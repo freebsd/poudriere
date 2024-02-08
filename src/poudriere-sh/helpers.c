@@ -213,9 +213,11 @@ getvarcmd(int argc, char **argv)
 		goto out;
 	}
 out:
-	if (argc == 3)
+	if (argc == 3 &&
+	    argv[2][0] != '\0' &&
+	    strcmp(argv[2], "-") != 0) {
 		setvar(argv[2], value, 0);
-	else
+	} else if (strcmp(value, "") != 0)
 		printf("%s\n", value);
 	return (ret);
 }

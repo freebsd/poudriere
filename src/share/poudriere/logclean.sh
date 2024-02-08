@@ -166,11 +166,14 @@ delete_empty_latest_per_pkg() {
 }
 
 echo_logdir() {
-	if [ -n "${MAX_COUNT}" ]; then
+	case "${MAX_COUNT:+set}" in
+	set)
 		echo "${log:?}"
-	else
+		;;
+	*)
 		printf "%s\000" "${log:?}"
-	fi
+		;;
+	esac
 }
 
 if [ -n "${MAX_COUNT}" ]; then
@@ -181,7 +184,8 @@ else
 	reason="builds older than ${DAYS} days in ${log_top} (filtered)"
 fi
 msg_n "Looking for ${reason}..."
-if [ -n "${MAX_COUNT}" ]; then
+case "${MAX_COUNT:+set}" in
+set)
 	# Find build directories up to limit MAX_COUNT per mastername
 	BUILDNAME_GLOB="${BUILDNAME_GLOB}" SHOW_FINISHED=1 \
 	    for_each_build echo_logdir | sort -d | \
@@ -204,14 +208,16 @@ if [ -n "${MAX_COUNT}" ]; then
 		}
 	}
 	' > "${OLDLOGS:?}"
-else
+	;;
+*)
 	# Find build directories older than DAYS
 	BUILDNAME_GLOB="${BUILDNAME_GLOB}" SHOW_FINISHED=1 \
 	    for_each_build echo_logdir | \
 	    xargs -0 -J {} \
 	    find -x {} -type d -mindepth 0 -maxdepth 0 -Btime +"${DAYS:?}"d \
 	    > "${OLDLOGS:?}"
-fi
+	;;
+esac
 echo " done"
 # Confirm these logs are safe to delete.
 ret=0
@@ -267,7 +273,9 @@ if [ ${logs_deleted} -eq 1 ]; then
 		    -print | sort -u -d | tail -n 1 | \
 		    awk -F / '{print $(NF - 1)}')"
 		rm -f "${MASTERNAME:?}/latest"
-		[ -z "${latest}" ] && continue
+		case "${latest}" in
+		"") continue ;;
+		esac
 		ln -s "${latest:?}" "${MASTERNAME:?}/latest"
 	done
 	echo " done"
@@ -281,7 +289,9 @@ if [ ${logs_deleted} -eq 1 ]; then
 		    -exec grep -l done: {} + | sort -u -d | tail -n 1 | \
 		    awk -F / '{print $(NF - 1)}')"
 		rm -f "${MASTERNAME:?}/latest-done"
-		[ -z "${latest_done}" ] && continue
+		case "${latest}" in
+		"") continue ;;
+		esac
 		ln -s "${latest_done:?}" "${MASTERNAME:?}/latest-done"
 	done
 	echo " done"

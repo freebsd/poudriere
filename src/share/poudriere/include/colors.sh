@@ -25,11 +25,13 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-if [ -z "${FORCE_COLORS}" ]; then
+case "${FORCE_COLORS-}" in
+"")
 	if ! [ -t 1 ] || ! [ -t 2 ]; then
 		USE_COLORS="no"
 	fi
-fi
+	;;
+esac
 
 # The number of hardcoded color sets supported for colorize_job_id
 MAXCOLORS=126
@@ -37,7 +39,8 @@ MAXCOLORS=126
 # Reset colors to be blank if colors are not being used.
 # Actual definitions are in colors.pre.sh to allow user to override
 # them and the below : {} lines in poudriere.conf.
-if [ ${USE_COLORS} = "no" ]; then
+case "${USE_COLORS-}" in
+no)
 	COLOR_RESET=
 	COLOR_BOLD=
 	COLOR_UNDER=
@@ -80,7 +83,8 @@ if [ ${USE_COLORS} = "no" ]; then
 	COLOR_FAIL=
 	COLOR_PHASE=
 	COLOR_DRY_MODE=
-else
+	;;
+*)
 
 	: ${D_LEFT:="${COLOR_BOLD}[${COLOR_RESET}"}
 	: ${D_RIGHT:="${COLOR_BOLD}]${COLOR_RESET}"}
@@ -97,7 +101,8 @@ else
 	: ${COLOR_FAIL:=${COLOR_RED}}
 	: ${COLOR_PHASE:=${COLOR_LIGHT_MAGENTA}}
 	: ${COLOR_DRY_MODE:=${COLOR_GREEN}}
-fi
+	;;
+esac
 
 colorize_job_id() {
 	[ $# -eq 2 ] || eargs colorize_job_id var_return job_id

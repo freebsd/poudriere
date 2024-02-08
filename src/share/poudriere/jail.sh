@@ -757,16 +757,21 @@ install_from_ftp() {
 		freebsdci) URL="https://artifact.ci.freebsd.org/snapshot/${V}/latest_tested/${ARCH%%.*}/${ARCH##*.}" ;;
 		esac
 		DISTS="${DISTS} dict"
-		[ "${NO_LIB32:-no}" = "no" -a "${ARCH}" = "amd64" ] &&
-			DISTS="${DISTS} lib32"
-		[ -n "${KERNEL}" ] && DISTS="${DISTS} kernels"
+		case "${NO_LIB32:-no}.${ARCH}" in
+		"no.amd64") DISTS="${DISTS} lib32" ;;
+		esac
+		case "${KERNEL:+set}" in
+		set) DISTS="${DISTS} kernels" ;;
+		esac
 		for dist in ${DISTS}; do
 			fetch_file ${JAILMNT}/fromftp/ "${URL}/$dist/CHECKSUM.${HASH}" ||
 				err 1 "Fail to fetch checksum file"
 			sed -n "s/.*(\(.*\...\)).*/\1/p" \
 				${JAILMNT}/fromftp/CHECKSUM.${HASH} | \
-				while read pkg; do
-				[ ${pkg} = "install.sh" ] && continue
+			while read pkg; do
+				case "${pkg}" in
+				"install.sh") continue ;;
+				esac
 				# Let's retry at least one time
 				fetch_file ${JAILMNT}/fromftp/ "${URL}/${dist}/${pkg}"
 			done
@@ -830,9 +835,12 @@ install_from_ftp() {
 			fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
 		fi
 
-		[ "${NO_LIB32:-no}" = "no" ] &&
-			DISTS="${DISTS} lib32"
-		[ -n "${KERNEL}" ] && DISTS="${DISTS} kernel"
+		case "${NO_LIB32:-no}" in
+		"no") DISTS="${DISTS} lib32" ;;
+		esac
+		case "${KERNEL:+set}" in
+		set) DISTS="${DISTS} kernel" ;;
+		esac
 		[ -s "${JAILMNT}/fromftp/MANIFEST" ] || err 1 "Empty MANIFEST file."
 		for dist in ${DISTS}; do
 			awk -vdist="${dist}.txz" '\
@@ -904,14 +912,26 @@ create_jail() {
 		err 1 "The jailname cannot contain a period (.). See jail(8)"
 
 	if [ "${METHOD}" = "null" ]; then
-		[ -z "${JAILMNT}" ] && \
-		    err 1 "Must set -M to path of jail to use"
-		[ "${JAILMNT}" = "/" ] && \
-		    err 1 "Cannot use / for -M"
+		case "${JAILMNT:+set}" in
+		set) ;;
+		*)
+			err ${EX_USAGE} "Must set -M to path of jail to use"
+			;;
+		esac
+		case "${JAILMNT}" in
+		"/")
+			err ${EX_USAGE} "Cannot use / for -M"
+			;;
+		esac
 	fi
 
 	if [ -z ${JAILMNT} ]; then
-		[ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
+		case "${BASEFS:+set}" in
+		set) ;;
+		*)
+			err ${EX_USAGE} "Please provide a BASEFS variable in your poudriere.conf"
+			;;
+		esac
 		JAILMNT="${BASEFS}/jails/${JAILNAME}"
 		_gsub "${JAILMNT}" ":" "_" JAILMNT
 	fi
@@ -919,10 +939,17 @@ create_jail() {
 	[ "${JAILMNT#*:*}" = "${JAILMNT}" ] ||
 		err 1 "The jail mount path cannot contain a colon (:)"
 
-	if [ -z "${JAILFS}" -a -z "${NO_ZFS}" ]; then
-		[ -z ${ZPOOL} ] && err 1 "Please provide a ZPOOL variable in your poudriere.conf"
+	case "${JAILFS:+set}.${NO_ZFS:+set}" in
+	""."")
+		case "${ZPOOL:+set}" in
+		set) ;;
+		*)
+			err ${EX_USAGE} "Please provide a ZPOOL variable in your poudriere.conf"
+			;;
+		esac
 		JAILFS=${ZPOOL}${ZROOTFS}/jails/${JAILNAME}
-	fi
+		;;
+	esac
 
 	if [ "${METHOD}" = "null" -a -n "${SRCPATH}" ]; then
 		SRC_BASE="${SRCPATH}"
@@ -972,8 +999,12 @@ create_jail() {
 	tar=*)
 		FCT=install_from_tar
 		TARBALL="${METHOD##*=}"
-		[ -z "${TARBALL}" ] && \
-		    err 1 "Must use format -m tar=/path/to/tarball.tar"
+		case "${TARBALL:+set}" in
+		set) ;;
+		*)
+			err ${EX_USAGE} "Must use format -m tar=/path/to/tarball.tar"
+			;;
+		esac
 		[ -r "${TARBALL}" ] || err 1 "Cannot read file ${TARBALL}"
 		METHOD="${METHOD%%=*}"
 		;;
@@ -998,10 +1029,13 @@ create_jail() {
 	case "${FCT}" in
 	install_from_vcs) ;;	# Checkout is done in $FCT
 	*)
-		if [ -z "${VERSION}" ] && \
-		    [ ! -r "${SRC_BASE:?}/sys/conf/newvers.sh" ]; then
-			usage VERSION
-		fi
+		case "${VERSION:+set}" in
+		"")
+			if [ ! -r "${SRC_BASE:?}/sys/conf/newvers.sh" ]; then
+				usage VERSION
+			fi
+			;;
+		esac
 		;;
 	esac
 

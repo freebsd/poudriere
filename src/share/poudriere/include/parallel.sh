@@ -78,7 +78,9 @@ timed_pwait() {
 	local pids="$2"
 	local status
 
-	[ -z "${pids}" ] && return 0
+	case "${pids}" in
+	"") return 0 ;;
+	esac
 
 	status=0
 	# Wait for the pids.
@@ -101,9 +103,9 @@ kill_and_wait() {
 	local pids="$2"
 	local ret=0
 
-	if [ -z "${pids}" ]; then
-		return 0
-	fi
+	case "${pids}" in
+	"") return 0 ;;
+	esac
 
 	{
 		kill -STOP ${pids} || :
@@ -205,10 +207,12 @@ parallel_exec() {
 parallel_start() {
 	local fifo
 
-	if [ -n "${NBPARALLEL:+1}" ]; then
+	case "${NBPARALLEL:+set}" in
+	set)
 		echo "parallel_start: Already started" >&2
 		return 1
-	fi
+		;;
+	esac
 	fifo="$(mktemp -ut parallel.pipe)"
 	mkfifo "${fifo}"
 	exec 9<> "${fifo}"
@@ -356,10 +360,12 @@ nohang() {
 		# on the 'sleep' to finish
 		n=
 		read_blocking -t "${read_timeout}" n <&8 || :
-		if [ "${n}" = "done" ]; then
+		case "${n}" in
+		done)
 			_wait "${childpid}" || ret=1
 			break
-		fi
+			;;
+		esac
 
 		# Not done, was a timeout, check the log time
 		lastupdated=$(stat -f "%m" ${logfile})
@@ -388,9 +394,9 @@ if [ -f /usr/bin/protect ] && [ $(/usr/bin/id -u) -eq 0 ]; then
 fi
 madvise_protect() {
 	[ $# -eq 1 ] || eargs madvise_protect pid
-	if [ -n "${PROTECT}" ]; then
-		${PROTECT} -p "$1" 2>/dev/null || :
-	fi
+	case "${PROTECT:+set}" in
+	set) ${PROTECT} -p "$1" 2>/dev/null || : ;;
+	esac
 	return 0
 }
 

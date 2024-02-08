@@ -212,20 +212,22 @@ else
 fi
 new_origin=$(grep -v '^#' "${portsdir:?}/MOVED" | awk -vorigin="${ORIGIN:?}" \
     -F\| '$1 == origin && $2 != "" {print $2}')
-if [ -n "${new_origin}" ]; then
+case "${new_origin:+set}" in
+set)
 	msg "MOVED: ${COLOR_PORT}${ORIGIN}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
-	# The ORIGIN may have a FLAVOR or SUBPKG in it which overrides
-	# whatever the user specified.
+	# The ORIGIN may have a FLAVOR in it which overrides whatever the
+	# user specified.
 	originspec_decode "${new_origin}" ORIGIN NEW_FLAVOR NEW_SUBPKG
-	if [ -n "${NEW_FLAVOR}" ]; then
-		FLAVOR="${NEW_FLAVOR}"
-	fi
-	if [ -n "${NEW_SUBPKG}" ]; then
-		SUBPKG="${NEW_SUBPKG}"
-	fi
+	case "${NEW_FLAVOR:+set}" in
+	set) FLAVOR="${NEW_FLAVOR}" ;;
+	esac
+	case "${NEW_SUBPKG:+set}" in
+	set) SUBPKG="${NEW_SUBPKG}" ;;
+	esac
 	# Update ORIGINSPEC for the new ORIGIN
 	originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
-fi
+	;;
+esac
 _lookup_portdir portdir "${ORIGIN}"
 if [ "${portdir:?}" = "${PORTSDIR:?}/${ORIGIN:?}" ] &&
 	[ ! -f "${portsdir:?}/${ORIGIN:?}/Makefile" ] ||

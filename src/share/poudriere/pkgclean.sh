@@ -165,14 +165,16 @@ else
 fi
 
 PACKAGES="${POUDRIERE_DATA:?}/packages/${MASTERNAME:?}"
-if [ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ]; then
+case "${ATOMIC_PACKAGE_REPOSITORY}" in
+yes)
 	if [ -d "${PACKAGES:?}/.building" ]; then
 		msg "Cleaning in previously failed build directory"
 		PACKAGES="${PACKAGES:?}/.building"
 	else
 		PACKAGES="${PACKAGES:?}/.latest"
 	fi
-fi
+	;;
+esac
 
 PKG_EXT='*' package_dir_exists_and_has_packages ||
     err 0 "No packages exist for ${MASTERNAME}"
@@ -345,11 +347,13 @@ END {
 		pkgversion="${pkg##*-}"
 		pkgversion="${pkgversion%.*}"
 
-		if [ -z "${lastpkg}" ]; then
+		case "${lastpkg}" in
+		"")
 			lastpkg="${pkg}"
 			lastver="${pkgversion}"
 			continue
-		fi
+			;;
+		esac
 
 		pkg_compare="$(pkg_compare "${pkgversion}" "${lastver}")"
 		case ${pkg_compare} in

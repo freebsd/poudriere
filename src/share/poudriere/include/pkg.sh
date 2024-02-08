@@ -31,19 +31,25 @@ pkg_get_origin() {
 	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
-	if [ -n "${_origin}" ] || ! shash_get 'pkg' 'origin' _origin; then
-		if [ -z "${_origin}" ]; then
+	case "${_origin}" in
+	"")
+		if ! shash_get 'pkg' 'origin' _origin; then
 			_origin=$(injail "${PKG_BIN:?}" query -F \
 			    "/packages/All/${pkg##*/}" "%o") || return
 		fi
+		;& # FALLTHROUGH
+	*)
 		shash_set 'pkg' 'origin' "${_origin}"
-	fi
-	if [ -n "${var_return}" ]; then
-		setvar "${var_return}" "${_origin}"
-	fi
-	if [ -z "${_origin}" ]; then
-		return 1
-	fi
+		;;
+	esac
+	case "${var_return}" in
+	"") ;;
+	-) echo "${_origin}" ;;
+	*) setvar "${var_return}" "${_origin}" ;;
+	esac
+	case "${_origin-}" in
+	"") return 1 ;;
+	esac
 }
 
 pkg_get_annotations() {
@@ -87,9 +93,11 @@ pkg_get_annotation() {
 		esac
 	done
 	mapfile_close "${mapfile_handle}" || :
-	if [ -n "${pga_var_return}" ]; then
-		setvar "${pga_var_return}" "${value}"
-	fi
+	case "${pga_var_return}" in
+	"") ;;
+	-) echo "${value}" ;;
+	*) setvar "${pga_var_return}" "${value}" ;;
+	esac
 }
 
 pkg_get_flavor() {
@@ -115,19 +123,25 @@ pkg_get_arch() {
 	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
-	if [ -n "${_arch}" ] || ! shash_get 'pkg' 'arch' _arch; then
-		if [ -z "${_arch}" ]; then
+	case "${_arch}" in
+	"")
+		if ! shash_get 'pkg' 'arch' _arch; then
 			_arch=$(injail "${PKG_BIN:?}" query -F \
 			    "/packages/All/${pkg##*/}" "%q") || return
 		fi
+		;& # FALLTHROUGH
+	*)
 		shash_set 'pkg' 'arch' "${_arch}"
-	fi
-	if [ -n "${var_return}" ]; then
-		setvar "${var_return}" "${_arch}"
-	fi
-	if [ -z "${_arch}" ]; then
-		return 1
-	fi
+		;;
+	esac
+	case "${var_return}" in
+	"") ;;
+	-) echo "${_arch}" ;;
+	*) setvar "${var_return}" "${_arch}" ;;
+	esac
+	case "${_arch}" in
+	"") return 1 ;;
+	esac
 }
 
 pkg_get_dep_origin_pkgnames() {
@@ -151,8 +165,9 @@ pkg_get_dep_origin_pkgnames() {
 		    tr '\n' ' ') || return
 		shash_set 'pkg' 'deps' "${fetched_data}"
 	fi
-	[ -n "${var_return_origins}" -o -n "${var_return_pkgnames}" ] || \
-	    return 0
+	case "${var_return_origins}${var_return_pkgnames}" in
+	"") return 0 ;;
+	esac
 	# Split the data
 	set -- ${fetched_data}
 	while [ $# -ne 0 ]; do
@@ -162,12 +177,16 @@ pkg_get_dep_origin_pkgnames() {
 		compiled_dep_pkgnames="${compiled_dep_pkgnames:+${compiled_dep_pkgnames} }${pkgname}"
 		shift 2
 	done
-	if [ -n "${var_return_origins}" ]; then
-		setvar "${var_return_origins}" "${compiled_dep_origins-}"
-	fi
-	if [ -n "${var_return_pkgnames}" ]; then
-		setvar "${var_return_pkgnames}" "${compiled_dep_pkgnames-}"
-	fi
+	case "${var_return_origins}" in
+	"") ;;
+	-) echo "${compiled_dep_origins-}" ;;
+	*) setvar "${var_return_origins}" "${compiled_dep_origins-}" ;;
+	esac
+	case "${var_return_pkgnames}" in
+	"") ;;
+	-) echo "${compiled_dep_pkgnames-}" ;;
+	*) setvar "${var_return_pkgnames}" "${compiled_dep_pkgnames-}" ;;
+	esac
 }
 
 pkg_get_options() {
@@ -198,9 +217,11 @@ pkg_get_options() {
 		EOF
 		shash_set 'pkg' 'options2' "${_compiled_options-}"
 	fi
-	if [ -n "${var_return}" ]; then
-		setvar "${var_return}" "${_compiled_options-}"
-	fi
+	case "${var_return}" in
+	"") ;;
+	-) echo "${_compiled_options-}" ;;
+	*) setvar "${var_return}" "${_compiled_options-}" ;;
+	esac
 }
 
 pkg_cache_data() {
@@ -456,13 +477,16 @@ sign_pkg() {
 	local pkgfile="$2"
 
 	msg "Signing pkg bootstrap with method: ${sigtype}"
-	if [ "${sigtype}" = "fingerprint" ]; then
+	case "${sigtype}" in
+	"fingerprint")
 		unlink "${pkgfile}.sig"
 		sha256 -q "${pkgfile}" | ${SIGNING_COMMAND} > "${pkgfile}.sig"
-	elif [ "${sigtype}" = "pubkey" ]; then
+		;;
+	"pubkey")
 		unlink "${pkgfile}.pubkeysig"
 		echo -n $(sha256 -q "${pkgfile}") | \
 		    openssl dgst -sha256 -sign "${PKG_REPO_SIGNING_KEY}" \
 		    -binary -out "${pkgfile}.pubkeysig"
-	fi
+		;;
+	esac
 }

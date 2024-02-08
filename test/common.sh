@@ -115,9 +115,10 @@ rm() {
 	local arg
 
 	for arg in "$@"; do
-		[ "${arg}" = "/" ] && err 99 "Tried to rm /"
-		[ "${arg%/}" = "/COPYRIGHT" ] && err 99 "Tried to rm /*"
-		[ "${arg%/}" = "/bin" ] && err 99 "Tried to rm /*"
+		case "${arg}" in
+		/) err 99 "Tried to rm /" ;;
+		/COPYRIGHT|/bin) err 99 "Tried to rm /*" ;;
+		esac
 	done
 
 	command rm "$@"

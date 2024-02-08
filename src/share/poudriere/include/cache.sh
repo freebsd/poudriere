@@ -191,11 +191,13 @@ cache_call_sv() {
 		sv_value=sv__null
 		${function} "$@"
 		ret=$?
-		if [ "${sv_value}" = "sv__null" ] && [ ${ret} -eq 0 ]; then
+		case "${ret}.${sv_value}" in
+		"0.sv__null")
 			# Function did not properly set sv_value,
 			# so ensure ret is >0
 			ret=76
-		fi
+			;;
+		esac
 		if [ "${USE_CACHE_CALL}" -eq 1 ]; then
 			_cache_set "${cc_var}" "${cc_key}" "${sv_value}"
 		fi

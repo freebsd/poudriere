@@ -40,26 +40,31 @@ pkgqueue_get_next() {
 
 	p=$(find ${POOL_BUCKET_DIRS:?} -type d -depth 1 -empty -print -quit) ||
 	    err "${EX_SOFTWARE}" "pkgqueue_get_next: Failed to search queue"
-	if [ -n "$p" ]; then
+	case "${p:+set}" in
+	set)
 		_pkgname=${p##*/}
 		if ! rename "${p}" "${MASTER_DATADIR:?}/building/${_pkgname}" \
 		    2>/dev/null; then
 			# Was the failure from /unbalanced?
-			if [ -z "${p%%*unbalanced/*}" ]; then
+			case "${p}" in
+			*"unbalanced/"*)
 				# We lost the race with a child running
 				# balance_pool(). The file is already
 				# gone and moved to a bucket. Try again.
 				ret=0
 				pkgqueue_get_next "$@" || ret=$?
 				return ${ret}
-			else
+				;;
+			*)
 				# Failure to move a balanced item??
 				err 1 "pkgqueue_get_next: Failed to mv ${p} to ${MASTER_DATADIR}/building/${_pkgname}"
-			fi
+				;;
+			esac
 		fi
 		# Update timestamp for buildtime accounting
 		touch "${MASTER_DATADIR:?}/building/${_pkgname}"
-	fi
+		;;
+	esac
 
 	setvar "${pkgname_var}" "${_pkgname}"
 	# XXX: All of this should be passed in the queue rather than determined
@@ -130,7 +135,8 @@ pkgqueue_clean_rdeps() {
 
 	# Cleanup everything that depends on my package
 	# Note 2 loops here to avoid rechecking clean_rdepends every loop.
-	if [ -n "${clean_rdepends}" ]; then
+	case "${clean_rdepends:+set}" in
+	set)
 		# Recursively cleanup anything that depends on my package.
 		for dep_dir in ${rdep_dir}/*; do
 			# May be empty if all my reverse deps are now skipped.
@@ -142,7 +148,8 @@ pkgqueue_clean_rdeps() {
 
 			pkgqueue_clean_pool ${dep_pkgname} "${clean_rdepends}"
 		done
-	else
+		;;
+	"")
 		for dep_dir in ${rdep_dir}/*; do
 			dep_pkgname=${dep_dir##*/}
 			pkgqueue_dir pkg_dir_name "${dep_pkgname}"
@@ -164,7 +171,8 @@ pkgqueue_clean_rdeps() {
 		    find % -type d -maxdepth 0 -empty 2>/dev/null | \
 		    xargs -J % mv % "pool/unbalanced" \
 		    2>/dev/null || :
-	fi
+		;;
+	esac
 
 	rm -rf "${rdep_dir}" 2>/dev/null &
 
@@ -217,8 +225,9 @@ pkgqueue_clean_pool() {
 	# if this build was sucessful. It only exists if pkgqueue_clean_pool is
 	# being called recursively to skip items and in that case it will
 	# not be empty.
-	[ -n "${clean_rdepends}" ] &&
-	    pkgqueue_clean_deps "${pkgname}" "${clean_rdepends}"
+	case "${clean_rdepends:+set}" in
+	set) pkgqueue_clean_deps "${pkgname}" "${clean_rdepends}" ;;
+	esac
 
 	return 0
 }
@@ -340,8 +349,9 @@ pkgqueue_sanity_check() {
 		find building -type d -mindepth 1 -maxdepth 1 | \
 		sed -e "s,^building/,," | tr '\n' ' ' \
 	)
-	[ -z "${crashed_packages}" ] ||	\
-		err 1 "Crashed package builds detected: ${crashed_packages}"
+	case "${crashed_packages:+set}" in
+	set) err 1 "Crashed package builds detected: ${crashed_packages}" ;;
+	esac
 
 	# Check if there's a cycle in the need-to-build queue
 	dependency_cycles=$(\
@@ -353,29 +363,32 @@ pkgqueue_sanity_check() {
 		awk -f ${AWKPREFIX}/dependency_loop.awk \
 	)
 
-	if [ -n "${dependency_cycles}" ]; then
-		err 1 "Dependency loop detected:
-${dependency_cycles}"
-	fi
+	case "${dependency_cycles:+set}" in
+	set) err 1 "Dependency loop detected:"$'\n'"${dependency_cycles}" ;;
+	esac
 
 	dead_packages=$(pkgqueue_find_dead_packages)
 
 	if [ ${always_fail} -eq 0 ]; then
-		if [ -n "${dead_packages}" ]; then
+		case "${dead_packages:+set}" in
+		set)
 			err 1 "Packages stuck in queue (depended on but not in queue): ${dead_packages}"
-		fi
+			;;
+		esac
 		cd "${pwd}"
 		return 0
 	fi
 
-	if [ -n "${dead_packages}" ]; then
+	case "${dead_packages:+set}" in
+	set)
 		failed_phase="stuck_in_queue"
 		for pkgname in ${dead_packages}; do
 			crashed_build "${pkgname}" "${failed_phase}"
 		done
 		cd "${pwd}"
 		return 0
-	fi
+		;;
+	esac
 
 	# No cycle, there's some unknown poudriere bug
 	err 1 "Unknown stuck queue bug detected. Please submit the entire build output to poudriere developers.
@@ -387,9 +400,11 @@ pkgqueue_empty() {
 	local pool_dir dirs
 	local n
 
-	if [ -z "${ALL_DEPS_DIRS}" ]; then
+	case "${ALL_DEPS_DIRS-}" in
+	"")
 		ALL_DEPS_DIRS=$(find ${MASTER_DATADIR:?}/deps -mindepth 1 -maxdepth 1 -type d)
-	fi
+		;;
+	esac
 
 	dirs="${ALL_DEPS_DIRS} ${POOL_BUCKET_DIRS:?}"
 
@@ -520,8 +535,11 @@ pkgqueue_trim_orphaned_build_deps() {
 	required_env pkgqueue_trim_orphaned_build_deps PWD "${MASTER_DATADIR_ABS:?}"
 	local tmp port originspec pkgname
 
-	if [ "${TRIM_ORPHANED_BUILD_DEPS}" != "yes" ] || \
-	    [ "${ALL}" -eq 1 ]; then
+	case "${TRIM_ORPHANED_BUILD_DEPS}" in
+	yes) ;;
+	*) return 0 ;;
+	esac
+	if [ "${ALL}" -eq 1 ]; then
 		return 0
 	fi
 	msg "Unqueueing orphaned build dependencies"

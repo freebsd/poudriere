@@ -136,7 +136,10 @@ issetvar() {
 
 	eval "_evalue=\${${var}-isv__null}"
 
-	[ "${_evalue}" != "isv__null" ]
+	case "${_evalue}" in
+	"isv__null") return 1 ;;
+	esac
+	return 0
 }
 fi
 
@@ -162,20 +165,25 @@ getvar() {
 
 	eval "_getvar_value=\${${_getvar_var}-gv__null}"
 
-	if [ "${_getvar_value}" = "gv__null" ]; then
+	case "${_getvar_value}" in
+	gv__null)
 		_getvar_value=
 		ret=1
-	else
+		case "${_getvar_var_return}" in
+		""|-) ;;
+		*) setvar "${_getvar_var_return}" "" ;;
+		esac
+		;;
+	*)
 		ret=0
-	fi
+		case "${_getvar_var_return}" in
+		""|-) echo "${_getvar_value}" ;;
+		*) setvar "${_getvar_var_return}" "${_getvar_value}" ;;
+		esac
+		;;
+	esac
 
-	if [ -n "${_getvar_var_return}" ]; then
-		setvar "${_getvar_var_return}" "${_getvar_value}"
-	else
-		echo "${_getvar_value}"
-	fi
-
-	return ${ret}
+	return "${ret}"
 }
 fi
 
@@ -201,8 +209,23 @@ _relpath_common() {
 		other="${dir1}"
 	fi
 	# Trim away path components until they match
-	while [ "${other#${common%/}/}" = "${other}" -a -n "${common}" ]; do
-		common="${common%/*}"
+	#while [ "${other#${common%/}/}" = "${other}" -a -n "${common}" ]; do
+	#	common="${common%/*}"
+	#done
+	while :; do
+		case "${common:+set}" in
+		set)
+			case "${other}" in
+			"${common%/}/"*)
+				break
+				;;
+			*)
+				common="${common%/*}"
+				;;
+			esac
+			;;
+		"") break ;;
+		esac
 	done
 	common="${common%/}"
 	common="${common:-/}"
@@ -245,25 +268,34 @@ _relpath() {
 	# Find the common prefix
 	_relpath_common "${dir1}" "${dir2}"
 
-	if [ "${_relpath_common_dir2}" = "." ]; then
+	case "${_relpath_common_dir2}" in
+	".")
 		newpath="${_relpath_common_dir1}"
-	else
+		;;
+	*)
 		# Replace each component in _relpath_common_dir2 with
 		# a ..
 		IFS="/"
-		if [ "${_relpath_common_dir1}" != "." ]; then
-			newpath="${_relpath_common_dir1}"
-		else
+		case "${_relpath_common_dir1}" in
+		".")
 			newpath=
-		fi
+			;;
+		*)
+			newpath="${_relpath_common_dir1}"
+			;;
+		esac
 		set -- ${_relpath_common_dir2}
 		while [ $# -gt 0 ]; do
 			newpath="..${newpath:+/}${newpath}"
 			shift
 		done
-	fi
+		;;
+	esac
 
-	setvar "${var_return}" "${newpath}"
+	case "${var_return}" in
+	-) echo "${newpath}" ;;
+	*) setvar "${var_return}" "${newpath}" ;;
+	esac
 }
 
 # See _relpath
@@ -272,12 +304,10 @@ relpath() {
 	[ $# -eq 2 -o $# -eq 3 ] || eargs relpath dir1 dir2 [var_return]
 	local dir1="$1"
 	local dir2="$2"
+	local outvar="${3:-"-"}"
 	local _relpath
 
-	_relpath "$@"
-	if [ -z "$3" ]; then
-		echo "${_relpath}"
-	fi
+	_relpath "${dir1}" "${dir2}" "${outvar}"
 }
 
 make_relative() {
@@ -289,15 +319,18 @@ make_relative() {
 	local value
 
 	getvar "${varname}" value || return 0
-	if [ -z "${value}" ]; then
-		return 0
-	fi
+	case "${value}" in
+	"") return 0 ;;
+	esac
 	case "${value}" in
 	/*)	_relpath "${value}" "${newroot}" "${varname}" ;;
 	*)	_relpath "${oldroot}/${value}" "${newroot}" "${varname}" ;;
 	esac
 }
-if [ "$(type randint 2>/dev/null)" != "randint is a shell builtin" ]; then
+
+case "$(type randint 2>/dev/null)" in
+"randint is a shell builtin") ;;
+*)
 randint() {
 	[ "$#" -eq 1 -o "$#" -eq 2 ] || eargs randint max_val [var_return]
 	local max_val="$1"
@@ -311,7 +344,8 @@ randint() {
 	val=$(jot -r 1 "${max_val}")
 	setvar "${var_return}" "${val}"
 }
-fi
+;;
+esac
 
 _trap_ignore_block() {
 	local -; set +x
@@ -355,7 +389,9 @@ trap_ignore_block() {
 	_trap_ignore_block 1 "$@"
 }
 
-if [ "$(type trap_push 2>/dev/null)" != "trap_push is a shell builtin" ]; then
+case "$(type trap_push 2>/dev/null)" in
+"trap_push is a shell builtin") ;;
+*)
 trap_push() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs trap_push signal var_return
@@ -365,13 +401,18 @@ trap_push() {
 
 	_trap="-"
 	while read -r ltrap ldash lhandler lsig; do
-		if [ -z "${lsig%%* *}" ]; then
+		case "${lsig}" in
+		*" "*)
 			# Multi-word handler, need to shift it back into
 			# lhandler and find the real lsig
 			lhandler="${lhandler} ${lsig% *}"
 			lsig="${lsig##* }"
-		fi
-		[ "${lsig}" = "${signal}" ] || continue
+			;;
+		esac
+		case "${lsig}" in
+		"${signal}") ;;
+		*) continue ;;
+		esac
 		_trap="${lhandler}"
 		trap - ${signal}
 		break
@@ -388,11 +429,10 @@ trap_pop() {
 	local signal="$1"
 	local _trap="$2"
 
-	if [ -n "${_trap}" ]; then
-		eval trap -- "${_trap}" ${signal} || :
-	else
-		return 1
-	fi
+	case "${_trap:+set}" in
+	set) eval trap -- "${_trap}" ${signal} || : ;;
+	"") return 1 ;;
+	esac
 }
 
 # Start a "critical section", disable INT/TERM while in here and delay until
@@ -444,7 +484,8 @@ critical_end() {
 		kill -TERM $(getpid)
 	fi
 }
-fi
+;;
+esac
 
 # Read a file into the given variable.
 _mapfile_read_file() {
@@ -465,24 +506,29 @@ _mapfile_read_file() {
 	_read_file_lines_read=0
 	ret=0
 	if mapfile handle "${file}" "re"; then
-		if [ -n "${var_return}" ]; then
+		case "${var_return}" in
+		""|-)
+			while IFS= mapfile_read "${handle}" mrf_line; do
+				_read_file_lines_read=$((_read_file_lines_read + 1))
+			done
+			;;
+		*)
 			newline=$'\n'
 			while IFS= mapfile_read "${handle}" mrf_line; do
 				mrf_data="${mrf_data:+${mrf_data}${newline}}${mrf_line}"
 				_read_file_lines_read=$((_read_file_lines_read + 1))
 			done
-		else
-			while IFS= mapfile_read "${handle}" mrf_line; do
-				_read_file_lines_read=$((_read_file_lines_read + 1))
-			done
-		fi
+			;;
+		esac
 		mapfile_close "${handle}" || ret="$?"
 	else
 		ret="$?"
 	fi
-	if [ -n "${var_return}" ]; then
-		setvar "${var_return}" "${mrf_data}"
-	fi
+	case "${var_return}" in
+	"") ;;
+	-) echo "${mrf_data}" ;;
+	*) setvar "${var_return}" "${mrf_data}" ;;
+	esac
 	return "${ret}"
 }
 
@@ -503,9 +549,9 @@ read_file() {
 	-|/dev/stdin) file="/dev/fd/0" ;;
 	*)
 		if [ ! -f "${file}" ]; then
-			if [ -n "${var_return}" ]; then
-				setvar "${var_return}" ""
-			fi
+			case "${var_return:+set}" in
+			set) setvar "${var_return}" "" ;;
+			esac
 			return 1
 		fi
 		;;
@@ -521,9 +567,9 @@ read_file() {
 	newline=$'\n'
 
 	if [ ${READ_FILE_USE_CAT:-0} -eq 1 ]; then
-		if [ -n "${var_return}" ]; then
-			_data="$(cat "${file}")"
-		fi
+		case "${var_return:+set}" in
+		set) _data="$(cat "${file}")" ;;
+		esac
 		_read_file_lines_read=$(wc -l < "${file}")
 		_read_file_lines_read=${_read_file_lines_read##* }
 	else
@@ -541,16 +587,18 @@ read_file() {
 				# Some error or interruption/signal. Reread.
 				*) continue ;;
 			esac
-			if [ -n "${var_return}" ]; then
-				_data="${_data:+${_data}${newline}}${_line}"
-			fi
+			case "${var_return:+set}" in
+			set) _data="${_data:+${_data}${newline}}${_line}" ;;
+			esac
 			_read_file_lines_read=$((_read_file_lines_read + 1))
 		done < "${file}" || _ret=$?
 	fi
 
-	if [ -n "${var_return}" ]; then
-		setvar "${var_return}" "${_data}"
-	fi
+	case "${var_return}" in
+	"") ;;
+	-) echo "${_data}" ;;
+	*) setvar "${var_return}" "${_data}" ;;
+	esac
 
 	return ${_ret}
 }
@@ -787,7 +835,22 @@ pipe_hold() {
 	return "${ret}"
 }
 
-if [ "$(type mapfile 2>/dev/null)" != "mapfile is a shell builtin" ]; then
+case "$(type mapfile 2>/dev/null)" in
+"mapfile is a shell builtin")
+mapfile_builtin() {
+	return 0
+}
+
+mapfile_keeps_file_open_on_eof() {
+	[ $# -eq 1 ] || eargs mapfile_keeps_file_open_on_eof handle
+	return 0
+}
+
+mapfile_supports_multiple_handles() {
+	return 0
+}
+;;
+*)
 mapfile() {
 	local -; set +x
 	[ $# -eq 2 -o $# -eq 3 ] || eargs mapfile handle_name file modes
@@ -869,9 +932,12 @@ mapfile_read() {
 	local handle="$1"
 	shift
 
-	if [ "${handle}" != "${_mapfile_handle-}" ]; then
+	case "${handle}" in
+	"${_mapfile_handle}") ;;
+	*)
 		err 1 "mapfile_read: Handle '${handle}' is not open${_mapfile_handle:+, '${_mapfile_handle}' is}."
-	fi
+		;;
+	esac
 
 	hash_get mapfile_fd "${handle}" fd || fd=8
 	read_blocking -r "$@" <&${fd}
@@ -913,9 +979,11 @@ mapfile_write() {
 		return "${ret}"
 	fi
 
-	if [ "${handle}" != "${_mapfile_handle-}" ]; then
+	case "${handle}" in
+	"${_mapfile_handle}") ;;
+	*)
 		err 1 "mapfile_write: Handle '${handle}' is not open${_mapfile_handle:+, '${_mapfile_handle}' is}."
-	fi
+	esac
 	hash_get mapfile_fd "${handle}" fd || fd=8
 	if [ "${Tflag:-0}" -eq 1 ]; then
 		echo ${nflag:+-n} "$@"
@@ -929,9 +997,11 @@ mapfile_close() {
 	local handle="$1"
 	local fd _
 
-	if [ "${handle}" != "${_mapfile_handle-}" ]; then
+	case "${handle}" in
+	"${_mapfile_handle}") ;;
+	*)
 		err 1 "mapfile_close: Handle '${handle}' is not open${_mapfile_handle:+, '${_mapfile_handle}' is}."
-	fi
+	esac
 	# Only close fd that we opened.
 	if ! hash_remove mapfile_fd "${handle}" _; then
 		exec 8>&-
@@ -952,21 +1022,8 @@ mapfile_keeps_file_open_on_eof() {
 mapfile_supports_multiple_handles() {
 	return 1
 }
-else
-
-mapfile_builtin() {
-	return 0
-}
-
-mapfile_keeps_file_open_on_eof() {
-	[ $# -eq 1 ] || eargs mapfile_keeps_file_open_on_eof handle
-	return 0
-}
-
-mapfile_supports_multiple_handles() {
-	return 0
-}
-fi
+;;
+esac
 
 # This is for reading from a file in a loop while avoiding a pipe.
 # It is analogous to read(builtin).For example these are mostly equivalent:
@@ -1457,11 +1514,14 @@ timespecsub() {
 		res_nsec="$((res_nsec + 1000000000))"
 	fi
 
-	if [ -n "${_var_return}" ]; then
-		setvar "${_var_return}" "${res_sec}.${res_nsec}"
-	else
+	case "${_var_return}" in
+	""|-)
 		echo "${res_sec}.${res_nsec}"
-	fi
+		;;
+	*)
+		setvar "${_var_return}" "${res_sec}.${res_nsec}"
+		;;
+	esac
 }
 
 calculate_duration() {
@@ -1577,22 +1637,30 @@ required_env() {
 		*!)
 			neg="!"
 			var="${var%!}"
+			getvar "${var}" actual_value || actual_value=re__null
+			# !expected
+			case "${expected_value}" in
+			"")
+				case "${actual_value}" in
+				# Special case: SET and not blank is wanted
+				"re__null"|"")
+					expected_value="empty or re__null"
+					;;
+				*) continue ;;
+				esac
+				;;
+			"${actual_value}") ;;
+			*) continue ;;
+			esac
 			;;
 		*)
 			neg=
+			getvar "${var}" actual_value || actual_value=re__null
+			case "${actual_value}" in
+			"${expected_value}") continue ;;
+			esac
 			;;
 		esac
-		getvar "${var}" actual_value || actual_value=re__null
-		# Special case: SET and not blank is wanted
-		if [ "${neg}" = "!" ] && [ -z "${expected_value}" ]; then
-			case "${actual_value}" in
-			re__null|"") ;;
-			*) continue ;;
-			esac
-			expected_value="empty or re__null"
-		elif [ "${actual_value}" ${neg}= "${expected_value}" ]; then
-			continue
-		fi
 		ret=$((ret + 1))
 		msg_error "entered ${function}() with wrong environment: expected ${var} ${neg}= '${expected_value}' actual: '${actual_value}'"
 	done
@@ -1610,31 +1678,39 @@ getpid() {
 fi
 
 # Export handling is different in builtin vs external
-if [ "$(type mktemp)" = "mktemp is a shell builtin" ]; then
+case "$(type mktemp)" in
+"mktemp is a shell builtin")
 	MKTEMP_BUILTIN=1
-fi
+	;;
+esac
 _mktemp() {
 	local -; set +x
 	local _mktemp_var_return="$1"
 	shift
 	local TMPDIR ret _mktemp_tmpfile datatmpdir
 
-	if [ -z "${TMPDIR-}" ]; then
+	case "${TMPDIR-}" in
+	"")
 		TMPDIR="${POUDRIERE_TMPDIR-}"
-		if [ -n "${MNT_DATADIR-}" -a ${STATUS} -eq 1 ]; then
+		case "${STATUS:-0}.${MNT_DATADIR-}" in
+		1."") ;;
+		1.*)
 			datatmpdir="${MNT_DATADIR:?}/tmp"
 			if [ -d "${datatmpdir}" ]; then
 				TMPDIR="${datatmpdir}"
 			fi
-		fi
-	fi
-
+			;;
+		esac
+		;;
+	esac
 	ret=0
-	if [ -n "${MKTEMP_BUILTIN-}" ]; then
+	case "${MKTEMP_BUILTIN:+set}" in
+	set)
 		# No export needed here since TMPDIR is set above in scope.
 		builtin _mktemp "${_mktemp_var_return}" "$@" || ret="$?"
 		return "${ret}"
-	fi
+		;;
+	esac
 
 	export TMPDIR
 	_mktemp_tmpfile="$(command mktemp "$@")" || ret="$?"
@@ -1642,14 +1718,17 @@ _mktemp() {
 	return "${ret}"
 }
 
-if [ "$(type dirempty 2>/dev/null)" != "dirempty is a shell builtin" ]; then
+case "$(type dirempty 2>/dev/null)" in
+"dirempty is a shell builtin") ;;
+*)
 dirempty() {
 	[ $# -eq 1 ] || eargs dirempty
 	local dir="$1"
 
 	! globmatch "${dir}/*"
 }
-fi
+;;
+esac
 
 globmatch() {
 	[ $# -eq 1 ] || eargs globmatch glob

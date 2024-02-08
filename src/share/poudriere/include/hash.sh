@@ -53,7 +53,8 @@ _gsub() {
 	local var_return="${4:-_gsub}"
 	local result_l= result_r="${string}"
 
-	if [ -n "${pattern}" ]; then
+	case "${pattern:+set}" in
+	set)
 		while :; do
 			# shellcheck disable=SC2295
 			case ${result_r} in
@@ -66,7 +67,8 @@ _gsub() {
 				;;
 		esac
 		done
-	fi
+		;;
+	esac
 
 	setvar "${var_return}" "${result_l}${result_r}"
 }
@@ -88,11 +90,14 @@ _gsub_badchars() {
 
 	# Avoid !^- processing as this is just filtering bad characters
 	# not a pattern.
-	if [ "${badchars#!}" != "${badchars}" ]; then
-		badchars="${badchars#!}!"
-	elif [ "${badchars#^}" != "${badchars}" ]; then
-		badchars="${badchars#^}^"
-	fi
+	while :; do
+		case "${badchars}" in
+		"!^") break ;;
+		"!"*) badchars="${badchars#!}!" ;;
+		"^"*) badchars="${badchars#^}^" ;;
+		*) break ;;
+		esac
+	done
 	case "${badchars}" in
 	*-*) _gsub "${badchars}" "-" "" badchars ;;
 	esac
@@ -106,9 +111,9 @@ gsub() {
 	local _gsub
 
 	_gsub "$@"
-	if [ -z "$4" ]; then
-		echo "${_gsub}"
-	fi
+	case "${4-}" in
+	"") echo "${_gsub}" ;;
+	esac
 }
 fi
 
