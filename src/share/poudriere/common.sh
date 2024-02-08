@@ -6814,7 +6814,8 @@ deps_sanity() {
 			ret=1
 		fi
 		if have_ports_feature FLAVORS && [ -z "${dep_flavor}" ] && \
-		    [ "${dep_originspec}" != "${dep_origin}" ]; then
+			[ -z "${dep_subpkg}" ] && \
+			[ "${dep_originspec}" != "${dep_origin}" ]; then
 			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} has dependency on ${COLOR_PORT}${dep_origin}${COLOR_RESET} with invalid empty FLAVOR; Please contact maintainer of the port to fix this."
 			ret=1
 		fi
