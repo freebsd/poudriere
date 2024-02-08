@@ -5727,7 +5727,7 @@ delete_old_pkg() {
 	local td d key dpath dir found raw_deps compiled_deps
 	local pkg_origin compiled_deps_pkgnames compiled_deps_pkgbases
 	local compiled_deps_pkgname compiled_deps_origin compiled_deps_new
-	local pkgbase new_pkgbase flavor pkg_flavor subpkg originspec
+	local pkgbase new_pkgbase flavor pkg_flavor pkg_subpkg originspec
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor
 	local ignore new_origin stale_pkg
 	local pkg_arch no_arch arch is_sym
@@ -5776,7 +5776,7 @@ delete_old_pkg() {
 		return 0
 	fi
 
-	subpkg=
+	pkg_subpkg=
 	pkg_flavor=
 	originspec=
 	if ! pkg_get_origin origin "${pkg}"; then
@@ -5794,9 +5794,10 @@ delete_old_pkg() {
 			pkg_get_flavor pkg_flavor "${pkg}"
 		fi
 		if have_ports_feature SUBPACKAGES; then
-			pkg_get_subpkg subpkg "${pkg}"
+			pkg_get_subpkg pkg_subpkg "${pkg}"
 		fi
-		originspec_encode originspec "${origin}" "${pkg_flavor}" "${subpkg}"
+		originspec_encode originspec "${origin}" "${pkg_flavor}" \
+		    "${pkg_subpkg}"
 		if ! originspec_is_needed_and_not_ignored "${originspec}"; then
 			if [ "${delete_unqueued}" -eq 1 ]; then
 				msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: no longer needed"
@@ -5832,9 +5833,10 @@ delete_old_pkg() {
 			pkg_get_flavor pkg_flavor "${pkg}"
 		fi
 		if have_ports_feature SUBPACKAGES; then
-			pkg_get_subpkg subpkg "${pkg}"
+			pkg_get_subpkg pkg_subpkg "${pkg}"
 		fi
-		originspec_encode originspec "${origin}" "${pkg_flavor}" "${subpkg}"
+		originspec_encode originspec "${origin}" "${pkg_flavor}" \
+		    "${pkg_subpkg}"
 	fi
 
 	v="${pkgname##*-}"
