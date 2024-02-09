@@ -4726,7 +4726,7 @@ build_port() {
 	[ $# -eq 2 ] || eargs build_port originspec pkgname
 	local originspec="$1"
 	local pkgname="$2"
-	local port flavor portdir subpkg
+	local port flavor portdir subpkg pkgbase
 	local mnt
 	local log
 	local network
@@ -4745,6 +4745,7 @@ build_port() {
 
 	originspec_decode "${originspec}" port flavor subpkg
 	_lookup_portdir portdir "${port}"
+	pkgbase="${pkgname%-*}"
 
 	if ! was_a_testport_run; then
 		exec </dev/null
@@ -4766,7 +4767,7 @@ build_port() {
 	set -o noglob
 	for jpkg in ${ALLOW_NETWORKING_PACKAGES}; do
 		# shellcheck disable=SC2254
-		case "${pkgname%-*}" in
+		case "${pkgbase}" in
 		${jpkg})
 			job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}"
 			msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}"
@@ -5712,7 +5713,7 @@ build_pkg() {
 	PORTTESTING="$2"
 	local port portdir subpkg
 	local build_failed=0
-	local name
+	local name pkgbase
 	local mnt
 	local failed_status failed_phase
 	local clean_rdepends
@@ -5744,7 +5745,8 @@ build_pkg() {
 	MAKE_ARGS="${FLAVOR:+ FLAVOR=${FLAVOR}}"
 	_lookup_portdir portdir "${port}"
 
-	_gsub_var_name "${pkgname%-*}" pkgname_varname
+	pkgbase="${pkgname%-*}"
+	_gsub_var_name "${pkgbase}" pkgname_varname
 	eval "MAX_FILES=\${MAX_FILES_${pkgname_varname}:-${DEFAULT_MAX_FILES}}"
 	eval "MAX_MEMORY=\${MAX_MEMORY_${pkgname_varname}:-${MAX_MEMORY:-}}"
 	if [ -n "${MAX_MEMORY}" -o -n "${MAX_FILES}" ]; then
@@ -5781,7 +5783,7 @@ build_pkg() {
 	set -f
 	for jpkg in ${TMPFS_BLACKLIST-}; do
 		# shellcheck disable=SC2254
-		case "${pkgname%-*}" in
+		case "${pkgbase}" in
 		${jpkg})
 			mkdir -p "${TMPFS_BLACKLIST_TMPDIR:?}/wrkdirs"
 			tmpfs_blacklist_dir="$(\
@@ -5804,7 +5806,7 @@ build_pkg() {
 	set -f
 	for jpkg in ${ALLOW_MAKE_JOBS_PACKAGES}; do
 		# shellcheck disable=SC2254
-		case "${pkgname%-*}" in
+		case "${pkgbase}" in
 		${jpkg})
 			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_RESET}"
 			sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' \
@@ -8902,7 +8904,7 @@ prepare_ports() {
 
 load_priorities_ptsort() {
 	local priority pkgname originspec pkg_boost origin flavor _rdep _ignored
-	local log
+	local log pkgbase
 	local -
 
 	awk '{print $2 " " $1}' "${MASTER_DATADIR:?}/pkg_deps" \
@@ -8911,6 +8913,7 @@ load_priorities_ptsort() {
 	# Add in boosts before running ptsort
 	while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs" \
 	    pkgname originspec _rdep _ignored; do
+		pkgbase="${pkgname%-*}"
 		# Does this pkg have an override?
 
 		# Disabling globs for this loop or wildcards will
@@ -8919,7 +8922,7 @@ load_priorities_ptsort() {
 		set -o noglob
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			# shellcheck disable=SC2254
-			case ${pkgname%-*} in
+			case ${pkgbase} in
 			${pkg_boost})
 				pkgqueue_contains "${pkgname}" || \
 				    continue
