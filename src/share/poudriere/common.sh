@@ -1309,22 +1309,27 @@ update_stats() {
 }
 
 update_stats_queued() {
-	[ $# -eq 0 ] || eargs update_stats_queued
-	local nbq nbi nbs nbp
+	[ "$#" -eq 0 ] || eargs update_stats_queued
+	local _originspec _pkgname _rdep _ignore nbq
+	local log
 
-	nbq=$(pkgqueue_list | wc -l)
-	# Need to add in pre-build ignored/skipped
-	_bget nbi stats_ignored || nbi=0
-	_bget nbs stats_skipped || nbs=0
-	_bget nbp stats_fetched || nbp=0
-	nbq=$((nbq + nbi + nbs + nbp))
-
+	_log_path log
+	while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs" \
+	    _pkgname _originspec _rdep _ignore; do
+		if [ "${_rdep}" = "listed" ] ||
+		    # XXX: This should only be for direct deps of listed packages that cause a skip
+		    [ -n "${_ignore}" ] ||
+		    pkgqueue_contains "${_pkgname}"; then
+			echo "${_originspec} ${_pkgname} ${_rdep}"
+		fi
+	done | sort | \
+	    write_atomic "${log:?}/.poudriere.ports.queued"
+	count_lines "${log:?}/.poudriere.ports.queued" nbq
 	# Add 1 for the main port to test
 	if was_a_testport_run; then
 		nbq=$((nbq + 1))
 	fi
-	bset stats_queued ${nbq##* }
-	update_remaining
+	bset stats_queued "${nbq}"
 }
 
 update_remaining() {
@@ -1558,10 +1563,23 @@ show_build_summary() {
 	local status nbb nbf nbs nbi nbq nbp ndone nbtobuild buildname
 	local log now elapsed buildtime queue_width
 
-	update_stats 2>/dev/null || return 0
-
-	_bget nbq stats_queued || nbq=0
 	_bget status status || status=unknown
+	_log_path log
+	_bget buildname buildname || buildname=
+	now=$(clock -epoch)
+
+	calculate_elapsed_from_log "${now}" "${log}" || return 1
+	elapsed=${_elapsed_time}
+	calculate_duration buildtime "${elapsed}"
+
+	if ! _bget nbq stats_queued || [ "${nbq}" -eq 0 ]; then
+		# The queue is not ready to display stats for.
+		printf "[%s] [%s] [%s] Time: %s\n" \
+		    "${MASTERNAME}" "${buildname}" "${status%%:*}" \
+		    "${buildtime}"
+		return 0
+	fi
+	update_stats 2>/dev/null || return 0
 	_bget nbf stats_failed || nbf=0
 	_bget nbi stats_ignored || nbi=0
 	_bget nbs stats_skipped || nbs=0
@@ -1579,14 +1597,6 @@ show_build_summary() {
 	else
 		queue_width=2
 	fi
-
-	_log_path log
-	_bget buildname buildname || :
-	now=$(clock -epoch)
-
-	calculate_elapsed_from_log "${now}" "${log}" || return 1
-	elapsed=${_elapsed_time}
-	calculate_duration buildtime "${elapsed}"
 
 	printf "[%s] [%s] [%s] \
 Queued: %-${queue_width}d \
@@ -1608,7 +1618,7 @@ _siginfo_handler() {
 	local j elapsed elapsed_phase job_id_color
 	local pkgname origin phase buildtime buildtime_phase started
 	local started_phase format_origin_phase format_phase sep
-	local tmpfs cpu mem
+	local tmpfs cpu mem nbq
 	local -
 
 	set +e
@@ -1624,12 +1634,13 @@ _siginfo_handler() {
 	"") return 0 ;;
 	esac
 
-	_bget nbq stats_queued || nbq=0
-	case "${nbq}" in
-	"") return 0 ;;
-	esac
-
 	show_build_summary
+
+	if ! _bget nbq stats_queued || [ "${nbq}" -eq 0 ]; then
+		# Not ready to display stats
+		show_log_info
+		return 0
+	fi
 
 	now=$(clock -monotonic)
 
@@ -8414,7 +8425,6 @@ trim_ignored() {
 	parallel_stop || err "$?" "trim_ignored"
 	# Update ignored/skipped stats
 	update_stats 2>/dev/null || :
-	update_stats_queued
 }
 
 trim_ignored_pkg() {
@@ -8629,6 +8639,8 @@ prepare_ports() {
 			bset stats_fetched 0
 			:> "${log:?}/.data.json"
 			:> "${log:?}/.data.mini.json"
+			:> "${log:?}/.poudriere.ports.queued"
+			:> "${log:?}/.poudriere.ports.tobuild"
 			:> "${log:?}/.poudriere.ports.built"
 			:> "${log:?}/.poudriere.ports.failed"
 			:> "${log:?}/.poudriere.ports.ignored"
@@ -8705,11 +8717,6 @@ prepare_ports() {
 	pkgqueue_unqueue_existing_packages
 	pkgqueue_trim_orphaned_build_deps
 
-	if was_a_bulk_run && [ "${resuming_build}" -eq 0 ]; then
-		# Update again after trimming the build queue
-		update_stats_queued
-	fi
-
 	# Call the deadlock code as non-fatal which will check for cycles
 	msg "Sanity checking build queue"
 	bset status "pkgqueue_sanity_check:"
@@ -8717,20 +8724,12 @@ prepare_ports() {
 
 	if was_a_bulk_run; then
 		if [ "${resuming_build}" -eq 0 ]; then
-			# Generate ports.queued list after the queue was
-			# trimmed.
-			local _originspec _pkgname _rdep _ignore
-
-			while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs" \
-			    _pkgname _originspec _rdep _ignore; do
-				if [ "${_rdep}" = "listed" ] || \
-				    pkgqueue_contains "${_pkgname}"; then
-					echo "${_originspec} ${_pkgname} ${_rdep}"
-				fi
-			done | sort | \
-			    write_atomic "${log:?}/.poudriere.ports.queued"
+			# Generate ports.queued list and stats_queued after
+			# the queue was trimmed.
+			update_stats_queued
 			get_to_build |
 			    write_atomic "${log:?}/.poudriere.ports.tobuild"
+			update_remaining
 		fi
 
 		load_priorities

@@ -8,7 +8,8 @@ do_bulk -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
 EXPECTED_IGNORED="ports-mgmt/poudriere-devel-IGNORED"
-EXPECTED_QUEUED="misc/foo@default misc/freebsd-release-manifests@default ports-mgmt/pkg ports-mgmt/poudriere-devel"
+EXPECTED_TOBUILD="misc/foo@default misc/freebsd-release-manifests@default ports-mgmt/pkg ports-mgmt/poudriere-devel"
+EXPECTED_QUEUED="${EXPECTED_TOBUILD} ports-mgmt/poudriere-devel-IGNORED"
 EXPECTED_LISTED="misc/foo@default ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-IGNORED"
 
 assert_bulk_queue_and_stats

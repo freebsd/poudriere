@@ -270,13 +270,13 @@ assert_queued() {
 	fi
 
 	tmp="$(mktemp -t queued.${dep})"
-	awk -v dep="${dep}" '$3 == dep' "${log}/.poudriere.ports.queued" \
+	awk -v dep="${dep}" '(dep == "" || $3 == dep)' "${log}/.poudriere.ports.queued" \
 	    > "${tmp}"
 	# First fix the list to expand main port FLAVORS
 	expand_origin_flavors "${origins}" origins_expanded
 	# The queue does remove duplicates - do the same here
 	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
-	echo "Asserting that only '${origins_expanded}' are in the${dep:+ ${dep}} queue" >&2
+	echo "Asserting that only '${origins_expanded}' are in the dep='${dep}' queue" >&2
 	for queuespec in ${origins_expanded}; do
 		case "${queuespec}" in
 		*:*)
@@ -288,7 +288,7 @@ assert_queued() {
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
 		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
-		echo "=> Asserting that ${originspec} | ${pkgname} is${dep:+ dep=${dep}} in queue" >&2
+		echo "=> Asserting that ${originspec} | ${pkgname} is dep='${dep}' in queue" >&2
 		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" -vdep="${dep}" '
 		    $1 == originspec && $2 == pkgname && (dep == "" || $3 == dep) {
 			print "==> " $0
@@ -301,7 +301,7 @@ assert_queued() {
 			next
 		    }
 		    $1 == originspec && $2 == pkgname && dep != "" && $3 != dep {
-			print "==> " $0
+			print "=!> " $0
 			found = 0
 			exit 1
 		    }
@@ -313,12 +313,12 @@ assert_queued() {
 		cat "${tmp}" | \
 		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		    -vdep="${dep}" '
-		    $1 == originspec && $2 == pkgname && $3 == dep { next }
+		    $1 == originspec && $2 == pkgname && (dep == "" || $3 == dep) { next }
 		    { print }
 		' > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
-	echo "=> Asserting that nothing else is in the${dep:+ ${dep}} queue" >&2
+	echo "=> Asserting that nothing else is in the dep='${dep}' queue" >&2
 	if [ -s "${tmp}" ]; then
 		echo "=> Items remaining:" >&2
 		cat "${tmp}" | sed -e 's,^,==> ,' >&2
@@ -496,12 +496,6 @@ assert_counts() {
 	local queued expected_queued ignored expected_ignored
 	local skipped expected_skipped
 
-	if [ -z "${EXPECTED_QUEUED-}" ]; then
-		expected_queued=0
-	else
-		expected_queued=$(echo "${EXPECTED_QUEUED}" | tr ' ' '\n' | wc -l)
-		expected_queued="${expected_queued##* }"
-	fi
 	if [ -z "${EXPECTED_IGNORED-}" ]; then
 		expected_ignored=0
 	else
@@ -514,7 +508,12 @@ assert_counts() {
 		expected_skipped=$(echo "${EXPECTED_SKIPPED}" | tr ' ' '\n' | wc -l)
 		expected_skipped="${expected_skipped##* }"
 	fi
-	expected_queued=$((expected_queued + expected_ignored + expected_skipped))
+	if [ -z "${EXPECTED_QUEUED-}" ]; then
+		expected_queued=0
+	else
+		expected_queued=$(echo "${EXPECTED_QUEUED}" | tr ' ' '\n' | wc -l)
+		expected_queued="${expected_queued##* }"
+	fi
 	echo "=> Asserting queued=${expected_queued} ignored=${expected_ignored} skipped=${expected_skipped}"
 
 	read queued < "${log}/.poudriere.stats_queued"
