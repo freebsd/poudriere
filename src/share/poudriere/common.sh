@@ -7115,6 +7115,9 @@ gather_port_vars() {
 	# are visited in the gatherqueue for *their default* originspec
 	# before processing any dependencies.
 
+	load_moved
+	load_blacklist "${JAILNAME:?}" "${PTNAME:?}" "${SETNAME-}"
+
 	msg "Gathering ports metadata"
 	bset status "gatheringportvars:"
 	run_hook gather_port_vars start
@@ -8416,7 +8419,7 @@ trim_ignored_pkg() {
 prepare_ports() {
 	local pkg
 	local log log_top log_jail
-	local n resuming_build
+	local resuming_build
 	local cache_dir sflag delete_pkg_list shash_bucket
 
 	cd "${MASTER_DATADIR:?}"
@@ -8491,9 +8494,6 @@ prepare_ports() {
 		fi
 	fi
 
-	load_moved
-	load_blacklist "${JAILNAME}" "${PTNAME}" "${SETNAME}"
-
 	fetch_global_port_vars || \
 	    err 1 "Failed to lookup global ports metadata"
 
@@ -8507,11 +8507,12 @@ prepare_ports() {
 
 	gather_port_vars
 
-	generate_queue
-
-	bset status "sanity:"
-
 	if was_a_bulk_run; then
+		generate_queue
+
+		bset status "sanity:"
+		msg "Sanity checking the repository"
+
 		# Migrate packages to new sufx
 		maybe_migrate_packages
 		# Stash dependency graph
@@ -8613,27 +8614,9 @@ prepare_ports() {
 			delete_all_pkgs "pkg bootstrap missing: unable to inspect existing packages"
 		fi
 		bset status "sanity:"
-	fi
 
-	msg "Sanity checking the repository"
+		delete_bad_pkg_repo_files
 
-	for n in \
-	    meta.${PKG_EXT} meta.txz \
-	    digests.${PKG_EXT} digests.txz \
-	    filesite.${PKG_EXT} filesite.txz \
-	    packagesite.${PKG_EXT} packagesite.txz; do
-		pkg="${PACKAGES:?}/All/${n}"
-		if [ -f "${pkg}" ]; then
-			msg "Removing invalid pkg repo file: ${pkg}"
-			unlink "${pkg}"
-		fi
-
-	done
-
-	delete_stale_pkg_cache
-
-	# Skip incremental build for pkgclean
-	if was_a_bulk_run; then
 		install -lsr "${log:?}" "${PACKAGES:?}/logs"
 
 		if ensure_pkg_installed; then
@@ -8654,6 +8637,7 @@ prepare_ports() {
 		fi
 
 		delete_stale_symlinks_and_empty_dirs
+		delete_stale_pkg_cache
 		download_from_repo_post_delete
 		bset status "sanity:"
 
@@ -8672,17 +8656,15 @@ prepare_ports() {
 				shash_remove_var "${shash_bucket}" || :
 			done
 		)
-	fi
 
-	pkgqueue_unqueue_existing_packages
-	pkgqueue_trim_orphaned_build_deps
+		pkgqueue_unqueue_existing_packages
+		pkgqueue_trim_orphaned_build_deps
 
-	# Call the deadlock code as non-fatal which will check for cycles
-	msg "Sanity checking build queue"
-	bset status "pkgqueue_sanity_check:"
-	pkgqueue_sanity_check 0
+		# Call the deadlock code as non-fatal which will check for cycles
+		msg "Sanity checking build queue"
+		bset status "pkgqueue_sanity_check:"
+		pkgqueue_sanity_check 0
 
-	if was_a_bulk_run; then
 		if [ "${resuming_build}" -eq 0 ]; then
 			# Generate ports.queued list and stats_queued after
 			# the queue was trimmed.

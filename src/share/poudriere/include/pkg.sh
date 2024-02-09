@@ -368,6 +368,26 @@ delete_stale_pkg_cache() {
 	return 0
 }
 
+# If the user ran pkg-repo in the wrong directory we need to undo that.
+delete_bad_pkg_repo_files() {
+	local ext file
+
+	for ext in "${PKG_EXT:?}" "txz"; do
+		for file in \
+		    meta \
+		    digests \
+		    filesite \
+		    packagesite; do
+			pkg="${PACKAGES:?}/All/${file}.${ext}"
+			if [ ! -f "${pkg}" ]; then
+				continue
+			fi
+			msg "Removing invalid pkg repo file: ${pkg}"
+			unlink "${pkg}"
+		done
+	done
+}
+
 delete_all_pkgs() {
 	[ $# -eq 1 ] || eargs delete_all_pkgs reason
 	local reason="$1"
