@@ -895,8 +895,26 @@ _setup_build() {
 	rm -f "${__MAKE_CONF}"
 }
 
+list_package_files() {
+	# find -ls seems nice here but it displays 'st_blocks' which can be
+	# delay-modified on ZFS
+	(
+		cd "${PACKAGES:?}/All/" || return
+		find -x . \( -type f -o -type l \) \
+		    -exec ls -alioT {} +
+	)
+}
+
 do_bulk() {
 	_setup_build
+	case "$@" in
+	*-n*)
+		DRY_RUN_PACKAGES_LIST="$(mktemp -ut packages_for_dry_run)"
+		if [ -d "${PACKAGES:?}/All/" ]; then
+			list_package_files
+		fi > "${DRY_RUN_PACKAGES_LIST:?}"
+		;;
+	esac
 	do_poudriere bulk \
 	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
 	    ${JFLAG:+-J ${JFLAG}} \
@@ -1026,6 +1044,31 @@ _assert_bulk_queue_and_stats() {
 }
 alias assert_bulk_queue_and_stats='stack_lineinfo _assert_bulk_queue_and_stats '
 
+_assert_bulk_dry_run() {
+	local log logfile tmp
+
+	_log_path log || err 99 "Unable to determine logdir"
+
+	# No logfiles should be created in the build dir.
+	# A directory is OK
+	assert_true [ -d "${log:?}/logs/" ]
+	assert_true [ -d "${log:?}/logs/errors" ]
+	assert "errors" "$(/bin/ls "${log:?}/logs/")" \
+	    "Logdir '${log:?}/logs' should have no logs"
+	assert "" "$(/bin/ls "${log:?}/logs/errors")" \
+	    "Logdir '${log:?}/logs/errors' should be empty"
+
+	# Packages should be untouched.
+	tmp="$(mktemp -u)"
+	if [ -d "${PACKAGES:?}/All/" ]; then
+		list_package_files
+	fi > "${tmp:?}"
+	stack_lineinfo assert_file "${tmp}" "${DRY_RUN_PACKAGES_LIST:?}"
+	# No .building dir should be left behind
+	assert_false [ -d "${PACKAGES:?}/.building" ]
+}
+alias assert_bulk_dry_run='stack_lineinfo _assert_bulk_dry_run '
+
 _assert_bulk_build_results() {
 	local pkgname file file2 log originspec origin flavor flavor2 subpkg
 	local PKG_BIN pkg_originspec pkg_origin pkg_flavor
@@ -1035,6 +1078,9 @@ _assert_bulk_build_results() {
 
 	which -s "${PKG_BIN:?}" || err 99 "Unable to find in host: ${PKG_BIN}"
 	_log_path log || err 99 "Unable to determine logdir"
+	case "${DRY_RUN_PACKAGES_LIST:+set}" in
+	set) unlink "${DRY_RUN_PACKAGES_LIST}" ;;
+	esac
 
 	assert_ret 0 [ -d "${PACKAGES}" ]
 	assert 0 $? "PACKAGES directory should exist: ${PACKAGES}"

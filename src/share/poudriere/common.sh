@@ -2704,6 +2704,13 @@ stash_packages() {
 
 	[ -L "${PACKAGES:?}/.latest" ] || convert_repository
 
+	case "${CLEAN-}" in
+	1)
+		if [ -d "${PACKAGES:?}/.building" ]; then
+			rm -rf "${PACKAGES:?}/.building"
+		fi
+		;;
+	esac
 	if [ -d "${PACKAGES:?}/.building" ]; then
 		# If the .building directory is still around, use it. The
 		# previous build may have failed, but all of the successful
@@ -4304,14 +4311,16 @@ download_from_repo_make_log() {
 	local logfile originspec
 
 	get_originspec_from_pkgname originspec "${pkgname}"
-	_logfile logfile "${pkgname}"
-	{
-		buildlog_start "${pkgname}" "${originspec}"
-		print_phase_header "poudriere"
-		echo "Fetched from ${packagesite}"
-		print_phase_footer
-		buildlog_stop "${pkgname}" "${originspec}" 0
-	} | write_atomic "${logfile}"
+	if [ "${DRY_RUN:-0}" -eq 0 ]; then
+		_logfile logfile "${pkgname}"
+		{
+			buildlog_start "${pkgname}" "${originspec}"
+			print_phase_header "poudriere"
+			echo "Fetched from ${packagesite}"
+			print_phase_footer
+			buildlog_stop "${pkgname}" "${originspec}" 0
+		} | write_atomic "${logfile}"
+	fi
 	badd ports.fetched "${originspec} ${pkgname}"
 }
 
@@ -5616,9 +5625,12 @@ clean_pool() {
 			badd ports.skipped "${skipped_originspec} ${skipped_pkgname} ${pkgname}"
 			COLOR_ARROW="${COLOR_SKIP}" \
 			    job_msg "${COLOR_SKIP}Skipping ${COLOR_PORT}${skipped_originspec} | ${skipped_pkgname}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_SKIP} ${clean_rdepends}"
-			redirect_to_bulk \
-			    run_hook pkgbuild skipped "${skipped_origin}" \
-			    "${skipped_pkgname}" "${origin}"
+			if [ "${DRY_RUN:-0}" -eq 0 ]; then
+				redirect_to_bulk \
+				    run_hook pkgbuild skipped \
+				    "${skipped_origin}" \
+				    "${skipped_pkgname}" "${origin}"
+			fi
 		fi
 	done
 
@@ -8494,16 +8506,18 @@ trim_ignored_pkg() {
 	originspec_decode "${originspec}" origin flavor subpkg
 	COLOR_ARROW="${COLOR_IGNORE}" \
 	    msg "${COLOR_IGNORE}Ignoring ${COLOR_PORT}${origin}${flavor:+@${flavor}}${subpkg:+~${subpkg}} | ${pkgname}${COLOR_IGNORE}: ${ignore}"
-	_logfile logfile "${pkgname}"
-	{
-		buildlog_start "${pkgname}" "${originspec}"
-		print_phase_header "check-sanity"
-		echo "Ignoring: ${ignore}"
-		print_phase_footer
-		buildlog_stop "${pkgname}" "${originspec}" 0
-	} | write_atomic "${logfile}"
+	if [ "${DRY_RUN:-0}" -eq 0 ]; then
+		_logfile logfile "${pkgname}"
+		{
+			buildlog_start "${pkgname}" "${originspec}"
+			print_phase_header "check-sanity"
+			echo "Ignoring: ${ignore}"
+			print_phase_footer
+			buildlog_stop "${pkgname}" "${originspec}" 0
+		} | write_atomic "${logfile}"
+		run_hook pkgbuild ignored "${origin}" "${pkgname}" "${ignore}"
+	fi
 	badd ports.ignored "${originspec} ${pkgname} ${ignore}"
-	run_hook pkgbuild ignored "${origin}" "${pkgname}" "${ignore}"
 	clean_pool "${pkgname}" "${originspec}" "ignored"
 }
 

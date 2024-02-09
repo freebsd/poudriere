@@ -7,7 +7,7 @@ LISTPORTS="ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-dep-IGNORED"
 OVERLAYS="omnibus"
 . common.bulk.sh
 
-do_bulk -n ${LISTPORTS}
+do_bulk -c -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
 # This would default to ports-mgmt/poudriere-devel-dep-IGNORED but it is
@@ -19,3 +19,4 @@ EXPECTED_QUEUED="${EXPECTED_TOBUILD} ${EXPECTED_IGNORED} ${EXPECTED_SKIPPED}"
 EXPECTED_LISTED="ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-dep-IGNORED"
 
 assert_bulk_queue_and_stats
+assert_bulk_dry_run

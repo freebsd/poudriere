@@ -28,7 +28,7 @@ EXPECTED_BUILT=
 do_bulk -c -n "${LISTPORTS}"
 assert 0 "$?" "Bulk should pass"
 assert_bulk_queue_and_stats
-assert_bulk_build_results
+assert_bulk_dry_run
 echo "------" | tee /dev/stderr
 
 # Remove misc/foo@* and misc/freebsd-release-manifests@foo

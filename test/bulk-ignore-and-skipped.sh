@@ -4,7 +4,7 @@ OVERLAYS="omnibus"
 JFLAG=1:1
 . common.bulk.sh
 
-do_bulk -n ${LISTPORTS}
+do_bulk -c -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
 # ports-mgmt/poudriere-devel-IGNORED is a dependency which is also ignored but
@@ -19,3 +19,4 @@ EXPECTED_QUEUED="${EXPECTED_TOBUILD} ${EXPECTED_IGNORED} ${EXPECTED_SKIPPED}"
 EXPECTED_LISTED="misc/foop-IGNORED ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-IGNORED-and-skipped"
 
 assert_bulk_queue_and_stats
+assert_bulk_dry_run

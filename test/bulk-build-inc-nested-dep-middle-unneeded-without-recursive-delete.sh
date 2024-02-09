@@ -24,9 +24,10 @@ EXPECTED_TOBUILD="ports-mgmt/poudriere-devel-dep-FOO misc/freebsd-release-manife
 EXPECTED_QUEUED="${EXPECTED_TOBUILD}"
 EXPECTED_LISTED="${LISTPORTS}"
 EXPECTED_BUILT=
-do_bulk -n ${LISTPORTS}
+do_bulk -c -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 assert_bulk_queue_and_stats
+assert_bulk_dry_run
 echo "------" | tee /dev/stderr
 
 EXPECTED_BUILT="${EXPECTED_TOBUILD}"
