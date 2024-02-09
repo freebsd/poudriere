@@ -983,14 +983,6 @@ do_pkgclean_smoke() {
 	assert "" "${nowpackages}" "All packages should have been removed"
 }
 
-sorted() {
-	if [ "$#" -eq 0 ]; then
-		return 0
-	fi
-	echo "$@" | tr ' ' '\n' | LC_ALL=C sort -u | sed -e '/^$/d' |
-	    paste -s -d ' ' -
-}
-
 count() {
 	local count
 	if [ "$#" -eq 0 ]; then

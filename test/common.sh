@@ -160,6 +160,14 @@ rm() {
 	command rm "$@"
 }
 
+sorted() {
+	if [ "$#" -eq 0 ]; then
+		return 0
+	fi
+	echo "$@" | tr ' ' '\n' | LC_ALL=C sort -u | sed -e '/^$/d' |
+	    paste -s -d ' ' -
+}
+
 catch_err() {
 	#local ERRORS_ARE_FATAL CRASHED
 	local TEST_HARD_ERROR

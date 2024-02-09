@@ -481,12 +481,15 @@ TESTS = builtins.sh cache.sh cache_pipe.sh calculate_duration.sh \
 	locked_mkdir_waiters_kill.sh locked_mkdir_waiters_all_lose.sh \
 	logging.sh mapfile.sh mktemp.sh options-badorigin.sh \
 	options-overlays.sh options-smoke.sh originspec.sh \
-	pkg_version.sh pipe_func.sh pipe_hold.sh port_var_fetch.sh \
-	prefix_output.sh read_blocking.sh read_file.sh relpath.sh \
-	relpath_common.sh required_env.sh shash_basic.sh stack.sh \
-	stripansi.sh test_contexts.sh test_contexts_expand.sh \
-	timespec.sh timestamp.sh trap_ignore_block.sh \
-	trap_save_block.sh trap_save.sh $(JAIL_TESTS) prep.sh
+	pkg_version.sh pkgqueue_basic.sh pkgqueue_failure_cleanup.sh \
+	pkgqueue_find_all_pool_references.sh pkgqueue_prioritize.sh \
+	pkgqueue_remove_many_pipe.sh pipe_func.sh pipe_hold.sh \
+	port_var_fetch.sh prefix_output.sh read_blocking.sh \
+	read_file.sh relpath.sh relpath_common.sh required_env.sh \
+	shash_basic.sh stack.sh stripansi.sh test_contexts.sh \
+	test_contexts_expand.sh timespec.sh timestamp.sh \
+	trap_ignore_block.sh trap_save_block.sh trap_save.sh \
+	$(JAIL_TESTS) prep.sh
 JAIL_TESTS = \
 	bulk-bad-dep-pkgname.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh \
@@ -1008,6 +1011,41 @@ originspec.sh.log: originspec.sh
 pkg_version.sh.log: pkg_version.sh
 	@p='pkg_version.sh'; \
 	b='pkg_version.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pkgqueue_basic.sh.log: pkgqueue_basic.sh
+	@p='pkgqueue_basic.sh'; \
+	b='pkgqueue_basic.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pkgqueue_failure_cleanup.sh.log: pkgqueue_failure_cleanup.sh
+	@p='pkgqueue_failure_cleanup.sh'; \
+	b='pkgqueue_failure_cleanup.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pkgqueue_find_all_pool_references.sh.log: pkgqueue_find_all_pool_references.sh
+	@p='pkgqueue_find_all_pool_references.sh'; \
+	b='pkgqueue_find_all_pool_references.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pkgqueue_prioritize.sh.log: pkgqueue_prioritize.sh
+	@p='pkgqueue_prioritize.sh'; \
+	b='pkgqueue_prioritize.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pkgqueue_remove_many_pipe.sh.log: pkgqueue_remove_many_pipe.sh
+	@p='pkgqueue_remove_many_pipe.sh'; \
+	b='pkgqueue_remove_many_pipe.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

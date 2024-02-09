@@ -54,6 +54,11 @@ TESTS=\
 	options-smoke.sh \
 	originspec.sh \
 	pkg_version.sh \
+	pkgqueue_basic.sh \
+	pkgqueue_failure_cleanup.sh \
+	pkgqueue_find_all_pool_references.sh \
+	pkgqueue_prioritize.sh \
+	pkgqueue_remove_many_pipe.sh \
 	pipe_func.sh \
 	pipe_hold.sh \
 	port_var_fetch.sh \

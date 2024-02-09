@@ -268,7 +268,9 @@ pkgqueue_clean_queue() {
 	[ $# -eq 2 ] || eargs pkgqueue_clean_queue pkgname clean_rdepends
 	local pkgname="$1"
 	local clean_rdepends="$2"
+	local -
 
+	set_pipefail
 	# Outputs skipped_pkgnames
 	in_reldir MASTER_DATADIR _pkgqueue_clean_queue "$@" | sort -u
 	case "${clean_rdepends}" in
@@ -612,7 +614,9 @@ _pkgqueue_find_all_pool_references() {
 		pkgqueue_dir rdep_dir_name "${dep_pkgname}"
 		echo "rdeps/${rdep_dir_name}/${pkgname}"
 	done
-	echo "deps/${pkg_dir_name}"
+	if [ -e "deps/${pkg_dir_name}" ]; then
+		echo "deps/${pkg_dir_name}"
+	fi
 	# Cleanup deps/*/${pkgname}
 	pkgqueue_dir rdep_dir_name "${pkgname}"
 	for rpn in rdeps/"${rdep_dir_name}"/*; do
@@ -624,7 +628,9 @@ _pkgqueue_find_all_pool_references() {
 		pkgqueue_dir dep_dir_name "${dep_pkgname}"
 		echo "deps/${dep_dir_name}/${pkgname}"
 	done
-	echo "rdeps/${rdep_dir_name}"
+	if [ -e "rdeps/${rdep_dir_name}" ]; then
+		echo "rdeps/${rdep_dir_name}"
+	fi
 }
 
 pkgqueue_unqueue_existing_packages() {
