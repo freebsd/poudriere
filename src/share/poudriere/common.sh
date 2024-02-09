@@ -328,6 +328,34 @@ job_msg_verbose() {
 	job_msg "$@"
 }
 
+: "${JOB_STATUS_TITLE_WIDTH:=9}"
+job_msg_status() {
+	[ "$#" -eq 3 ] || [ "$#" -eq 4 ] ||
+	    eargs job_msg_status msgfunc title originspec pkgname '[msg]'
+	local title="$1"
+	local originspec="$2"
+	local pkgname="$3"
+	local msg="${4-}"
+	local title_msg job_name msg_colored
+
+	title_msg="${COLOR_ARROW-}$(printf "%-${JOB_STATUS_TITLE_WIDTH}s" "${title}")${COLOR_ARROW:+${COLOR_RESET}}"
+	job_name="${COLOR_PORT}${originspec} | ${pkgname}${COLOR_RESET}"
+	msg_colored="${msg:+${COLOR_ARROW-}: ${msg}${COLOR_ARROW:+${COLOR_RESET}}}"
+	job_msg "${title_msg} ${job_name}${msg_colored-}"
+}
+
+job_msg_status_verbose() {
+	job_msg_status "$@"
+}
+
+job_msg_status_debug() {
+	job_msg_status "$@"
+}
+
+job_msg_status_dev() {
+	job_msg_status "$@"
+}
+
 # These are aligned for 'Building msg'
 job_msg_dev() {
 	COLOR_ARROW="${COLOR_DEV}" \
@@ -374,6 +402,7 @@ post_getopts() {
 	if ! [ ${VERBOSE} -gt 2 ]; then
 		msg_dev() { :; }
 		job_msg_dev() { :; }
+		job_msg_status_dev() { :; }
 		if [ "${IN_TEST:-0}" -eq 0 ]; then
 			msg_assert_dev() { :; }
 		fi
@@ -381,10 +410,12 @@ post_getopts() {
 	if ! [ ${VERBOSE} -gt 1 ]; then
 		msg_debug() { :; }
 		job_msg_debug() { :; }
+		job_msg_status_debug() { :; }
 	fi
 	if ! [ ${VERBOSE} -gt 0 ]; then
 		msg_verbose() { :; }
 		job_msg_verbose() { :; }
+		job_msg_status_verbose() { :; }
 	fi
 }
 
@@ -1295,6 +1326,17 @@ bset() {
 	write_atomic "${log:?}/${file:?}" <<-EOF
 	$@
 	EOF
+}
+
+job_build_status() {
+	[ "$#" -eq 3 ] || eargs job_build_status phase origingspec pkgname
+	local phase="$1"
+	local originspec="$2"
+	local pkgname="$3"
+
+	bset_job_status "${phase}" "${originspec}" "${pkgname}"
+	job_msg_status_verbose "Status" "${originspec}" "${pkgname}" \
+	    "${COLOR_PHASE}${phase}${COLOR_RESET}"
 }
 
 bset_job_status() {
@@ -4585,8 +4627,7 @@ check_fs_violation() {
 	if [ -s "${tmpfile:?}" ]; then
 		msg "Error: ${err_msg}"
 		cat "${tmpfile:?}"
-		bset_job_status "${status_value}" "${originspec}" "${pkgname}"
-		job_msg_verbose "Status   ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_RESET}: ${status_value}"
+		job_build_status "${status_value}" "${originspec}" "${pkgname}"
 		ret=1
 	fi
 	unlink "${tmpfile:?}"
@@ -4778,8 +4819,7 @@ build_port() {
 		max_execution_time=${MAX_EXECUTION_TIME}
 		phaseenv=
 		JUSER=${jailuser}
-		bset_job_status "${phase}" "${originspec}" "${pkgname}"
-		job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
+		job_build_status "${phase}" "${originspec}" "${pkgname}"
 		if [ "${PORTTESTING}" -eq 1 ]; then
 			phaseenv="${phaseenv:+${phaseenv} }DEVELOPER_MODE=yes"
 		fi
@@ -4943,14 +4983,12 @@ build_port() {
 				# 3 = cmd timeout
 				if [ $hangstatus -eq 2 ]; then
 					msg "Killing runaway build after ${NOHANG_TIME} seconds with no output"
-					bset_job_status "${phase}/runaway" \
+					job_build_status "${phase}/runaway" \
 					    "${originspec}" "${pkgname}"
-					job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}: ${COLOR_PHASE}runaway"
 				elif [ $hangstatus -eq 3 ]; then
 					msg "Killing timed out build after ${max_execution_time} seconds"
-					bset_job_status "${phase}/timeout" \
+					job_build_status "${phase}/timeout" \
 					    "${originspec}" "${pkgname}"
-					job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}: ${COLOR_PHASE}timeout"
 				fi
 				return 1
 			fi
@@ -4986,7 +5024,7 @@ build_port() {
 		"1""stage")
 			local die=0
 
-			bset_job_status "stage-qa" "${originspec}" "${pkgname}"
+			job_build_status "stage-qa" "${originspec}" "${pkgname}"
 			if ! cleanenv injail /usr/bin/env DEVELOPER=1 \
 			    ${PORT_FLAGS:=-S "${PORT_FLAGS}"} \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
@@ -4998,7 +5036,7 @@ build_port() {
 				die=1
 			fi
 
-			bset_job_status "check-plist" "${originspec}" \
+			job_build_status "check-plist" "${originspec}" \
 			    "${pkgname}"
 			if ! cleanenv injail /usr/bin/env \
 			    ${PORT_FLAGS:+-S "${PORT_FLAGS}"} \
@@ -5588,8 +5626,9 @@ crashed_build() {
 		install -lrs "${log:?}" "${log_error:?}"
 		badd ports.failed \
 		    "${originspec} ${pkgname} ${failed_phase} ${failed_phase}"
-		COLOR_ARROW="${COLOR_FAIL}" job_msg \
-		    "${COLOR_FAIL}Finished ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
+		COLOR_ARROW="${COLOR_FAIL}" job_msg_status \
+		    "Finished" "${originspec}" "${pkgname}" \
+		    "Failed: ${COLOR_PHASE}${failed_phase}"
 		run_hook pkgbuild failed "${origin}" "${pkgname}" \
 		    "${failed_phase}" \
 		    "${log_error}"
@@ -5642,7 +5681,9 @@ clean_pool() {
 			# Normal skip handling.
 			badd ports.skipped "${skipped_originspec} ${skipped_pkgname} ${pkgname}"
 			COLOR_ARROW="${COLOR_SKIP}" \
-			    job_msg "${COLOR_SKIP}Skipping ${COLOR_PORT}${skipped_originspec} | ${skipped_pkgname}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_SKIP} ${clean_rdepends}"
+			    job_msg_status "Skipping" \
+			    "${skipped_originspec}" "${skipped_pkgname}" \
+			    "Dependent port ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_SKIP} ${clean_rdepends}"
 			if [ "${DRY_RUN:-0}" -eq 0 ]; then
 				redirect_to_bulk \
 				    run_hook pkgbuild skipped \
@@ -5703,7 +5744,7 @@ build_pkg() {
 	get_originspec_from_pkgname originspec "${pkgname}"
 	originspec_decode "${originspec}" port FLAVOR subpkg
 	bset_job_status "starting" "${originspec}" "${pkgname}"
-	job_msg "Building ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}}${subpkg:+~${subpkg}} | ${pkgname}${COLOR_RESET}"
+	job_msg_status "Building" "${port}${FLAVOR:+@${FLAVOR}}${subpkg:+~${subpkg}}" "${pkgname}"
 
 	MAKE_ARGS="${FLAVOR:+ FLAVOR=${FLAVOR}}"
 	_lookup_portdir portdir "${port}"
@@ -5811,7 +5852,10 @@ build_pkg() {
 
 	if [ ${build_failed} -eq 0 ]; then
 		badd ports.built "${originspec} ${pkgname} ${elapsed}"
-		COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_SUCCESS}: Success"
+		COLOR_ARROW="${COLOR_SUCCESS}" \
+		    job_msg_status "Finished" \
+		    "${port}${FLAVOR:+@${FLAVOR}}" "${pkgname}" \
+		    "Success"
 		redirect_to_bulk \
 		    run_hook pkgbuild success "${port}" "${pkgname}"
 		# Cache information for next run
@@ -5834,7 +5878,10 @@ build_pkg() {
 			;;
 		esac
 		badd ports.failed "${originspec} ${pkgname} ${failed_phase} ${errortype} ${elapsed}"
-		COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
+		COLOR_ARROW="${COLOR_FAIL}" \
+		    job_msg_status "Finished" \
+		    "${port}${FLAVOR:+@${FLAVOR}}" "${pkgname}" \
+		    "Failed: ${COLOR_PHASE}${failed_phase}"
 		redirect_to_bulk \
 		    run_hook pkgbuild failed "${port}" "${pkgname}" "${failed_phase}" \
 		    "${log:?}/logs/errors/${pkgname:?}.log"
@@ -8533,7 +8580,9 @@ trim_ignored_pkg() {
 	fi
 	originspec_decode "${originspec}" origin flavor subpkg
 	COLOR_ARROW="${COLOR_IGNORE}" \
-	    msg "${COLOR_IGNORE}Ignoring ${COLOR_PORT}${origin}${flavor:+@${flavor}}${subpkg:+~${subpkg}} | ${pkgname}${COLOR_IGNORE}: ${ignore}"
+	    job_msg_status "Ignoring" \
+	    "${origin}${flavor:+@${flavor}}${subpkg:+~${subpkg}}" "${pkgname}" \
+	    "${ignore}"
 	if [ "${DRY_RUN:-0}" -eq 0 ]; then
 		_logfile logfile "${pkgname}"
 		{
