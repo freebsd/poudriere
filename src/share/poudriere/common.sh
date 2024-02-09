@@ -5633,6 +5633,10 @@ clean_pool() {
 		    pkgname_is_listed "${skipped_pkgname}"; then
 			trim_ignored_pkg "${skipped_pkgname}" "${skipped_originspec}" "Dependent port ${originspec} | ${pkgname} ${clean_rdepends}"
 		else
+			if ! noclobber shash_set pkgname-skipped "${skipped_pkgname}" 1; then
+				msg_debug "clean_pool: Skipping duplicate ${skipped_pkgname}"
+				continue
+			fi
 			# Normal skip handling.
 			badd ports.skipped "${skipped_originspec} ${skipped_pkgname} ${pkgname}"
 			COLOR_ARROW="${COLOR_SKIP}" \
@@ -8525,6 +8529,10 @@ trim_ignored_pkg() {
 	local ignore="$3"
 	local origin flavor subpkg logfile
 
+	if ! noclobber shash_set pkgname-trim_ignored "${pkgname}" 1; then
+		msg_debug "trim_ignored_pkg: Skipping duplicate ${pkgname}"
+		return 0
+	fi
 	originspec_decode "${originspec}" origin flavor subpkg
 	COLOR_ARROW="${COLOR_IGNORE}" \
 	    msg "${COLOR_IGNORE}Ignoring ${COLOR_PORT}${origin}${flavor:+@${flavor}}${subpkg:+~${subpkg}} | ${pkgname}${COLOR_IGNORE}: ${ignore}"
@@ -8780,6 +8788,8 @@ prepare_ports() {
 			    pkgname-run_deps \
 			    pkgname-lib_deps \
 			    pkgname-prefix \
+			    pkgname-trim_ignored \
+			    pkgname-skipped \
 			    ; do
 				shash_remove_var "${shash_bucket}" || :
 			done

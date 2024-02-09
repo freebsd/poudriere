@@ -1385,16 +1385,18 @@ set_make_conf() {
 set_make_conf <<-EOF
 EOF
 
-echo -n "Pruning stale jails..."
-${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} jail -k \
-    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
-    >/dev/null || :
-echo " done"
-echo -n "Pruning previous logs..."
-${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} logclean \
-    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
-    -ay >/dev/null || :
-echo " done"
+{
+	echo -n "Pruning stale jails..."
+	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} jail -k \
+	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
+	    >/dev/null || :
+	echo " done"
+	echo -n "Pruning previous logs..."
+	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} logclean \
+	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
+	    -ay >/dev/null || :
+	echo " done"
+} >&${REDIRECTED_STDERR_FD:-2}
 
 # Import local ports tree
 pset "${PTNAME}" mnt "${PTMNT}"

@@ -542,6 +542,8 @@ JAIL_TESTS = \
 	bulk-ignore-listed-skipped-dep.sh \
 	bulk-ignore-listed.sh \
 	bulk-ignore-one-dep-but-not-other.sh \
+	bulk-listed-flavor-all-skip-to-double-ignore.sh \
+	bulk-listed-flavor-double-skip.sh \
 	bulk-no-overlay-specific.sh \
 	bulk-overlay-all.sh \
 	bulk-overlay-specific.sh \
@@ -1517,6 +1519,20 @@ bulk-ignore-listed.sh.log: bulk-ignore-listed.sh
 bulk-ignore-one-dep-but-not-other.sh.log: bulk-ignore-one-dep-but-not-other.sh
 	@p='bulk-ignore-one-dep-but-not-other.sh'; \
 	b='bulk-ignore-one-dep-but-not-other.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-listed-flavor-all-skip-to-double-ignore.sh.log: bulk-listed-flavor-all-skip-to-double-ignore.sh
+	@p='bulk-listed-flavor-all-skip-to-double-ignore.sh'; \
+	b='bulk-listed-flavor-all-skip-to-double-ignore.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-listed-flavor-double-skip.sh.log: bulk-listed-flavor-double-skip.sh
+	@p='bulk-listed-flavor-double-skip.sh'; \
+	b='bulk-listed-flavor-double-skip.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

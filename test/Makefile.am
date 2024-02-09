@@ -130,6 +130,8 @@ JAIL_TESTS= \
 	bulk-ignore-listed-skipped-dep.sh \
 	bulk-ignore-listed.sh \
 	bulk-ignore-one-dep-but-not-other.sh \
+	bulk-listed-flavor-all-skip-to-double-ignore.sh \
+	bulk-listed-flavor-double-skip.sh \
 	bulk-no-overlay-specific.sh \
 	bulk-overlay-all.sh \
 	bulk-overlay-specific.sh \
