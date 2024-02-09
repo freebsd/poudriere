@@ -463,7 +463,8 @@ EXTRA_DIST = $(TESTS) \
 	    runtest.sh
 
 XFAIL_TESTS = \
-	distclean-overlays.sh
+	distclean-overlays.sh \
+	options-overlays.sh
 
 
 # Depend bulk tests on jail setup
@@ -475,13 +476,14 @@ TESTS = builtins.sh cache.sh cache_pipe.sh calculate_duration.sh \
 	locks_critical_section.sh locks_critical_section_nested.sh \
 	locked_mkdir.sh locked_mkdir_waiters.sh \
 	locked_mkdir_waiters_kill.sh locked_mkdir_waiters_all_lose.sh \
-	logging.sh mapfile.sh mktemp.sh originspec.sh pkg_version.sh \
-	pipe_func.sh pipe_hold.sh port_var_fetch.sh prefix_output.sh \
-	read_blocking.sh read_file.sh relpath.sh relpath_common.sh \
-	required_env.sh shash_basic.sh stack.sh stripansi.sh \
-	test_contexts.sh test_contexts_expand.sh timespec.sh \
-	timestamp.sh trap_ignore_block.sh trap_save_block.sh \
-	trap_save.sh $(JAIL_TESTS) prep.sh
+	logging.sh mapfile.sh mktemp.sh options-badorigin.sh \
+	options-overlays.sh options-smoke.sh originspec.sh \
+	pkg_version.sh pipe_func.sh pipe_hold.sh port_var_fetch.sh \
+	prefix_output.sh read_blocking.sh read_file.sh relpath.sh \
+	relpath_common.sh required_env.sh shash_basic.sh stack.sh \
+	stripansi.sh test_contexts.sh test_contexts_expand.sh \
+	timespec.sh timestamp.sh trap_ignore_block.sh \
+	trap_save_block.sh trap_save.sh $(JAIL_TESTS) prep.sh
 JAIL_TESTS = \
 	bulk-build-inc-pkgclean-flavor-default.sh \
 	bulk-build-inc-pkgclean-flavor.sh \
@@ -930,6 +932,27 @@ mapfile.sh.log: mapfile.sh
 mktemp.sh.log: mktemp.sh
 	@p='mktemp.sh'; \
 	b='mktemp.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+options-badorigin.sh.log: options-badorigin.sh
+	@p='options-badorigin.sh'; \
+	b='options-badorigin.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+options-overlays.sh.log: options-overlays.sh
+	@p='options-overlays.sh'; \
+	b='options-overlays.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+options-smoke.sh.log: options-smoke.sh
+	@p='options-smoke.sh'; \
+	b='options-smoke.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

@@ -11,7 +11,8 @@ EXTRA_DIST= $(TESTS) \
 	    runtest.sh
 
 XFAIL_TESTS= \
-	distclean-overlays.sh
+	distclean-overlays.sh \
+	options-overlays.sh
 
 TESTS=\
 	builtins.sh \
@@ -42,6 +43,9 @@ TESTS=\
 	logging.sh \
 	mapfile.sh \
 	mktemp.sh \
+	options-badorigin.sh \
+	options-overlays.sh \
+	options-smoke.sh \
 	originspec.sh \
 	pkg_version.sh \
 	pipe_func.sh \

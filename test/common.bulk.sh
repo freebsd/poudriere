@@ -862,6 +862,15 @@ do_distclean() {
 	    "$@"
 }
 
+do_options() {
+	_setup_overlays
+	do_poudriere options \
+	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
+	    ${PORT_DBDIRNAME:+-o "${PORT_DBDIRNAME}"} \
+	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
+	    "$@"
+}
+
 do_pkgclean() {
 	_setup_overlays
 	# pkg is needed for pkgclean
