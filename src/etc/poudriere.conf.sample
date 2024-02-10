@@ -89,13 +89,13 @@ USE_TMPFS=yes
 DISTFILES_CACHE=/usr/ports/distfiles
 
 # If set the ports tree marked to use git will use the defined
-# mirror (default: git.FreeBSD.org/port.git)
+# mirror (default: git.FreeBSD.org/src.git)
 #
 # Example to use github mirror:
 #GIT_BASEURL=github.com/freebsd/freebsd-src.git
 
 # If set the source tree marked to use git will use the defined
-# mirror (default: git.FreeBSD.org/src.git)
+# mirror (default: git.FreeBSD.org/ports.git)
 #
 # Example to use github mirror:
 #GIT_PORTSURL=github.com/freebsd/freebsd-ports.git
