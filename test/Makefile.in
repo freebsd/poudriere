@@ -492,7 +492,15 @@ TESTS = builtins.sh cache.sh cache_pipe.sh calculate_duration.sh \
 	timestamp.sh trap_ignore_block.sh trap_save_block.sh \
 	trap_save.sh $(JAIL_TESTS) prep.sh
 JAIL_TESTS = \
+	bulk-MOVED-default.sh \
+	bulk-MOVED-flavor-all.sh \
+	bulk-MOVED-flavor.sh \
+	bulk-MOVED-to-default-flavor.sh \
+	bulk-MOVED-to-specific-flavor.sh \
 	bulk-bad-dep-pkgname.sh \
+	bulk-build-MOVED-default.sh \
+	bulk-build-MOVED-flavor-all.sh \
+	bulk-build-MOVED-flavor.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
@@ -554,6 +562,10 @@ JAIL_TESTS = \
 	bulk-overlay-specific.sh \
 	bulk-skipped-and-needed-dep.sh \
 	testport-all-flavors-failure.sh \
+	testport-build-MOVED-default.sh \
+	testport-build-MOVED-flavor.sh \
+	testport-build-MOVED-to-default-flavor.sh \
+	testport-build-MOVED-to-different-flavor.sh \
 	testport-build-default-flavor-default.sh \
 	testport-build-default-flavor.sh \
 	testport-build-no-deps.sh \
@@ -1193,9 +1205,65 @@ trap_save.sh.log: trap_save.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-MOVED-default.sh.log: bulk-MOVED-default.sh
+	@p='bulk-MOVED-default.sh'; \
+	b='bulk-MOVED-default.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-MOVED-flavor-all.sh.log: bulk-MOVED-flavor-all.sh
+	@p='bulk-MOVED-flavor-all.sh'; \
+	b='bulk-MOVED-flavor-all.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-MOVED-flavor.sh.log: bulk-MOVED-flavor.sh
+	@p='bulk-MOVED-flavor.sh'; \
+	b='bulk-MOVED-flavor.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-MOVED-to-default-flavor.sh.log: bulk-MOVED-to-default-flavor.sh
+	@p='bulk-MOVED-to-default-flavor.sh'; \
+	b='bulk-MOVED-to-default-flavor.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-MOVED-to-specific-flavor.sh.log: bulk-MOVED-to-specific-flavor.sh
+	@p='bulk-MOVED-to-specific-flavor.sh'; \
+	b='bulk-MOVED-to-specific-flavor.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 bulk-bad-dep-pkgname.sh.log: bulk-bad-dep-pkgname.sh
 	@p='bulk-bad-dep-pkgname.sh'; \
 	b='bulk-bad-dep-pkgname.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-MOVED-default.sh.log: bulk-build-MOVED-default.sh
+	@p='bulk-build-MOVED-default.sh'; \
+	b='bulk-build-MOVED-default.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-MOVED-flavor-all.sh.log: bulk-build-MOVED-flavor-all.sh
+	@p='bulk-build-MOVED-flavor-all.sh'; \
+	b='bulk-build-MOVED-flavor-all.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-MOVED-flavor.sh.log: bulk-build-MOVED-flavor.sh
+	@p='bulk-build-MOVED-flavor.sh'; \
+	b='bulk-build-MOVED-flavor.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1623,6 +1691,34 @@ bulk-skipped-and-needed-dep.sh.log: bulk-skipped-and-needed-dep.sh
 testport-all-flavors-failure.sh.log: testport-all-flavors-failure.sh
 	@p='testport-all-flavors-failure.sh'; \
 	b='testport-all-flavors-failure.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-build-MOVED-default.sh.log: testport-build-MOVED-default.sh
+	@p='testport-build-MOVED-default.sh'; \
+	b='testport-build-MOVED-default.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-build-MOVED-flavor.sh.log: testport-build-MOVED-flavor.sh
+	@p='testport-build-MOVED-flavor.sh'; \
+	b='testport-build-MOVED-flavor.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-build-MOVED-to-default-flavor.sh.log: testport-build-MOVED-to-default-flavor.sh
+	@p='testport-build-MOVED-to-default-flavor.sh'; \
+	b='testport-build-MOVED-to-default-flavor.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-build-MOVED-to-different-flavor.sh.log: testport-build-MOVED-to-different-flavor.sh
+	@p='testport-build-MOVED-to-different-flavor.sh'; \
+	b='testport-build-MOVED-to-different-flavor.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

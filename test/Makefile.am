@@ -83,7 +83,15 @@ TESTS=\
 	$(JAIL_TESTS)
 
 JAIL_TESTS= \
+	bulk-MOVED-default.sh \
+	bulk-MOVED-flavor-all.sh \
+	bulk-MOVED-flavor.sh \
+	bulk-MOVED-to-default-flavor.sh \
+	bulk-MOVED-to-specific-flavor.sh \
 	bulk-bad-dep-pkgname.sh \
+	bulk-build-MOVED-default.sh \
+	bulk-build-MOVED-flavor-all.sh \
+	bulk-build-MOVED-flavor.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
@@ -145,6 +153,10 @@ JAIL_TESTS= \
 	bulk-overlay-specific.sh \
 	bulk-skipped-and-needed-dep.sh \
 	testport-all-flavors-failure.sh \
+	testport-build-MOVED-default.sh \
+	testport-build-MOVED-flavor.sh \
+	testport-build-MOVED-to-default-flavor.sh \
+	testport-build-MOVED-to-different-flavor.sh \
 	testport-build-default-flavor-default.sh \
 	testport-build-default-flavor.sh \
 	testport-build-no-deps.sh \

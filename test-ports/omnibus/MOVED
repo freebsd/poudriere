@@ -1,0 +1,4 @@
+misc/freebsd-release-manifests-OLD-MOVED|misc/freebsd-release-manifests-NEW-MOVED|2022-12-20|Renamed
+misc/freebsd-release-manifests-OLD-MOVED@optional|misc/freebsd-release-manifests-NEW-MOVED@default|2022-12-20|Merged into NEW-MOVED's default
+misc/freebsd-release-manifests-OLD-MOVED@optional2|misc/freebsd-release-manifests-NEW-MOVED@bar|2022-12-20|Merged into NEW-MOVED's BAR FLAVOR
+misc/freebsd-release-manifests-NEW-MOVED|misc/freebsd-release-manifests|2022-12-20|Never existed

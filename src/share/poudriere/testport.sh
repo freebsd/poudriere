@@ -220,33 +220,6 @@ else
 		;;
 	esac
 fi
-new_origin=$(grep -v '^#' "${portsdir:?}/MOVED" | awk -vorigin="${ORIGIN:?}" \
-    -F\| '$1 == origin && $2 != "" {print $2}')
-case "${new_origin:+set}" in
-set)
-	msg "MOVED: ${COLOR_PORT}${ORIGIN}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
-	# The ORIGIN may have a FLAVOR in it which overrides whatever the
-	# user specified.
-	originspec_decode "${new_origin}" ORIGIN NEW_FLAVOR NEW_SUBPKG
-	case "${NEW_FLAVOR:+set}" in
-	set) FLAVOR="${NEW_FLAVOR}" ;;
-	esac
-	case "${NEW_SUBPKG:+set}" in
-	set) SUBPKG="${NEW_SUBPKG}" ;;
-	esac
-	# Update ORIGINSPEC for the new ORIGIN
-	originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
-	;;
-esac
-_lookup_portdir portdir "${ORIGIN}"
-if [ "${portdir:?}" = "${PORTSDIR:?}/${ORIGIN:?}" ] &&
-	[ ! -f "${portsdir:?}/${ORIGIN:?}/Makefile" ] ||
-	[ -d "${portsdir:?}/${ORIGIN:?}/../Mk" ]; then
-	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
-fi
-
-injail /usr/bin/make -C "${portdir:?}" maintainer ECHO_CMD=true || \
-    err 1 "Port is broken"
 
 if [ $CONFIGSTR -eq 1 ]; then
 	command -v portconfig >/dev/null 2>&1 || \
@@ -267,6 +240,33 @@ fi
 # deps_fetch_vars lookup for dependencies moved to prepare_ports()
 LISTPORTS="${ORIGINSPEC:?}"
 prepare_ports
+if check_moved "${ORIGINSPEC}" new_originspec 1; then
+	msg "MOVED: ${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET} moved to ${COLOR_PORT}${new_originspec}${COLOR_RESET}"
+	case "${new_originspec}" in
+	"EXPIRED "*) ;;
+	"") ;;
+	*)
+		# The ORIGIN may have a FLAVOR in it which overrides what
+		# user specified.
+		originspec_decode "${new_originspec}" ORIGIN NEW_FLAVOR NEW_SUBPKG
+		case "${NEW_FLAVOR:+set}" in
+		set) FLAVOR="${NEW_FLAVOR}" ;;
+		esac
+		case "${NEW_SUBPKG:+set}" in
+		set) SUBPKG="${NEW_SUBPKG}" ;;
+		esac
+		# Update ORIGINSPEC for the new ORIGIN
+		originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
+		;;
+	esac
+fi
+# Ensure the port exists after handling MOVED.
+_lookup_portdir portdir "${ORIGIN}"
+if [ "${portdir:?}" = "${PORTSDIR:?}/${ORIGIN:?}" ] &&
+	[ ! -f "${portsdir:?}/${ORIGIN:?}/Makefile" ] ||
+	[ -d "${portsdir:?}/${ORIGIN:?}/../Mk" ]; then
+	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
+fi
 get_pkgname_from_originspec "${ORIGINSPEC:?}" PKGNAME ||
     err "${EX_SOFTWARE}" "Failed to find PKGNAME for ${ORIGINSPEC}"
 shash_get pkgname-ignore "${PKGNAME:?}" IGNORE || :

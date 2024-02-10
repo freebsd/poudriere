@@ -5516,7 +5516,9 @@ parallel_build() {
 	(
 		cd "${SHASH_VAR_PATH:?}"
 		for shash_bucket in \
-		    origin-flavors; do
+		    origin-flavors \
+		    originspec-moved \
+		    ; do
 			shash_remove_var "${shash_bucket}" || :
 		done
 	)
@@ -6319,7 +6321,7 @@ delete_old_pkg() {
 	local compiled_deps_pkgname compiled_deps_origin compiled_deps_new
 	local pkgbase new_pkgbase flavor flavors pkg_flavor pkg_subpkg originspec
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor
-	local ignore new_origin stale_pkg
+	local ignore new_originspec stale_pkg
 	local pkg_arch no_arch arch is_sym
 
 	pkgfile="${pkg##*/}"
@@ -6393,17 +6395,18 @@ delete_old_pkg() {
 		# Apparently we expect this package via its origin and flavor.
 	fi
 
-	if shash_get origin-moved "${origin}" new_origin; then
-		case "${new_origin}" in
+	if check_moved "${originspec}" new_originspec; then
+		case "${new_originspec}" in
 		"EXPIRED "*)
-			msg "Deleting ${pkgfile}: ${COLOR_PORT}${originspec}${COLOR_RESET} ${new_origin#EXPIRED }"
+			msg "Deleting ${pkgfile}: ${COLOR_PORT}${originspec}${COLOR_RESET} ${new_originspec#EXPIRED }"
 			;;
 		*)
-			msg "Deleting ${pkgfile}: ${COLOR_PORT}${originspec}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
+			msg "Deleting ${pkgfile}: ${COLOR_PORT}${originspec}${COLOR_RESET} moved to ${COLOR_PORT}${new_originspec}${COLOR_RESET}"
 			;;
 		esac
 		delete_pkg "${pkg}"
 		return 0
+		originspec_decode "${new_originspec}" origin flavor subpkg
 	fi
 
 	_my_path mnt
@@ -6612,10 +6615,10 @@ delete_old_pkg() {
 			done
 			# Handle MOVED
 			for compiled_deps_origin in ${compiled_deps}; do
-				shash_get origin-moved \
-				    "${compiled_deps_origin}" \
-				    new_origin && \
-				    compiled_deps_origin="${new_origin}"
+				if check_moved "${compiled_deps_origin}" \
+				    new_origin; then
+					compiled_deps_origin="${new_origin}"
+				fi
 				case "${compiled_deps_origin}" in
 				"EXPIRED "*) continue ;;
 				esac
@@ -7495,7 +7498,7 @@ deps_sanity() {
 	local originspec="${1}"
 	local deps="${2}"
 	local origin dep_originspec dep_origin dep_flavor dep_subpkg ret
-	local new_origin moved_reason
+	local new_originspec moved_reason
 
 	originspec_decode "${originspec}" origin '' ''
 
@@ -7519,17 +7522,17 @@ deps_sanity() {
 			# framework not supporting it later on, and the
 			# PKGNAME would be wrong, but we can at least
 			# advise the user about it.
-			shash_get origin-moved "${dep_origin}" \
-			    new_origin || new_origin=
-			case "${new_origin}" in
+			check_moved "${dep_originspec}" new_originspec ||
+			    new_originspec=
+			case "${new_originspec}" in
 			"EXPIRED "*)
-				moved_reason="port EXPIRED: ${new_origin#EXPIRED }"
+				moved_reason="port EXPIRED: ${new_originspec#EXPIRED }"
 				;;
 			"")
 				unset moved_reason
 				;;
 			*)
-				moved_reason="moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
+				moved_reason="moved to ${COLOR_PORT}${new_originspec}${COLOR_RESET}"
 				;;
 			esac
 			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on nonexistent origin ${COLOR_PORT}${dep_origin}${COLOR_RESET}${moved_reason:+ (${moved_reason})}; Please contact maintainer of the port to fix this."
@@ -8205,29 +8208,29 @@ _listed_ports() {
 			fi
 			;;
 		esac
-		origin_listed="${origin}"
-		if shash_get origin-moved "${origin}" new_origin; then
-			case "${new_origin}" in
+		originspec_listed="${originspec}"
+		if check_moved "${originspec}" new_originspec 1; then
+			case "${new_originspec}" in
 			"EXPIRED "*)
-				msg_error "MOVED: ${origin} ${new_origin}"
+				msg_error "MOVED: ${origin} ${new_originspec}"
 				set_pipe_fatal_error || return
 				continue
 				;;
 			esac
-			originspec="${new_origin}"
+			originspec="${new_originspec}"
 			originspec_decode "${originspec}" origin flavor ''
 		else
-			unset new_origin
+			unset new_originspec
 		fi
 		if ! test_port_origin_exist "${origin}"; then
-			msg_error "Nonexistent origin listed: ${COLOR_PORT}${origin_listed}${new_origin:+${COLOR_RESET} (moved to nonexistent ${COLOR_PORT}${new_origin}${COLOR_RESET})}"
+			msg_error "Nonexistent origin listed: ${COLOR_PORT}${originspec_listed}${new_originspec:+${COLOR_RESET} (moved to nonexistent ${COLOR_PORT}${new_originspec}${COLOR_RESET})}"
 			set_pipe_fatal_error || return
 			continue
 		fi
-		case "${tell_moved:+set}.${new_origin:+set}" in
+		case "${tell_moved:+set}.${new_originspec:+set}" in
 		set.set)
 			msg_warn \
-			    "MOVED: ${COLOR_PORT}${origin_listed}${COLOR_RESET} renamed to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
+			    "MOVED: ${COLOR_PORT}${originspec_listed}${COLOR_RESET} renamed to ${COLOR_PORT}${new_originspec}${COLOR_RESET}"
 			;;
 		esac
 		echo "${originspec}"
@@ -8403,22 +8406,36 @@ delete_stale_symlinks_and_empty_dirs() {
 }
 
 load_moved() {
-	# Distclean will run this outside of a jail.
-	case "${SCRIPTNAME:?}" in
-	"distclean.sh") ;;
+	# Tests and Distclean will run this outside of a jail.
+	case "${IN_TEST:-0}.${SCRIPTNAME:?}" in
+	1.*|*."distclean.sh") ;;
 	*)
 		required_env load_moved SHASH_VAR_PATH "var/cache"
 		;;
 	esac
-	[ -f "${MASTERMNT?}${PORTSDIR:?}/MOVED" ] || return 0
 	msg "Loading MOVED for ${MASTERMNT}${PORTSDIR}"
 	bset status "loading_moved:"
 	local movedfiles o
 
+	# Duplicated logic so messages can go to stdout
 	{
-		echo "${MASTERMNT?}${PORTSDIR:?}/MOVED"
+		if [ -f "${MASTERMNT?}${PORTSDIR:?}/MOVED" ]; then
+			msg_verbose "Loading MOVED from ${MASTERMNT?}${PORTSDIR:?}/MOVED"
+		fi
 		for o in ${OVERLAYS}; do
-			test -f "${MASTERMNT?}${OVERLAYSDIR:?}/${o:?}/MOVED" || continue
+			[ -f "${MASTERMNT?}${OVERLAYSDIR:?}/${o:?}/MOVED" ] ||
+			    continue
+			msg_verbose "Loading MOVED from ${MASTERMNT?}${OVERLAYSDIR:?}/${o:?}/MOVED"
+		done
+	}
+
+	{
+		if [ -f "${MASTERMNT?}${PORTSDIR:?}/MOVED" ]; then
+			echo "${MASTERMNT?}${PORTSDIR:?}/MOVED"
+		fi
+		for o in ${OVERLAYS}; do
+			[ -f "${MASTERMNT?}${OVERLAYSDIR:?}/${o:?}/MOVED" ] ||
+			    continue
 			echo "${MASTERMNT?}${OVERLAYSDIR:?}/${o:?}/MOVED"
 		done
 	} | \
@@ -8427,8 +8444,92 @@ load_moved() {
 	while mapfile_read_loop_redir old_origin new_origin; do
 		# new_origin may be EXPIRED followed by the reason
 		# or only a new origin.
-		shash_set origin-moved "${old_origin}" "${new_origin}"
+		shash_set originspec-moved "${old_origin}" "${new_origin}"
 	done
+}
+
+check_moved() {
+	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] || eargs check_moved originspec new_originspec_var \
+	    recurse
+	local cm_originspec="$1"
+	local cm_new_originspec_var="$2"
+	local cm_recurse="${3-}"
+	local cm_new_originspec
+	local cm_origin cm_flavor cm_new_origin cm_new_flavor
+
+	while _check_moved "${cm_originspec}" cm_new_originspec; do
+		case "${cm_recurse-}" in
+		0)
+			setvar "${cm_new_originspec_var}" "${cm_new_originspec}"
+			return 0
+			;;
+		esac
+		# XXX: subpkg
+		originspec_decode "${cm_new_originspec}" cm_new_origin \
+		    cm_new_flavor ''
+		case "${cm_new_originspec}" in
+		""|"EXPIRED "*)
+			setvar "${cm_new_originspec_var}" "${cm_new_originspec}"
+			return 0
+			;;
+		esac
+		if test_port_origin_exist "${cm_new_origin}"; then
+			msg_debug "check_moved: ${COLOR_PORT}${cm_originspec}${COLOR_RESET} MOVED to ${COLOR_PORT}${cm_new_originspec}${COLOR_RESET}" >&2
+			setvar "${cm_new_originspec_var}" "${cm_new_originspec}"
+			return 0
+		fi
+		msg_debug "check_moved: ${COLOR_PORT}${cm_originspec}${COLOR_RESET} MOVED to nonexistent ${COLOR_PORT}${cm_new_originspec}${COLOR_RESET}: continuing search" >&2
+		cm_originspec="${cm_new_originspec}"
+	done
+	setvar "${cm_new_originspec_var}" ""
+	return 1
+}
+
+_check_moved() {
+	[ "$#" -eq 2 ] || eargs _check_moved originspec new_originspec_var
+	local _cm_originspec="$1"
+	local _cm_new_originspec_var="$2"
+	local _cm_new_originspec
+	local _cm_origin _cm_flavor _cm_new_origin _cm_new_flavor
+	local _cm_subpkg _cm_new_subpkg
+
+	# Easy case first.
+	if shash_get originspec-moved "${_cm_originspec}" \
+	    _cm_new_originspec; then
+		setvar "${_cm_new_originspec_var}" "${_cm_new_originspec}"
+		return 0
+	fi
+
+	# It is possible that the port was MOVED but without
+	# FLAVOR desingations. Check for that.
+	originspec_decode "${_cm_originspec}" _cm_origin _cm_flavor _cm_subpkg
+	case "${_cm_flavor}" in
+	# No FLAVOR in the originspec so nothing more to do.
+	"") return 1 ;;
+	esac
+	if ! shash_get originspec-moved "${_cm_origin}" _cm_new_originspec; then
+		# This originspec wasn't moved without a FLAVOR either.
+		return 1
+	fi
+	# The originspec *was* moved without a FLAVOR.
+
+	# Check if the new origin has a FLAVOR. If so and the old
+	# originspec also has a FLAVOR that does not match then
+	# it's unclear what to do.
+	originspec_decode "${_cm_new_originspec}" _cm_new_origin \
+	    _cm_new_flavor _cm_new_subpkg
+	case "${_cm_new_flavor}" in
+	# Matching our FLAVOR, or none, is fine.
+	"${_cm_flavor}") ;;
+	"") _cm_new_flavor="${_cm_flavor}" ;;
+	*)
+		err "${EX_SOFTWARE}" \
+		    "check_moved: ${COLOR_PORT}${_cm_originspec}${COLOR_RESET} moved to ${COLOR_PORT}${cm_new_originspec}${COLOR_RESET} with a different FLAVOR. MOVED src referenced default ${COLOR_PORT}${cm_origin}${COLOR_RESET}. Wrong entry or src should specify default FLAVOR."
+		;;
+	esac
+	originspec_encode "${_cm_new_originspec_var}" \
+	    "${_cm_new_origin}" "${_cm_new_flavor}" "${_cm_new_subpkg}"
+	return
 }
 
 fetch_global_port_vars() {
@@ -8853,7 +8954,6 @@ prepare_ports() {
 			cd "${SHASH_VAR_PATH:?}"
 			for shash_bucket in \
 			    origin-flavor-all \
-			    origin-moved \
 			    pkgname-ignore \
 			    pkgname-options \
 			    pkgname-run_deps \
