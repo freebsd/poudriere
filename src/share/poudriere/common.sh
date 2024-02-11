@@ -1389,17 +1389,19 @@ update_stats_queued() {
 	bset stats_queued "${nbq}"
 }
 
-get_to_build() {
-	[ "$#" -eq 0 ] || eargs get_to_build
-	local _originspec _pkgname _rdep _ignore
-	local log
+update_tobuild() {
+	[ "$#" -eq 0 ] || eargs update_tobuild
+	local pkgname originspec rdep
 
-	_log_path log
-	while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs" \
-	    _pkgname _originspec _rdep _ignore; do
-		pkgqueue_contains "${_pkgname}" || continue
-		echo "${_originspec} ${_pkgname} ${_rdep}"
-	done
+	while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs_not_ignored" \
+	    pkgname originspec rdep; do
+		if ! pkgqueue_contains "${pkgname}"; then
+			continue
+		fi
+		echo "${pkgname} ${originspec} ${rdep}"
+	done > "${MASTER_DATADIR:?}/tobuild_pkgs"
+
+	update_stats_tobuild
 }
 
 update_stats_tobuild() {
@@ -1407,8 +1409,8 @@ update_stats_tobuild() {
 	local nbtb log
 
 	_log_path log
-	get_to_build |
-	    write_atomic "${log:?}/.poudriere.ports.tobuild"
+	awk '{print $2,$1,$3 }' "${MASTER_DATADIR:?}/tobuild_pkgs" > \
+	    "${log:?}/.poudriere.ports.tobuild"
 	count_lines "${log:?}/.poudriere.ports.tobuild" nbtb
 	bset stats_tobuild "${nbtb}"
 }
@@ -1658,7 +1660,8 @@ show_dry_run_summary() {
 
 		if [ "${ALL}" -eq 0 ] || [ "${VERBOSE}" -ge 1 ]; then
 			msg_n "Ports to build: "
-			get_to_build | cut -d ' ' -f1 | paste -s -d ' ' -
+			cut -d ' ' -f2 "${MASTER_DATADIR:?}/tobuild_pkgs" |
+			    paste -s -d ' ' -
 		fi
 	else
 		msg "No packages would be built"
@@ -4174,13 +4177,8 @@ download_from_repo() {
 	# only list packages which do not exists to prevent pkg
 	# from overwriting prebuilt packages
 	missing_pkgs=$(mktemp -t missing_pkgs)
-	while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs" \
+	while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs_not_ignored" \
 	    pkgname originspec listed ignored; do
-		# Skip ignored ports
-		if shash_exists pkgname-ignore "${pkgname}"; then
-			msg_debug "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: ignored"
-			continue
-		fi
 		# Skip listed packages when testing
 		if [ "${PORTTESTING}" -eq 1 ]; then
 			if [ "${CLEAN:-0}" -eq 1 ] || \
@@ -7683,7 +7681,7 @@ gather_port_vars_port() {
 				esac
 				;;
 			esac
-			if pkgname_is_queued "${pkgname}"; then
+			if pkgname_metadata_is_known "${pkgname}"; then
 				# Nothing more do to.
 				return 0
 			fi
@@ -7843,7 +7841,7 @@ is_failed_metadata_lookup() {
 	case "${rdep} " in
 	"metadata "*) return 1 ;;
 	esac
-	if pkgname_is_queued "${pkgname}"; then
+	if pkgname_metadata_is_known "${pkgname}"; then
 		return 1
 	fi
 	return 0
@@ -7971,6 +7969,16 @@ gather_port_vars_process_depqueue() {
 	esac
 }
 
+# We may gather metadata for more ports than we actually want to build.
+# In here will will compute the list of packages that we are actually
+# interested in.
+compute_needed() {
+	[ "$#" -eq 0 ] || eargs compute_needed
+
+	awk 'NF < 4' "${MASTER_DATADIR:?}/all_pkgs" > \
+	    "${MASTER_DATADIR:?}/all_pkgs_not_ignored"
+}
+
 generate_queue() {
 	required_env generate_queue PWD "${MASTER_DATADIR_ABS:?}"
 	local pkgname originspec dep_pkgname _rdep _ignored
@@ -7984,7 +7992,7 @@ generate_queue() {
 	:> "${MASTER_DATADIR:?}/pkg_deps.unsorted"
 
 	parallel_start
-	while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs" \
+	while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs_not_ignored" \
 	    pkgname originspec _rdep _ignored; do
 		parallel_run generate_queue_pkg "${pkgname}" "${originspec}" \
 		    "${MASTER_DATADIR}/pkg_deps.unsorted" || set_pipe_fatal_error
@@ -8018,12 +8026,6 @@ generate_queue_pkg() {
 	# Safe to remove pkgname-deps now, it won't be needed later.
 	shash_remove pkgname-deps "${pkgname}" deps || \
 	    err 1 "generate_queue_pkg failed to find deps for ${COLOR_PORT}${pkgname}${COLOR_RESET}"
-
-	# Don't bother relating dependencies of IGNORED ports.
-	if shash_exists pkgname-ignore "${pkgname}"; then
-		msg_debug "generate_queue_pkg: Will not build IGNORED ${COLOR_PORT}${pkgname}${COLOR_RESET} nor queue its deps"
-		return
-	fi
 	msg_debug "generate_queue_pkg: Will build ${COLOR_PORT}${pkgname}${COLOR_RESET}"
 	pkgqueue_add "${pkgname}" || \
 	    err 1 "generate_queue_pkg: Error creating queue entry for ${COLOR_PORT}${pkgname}${COLOR_RESET}: There may be a duplicate origin in a category Makefile"
@@ -8269,12 +8271,15 @@ _listed_ports() {
 }
 
 listed_pkgnames() {
+	[ -e "${MASTER_DATADIR:?}/all_pkgs" ] ||
+	    err "${EX_SOFTWARE}" "listed_pkgnames: all_pkgs not yet computed"
+
 	awk '$3 == "listed" { print $1 }' "${MASTER_DATADIR:?}/all_pkgs"
 }
 
 # Pkgname was in queue
-pkgname_is_queued() {
-	[ $# -eq 1 ] || eargs pkgname_is_queued pkgname
+pkgname_metadata_is_known() {
+	[ $# -eq 1 ] || eargs pkgname_metadata_is_known pkgname
 	local pkgname="$1"
 
 	awk -vpkgname="${pkgname}" '
@@ -8296,6 +8301,8 @@ pkgname_is_listed() {
 	if [ "${ALL}" -eq 1 ]; then
 		return 0
 	fi
+	[ -e "${MASTER_DATADIR:?}/all_pkgs" ] ||
+	    err "${EX_SOFTWARE}" "pkgname_is_listed: all_pkgs not yet computed"
 
 	awk -vpkgname="${pkgname}" '
 	    $3 == "listed" && $1 == pkgname {
@@ -8317,6 +8324,8 @@ pkgbase_is_needed() {
 	if [ "${ALL}" -eq 1 ]; then
 		return 0
 	fi
+	[ -e "${MASTER_DATADIR:?}/all_pkgs_not_ignored" ] ||
+	    err "${EX_SOFTWARE}" "pkgbase_is_needed: all_pkgs_not_ignored not yet computed"
 
 	# We check on PKGBASE rather than PKGNAME from pkg_deps
 	# since the caller may be passing in a different version
@@ -8332,13 +8341,16 @@ pkgbase_is_needed() {
 	    END {
 		if (found != 1)
 			exit 1
-	    }' "${MASTER_DATADIR:?}/all_pkgs"
+	    }' "${MASTER_DATADIR:?}/all_pkgs_not_ignored"
 }
 
 pkgbase_is_needed_and_not_ignored() {
 	[ $# -eq 1 ] || eargs pkgbase_is_needed_and_not_ignored pkgname
 	local pkgname="$1"
 	local pkgbase
+
+	[ -e "${MASTER_DATADIR:?}/all_pkgs_not_ignored" ] ||
+	    err "${EX_SOFTWARE}" "pkgbase_is_needed_and_not_ignored: all_pkgs_not_ignored not yet computed"
 
 	# We check on PKGBASE rather than PKGNAME from pkg_deps
 	# since the caller may be passing in a different version
@@ -8355,12 +8367,14 @@ pkgbase_is_needed_and_not_ignored() {
 	    END {
 		if (found != 1)
 			exit 1
-	    }' "${MASTER_DATADIR:?}/all_pkgs"
+	    }' "${MASTER_DATADIR:?}/all_pkgs_not_ignored"
 }
-
 
 ignored_packages() {
 	[ $# -eq 0 ] || eargs ignored_packages
+
+	[ -e "${MASTER_DATADIR:?}/all_pkgs" ] ||
+	    err "${EX_SOFTWARE}" "ignored_packages: all_pkgs not yet computed"
 
 	awk 'NF >= 4' "${MASTER_DATADIR:?}/all_pkgs"
 }
@@ -8377,6 +8391,8 @@ originspec_is_needed_and_not_ignored() {
 		msg_warn "originspec_is_needed_and_not_ignored: origin ${COLOR_PORT}${origin}${COLOR_RESET} requires a FLAVOR set for originspec"
 		return 1
 	fi
+	[ -e "${MASTER_DATADIR:?}/all_pkgs_not_ignored" ] ||
+	    err "${EX_SOFTWARE}" "originspec_is_needed_and_not_ignored: all_pkgs_not_ignored not yet computed"
        awk -voriginspec="${originspec}" '
            $2 == originspec {
                if (NF < 4)
@@ -8386,7 +8402,7 @@ originspec_is_needed_and_not_ignored() {
            END {
                if (found != 1)
                        exit 1
-           }' "${MASTER_DATADIR:?}/all_pkgs"
+           }' "${MASTER_DATADIR:?}/all_pkgs_not_ignored"
 }
 
 # Port was listed to be built
@@ -8397,6 +8413,8 @@ originspec_is_listed() {
 	if [ "${ALL}" -eq 1 ]; then
 		return 0
 	fi
+	[ -e "${MASTER_DATADIR:?}/all_pkgs" ] ||
+	    err "${EX_SOFTWARE}" "originspec_is_listed: all_pkgs not yet computed"
 	awk -voriginspec="${originspec}" '
 	    $3 == "listed" && $2 == originspec {
 		found=1
@@ -8853,6 +8871,8 @@ prepare_ports() {
 
 	gather_port_vars
 
+	compute_needed
+
 	if was_a_bulk_run; then
 		generate_queue
 
@@ -8862,6 +8882,7 @@ prepare_ports() {
 		# Migrate packages to new sufx
 		maybe_migrate_packages
 		# Stash dependency graph
+		cp -f "${MASTER_DATADIR}/all_pkgs_not_ignored" "${log:?}/.poudriere.all_pkgs_not_ignored%"
 		cp -f "${MASTER_DATADIR}/pkg_deps" "${log:?}/.poudriere.pkg_deps%"
 		cp -f "${MASTER_DATADIR}/pkg_pool" \
 		    "${log:?}/.poudriere.pkg_pool%"
@@ -8996,6 +9017,7 @@ prepare_ports() {
 			    origin-flavor-all \
 			    pkgname-ignore \
 			    pkgname-options \
+			    pkgname-deps \
 			    pkgname-run_deps \
 			    pkgname-lib_deps \
 			    pkgname-prefix \
@@ -9017,7 +9039,7 @@ prepare_ports() {
 		if [ "${resuming_build}" -eq 0 ]; then
 			# Generate ports.queued list and stats_queued after
 			# the queue was trimmed.
-			update_stats_tobuild
+			update_tobuild
 			update_stats_queued
 			update_remaining
 		fi
@@ -9049,7 +9071,7 @@ prepare_ports() {
 }
 
 load_priorities_ptsort() {
-	local priority pkgname originspec origin flavor _rdep _ignored
+	local priority pkgname originspec origin flavor _rdep
 	local log pkgbase pkg_boost_glob
 	local -
 
@@ -9057,8 +9079,8 @@ load_priorities_ptsort() {
 	    > "${MASTER_DATADIR:?}/pkg_deps.ptsort"
 
 	# Add in boosts before running ptsort
-	while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs" \
-	    pkgname originspec _rdep _ignored; do
+	while mapfile_read_loop "${MASTER_DATADIR:?}/tobuild_pkgs" \
+	    pkgname originspec _rdep; do
 		pkgbase="${pkgname%-*}"
 		# Does this pkg have an override?
 
@@ -9070,9 +9092,8 @@ load_priorities_ptsort() {
 			# shellcheck disable=SC2254
 			case ${pkgbase} in
 			${pkg_boost_glob})
-				pkgqueue_contains "${pkgname}" || \
-				    continue
-				originspec_decode "${originspec}" origin flavor subpkg
+				originspec_decode "${originspec}" origin \
+				    flavor subpkg
 				msg "Boosting priority: ${COLOR_PORT}${origin}${flavor:+@${flavor}}${subpkg:+~${subpkg}} | ${pkgname}"
 				echo "${pkgname} ${PRIORITY_BOOST_VALUE}" >> \
 				    "${MASTER_DATADIR:?}/pkg_deps.ptsort"
