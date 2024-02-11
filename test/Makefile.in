@@ -498,6 +498,7 @@ JAIL_TESTS = \
 	bulk-MOVED-to-default-flavor.sh \
 	bulk-MOVED-to-specific-flavor.sh \
 	bulk-bad-dep-pkgname.sh \
+	bulk-build-MOVED-BLACKLIST-flavor-all.sh \
 	bulk-build-MOVED-default.sh \
 	bulk-build-MOVED-flavor-all.sh \
 	bulk-build-MOVED-flavor.sh \
@@ -1243,6 +1244,13 @@ bulk-MOVED-to-specific-flavor.sh.log: bulk-MOVED-to-specific-flavor.sh
 bulk-bad-dep-pkgname.sh.log: bulk-bad-dep-pkgname.sh
 	@p='bulk-bad-dep-pkgname.sh'; \
 	b='bulk-bad-dep-pkgname.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-MOVED-BLACKLIST-flavor-all.sh.log: bulk-build-MOVED-BLACKLIST-flavor-all.sh
+	@p='bulk-build-MOVED-BLACKLIST-flavor-all.sh'; \
+	b='bulk-build-MOVED-BLACKLIST-flavor-all.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

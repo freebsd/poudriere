@@ -3738,7 +3738,7 @@ load_blacklist() {
 		    "${POUDRIERED:?}/${bfile:?}" | sed -e 's|[[:space:]]*#.*||')" ||
 		    ports=
 		for port in ${ports}; do
-			case " ${BLACKLIST} " in
+			case " ${BLACKLIST-} " in
 			*" ${port} "*) continue;;
 			esac
 			msg_warn "Blacklisting (from ${POUDRIERED}/${bfile}): ${COLOR_PORT}${port}"
@@ -6061,7 +6061,7 @@ deps_fetch_vars() {
 	local _existing_origin _existing_originspec categories _ignore
 	local _forbidden _default_originspec _default_pkgname _no_arch
 	local origin _dep _new_pkg_deps
-	local _origin_flavor _flavor _flavors
+	local _origin_flavor _flavor _flavors _default_flavor
 	local _origin_subpkg
 	local _prefix _pkgname_var _pdeps_var
 	local _depend_specials=
@@ -6150,8 +6150,39 @@ deps_fetch_vars() {
 	setvar "${deps_var}" "${_pkg_deps}"
 	setvar "${flavor_var}" "${_flavor}"
 	setvar "${flavors_var}" "${_flavors}"
-	case " ${BLACKLIST} " in
-	*" ${origin} "*) : ${_ignore:="Blacklisted"} ;;
+	# Handle BLACKLIST
+	case "${_flavors:+set}" in
+	set)
+		_default_flavor="${_flavors%% *}"
+		case "${_flavor}" in
+		"${_default_flavor}")
+			case " ${BLACKLIST-} " in
+			*" ${origin}@${FLAVOR_DEFAULT} "*|\
+			*" ${origin}@${_flavor} "*|\
+			*" ${origin}@${FLAVOR_ALL} "*|\
+			*" ${origin} "*)
+				: ${_ignore:="Blacklisted"}
+				;;
+			esac
+			;;
+		*)
+			case " ${BLACKLIST-} " in
+			*" ${origin}@${_flavor} "*|\
+			*" ${origin}@${FLAVOR_ALL} "*|\
+			*" ${origin} "*)
+				: ${_ignore:="Blacklisted"}
+				;;
+			esac
+			;;
+		esac
+		;;
+	*)	# Port has NO flavors
+		case " ${BLACKLIST-} " in
+		*" ${origin} "*)
+			: ${_ignore:="Blacklisted"}
+			;;
+		esac
+		;;
 	esac
 	setvar "${ignore_var}" "${_ignore}"
 	# Need all of the output vars set before potentially returning 2.

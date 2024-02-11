@@ -89,6 +89,7 @@ JAIL_TESTS= \
 	bulk-MOVED-to-default-flavor.sh \
 	bulk-MOVED-to-specific-flavor.sh \
 	bulk-bad-dep-pkgname.sh \
+	bulk-build-MOVED-BLACKLIST-flavor-all.sh \
 	bulk-build-MOVED-default.sh \
 	bulk-build-MOVED-flavor-all.sh \
 	bulk-build-MOVED-flavor.sh \

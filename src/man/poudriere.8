@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd December 20, 2022
+.Dd December 24, 2022
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -340,6 +340,23 @@ to
 .Ss Blacklist ports
 You can also specify a blacklist which will disallow the lists port origins
 from building on the matched jail.
+.Pp
+FLAVOR handling is different than described in the
+.Sx FLAVORS
+section.
+.Bl -tag -width "devel/foo@bar" -compact
+.It Cm devel/foo
+Blacklist every FLAVOR.
+.It Cm devel/foo@all
+Blacklist every FLAVOR.
+.It Cm devel/foo@-
+Blacklist only the default FLAVOR.
+.It Cm devel/foo@bar
+Blacklist only the
+.Sy bar
+FLAVOR.
+.El
+.Pp
 Any of the following are allowed and will all be used in the order shown:
 .Pp
 .Dl Pa /usr/local/etc/poudriere.d/blacklist

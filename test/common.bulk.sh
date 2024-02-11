@@ -1422,6 +1422,17 @@ export PACKAGE_BUILDING=yes
 MASTERNAME="${JAILNAME:?}-${PTNAME:?}-${SETNAME:?}"
 _mastermnt MASTERMNT
 
+set_blacklist() {
+	local blacklist
+
+	blacklist="${POUDRIERE_ETC:?}/poudriere.d/${MASTERNAME:?}-blacklist"
+	msg "Updating ${blacklist}" >&2
+	write_atomic_cmp "${blacklist}"
+	showfile "${blacklist}"
+}
+set_blacklist <<-EOF
+EOF
+
 set_poudriere_conf() {
 	local poudriere_conf
 
