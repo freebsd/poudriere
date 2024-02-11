@@ -1694,7 +1694,7 @@ get_data_dir() {
 		# Explicitly set properties for values diverging from top dataset
 		zfs create -p -o atime=off \
 			-o compression=on \
-			-o mountpoint=${BASEFS} \
+			-o mountpoint="$(remove_altroot ${BASEFS})" \
 			${ZPOOL}${ZROOTFS}
 		zfs create ${ZPOOL}${ZROOTFS}/jails
 		zfs create ${ZPOOL}${ZROOTFS}/ports
