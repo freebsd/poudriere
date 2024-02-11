@@ -58,6 +58,7 @@ TESTS=\
 	options-overlays.sh \
 	options-smoke.sh \
 	originspec.sh \
+	parallel_run.sh \
 	pkg_version.sh \
 	pkgqueue_basic.sh \
 	pkgqueue_failure_cleanup.sh \

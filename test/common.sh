@@ -463,6 +463,7 @@ cleanup() {
 	ret="$?"
 	msg "Cleaning up" >&"${REDIRECTED_STDERR_FD:-2}"
 	capture_output_simple_stop
+	parallel_shutdown || :
 	if [ "${ret}" -ne 0 ] && [ -n "${LOG_START_LASTFILE-}" ] &&
 	    [ -s "${LOG_START_LASTFILE}" ]; then
 		echo "Log captured data not seen:" >&2

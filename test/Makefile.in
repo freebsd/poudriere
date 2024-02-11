@@ -484,7 +484,7 @@ TESTS = array.sh builtins.sh cache.sh cache_pipe.sh \
 	locked_mkdir_waiters.sh locked_mkdir_waiters_kill.sh \
 	locked_mkdir_waiters_all_lose.sh logging.sh mapfile.sh \
 	mktemp.sh options-badorigin.sh options-overlays.sh \
-	options-smoke.sh originspec.sh pkg_version.sh \
+	options-smoke.sh originspec.sh parallel_run.sh pkg_version.sh \
 	pkgqueue_basic.sh pkgqueue_failure_cleanup.sh \
 	pkgqueue_find_all_pool_references.sh pkgqueue_prioritize.sh \
 	pkgqueue_remove_many_pipe.sh pkgqueue_trimmed_misordered.sh \
@@ -1044,6 +1044,13 @@ options-smoke.sh.log: options-smoke.sh
 originspec.sh.log: originspec.sh
 	@p='originspec.sh'; \
 	b='originspec.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+parallel_run.sh.log: parallel_run.sh
+	@p='parallel_run.sh'; \
+	b='parallel_run.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

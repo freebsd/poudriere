@@ -350,7 +350,7 @@ kill_all_jobs() {
 	return "${ret}"
 }
 
-parallel_exec() {
+_parallel_exec() {
 	local ret=0
 	local - # Make `set +e` local
 	local errexit=0
@@ -475,7 +475,7 @@ parallel_run() {
 	if [ "${NBPARALLEL}" -lt "${PARALLEL_JOBS}" ]; then
 		NBPARALLEL="$((NBPARALLEL + 1))"
 	fi
-	PARALLEL_CHILD=1 spawn parallel_exec "$@"
+	PARALLEL_CHILD=1 spawn _parallel_exec "$@"
 	list_add PARALLEL_PIDS "$!"
 
 	return "${ret}"
