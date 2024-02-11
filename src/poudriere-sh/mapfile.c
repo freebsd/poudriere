@@ -101,7 +101,6 @@ md_close(struct mapped_data *md)
 		if (fileno(md->fp) == STDIN_FILENO) {
 			fdclose(md->fp, NULL);
 		} else {
-			assert(fileno(md->fp) >= 10);
 			fclose(md->fp);
 		}
 		md->fp = NULL;
@@ -135,7 +134,7 @@ md_find(const char *handle)
 extern int fd0_redirected;
 
 static struct mapped_data *
-_mapfile_open(const char *file, const char *modes, int qflag)
+_mapfile_open(const char *file, const char *modes, int Fflag, int qflag)
 {
 	FILE *fp;
 	struct mapped_data *md;
@@ -208,35 +207,37 @@ _mapfile_open(const char *file, const char *modes, int qflag)
 			    file);
 		}
 #endif
-		/* sh has <=10 reserved. */
-		if (fileno(fp) < 10) {
-			cmd = -1;
-			dupp = dupmodes;
-			for (p = modes; *p; p++) {
-				if (*p == 'e') {
-					cmd = F_DUPFD_CLOEXEC;
-					continue;
+		if (!Fflag) {
+			/* sh has <=10 reserved. */
+			if (fileno(fp) < 10) {
+				cmd = -1;
+				dupp = dupmodes;
+				for (p = modes; *p; p++) {
+					if (*p == 'e') {
+						cmd = F_DUPFD_CLOEXEC;
+						continue;
+					}
+					*dupp++ = *p;
 				}
-				*dupp++ = *p;
-			}
-			*dupp = '\0';
-			if (cmd == -1)
-				cmd = F_DUPFD;
+				*dupp = '\0';
+				if (cmd == -1)
+					cmd = F_DUPFD;
 
-			if ((newfd = fcntl(fileno(fp), cmd, 10)) == -1) {
-				serrno = errno;
-				fclose(fp);
-				INTON;
-				errno = serrno;
-				err(EX_NOINPUT, "%s", "fcntl");
-			}
-			assert(newfd >= 10);
-			(void)fclose(fp);
-			if ((fp = fdopen(newfd, dupmodes)) == NULL) {
-				serrno = errno;
-				INTON;
-				errno = serrno;
-				err(EX_NOINPUT, "%s", "fdopen");
+				if ((newfd = fcntl(fileno(fp), cmd, 10)) == -1) {
+					serrno = errno;
+					fclose(fp);
+					INTON;
+					errno = serrno;
+					err(EX_NOINPUT, "%s", "fcntl");
+				}
+				assert(newfd >= 10);
+				(void)fclose(fp);
+				if ((fp = fdopen(newfd, dupmodes)) == NULL) {
+					serrno = errno;
+					INTON;
+					errno = serrno;
+					err(EX_NOINPUT, "%s", "fdopen");
+				}
 			}
 		}
 	}
@@ -260,11 +261,15 @@ mapfilecmd(int argc, char **argv)
 	struct mapped_data *md;
 	const char *file, *var_return, *modes;
 	char handle[32];
-	int ch, qflag;
+	int ch, qflag, Fflag;
 
-	qflag = 0;
-	while ((ch = getopt(argc, argv, "q")) != -1) {
+	Fflag = qflag = 0;
+	while ((ch = getopt(argc, argv, "Fq")) != -1) {
 		switch (ch) {
+		case 'F':
+			/* "fast" - avoid some unneeded protections. */
+			Fflag = 1;
+			break;
 		case 'q':
 			qflag = 1;
 			break;
@@ -287,7 +292,7 @@ mapfilecmd(int argc, char **argv)
 	else
 		modes = "re";
 
-	md = _mapfile_open(file, modes, qflag);
+	md = _mapfile_open(file, modes, Fflag, qflag);
 	assert(md != NULL);
 
 	snprintf(handle, sizeof(handle), "%d", md->handle);
@@ -567,7 +572,7 @@ mapfile_read_loopcmd(int argc, char **argv)
 	}
 	if (md == NULL) {
 		/* Create handle */
-		md = _mapfile_open(file, "r", 0);
+		md = _mapfile_open(file, "r", 0, 0);
 		assert(md != NULL);
 		md->fd0_redirected = fd0_redirected;
 		md->pid = shpid;
@@ -822,7 +827,7 @@ mapfile_writecmd(int argc, char **argv)
 
 		/* Read from TTY */
 		ret = 0;
-		md_read = _mapfile_open("/dev/fd/0", "r", 0);
+		md_read = _mapfile_open("/dev/fd/0", "r", 1, 1);
 		assert(md_read != NULL);
 		while ((rret = _mapfile_read(md_read, &line, NULL, NULL)) == 0) {
 			ret = _mapfile_write(md, handle, nflag, Tflag, line);

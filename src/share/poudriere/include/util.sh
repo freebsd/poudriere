@@ -619,7 +619,7 @@ read_line() {
 
 	_ret=0
 	if mapfile_builtin; then
-		if mapfile maph "${file}"; then
+		if mapfile -F maph "${file}"; then
 			IFS= mapfile_read "${maph}" "${var_return}" || _ret=$?
 			mapfile_close "${maph}" || :
 		else
@@ -679,7 +679,7 @@ readlines_file() {
 	rl_var_count="$#"
 	rl_rest=
 	ret=0
-	if mapfile rl_handle "${rl_file:?}" "r"; then
+	if mapfile -F rl_handle "${rl_file:?}" "r"; then
 		while IFS= mapfile_read "${rl_handle}" rl_line; do
 			_readlines_lines_read="$((_readlines_lines_read + 1))"
 			case "${rl_var_count}" in
@@ -952,9 +952,10 @@ mapfile() {
 	local OPTIND=1 qflag flag
 
 	qflag=0
-	while getopts "q" flag; do
+	while getopts "Fq" flag; do
 		case "${flag}" in
 		q) qflag=1 ;;
+		F) # builtin compat ;;
 		esac
 	done
 	shift $((OPTIND-1))
@@ -1351,7 +1352,7 @@ mapfile_cat_file() {
 		case "${_file}" in
 		-) _file="/dev/fd/0" ;;
 		esac
-		if mapfile ${qflag:+-q} _handle "${_file}" "r"; then
+		if mapfile ${qflag:+-q} -F _handle "${_file}" "r"; then
 			mapfile_cat "${_handle}" || ret="$?"
 			mapfile_close "${_handle}" || ret="$?"
 		else
