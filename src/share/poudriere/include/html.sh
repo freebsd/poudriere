@@ -195,7 +195,7 @@ install_html_files() {
 	fi
 
 	# All processes need to make a copy of the base files.
-	if slock_acquire html_base 200; then
+	if slock_acquire html_base 5; then
 		mkdir -p "${dest}"
 		# Hardlink-copy the base into the destination dir.
 		cp -xal "${base}/" "${dest}/"
