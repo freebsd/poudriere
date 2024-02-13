@@ -3207,6 +3207,9 @@ jail_start() {
 	injail id >/dev/null 2>&1 || \
 	    err $? "Unable to execute id(1) in jail. Emulation or ABI wrong."
 
+	# Generate /var/run/os-release
+	injail service os-release start
+ 
 	portbuild_gid=$(injail pw groupshow "${PORTBUILD_GROUP}" 2>/dev/null | cut -d : -f3 || :)
 	if [ -z "${portbuild_gid}" ]; then
 		msg_n "Creating group ${PORTBUILD_GROUP}"
