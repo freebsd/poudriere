@@ -84,7 +84,7 @@ build_all_json() {
 		build_jail_json
 		slock_release "json_jail_${MASTERNAME}"
 	fi
-	if slock_acquire "json_top" 20 2>/dev/null; then
+	if slock_acquire "json_top" 5 2>/dev/null; then
 		build_top_json
 		slock_release "json_top"
 	fi
