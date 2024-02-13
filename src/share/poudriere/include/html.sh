@@ -78,7 +78,6 @@ html_json_main() {
 }
 
 build_all_json() {
-	critical_start
 	build_json
 	if slock_acquire -q "json_jail_${MASTERNAME:?}" 2; then
 		build_jail_json
@@ -88,11 +87,14 @@ build_all_json() {
 		build_top_json
 		slock_release "json_top"
 	fi
-	critical_end
 }
 
 build_json() {
 	required_env build_json log_path! ''
+	local ret
+
+	ret=0
+	critical_start
 	/usr/bin/awk \
 		-f "${AWKPREFIX:?}/json.awk" "${log_path:?}"/.poudriere.*[!%] | \
 		/usr/bin/awk 'ORS=""; {print} END {print "\n"}' | \
@@ -104,12 +106,14 @@ build_json() {
 		-f "${AWKPREFIX:?}/json.awk" "${log_path:?}"/.poudriere.*[!%] | \
 		/usr/bin/awk 'ORS=""; {print} END {print "\n"}' | \
 		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' | \
-		write_atomic_cmp "${log_path:?}/.data.mini.json"
+		write_atomic_cmp "${log_path:?}/.data.mini.json" || ret="$?"
+	critical_end
+	return "${ret}"
 }
 
 build_jail_json() {
 	required_env build_jail_json log_path_jail! ''
-	local empty
+	local empty ret
 
 	lock_have "json_jail_${MASTERNAME:?}" ||
 		err 1 "build_jail_json requires slock json_jail_${MASTERNAME}"
@@ -120,6 +124,8 @@ build_jail_json() {
 		esac
 		break
 	done
+	ret=0
+	critical_start
 	{
 		echo "{\"builds\":{"
 		echo "${log_path_jail:?}"/*/.data.mini.json | \
@@ -127,15 +133,19 @@ build_jail_json() {
 		    /usr/bin/sed -e '/^$/d' | \
 		    paste -s -d , -
 		echo "}}"
-	} | write_atomic_cmp "${log_path_jail:?}/.data.json"
+	} | write_atomic_cmp "${log_path_jail:?}/.data.json" || ret="$?"
+	critical_end
+	return "${ret}"
 }
 
 build_top_json() {
 	required_env build_top_json log_path_top! ''
-	local empty
+	local empty ret
 
 	lock_have "json_top" ||
 		err 1 "build_top_json requires slock json_top"
+	ret=0
+	critical_start
 	(
 		cd "${log_path_top:?}"
 		for empty in */latest/.data.mini.json; do
@@ -151,7 +161,9 @@ build_top_json() {
 		    /usr/bin/sed -e '/^$/d' | \
 		    paste -s -d , -
 		echo "}}"
-	) | write_atomic_cmp "${log_path_top:?}/.data.json"
+	) | write_atomic_cmp "${log_path_top:?}/.data.json" || ret="$?"
+	critical_end
+	return "${ret}"
 }
 
 # This is called at the end
@@ -160,7 +172,9 @@ html_json_cleanup() {
 
 	_log_path log
 	bset ended "$(clock -epoch)" || :
+	critical_start
 	build_all_json || :
+	critical_end
 }
 
 # Create/Update a base dir and then hardlink-copy the files into the
