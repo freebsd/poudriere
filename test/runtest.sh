@@ -85,7 +85,7 @@ bulk*.sh) : ${TIMEOUT:=300} ;;
 locked_mkdir.sh) : ${TIMEOUT:=120} ;;
 esac
 : ${TIMEOUT:=90}
-: ${TIMESTAMP="${LIBEXECPREFIX}/timestamp" -t}
+: ${TIMESTAMP="${LIBEXECPREFIX}/timestamp" -t -1stdout: -2stderr:}
 
 [ "${am_check}" -eq 0 ] && [ -t 0 ] && export FORCE_COLORS=1
 exec < /dev/null
