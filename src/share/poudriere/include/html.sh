@@ -54,17 +54,17 @@ html_json_main() {
 	# Ensure we are not sitting in the MASTER_DATADIR directory and
 	# move into the logdir for relative operations.
 	_log_path_top log_path_top
-	cd "${log_path_top}"
+	cd "${log_path_top:?}"
 	log_path_top="."
 
 	# Determine relative paths
 	_log_path_jail log_path_jail
-	_relpath "${log_path_jail}" "${log_path_top}"
-	log_path_jail="${_relpath}"
+	_relpath "${log_path_jail:?}" "${log_path_top:?}"
+	log_path_jail="${_relpath:?}"
 
 	_log_path log_path
-	_relpath "${log_path}" "${log_path_top}"
-	log_path="${_relpath}"
+	_relpath "${log_path:?}" "${log_path_top:?}"
+	log_path="${_relpath:?}"
 
 	trap exit TERM
 	trap html_json_cleanup EXIT
@@ -73,16 +73,16 @@ html_json_main() {
 		stress_snapshot
 		update_stats || :
 		build_all_json
-		sleep ${HTML_JSON_UPDATE_INTERVAL} 2>/dev/null
+		sleep "${HTML_JSON_UPDATE_INTERVAL}" 2>/dev/null
 	done
 }
 
 build_all_json() {
 	critical_start
 	build_json
-	if slock_acquire -q "json_jail_${MASTERNAME}" 2; then
+	if slock_acquire -q "json_jail_${MASTERNAME:?}" 2; then
 		build_jail_json
-		slock_release "json_jail_${MASTERNAME}"
+		slock_release "json_jail_${MASTERNAME:?}"
 	fi
 	if slock_acquire -q "json_top" 5; then
 		build_top_json
@@ -94,26 +94,26 @@ build_all_json() {
 build_json() {
 	required_env build_json log_path! ''
 	/usr/bin/awk \
-		-f ${AWKPREFIX}/json.awk ${log_path}/.poudriere.*[!%] | \
+		-f "${AWKPREFIX:?}/json.awk" "${log_path:?}"/.poudriere.*[!%] | \
 		/usr/bin/awk 'ORS=""; {print} END {print "\n"}' | \
 		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' | \
-		write_atomic_cmp "${log_path}/.data.json"
+		write_atomic_cmp "${log_path:?}/.data.json"
 
 	# Build mini json for stats
 	/usr/bin/awk -v mini=yes \
-		-f ${AWKPREFIX}/json.awk ${log_path}/.poudriere.*[!%] | \
+		-f "${AWKPREFIX:?}/json.awk" "${log_path:?}"/.poudriere.*[!%] | \
 		/usr/bin/awk 'ORS=""; {print} END {print "\n"}' | \
 		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' | \
-		write_atomic_cmp "${log_path}/.data.mini.json"
+		write_atomic_cmp "${log_path:?}/.data.mini.json"
 }
 
 build_jail_json() {
 	required_env build_jail_json log_path_jail! ''
 	local empty
 
-	lock_have "json_jail_${MASTERNAME}" ||
+	lock_have "json_jail_${MASTERNAME:?}" ||
 		err 1 "build_jail_json requires slock json_jail_${MASTERNAME}"
-	for empty in ${log_path_jail}/*/.data.mini.json; do
+	for empty in "${log_path_jail:?}"/*/.data.mini.json; do
 		case "${empty}" in
 		# Empty
 		"${log_path_jail}/*/.data.mini.json") return 0 ;;
@@ -122,12 +122,12 @@ build_jail_json() {
 	done
 	{
 		echo "{\"builds\":{"
-		echo ${log_path_jail}/*/.data.mini.json | \
-		    xargs /usr/bin/awk -f ${AWKPREFIX}/json_jail.awk | \
+		echo "${log_path_jail:?}"/*/.data.mini.json | \
+		    xargs /usr/bin/awk -f "${AWKPREFIX:?}/json_jail.awk" |
 		    /usr/bin/sed -e '/^$/d' | \
 		    paste -s -d , -
 		echo "}}"
-	} | write_atomic_cmp "${log_path_jail}/.data.json"
+	} | write_atomic_cmp "${log_path_jail:?}/.data.json"
 }
 
 build_top_json() {
@@ -137,7 +137,7 @@ build_top_json() {
 	lock_have "json_top" ||
 		err 1 "build_top_json requires slock json_top"
 	(
-		cd "${log_path_top}"
+		cd "${log_path_top:?}"
 		for empty in */latest/.data.mini.json; do
 			case "${empty}" in
 			# Empty
@@ -147,11 +147,11 @@ build_top_json() {
 		done
 		echo "{\"masternames\":{"
 		echo */latest/.data.mini.json | \
-		    xargs /usr/bin/awk -f ${AWKPREFIX}/json_top.awk 2>/dev/null | \
+		    xargs /usr/bin/awk -f "${AWKPREFIX:?}/json_top.awk" 2>/dev/null | \
 		    /usr/bin/sed -e '/^$/d' | \
 		    paste -s -d , -
 		echo "}}"
-	) | write_atomic_cmp "${log_path_top}/.data.json"
+	) | write_atomic_cmp "${log_path_top:?}/.data.json"
 }
 
 # This is called at the end
@@ -175,7 +175,7 @@ install_html_files() {
 	# mostly a problem in tests.
 	if slock_acquire -q html_base 0; then
 		# Update the base copy
-		do_clone_del -r "${src}" "${base}"
+		do_clone_del -r "${src:?}" "${base:?}"
 
 		# Mark this HTML as inline rather than hosted. This means
 		# it will support Indexes and file://, rather than the
@@ -184,10 +184,10 @@ install_html_files() {
 		# results in a 404 for every page load.
 		if [ "${HTML_TYPE}" = "inline" ]; then
 		    if grep -q 'server_style = "hosted"' \
-			"${base}/index.html"; then
+			"${base:?}/index.html"; then
 			    sed -i '' -e \
 			    's/server_style = "hosted"/server_style = "inline"/' \
-			    ${base}/*.html
+			    "${base:?}"/*.html
 		    fi
 		fi
 
@@ -196,13 +196,13 @@ install_html_files() {
 
 	# All processes need to make a copy of the base files.
 	if slock_acquire -q html_base 5; then
-		mkdir -p "${dest}"
+		mkdir -p "${dest:?}"
 		# Hardlink-copy the base into the destination dir.
-		cp -xal "${base}/" "${dest}/"
+		cp -xal "${base:?}/" "${dest:?}/"
 
 		# Symlink the build
-		ln -fs build.html "${dest}/index.html"
-		unlink "${dest}/jail.html"
+		ln -fs build.html "${dest:?}/index.html"
+		unlink "${dest:?}/jail.html"
 
 		slock_release html_base
 	fi

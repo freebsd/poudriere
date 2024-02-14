@@ -38,11 +38,11 @@ pkgqueue_get_next() {
 
 	# CWD is MASTER_DATADIR/pool
 
-	p=$(find ${POOL_BUCKET_DIRS} -type d -depth 1 -empty -print -quit) ||
+	p=$(find ${POOL_BUCKET_DIRS:?} -type d -depth 1 -empty -print -quit) ||
 	    err "${EX_SOFTWARE}" "pkgqueue_get_next: Failed to search queue"
 	if [ -n "$p" ]; then
 		_pkgname=${p##*/}
-		if ! rename "${p}" "${MASTER_DATADIR}/building/${_pkgname}" \
+		if ! rename "${p}" "${MASTER_DATADIR:?}/building/${_pkgname}" \
 		    2>/dev/null; then
 			# Was the failure from /unbalanced?
 			if [ -z "${p%%*unbalanced/*}" ]; then
@@ -58,7 +58,7 @@ pkgqueue_get_next() {
 			fi
 		fi
 		# Update timestamp for buildtime accounting
-		touch "${MASTER_DATADIR}/building/${_pkgname}"
+		touch "${MASTER_DATADIR:?}/building/${_pkgname}"
 	fi
 
 	setvar "${pkgname_var}" "${_pkgname}"
@@ -68,13 +68,13 @@ pkgqueue_get_next() {
 }
 
 pkgqueue_init() {
-	mkdir -p "${MASTER_DATADIR}/building" \
-		"${MASTER_DATADIR}/pool" \
-		"${MASTER_DATADIR}/pool/unbalanced" \
-		"${MASTER_DATADIR}/deps" \
-		"${MASTER_DATADIR}/rdeps" \
-		"${MASTER_DATADIR}/cleaning/deps" \
-		"${MASTER_DATADIR}/cleaning/rdeps"
+	mkdir -p "${MASTER_DATADIR:?}/building" \
+		"${MASTER_DATADIR:?}/pool" \
+		"${MASTER_DATADIR:?}/pool/unbalanced" \
+		"${MASTER_DATADIR:?}/deps" \
+		"${MASTER_DATADIR:?}/rdeps" \
+		"${MASTER_DATADIR:?}/cleaning/deps" \
+		"${MASTER_DATADIR:?}/cleaning/rdeps"
 }
 
 pkgqueue_contains() {
@@ -229,7 +229,7 @@ pkgqueue_done() {
 	local clean_rdepends="$2"
 
 	(
-		cd "${MASTER_DATADIR}"
+		cd "${MASTER_DATADIR:?}"
 		pkgqueue_clean_pool "${pkgname}" "${clean_rdepends}"
 	) | sort -u
 
@@ -308,10 +308,10 @@ pkgqueue_remaining() {
 
 	{
 		# Find items in pool ready-to-build
-		( cd "${MASTER_DATADIR}/pool"; find . -type d -depth 2 | \
+		( cd "${MASTER_DATADIR:?}/pool"; find . -type d -depth 2 | \
 		    sed -e 's,$, ready-to-build,' )
 		# Find items in queue not ready-to-build.
-		( cd "${MASTER_DATADIR}"; pkgqueue_list ) | \
+		( cd "${MASTER_DATADIR:?}"; pkgqueue_list ) | \
 		    sed -e 's,$, waiting-on-dependency,'
 	} 2>/dev/null | sed -e 's,.*/,,'
 	return 0
@@ -332,7 +332,7 @@ pkgqueue_sanity_check() {
 	local failed_phase pwd dead_packages
 
 	pwd="${PWD}"
-	cd "${MASTER_DATADIR}"
+	cd "${MASTER_DATADIR:?}"
 
 	# If there are still packages marked as "building" they have crashed
 	# and it's likely some poudriere or system bug
@@ -388,10 +388,10 @@ pkgqueue_empty() {
 	local n
 
 	if [ -z "${ALL_DEPS_DIRS}" ]; then
-		ALL_DEPS_DIRS=$(find ${MASTER_DATADIR}/deps -mindepth 1 -maxdepth 1 -type d)
+		ALL_DEPS_DIRS=$(find ${MASTER_DATADIR:?}/deps -mindepth 1 -maxdepth 1 -type d)
 	fi
 
-	dirs="${ALL_DEPS_DIRS} ${POOL_BUCKET_DIRS}"
+	dirs="${ALL_DEPS_DIRS} ${POOL_BUCKET_DIRS:?}"
 
 	n=0
 	# Check twice that the queue is empty. This avoids racing with

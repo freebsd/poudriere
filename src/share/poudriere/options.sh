@@ -156,7 +156,7 @@ if [ -n "${JAILNAME}" -a -n "${ARCH}" ]; then
 fi
 
 export PORTSDIR=`pget ${PTNAME} mnt`
-[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
+[ -d "${PORTSDIR:?}/ports" ] && PORTSDIR="${PORTSDIR:?}/ports"
 [ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"
 if command -v portconfig >/dev/null 2>&1; then
 	d4p=portconfig
@@ -195,10 +195,10 @@ options_cleanup() {
 	rm -f ${__MAKE_CONF}
 }
 setup_makeconf ${__MAKE_CONF} "${JAILNAME}" "${PTNAME}" "${SETNAME}"
-fetch_global_port_vars
+MASTERMNT= fetch_global_port_vars
 
 export TERM=${SAVED_TERM}
-ports="$(listed_ports show_moved)" ||
+ports="$(MASTERMNTREL= listed_ports show_moved)" ||
     err "$?" "Failed to list ports"
 for originspec in ${ports}; do
 	originspec_decode "${originspec}" origin flavor ''

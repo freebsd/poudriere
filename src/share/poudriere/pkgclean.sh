@@ -164,13 +164,13 @@ else
 	read_packages_from_params "$@"
 fi
 
-PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
+PACKAGES="${POUDRIERE_DATA:?}/packages/${MASTERNAME:?}"
 if [ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ]; then
-	if [ -d "${PACKAGES}/.building" ]; then
+	if [ -d "${PACKAGES:?}/.building" ]; then
 		msg "Cleaning in previously failed build directory"
-		PACKAGES="${PACKAGES}/.building"
+		PACKAGES="${PACKAGES:?}/.building"
 	else
-		PACKAGES="${PACKAGES}/.latest"
+		PACKAGES="${PACKAGES:?}/.latest"
 	fi
 fi
 
@@ -201,10 +201,10 @@ bset status "pkgclean:"
 
 CLEANUP_HOOK=pkgclean_cleanup
 pkgclean_cleanup() {
-	rm -f ${BADFILES_LIST} ${FOUND_ORIGINS} 2>/dev/null
+	rm -f "${BADFILES_LIST:?}" "${FOUND_ORIGINS:?}" 2>/dev/null
 }
-BADFILES_LIST=$(mktemp -t poudriere_pkgclean)
-FOUND_ORIGINS=$(mktemp -t poudriere_pkgclean)
+BADFILES_LIST="$(mktemp -t poudriere_pkgclean)"
+FOUND_ORIGINS="$(mktemp -t poudriere_pkgclean)"
 
 should_delete() {
 	[ $# -eq 1 ] || eargs should_delete pkgfile
@@ -226,7 +226,7 @@ should_delete() {
 		should_delete_listed "${pkgfile}" "${origin}" "${pkgname}" ||
 		    ret="$?"
 	else
-		echo "${pkgfile} ${origin}" >> "${FOUND_ORIGINS}"
+		echo "${pkgfile} ${origin}" >> "${FOUND_ORIGINS:?}"
 	fi
 	return "${ret}"
 }
@@ -275,11 +275,11 @@ should_delete_listed() {
 	return 1 # keep
 }
 
-for file in ${PACKAGES}/All/*; do
+for file in ${PACKAGES:?}/All/*; do
 	case ${file} in
 	*.${PKG_EXT})
 		if should_delete "${file}"; then
-			echo "${file}" >> "${BADFILES_LIST}"
+			echo "${file}" >> "${BADFILES_LIST:?}"
 		fi
 		;;
 	*.txz)
@@ -295,7 +295,7 @@ for file in ${PACKAGES}/All/*; do
 		;&
 	*)
 		msg_verbose "Found incorrect format file: ${file}"
-		echo "${file}" >> ${BADFILES_LIST}
+		echo "${file}" >> "${BADFILES_LIST:?}"
 		;;
 	esac
 done
@@ -314,7 +314,7 @@ pkg_compare() {
 
 # Check for duplicated origins (older packages) and keep only newer ones
 # This also grouped by pkgbase to respect PKGNAME uniqueness
-sort ${FOUND_ORIGINS} | awk '
+sort "${FOUND_ORIGINS:?}" | awk '
 {
 	pkg = $1
 	origin = $2
@@ -355,13 +355,13 @@ END {
 		case ${pkg_compare} in
 			'>')
 				msg_verbose "Found old package: ${lastpkg}"
-				echo "${lastpkg}" >> ${BADFILES_LIST}
+				echo "${lastpkg}" >> "${BADFILES_LIST:?}"
 				lastpkg="${pkg}"
 				lastver="${pkgversion}"
 				;;
 			'<')
 				msg_verbose "Found old package: ${pkg}"
-				echo "${pkg}" >> ${BADFILES_LIST}
+				echo "${pkg}" >> "${BADFILES_LIST:?}"
 				;;
 			'=')
 				# This should be impossible now due to the
@@ -393,14 +393,14 @@ if [ "${ret}" -eq 1 ] || [ "${FORCE_BUILD_REPO}" -eq 1 ]; then
 	if [ ${BUILD_REPO} -eq 1 ]; then
 		if [ ${DO_ALL} -eq 1 ]; then
 			msg "Removing pkg repository files"
-			rm -f "${PACKAGES}/meta.txz" \
-				"${PACKAGES}/meta.${PKG_EXT}" \
-				"${PACKAGES}/digests.txz" \
-				"${PACKAGES}/digests.${PKG_EXT}" \
-				"${PACKAGES}/filesite.txz" \
-				"${PACKAGES}/filesite.${PKG_EXT}" \
-				"${PACKAGES}/packagesite.txz" \
-				"${PACKAGES}/packagesite.${PKG_EXT}"
+			rm -f "${PACKAGES:?}/meta.txz" \
+				"${PACKAGES:?}/meta.${PKG_EXT}" \
+				"${PACKAGES:?}/digests.txz" \
+				"${PACKAGES:?}/digests.${PKG_EXT}" \
+				"${PACKAGES:?}/filesite.txz" \
+				"${PACKAGES:?}/filesite.${PKG_EXT}" \
+				"${PACKAGES:?}/packagesite.txz" \
+				"${PACKAGES:?}/packagesite.${PKG_EXT}"
 		else
 			build_repo
 		fi

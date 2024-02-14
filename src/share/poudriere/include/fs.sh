@@ -26,9 +26,9 @@
 createfs() {
 	[ $# -eq 3 ] || eargs createfs name mnt fs
 	local name mnt fs
-	name=$1
-	mnt=$(echo $2 | sed -e "s,//,/,g")
-	fs=$3
+	name="$1"
+	mnt="$(echo $2 | sed -e "s,//,/,g")"
+	fs="$3"
 
 	[ -z "${NO_ZFS}" ] || fs=none
 
@@ -37,22 +37,22 @@ createfs() {
 		if ! zfs create -p \
 			-o compression=on \
 			-o atime=off \
-			-o mountpoint=${mnt} ${fs}; then
+			-o mountpoint="${mnt:?}" "${fs:?}"; then
 			echo " fail"
 			err 1 "Failed to create FS ${fs}"
 		fi
 		echo " done"
 		# Must invalidate the zfs_getfs cache now in case of a
 		# negative entry.
-		cache_invalidate _zfs_getfs "${mnt}"
+		cache_invalidate _zfs_getfs "${mnt:?}"
 	else
 		msg_n "Creating ${name} fs at ${mnt}..."
-		if ! mkdir -p "${mnt}"; then
+		if ! mkdir -p "${mnt:?}"; then
 			echo " fail"
 			err 1 "Failed to create directory ${mnt}"
 		fi
 		# If the directory is non-empty then we didn't create it.
-		if ! dirempty "${mnt}"; then
+		if ! dirempty "${mnt:?}"; then
 			echo " fail"
 			err 1 "Directory not empty at ${mnt}"
 		fi
@@ -184,7 +184,7 @@ rollbackfs() {
 		return
 	fi
 
-	do_clone_del -rx "${MASTERMNT}" "${mnt}"
+	do_clone_del -rx "${MASTERMNT:?}" "${mnt:?}"
 }
 
 findmounts() {
@@ -243,9 +243,9 @@ _zfs_getfs() {
 	[ $# -eq 1 ] || eargs _zfs_getfs mnt
 	local mnt="${1}"
 
-	mntres=$(realpath -q "${mnt}" || echo "${mnt}")
-	zfs list -rt filesystem -H -o name,mountpoint ${ZPOOL}${ZROOTFS} | \
-	    awk -vmnt="${mntres}" '$2 == mnt {print $1}'
+	mntres=$(realpath -q "${mnt:?}" || echo "${mnt:?}")
+	zfs list -rt filesystem -H -o name,mountpoint ${ZPOOL:?}${ZROOTFS:?} | \
+	    awk -vmnt="${mntres:?}" '$2 == mnt {print $1}'
 }
 
 zfs_getfs() {
@@ -282,7 +282,7 @@ mnt_tmpfs() {
 	size=
 	[ -n "${limit}" ] && size="-o size=${limit}G"
 
-	mount -t tmpfs ${size} tmpfs "${dst}"
+	mount -t tmpfs ${size} tmpfs "${dst:?}"
 }
 
 clonefs() {
@@ -353,10 +353,10 @@ clonefs() {
 				echo ".cpignore"
 			} > "${cpignore}"
 		fi
-		do_clone -r ${cpignore:+-X "${cpignore}"} "${from}" "${mnt}"
+		do_clone -r ${cpignore:+-X "${cpignore}"} "${from}" "${mnt:?}"
 		if [ "${snap}" = "clean" ]; then
 			rm -f "${cpignore}"
-			echo "${DATADIR_NAME}" >> "${mnt}/.cpignore"
+			echo "${DATADIR_NAME}" >> "${mnt:?}/.cpignore"
 		fi
 	fi
 }
@@ -387,30 +387,30 @@ destroyfs() {
 	local type="$2"
 	local fs
 
-	umountfs ${mnt} 1
+	umountfs "${mnt:?}" 1
 	if [ ${TMPFS_ALL} -eq 1 ]; then
-		if [ -d "${mnt}" ]; then
-			if ! umount -n "${mnt}" 2>/dev/null; then
-				umount -f "${mnt}" 2>/dev/null || :
+		if [ -d "${mnt:?}" ]; then
+			if ! umount -n "${mnt:?}" 2>/dev/null; then
+				umount -f "${mnt:?}" 2>/dev/null || :
 			fi
 		fi
 	else
 		if [ -n "${NO_ZFS}" ]; then
 			fs=none
 		else
-			fs=$(zfs_getfs ${mnt})
+			fs=$(zfs_getfs "${mnt:?}")
 		fi
 		if [ -n "${fs}" -a "${fs}" != "none" ]; then
 			zfs destroy -rf ${fs}
-			rmdir ${mnt} || :
+			rmdir "${mnt:?}" || :
 			# Must invalidate the zfs_getfs cache.
-			cache_invalidate _zfs_getfs "${mnt}"
+			cache_invalidate _zfs_getfs "${mnt:?}"
 		else
-			[ -d ${mnt} ] || return 0
-			rm -rfx ${mnt} 2>/dev/null || :
-			if [ -d "${mnt}" ]; then
-				chflags -R 0 ${mnt}
-				rm -rfx ${mnt}
+			[ -d "${mnt:?}" ] || return 0
+			rm -rfx "${mnt:?}" 2>/dev/null || :
+			if [ -d "${mnt:?}" ]; then
+				chflags -R 0 "${mnt:?}"
+				rm -rfx "${mnt:?}"
 			fi
 		fi
 	fi

@@ -171,7 +171,7 @@ shash_remove_var() {
 
 	# This assumes globbing works
 	_shash_var_name "${var}%*"
-	find -x "${SHASH_VAR_PATH}" \
+	find -x "${SHASH_VAR_PATH:?}" \
 	    -name "${SHASH_VAR_PREFIX}${_shash_var_name}" \
 	    -delete || :
 }

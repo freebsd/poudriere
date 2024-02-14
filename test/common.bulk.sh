@@ -736,5 +736,5 @@ MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 _mastermnt MASTERMNT
 export POUDRIERE_BUILD_TYPE=bulk
 _log_path log
-: ${PACKAGES:=${POUDRIERE_DATA}/packages/${MASTERNAME}}
+: ${PACKAGES:=${POUDRIERE_DATA:?}/packages/${MASTERNAME:?}}
 set +e

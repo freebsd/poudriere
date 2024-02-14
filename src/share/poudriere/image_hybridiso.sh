@@ -54,7 +54,7 @@ hybridiso_build()
 	/dev/iso9660/${imageupper} / cd9660 ro 0 0
 	tmpfs /tmp tmpfs rw,mode=1777 0 0
 	EOF
-	do_clone -r ${WRKDIR}/world/boot ${WRKDIR}/out/boot
+	do_clone -r ${WRKDIR:?}/world/boot ${WRKDIR:?}/out/boot
 }
 
 hybridiso_generate()

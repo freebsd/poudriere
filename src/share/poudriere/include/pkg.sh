@@ -54,7 +54,7 @@ pkg_get_annotations() {
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
 	if ! shash_exists 'pkg' 'annotations'; then
-		injail ${PKG_BIN} query -F "/packages/All/${pkg##*/}" \
+		injail ${PKG_BIN:?} query -F "/packages/All/${pkg##*/}" \
 		    '%At %Av' | sort |
 		    shash_write 'pkg' 'annotations'
 	fi
@@ -226,15 +226,15 @@ pkg_cacher_queue() {
 
 	encode_args encoded_data "$@"
 
-	echo "${encoded_data}" > ${MASTER_DATADIR}/pkg_cacher.pipe
+	echo "${encoded_data}" > ${MASTER_DATADIR:?}/pkg_cacher.pipe
 }
 
 pkg_cacher_main() {
 	local pkg work pkgname origin flavor
 	local IFS
 
-	mkfifo ${MASTER_DATADIR}/pkg_cacher.pipe
-	exec 6<> ${MASTER_DATADIR}/pkg_cacher.pipe
+	mkfifo ${MASTER_DATADIR:?}/pkg_cacher.pipe
+	exec 6<> ${MASTER_DATADIR:?}/pkg_cacher.pipe
 
 	trap exit TERM
 	trap pkg_cacher_cleanup EXIT
@@ -254,11 +254,11 @@ pkg_cacher_main() {
 pkg_cacher_cleanup() {
 	local IFS; unset IFS;
 
-	unlink ${MASTER_DATADIR}/pkg_cacher.pipe
+	unlink ${MASTER_DATADIR:?}/pkg_cacher.pipe
 }
 
 get_cache_dir() {
-	setvar "${1}" "${POUDRIERE_DATA}/cache/${MASTERNAME:?}"
+	setvar "${1}" "${POUDRIERE_DATA:?}/cache/${MASTERNAME:?}"
 }
 
 # Return the cache dir for the given pkg
@@ -284,7 +284,7 @@ get_pkg_cache_dir() {
 		pkg_mtime=$(stat -f %m "${pkg}")
 	fi
 
-	pkg_dir="${cache_dir}/${pkg_file}/${pkg_mtime}"
+	pkg_dir="${cache_dir:?}/${pkg_file:?}/${pkg_mtime}"
 
 	if [ "${use_mtime}" -eq 1 ]; then
 		[ -d "${pkg_dir}" ] || mkdir -p "${pkg_dir}"

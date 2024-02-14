@@ -177,7 +177,7 @@ cleanup_new_ports() {
 	if [ "${CREATED_FS}" -eq 1 ] && [ "${METHOD}" != "null" ]; then
 		TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
 	fi
-	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
+	rm -rf "${POUDRIERED:?}/ports/${PTNAME:?}" || :
 }
 
 check_portsnap_interactive() {
@@ -339,7 +339,7 @@ delete)
 			TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
 		fi
 	fi
-	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
+	rm -rf "${POUDRIERED:?}/ports/${PTNAME:?}" || :
 	echo " done"
 	;;
 

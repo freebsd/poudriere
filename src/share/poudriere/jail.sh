@@ -105,7 +105,7 @@ list_jail() {
 		display_add JAILNAME
 	fi
 	[ -d ${POUDRIERED}/jails ] || return 0
-	jails="$(find "${POUDRIERED}/jails" -type d \
+	jails="$(find "${POUDRIERED:?}/jails" -type d \
 	    -maxdepth 1 -mindepth 1 -print)"
 	for j in ${jails}; do
 		name=${j##*/}
@@ -160,8 +160,8 @@ delete_jail() {
 		TMPFS_ALL=0 destroyfs ${JAILMNT} jail || :
 	fi
 	cache_dir="${POUDRIERE_DATA}/cache/${JAILNAME}-*"
-	rm -rfx ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} \
-		${POUDRIERE_DATA}/.m/${JAILNAME}-* || :
+	rm -rfx ${POUDRIERED:?}/jails/${JAILNAME} ${cache_dir} \
+		${POUDRIERE_DATA:?}/.m/${JAILNAME}-* || :
 	echo " done"
 	if [ "${CLEANJAIL}" = "none" ]; then
 		return 0
@@ -175,7 +175,7 @@ delete_jail() {
 		wrkdirs) cleandir="${POUDRIERE_DATA}/wkdirs"; depth=1 ;;
 	esac
 	if [ -n "${clean_dir}" ]; then
-		find -x "${clean_dir}/" -name "${JAILNAME}-*" \
+		find -x "${clean_dir:?}/" -name "${JAILNAME}-*" \
 		    ${depth:+-maxdepth ${depth}} -print0 | \
 		    xargs -0 rm -rfx || :
 	fi
@@ -210,9 +210,9 @@ rename_jail() {
 
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	msg_n "Renaming '${JAILNAME}' in '${NEWJAILNAME}'"
-	mv ${POUDRIERED}/jails/${JAILNAME} ${POUDRIERED}/jails/${NEWJAILNAME}
-	cache_dir="${POUDRIERE_DATA}/cache/${JAILNAME}-*"
-	rm -rf ${cache_dir} >/dev/null 2>&1 || :
+	mv ${POUDRIERED:?}/jails/${JAILNAME} ${POUDRIERED:?}/jails/${NEWJAILNAME}
+	cache_dir="${POUDRIERE_DATA:?}/cache/${JAILNAME}-*"
+	rm -rf ${cache_dir:?} >/dev/null 2>&1 || :
 	echo " done"
 	msg_warn "The packages, logs and filesystems have not been renamed."
 	msg_warn "If you choose to rename the filesystem then modify the 'mnt' and 'fs' files in ${POUDRIERED}/jails/${NEWJAILNAME}"
@@ -229,7 +229,7 @@ update_pkgbase() {
 	msg "Starting make update-packages"
 	env ${PKG_REPO_SIGNING_KEY:+PKG_REPO_SIGNING_KEY="${PKG_REPO_SIGNING_KEY}"} IGNORE_OSMAJOR=y \
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} update-packages \
-			KERNCONF="${KERNEL}" DESTDIR="${destdir}" \
+			KERNCONF="${KERNEL}" DESTDIR="${destdir:?}" \
 			REPODIR="${POUDRIERE_DATA}/images/${JAILNAME}-repo" \
 			NO_INSTALLEXTRAKERNELS=no ${MAKEWORLDARGS}
 	case $? in
@@ -240,7 +240,7 @@ update_pkgbase() {
 	    2)
 		env ${PKG_REPO_SIGNING_KEY:+PKG_REPO_SIGNING_KEY="${PKG_REPO_SIGNING_KEY}"} \
 			${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages \
-				KERNCONF="${KERNEL}" DESTDIR="${destdir}" \
+				KERNCONF="${KERNEL}" DESTDIR="${destdir:?}" \
 				REPODIR="${POUDRIERE_DATA}/images/${JAILNAME}-repo" \
 				NO_INSTALLEXTRAKERNELS=no ${MAKEWORLDARGS} || \
 			err 1 "Failed to 'make packages'"
@@ -335,7 +335,7 @@ update_jail() {
 		fi
 		unset_cross_env
 
-		rm -f "${fu_bin}"
+		rm -f "${fu_bin:?}"
 		update_version
 		build_native_xtools
 		markfs clean ${JAILMNT}
@@ -343,14 +343,14 @@ update_jail() {
 	svn*|git*)
 		install_from_vcs version_extra
 		RELEASE=$(update_version "${version_extra}")
-		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
+		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT:?} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
 	src=*)
 		SRC_BASE="${METHOD#src=}"
 		install_from_src version_extra
 		RELEASE=$(update_version "${version_extra}")
-		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
+		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT:?} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
 	gjb|url=*|freebsdci)
@@ -395,17 +395,17 @@ installworld() {
 
 	msg "Starting make installworld"
 	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} installworld \
-	    DESTDIR=${destdir} DB_FROM_SRC=1 ${MAKEWORLDARGS} || \
+	    DESTDIR=${destdir:?} DB_FROM_SRC=1 ${MAKEWORLDARGS} || \
 	    err 1 "Failed to 'make installworld'"
-	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} DESTDIR=${destdir} \
+	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} DESTDIR=${destdir:?} \
 	    DB_FROM_SRC=1 distrib-dirs ${MAKEWORLDARGS} || \
 	    err 1 "Failed to 'make distrib-dirs'"
-	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} DESTDIR=${destdir} \
+	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} DESTDIR=${destdir:?} \
 	    distribution ${MAKEWORLDARGS} || err 1 "Failed to 'make distribution'"
 	if [ -n "${KERNEL}" ]; then
 		msg "Starting make installkernel"
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} installkernel \
-		    KERNCONF="${KERNEL}" NO_INSTALLEXTRAKERNELS=no DESTDIR=${destdir} ${MAKEWORLDARGS} || \
+		    KERNCONF="${KERNEL}" NO_INSTALLEXTRAKERNELS=no DESTDIR=${destdir:?} ${MAKEWORLDARGS} || \
 		    err 1 "Failed to 'make installkernel'"
 	fi
 
@@ -423,7 +423,7 @@ build_pkgbase() {
 	msg "Starting make packages"
 	env ${PKG_REPO_SIGNING_KEY:+PKG_REPO_SIGNING_KEY="${PKG_REPO_SIGNING_KEY}"} \
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages \
-			KERNCONF="${KERNEL}" DESTDIR=${destdir} \
+			KERNCONF="${KERNEL}" DESTDIR=${destdir:?} \
 			REPODIR=${POUDRIERE_DATA}/images/${JAILNAME}-repo \
 			NO_INSTALLEXTRAKERNELS=no ${MAKEWORLDARGS} || \
 		err 1 "Failed to 'make packages'"
@@ -481,21 +481,21 @@ setup_build_env() {
 setup_src_conf() {
 	local src="$1"
 
-	if [ -f "${JAILMNT}/etc/${src}.conf" ]; then
-		rm -f "${JAILMNT}/etc/${src}.conf"
+	if [ -f "${JAILMNT:?}/etc/${src}.conf" ]; then
+		rm -f "${JAILMNT:?}/etc/${src}.conf"
 	fi
-	touch "${JAILMNT}/etc/${src}.conf"
-	if [ -f "${POUDRIERED}/${src}.conf" ]; then
-		cat "${POUDRIERED}/${src}.conf" > "${JAILMNT}/etc/${src}.conf"
+	touch "${JAILMNT:?}/etc/${src}.conf"
+	if [ -f "${POUDRIERED:?}/${src}.conf" ]; then
+		cat "${POUDRIERED:?}/${src}.conf" > "${JAILMNT}/etc/${src}.conf"
 	fi
 	if [ -n "${SETNAME}" ] &&
-	    [ -f "${POUDRIERED}/${SETNAME}-${src}.conf" ]; then
-		cat "${POUDRIERED}/${SETNAME}-${src}.conf" >> \
-		    "${JAILMNT}/etc/${src}.conf"
+	    [ -f "${POUDRIERED:?}/${SETNAME}-${src}.conf" ]; then
+		cat "${POUDRIERED:?}/${SETNAME}-${src}.conf" >> \
+		    "${JAILMNT:?}/etc/${src}.conf"
 	fi
-	if [ -f "${POUDRIERED}/${JAILNAME}-${src}.conf" ]; then
-		cat "${POUDRIERED}/${JAILNAME}-${src}.conf" >> \
-		    "${JAILMNT}/etc/${src}.conf"
+	if [ -f "${POUDRIERED:?}/${JAILNAME}-${src}.conf" ]; then
+		cat "${POUDRIERED:?}/${JAILNAME}-${src}.conf" >> \
+		    "${JAILMNT:?}/etc/${src}.conf"
 	fi
 }
 
@@ -546,14 +546,14 @@ build_native_xtools() {
 	${MAKE_CMD} -C ${XDEV_SRC} native-xtools ${MAKE_JOBS} \
 	    ${BUILTWORLD:+-DNO_NXBTOOLCHAIN} \
 	    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools' in ${XDEV_SRC}"
-	rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
+	rm -rf ${JAILMNT:?}/nxb-bin || err 1 "Failed to remove old native-xtools"
 	# Check for native-xtools-install support
 	NXTP=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
 	    ${MAKE_CMD} -C ${XDEV_SRC} -f Makefile.inc1 -V NXTP)
 	if [ -n "${NXTP}" ]; then
 		# New style, we call native-xtools-install
 		${MAKE_CMD} -C ${XDEV_SRC} native-xtools-install ${MAKE_JOBS} \
-		    DESTDIR=${JAILMNT} NXTP=/nxb-bin || \
+		    DESTDIR=${JAILMNT:?} NXTP=/nxb-bin || \
 		    err 1 "Failed to 'make native-xtools-install' in ${XDEV_SRC}"
 	else
 		# Old style, we guess or ask where the files were dropped
@@ -598,7 +598,7 @@ install_from_src() {
 		.svn
 		EOF
 	fi
-	do_clone -r ${cpignore_flag} ${SRC_BASE} ${JAILMNT}/usr/src
+	do_clone -r ${cpignore_flag} "${SRC_BASE:?}" "${JAILMNT:?}/usr/src"
 	if [ -n "${cpignore}" ]; then
 		rm -f "${cpignore}"
 	fi
@@ -855,7 +855,7 @@ install_from_ftp() {
 	esac
 
 	msg_n "Cleaning up..."
-	rm -rf ${JAILMNT}/fromftp/
+	rm -rf ${JAILMNT:?}/fromftp/
 	echo " done"
 
 	check_kernconf
