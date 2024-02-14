@@ -138,7 +138,6 @@ CLEANUP_HOOK=distfiles_cleanup
 read_packages_from_params "$@"
 
 for PTNAME in ${PTNAMES}; do
-	: ${DEP_FATAL_ERROR_FILE:=dep_fatal_error-$$}
 	clear_dep_fatal_error
 	parallel_start
 

@@ -6573,6 +6573,11 @@ set_dep_fatal_error() {
 	if [ -n "${DEP_FATAL_ERROR}" ]; then
 		return 0
 	fi
+	case "${ERRORS_ARE_DEP_FATAL:+set}" in
+	set) ;;
+	# Running in a context where we should error now rather than delay.
+	*) return 1 ;;
+	esac
 	DEP_FATAL_ERROR=1
 	# Mark the fatal error flag. Must do it like this as this may be
 	# running in a sub-shell.
@@ -7474,14 +7479,14 @@ _listed_ports() {
 		originspec_decode "${originspec}" origin flavor ''
 		if [ -n "${flavor}" ] && ! have_ports_feature FLAVORS; then
 			msg_error "Trying to build FLAVOR-specific ${originspec} but ports tree has no FLAVORS support."
-			set_dep_fatal_error
+			set_dep_fatal_error || return
 			continue
 		fi
 		origin_listed="${origin}"
 		if shash_get origin-moved "${origin}" new_origin; then
 			if [ "${new_origin%% *}" = "EXPIRED" ]; then
 				msg_error "MOVED: ${origin} ${new_origin}"
-				set_dep_fatal_error
+				set_dep_fatal_error || return
 				continue
 			fi
 			originspec="${new_origin}"
@@ -7491,7 +7496,7 @@ _listed_ports() {
 		fi
 		if ! test_port_origin_exist "${origin}"; then
 			msg_error "Nonexistent origin listed: ${COLOR_PORT}${origin_listed}${new_origin:+${COLOR_RESET} (moved to nonexistent ${COLOR_PORT}${new_origin}${COLOR_RESET})}"
-			set_dep_fatal_error
+			set_dep_fatal_error || return
 			continue
 		fi
 		if [ -n "${tell_moved}" ] && [ -n "${new_origin}" ]; then
@@ -8942,7 +8947,7 @@ export LC_COLLATE
 
 : ${MAX_FILES:=8192}
 : ${DEFAULT_MAX_FILES:=${MAX_FILES}}
-: ${DEP_FATAL_ERROR_FILE:=dep_fatal_error}
+: ${DEP_FATAL_ERROR_FILE:=dep_fatal_error-$$}
 HAVE_FDESCFS=0
 if [ "$(mount -t fdescfs | awk '$3 == "/dev/fd" {print $3}')" = "/dev/fd" ]; then
 	HAVE_FDESCFS=1
