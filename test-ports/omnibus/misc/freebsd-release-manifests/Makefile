@@ -3,10 +3,10 @@
 PORTNAME=	freebsd-release-manifests
 DISTVERSION=	20161010
 PORTREVISION=	0
-FLAVORS=	DEFAULT FOO BAR
-FLAVOR?=	DEFAULT
-.if ${FLAVOR} != DEFAULT && !empty(FLAVORS:M${FLAVOR})
-PKGNAMESUFFIX=	-${FLAVOR}
+FLAVORS=	default foo bar
+FLAVOR?=	default
+.if ${FLAVOR} != default && !empty(FLAVORS:M${FLAVOR})
+PKGNAMESUFFIX=	-${FLAVOR:tu}
 .endif
 CATEGORIES=	misc
 MASTER_SITES=	#
@@ -17,7 +17,7 @@ COMMENT=	FreeBSD release manifests
 
 LICENSE=	BSD2CLAUSE
 
-.if ${FLAVOR} == FOO
+.if ${FLAVOR} == foo
 RUN_DEPENDS+=	foo:misc/foo
 .endif
 

@@ -3,12 +3,12 @@
 PORTNAME=	foo
 DISTVERSION=	20161010
 PORTREVISION=	0
-FLAVORS=	DEFAULT FLAV IGNORED
-FLAVOR?=	DEFAULT
-.if ${FLAVOR} != DEFAULT && !empty(FLAVORS:M${FLAVOR})
-PKGNAMESUFFIX=	-${FLAVOR}
+FLAVORS=	default flav ignored
+FLAVOR?=	default
+.if ${FLAVOR} != default && !empty(FLAVORS:M${FLAVOR})
+PKGNAMESUFFIX=	-${FLAVOR:tu}
 .endif
-.if ${FLAVOR} == IGNORED
+.if ${FLAVOR} == ignored
 IGNORE=		ignored
 .endif
 CATEGORIES=	misc

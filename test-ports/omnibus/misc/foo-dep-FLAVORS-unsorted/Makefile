@@ -3,7 +3,7 @@
 PORTNAME=	foo-dep-FLAVORS-unsorted
 DISTVERSION=	20161010
 PORTREVISION=	0
-FLAVORS=	FLAV DEFAULT IGNORED DEPIGNORED
+FLAVORS=	flav default ignored depignored
 CATEGORIES=	misc
 MASTER_SITES=	#
 DISTFILES=	#
@@ -21,15 +21,15 @@ DATADIR=	${PREFIX}/share/freebsd
 .include <bsd.port.options.mk>
 
 .if empty(FLAVOR)
-FLAVOR=	DEFAULT
+FLAVOR=	default
 .endif
 
-.if ${FLAVOR} != DEFAULT && !empty(FLAVORS:M${FLAVOR})
-PKGNAMESUFFIX=	-${FLAVOR}
+.if ${FLAVOR} != default && !empty(FLAVORS:M${FLAVOR})
+PKGNAMESUFFIX=	-${FLAVOR:tu}
 .endif
-.if ${FLAVOR} == IGNORED
+.if ${FLAVOR} == ignored
 IGNORE=		ignored
-.elif ${FLAVOR} == DEPIGNORED
+.elif ${FLAVOR} == depignored
 IGNORE=		dep ignored
 .endif
 

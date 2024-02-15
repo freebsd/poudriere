@@ -1,4 +1,4 @@
-LISTPORTS="misc/freebsd-release-manifests@FOO ports-mgmt/poudriere-devel-dep-FOO misc/freebsd-release-manifests@nonexistent"
+LISTPORTS="misc/freebsd-release-manifests@foo ports-mgmt/poudriere-devel-dep-FOO misc/freebsd-release-manifests@nonexistent"
 OVERLAYS="omnibus"
 . common.bulk.sh
 

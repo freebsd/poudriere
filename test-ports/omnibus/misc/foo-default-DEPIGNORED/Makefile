@@ -3,10 +3,10 @@
 PORTNAME=	foo-default-DEPIGNORED
 DISTVERSION=	20161010
 PORTREVISION=	0
-FLAVORS=	DEFAULT FLAV
-FLAVOR?=	DEFAULT
-.if ${FLAVOR} != DEFAULT && !empty(FLAVORS:M${FLAVOR})
-PKGNAMESUFFIX=	-${FLAVOR}
+FLAVORS=	default flav
+FLAVOR?=	default
+.if ${FLAVOR} != default && !empty(FLAVORS:M${FLAVOR})
+PKGNAMESUFFIX=	-${FLAVOR:tu}
 .endif
 CATEGORIES=	misc
 MASTER_SITES=	#
@@ -22,8 +22,8 @@ NO_ARCH=	yes
 
 DATADIR=	${PREFIX}/share/freebsd
 
-.if ${FLAVOR} == DEFAULT
-RUN_DEPENDS+=	foo-dep-FLAVORS-unsorted-DEPIGNORED:misc/foo-dep-FLAVORS-unsorted@DEPIGNORED
+.if ${FLAVOR} == default
+RUN_DEPENDS+=	foo-dep-FLAVORS-unsorted-depignored:misc/foo-dep-FLAVORS-unsorted@depignored
 .endif
 
 do-install:

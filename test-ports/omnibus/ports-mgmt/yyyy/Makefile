@@ -28,7 +28,7 @@ OPTIONS_DEFINE=	ZSH EXAMPLES
 OPTIONS_DEFAULT=ZSH
 OPTIONS_SUB=	yes
 
-RUN_DEPENDS+=	foo-FLAV>0:misc/foo@FLAV
+RUN_DEPENDS+=	foo-FLAV>0:misc/foo@flav
 
 .include <bsd.port.options.mk>
 

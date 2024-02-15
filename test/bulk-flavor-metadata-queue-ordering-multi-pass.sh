@@ -17,11 +17,11 @@
 #  -> gqueue
 #   -> ERROR: Already looked up
 #
-# devel-dep-FOO depends on freebsd-release-manifests@FOO
+# devel-dep-FOO depends on freebsd-release-manifests@foo
 # zzzz depends on freebsd-release-manifests (DEFAULT)
-# yyyy depends on devel/foo@FLAV
+# yyyy depends on devel/foo@flav
 # 2nd pass:
-# freebsd-release-manifests@FOO depends on devel/foo (DEFAULT)
+# freebsd-release-manifests@foo depends on devel/foo (DEFAULT)
 LISTPORTS="ports-mgmt/poudriere-devel-dep-FOO ports-mgmt/zzzz ports-mgmt/yyyy"
 OVERLAYS="omnibus"
 . common.bulk.sh
@@ -29,7 +29,7 @@ OVERLAYS="omnibus"
 do_bulk -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
-EXPECTED_QUEUED="misc/foo misc/foo@FLAV misc/freebsd-release-manifests misc/freebsd-release-manifests@FOO ports-mgmt/pkg ports-mgmt/poudriere-devel-dep-FOO ports-mgmt/yyyy ports-mgmt/zzzz"
+EXPECTED_QUEUED="misc/foo misc/foo@flav misc/freebsd-release-manifests misc/freebsd-release-manifests@foo ports-mgmt/pkg ports-mgmt/poudriere-devel-dep-FOO ports-mgmt/yyyy ports-mgmt/zzzz"
 EXPECTED_LISTED="ports-mgmt/poudriere-devel-dep-FOO ports-mgmt/yyyy ports-mgmt/zzzz"
 
 assert_bulk_queue_and_stats

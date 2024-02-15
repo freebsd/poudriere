@@ -1,4 +1,4 @@
-LISTPORTS="misc/freebsd-release-manifests@DEFAULT ports-mgmt/poudriere-devel"
+LISTPORTS="misc/freebsd-release-manifests@default ports-mgmt/poudriere-devel"
 OVERLAYS="omnibus"
 . common.bulk.sh
 

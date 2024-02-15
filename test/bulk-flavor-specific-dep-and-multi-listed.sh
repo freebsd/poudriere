@@ -1,7 +1,7 @@
 LISTPORTS="
-	misc/freebsd-release-manifests@BAR
-	misc/freebsd-release-manifests@FOO
-	misc/freebsd-release-manifests@DEFAULT
+	misc/freebsd-release-manifests@bar
+	misc/freebsd-release-manifests@foo
+	misc/freebsd-release-manifests@default
 	ports-mgmt/poudriere-devel-dep-FOO
 "
 OVERLAYS="omnibus"
@@ -10,7 +10,7 @@ OVERLAYS="omnibus"
 do_bulk -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
-EXPECTED_QUEUED="misc/foo misc/freebsd-release-manifests misc/freebsd-release-manifests@BAR misc/freebsd-release-manifests@FOO ports-mgmt/pkg ports-mgmt/poudriere-devel-dep-FOO"
-EXPECTED_LISTED="misc/freebsd-release-manifests misc/freebsd-release-manifests@BAR misc/freebsd-release-manifests@FOO ports-mgmt/poudriere-devel-dep-FOO"
+EXPECTED_QUEUED="misc/foo misc/freebsd-release-manifests misc/freebsd-release-manifests@bar misc/freebsd-release-manifests@foo ports-mgmt/pkg ports-mgmt/poudriere-devel-dep-FOO"
+EXPECTED_LISTED="misc/freebsd-release-manifests misc/freebsd-release-manifests@bar misc/freebsd-release-manifests@foo ports-mgmt/poudriere-devel-dep-FOO"
 
 assert_bulk_queue_and_stats

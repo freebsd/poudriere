@@ -1,7 +1,7 @@
 FLAVOR_DEFAULT_ALL=no
 FLAVOR_DEFAULT=-
 
-LISTPORTS="misc/foo-default-IGNORED@FLAV"
+LISTPORTS="misc/foo-default-IGNORED@flav"
 OVERLAYS="overlay omnibus"
 . common.bulk.sh
 
@@ -10,7 +10,7 @@ assert 0 $? "Bulk should pass"
 
 EXPECTED_IGNORED=
 EXPECTED_SKIPPED=
-EXPECTED_QUEUED="misc/foo-default-IGNORED@FLAV ports-mgmt/pkg"
-EXPECTED_LISTED="misc/foo-default-IGNORED@FLAV"
+EXPECTED_QUEUED="misc/foo-default-IGNORED@flav ports-mgmt/pkg"
+EXPECTED_LISTED="misc/foo-default-IGNORED@flav"
 
 assert_bulk_queue_and_stats

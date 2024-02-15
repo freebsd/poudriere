@@ -29,7 +29,7 @@ OPTIONS_DEFINE=	ZSH EXAMPLES
 OPTIONS_DEFAULT=ZSH
 OPTIONS_SUB=	yes
 
-RUN_DEPENDS+=	freebsd-release-manifests>0:misc/freebsd-release-manifests@DEFAULT
+RUN_DEPENDS+=	freebsd-release-manifests>0:misc/freebsd-release-manifests@default
 
 .include <bsd.port.options.mk>
 
