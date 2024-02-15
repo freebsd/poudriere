@@ -124,8 +124,10 @@ cleanup(void)
 		lockfd = -1;
 	}
 #ifdef SHELL
-	if (did_sigalrm == 1)
+	if (did_sigalrm == 1) {
+		alarm(0);
 		sigaction(SIGALRM, &oact, NULL);
+	}
 	trap_pop(SIGINFO, &oinfo);
 	errno = serrno;
 #endif
@@ -341,6 +343,10 @@ main(int argc, char **argv)
 	while (lockfd == -1 && !timed_out)
 		lockfd = acquire_lock(dirfd, pathbuf);
 	waitsec = alarm(0);
+#ifdef SHELL
+	sigaction(SIGALRM, &oact, NULL);
+	did_sigalrm = 0;
+#endif
 	if (lockfd == -1) {		/* We failed to acquire the lock. */
 #ifdef SHELL
 		cleanup();
