@@ -22,6 +22,7 @@ while read var; do
 	VERBOSE|\
 	SH_DISABLE_VFORK|TIMESTAMP|TRUSS|\
 	HTML_JSON_UPDATE_INTERVAL|\
+	TESTS_SKIP_BUILD|\
 	TMPDIR|\
 	SH) ;;
 	*)
@@ -83,6 +84,13 @@ prep.sh) : ${TIMEOUT:=1800} ;;
 bulk*build*.sh) : ${TIMEOUT:=900} ;;
 bulk*.sh) : ${TIMEOUT:=300} ;;
 locked_mkdir.sh) : ${TIMEOUT:=120} ;;
+esac
+case "${1##*/}" in
+*build*)
+	if [ -n "${TESTS_SKIP_BUILD-}" ]; then
+		exit 77
+	fi
+	;;
 esac
 : ${TIMEOUT:=90}
 : ${TIMESTAMP="${LIBEXECPREFIX}/timestamp" -t -1stdout: -2stderr:}
