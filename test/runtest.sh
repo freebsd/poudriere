@@ -53,6 +53,13 @@ bulk*build*.sh) : ${TIMEOUT:=900} ;;
 bulk*.sh) : ${TIMEOUT:=300} ;;
 locked_mkdir.sh) : ${TIMEOUT:=120} ;;
 esac
+case "${1##*/}" in
+*build*)
+	if [ -n "${TESTS_SKIP_BUILD-}" ]; then
+		exit 77
+	fi
+	;;
+esac
 : ${TIMEOUT:=90}
 
 [ "${am_check}" -eq 0 ] && [ -t 0 ] && export FORCE_COLORS=1
@@ -63,7 +70,7 @@ exec < /dev/null
 while read var; do
 	unset ${var}
 done <<-EOF
-$(env | egrep '^(WITH_|PORT|MAKE)'|grep -vF '.MAKE'|cut -d= -f1)
+$(env | egrep '^(WITH_|PORT|MAKE|TESTS_SKIP_BUILD)'|grep -vF '.MAKE'|cut -d= -f1)
 EOF
 
 echo "Using SH=${SH}" >&2
