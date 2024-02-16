@@ -321,20 +321,24 @@ if [ ${logs_deleted} -eq 1 ]; then
 		# Was this build eliminated?
 		[ -d "${MASTERNAME}" ] || continue
 		msg_n "Rebuilding HTML JSON for: ${MASTERNAME}..."
-		_log_path_jail log_path_jail
 		if slock_acquire "json_jail_${MASTERNAME}" 60 2>/dev/null; then
+			_log_path_jail log_path_jail
 			build_jail_json || :
 			slock_release "json_jail_${MASTERNAME}"
+			echo " done"
+		else
+			echo " skipped (locked by another process)"
 		fi
-		echo " done"
 	done
 	msg_n "Rebuilding HTML JSON for top-level..."
-	log_path_top="${log_top}"
 	if slock_acquire "json_top" 60 2>/dev/null; then
+		log_path_top="${log_top:?}"
 		build_top_json || :
 		slock_release "json_top"
+		echo " done"
+	else
+		echo " skipped (locked by another process)"
 	fi
-	echo " done"
 elif [ "${DRY_RUN}" -eq 1 ]; then
 	msg "[Dry Run] Would fix latest symlinks..."
 	msg "[Dry Run] Would fix latest-done symlinks..."
