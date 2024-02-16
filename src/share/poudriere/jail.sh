@@ -449,13 +449,14 @@ setup_build_env() {
 	MAKE_JOBS="-j${PARALLEL_JOBS}"
 
 	mkdir -p ${JAILMNT}/etc
+ 	setup_src_conf "make"
 	setup_src_conf "src"
 	setup_src_conf "src-env"
 	if [ "${TARGET}" = "mips" ]; then
 		echo "WITH_ELFTOOLCHAIN_TOOLS=y" >> ${JAILMNT}/etc/src.conf
 	fi
 
-	export __MAKE_CONF=/dev/null
+	export __MAKE_CONF=${JAILMNT}/etc/make.conf
 	export SRCCONF=${JAILMNT}/etc/src.conf
 	export SRC_ENV_CONF=${JAILMNT}/etc/src-env.conf
 }
