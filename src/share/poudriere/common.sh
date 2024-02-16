@@ -6120,12 +6120,13 @@ delete_old_pkgs() {
 }
 
 _lock_acquire() {
-	[ $# -eq 2 -o $# -eq 3 ] || eargs _lock_acquire lockpath lockname \
-	    [waittime]
-	local lockname="$1"
-	local lockpath="$2"
-	local waittime="${3:-30}"
+	[ $# -eq 3 -o $# -eq 4 ] ||
+	    eargs _lock_acquire quiet lockpath lockname [waittime]
 	local have_lock mypid lock_pid real_lock_pid
+	local quiet="$1"
+	local lockname="$2"
+	local lockpath="$3"
+	local waittime="${4:-30}"
 
 	mypid="$(getpid)"
 	hash_get have_lock "${lockname}" have_lock || have_lock=0
@@ -6140,7 +6141,9 @@ _lock_acquire() {
 	fi
 	if [ "${have_lock}" -eq 0 ] &&
 		! locked_mkdir "${waittime}" "${lockpath}" "${mypid}"; then
-		msg_warn "Failed to acquire ${lockname} lock"
+		if [ "${quiet}" -eq 0 ]; then
+			msg_warn "Failed to acquire ${lockname} lock"
+		fi
 		return 1
 	fi
 	# XXX: Remove this block with locked_mkdir [EINTR] fixes.
@@ -6148,7 +6151,9 @@ _lock_acquire() {
 		# locked_mkdir is quite racy. We may have gotten a false-success
 		# and need to consider it a failure.
 		if [ ! -d "${lockpath}" ]; then
-			msg_warn "Lost race grabbing ${lockname} lock: no dir"
+			if [ "${quiet}" -eq 0 ]; then
+				msg_warn "Lost race grabbing ${lockname} lock: no dir"
+			fi
 			return 1
 		fi
 		# Must use cat due to no EOL
@@ -6156,7 +6161,9 @@ _lock_acquire() {
 		case "${real_lock_pid}" in
 		"${mypid}") ;;
 		*)
-			msg_warn "Lost race grabbing ${lockname} lock: wrong pid: mypid=${mypid} lock_pid=${real_lock_pid}"
+			if [ "${quiet}" -eq 0 ]; then
+				msg_warn "Lost race grabbing ${lockname} lock: wrong pid: mypid=${mypid} lock_pid=${real_lock_pid}"
+			fi
 			return 1
 			;;
 		esac
@@ -6169,25 +6176,48 @@ _lock_acquire() {
 
 # Acquire local build lock
 lock_acquire() {
-	[ $# -eq 1 -o $# -eq 2 ] || eargs lock_acquire lockname [waittime]
-	local lockname="$1"
-	local waittime="$2"
-	local lockpath
+	[ $# -eq 1 -o $# -eq 2 -o $# -eq 3 ] ||
+	    eargs lock_acquire [-q] lockname [waittime]
+	local lockname waittime lockpath
+
+	case "$1" in
+	"-q")
+		quiet=1
+		shift
+		;;
+	*)
+		quiet=0
+		;;
+	esac
+	lockname="$1"
+	waittime="$2"
 
 	lockpath="${POUDRIERE_TMPDIR}/lock-${MASTERNAME}-${lockname}"
-	_lock_acquire "${lockname}" "${lockpath}" "${waittime}"
+	_lock_acquire "${quiet}" "${lockname}" "${lockpath}" "${waittime}"
 }
 
 # Acquire system wide lock
 slock_acquire() {
-	[ $# -eq 1 -o $# -eq 2 ] || eargs slock_acquire lockname [waittime]
-	local lockname="$1"
-	local waittime="$2"
-	local lockpath
+	[ $# -eq 1 -o $# -eq 2 -o $# -eq 3 ] ||
+	    eargs slock_acquire [-q] lockname [waittime]
+	local lockname waittime lockpath quiet
+
+	case "$1" in
+	"-q")
+		quiet=1
+		shift
+		;;
+	*)
+		quiet=0
+		;;
+	esac
+	lockname="$1"
+	waittime="$2"
 
 	mkdir -p "${SHARED_LOCK_DIR}" 2>/dev/null || :
 	lockpath="${SHARED_LOCK_DIR}/lock-poudriere-shared-${lockname}"
-	_lock_acquire "${lockname}" "${lockpath}" "${waittime}" || return
+	_lock_acquire "${quiet}" "${lockname}" "${lockpath}" "${waittime}" ||
+	    return
 	# This assumes SHARED_LOCK_DIR isn't overridden by caller
 	SLOCKS="${SLOCKS:+${SLOCKS} }${lockname}"
 }

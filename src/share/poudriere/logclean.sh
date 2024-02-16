@@ -321,7 +321,7 @@ if [ ${logs_deleted} -eq 1 ]; then
 		# Was this build eliminated?
 		[ -d "${MASTERNAME}" ] || continue
 		msg_n "Rebuilding HTML JSON for: ${MASTERNAME}..."
-		if slock_acquire "json_jail_${MASTERNAME}" 5 2>/dev/null; then
+		if slock_acquire -q "json_jail_${MASTERNAME}" 5; then
 			_log_path_jail log_path_jail
 			build_jail_json || :
 			slock_release "json_jail_${MASTERNAME}"
@@ -331,7 +331,7 @@ if [ ${logs_deleted} -eq 1 ]; then
 		fi
 	done
 	msg_n "Rebuilding HTML JSON for top-level..."
-	if slock_acquire "json_top" 5 2>/dev/null; then
+	if slock_acquire -q "json_top" 5; then
 		log_path_top="${log_top:?}"
 		build_top_json || :
 		slock_release "json_top"

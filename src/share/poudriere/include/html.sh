@@ -80,11 +80,11 @@ html_json_main() {
 build_all_json() {
 	critical_start
 	build_json
-	if slock_acquire "json_jail_${MASTERNAME}" 2 2>/dev/null; then
+	if slock_acquire -q "json_jail_${MASTERNAME}" 2; then
 		build_jail_json
 		slock_release "json_jail_${MASTERNAME}"
 	fi
-	if slock_acquire "json_top" 5 2>/dev/null; then
+	if slock_acquire -q "json_top" 5; then
 		build_top_json
 		slock_release "json_top"
 	fi
@@ -173,7 +173,7 @@ install_html_files() {
 
 	# Only 1 process needs to install the base files at a time. This is
 	# mostly a problem in tests.
-	if slock_acquire html_base 0 2>/dev/null; then
+	if slock_acquire -q html_base 0; then
 		# Update the base copy
 		do_clone_del -r "${src}" "${base}"
 
@@ -195,7 +195,7 @@ install_html_files() {
 	fi
 
 	# All processes need to make a copy of the base files.
-	if slock_acquire html_base 5; then
+	if slock_acquire -q html_base 5; then
 		mkdir -p "${dest}"
 		# Hardlink-copy the base into the destination dir.
 		cp -xal "${base}/" "${dest}/"
