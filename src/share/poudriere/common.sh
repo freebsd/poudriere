@@ -6135,7 +6135,7 @@ _lock_acquire() {
 	if [ -n "${lock_pid}" -a "${lock_pid}" != "${mypid}" ]; then
 		hash_unset have_lock "${lockname}"
 		hash_unset lock_pid "${lockname}"
-		unset lock_pid
+		lock_pid=
 		have_lock=0
 	fi
 	if [ "${have_lock}" -eq 0 ] &&
