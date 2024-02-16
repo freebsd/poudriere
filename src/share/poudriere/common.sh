@@ -519,8 +519,12 @@ _logfile() {
 		# Link to BUILD_TYPE/latest-per-pkg/PORTNAME/PKGVERSION/MASTERNAME.log
 		ln -f "${_logfile}" "${_latest_log:?}/${MASTERNAME:?}.log"
 
-		# Link to JAIL/latest-per-pkg/PKGNAME.log
-		ln -f "${_logfile}" "${_log_jail:?}/latest-per-pkg/${pkgname:?}.log"
+		if slock_acquire -q "logs_latest-per-pkg" 60; then
+			# Link to JAIL/latest-per-pkg/PKGNAME.log
+			ln -f "${_logfile}" \
+			    "${_log_jail:?}/latest-per-pkg/${pkgname:?}.log"
+			slock_release "logs_latest-per-pkg"
+		fi
 	fi
 
 	setvar "${var_return}" "${_logfile}"
@@ -8891,6 +8895,12 @@ prepare_ports() {
 	USE_CACHE_CALL=1
 
 	if was_a_bulk_run; then
+		msg_n "Acquiring build logs lock for ${MASTERNAME}..."
+		if slock_acquire "logs_${MASTERNAME:?}" 60; then
+			echo " done"
+		else
+			err 1 "failed (in use by another process)"
+		fi
 		_log_path log
 		_log_path_jail log_jail
 		_log_path_top log_top
