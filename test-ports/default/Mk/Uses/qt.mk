@@ -22,8 +22,9 @@ _QT_MK_INCLUDED=	qt.mk
 
 # Qt versions currently supported by the framework.
 _QT_SUPPORTED?=		5 6
-QT5_VERSION?=		5.15.5
-QT6_VERSION?=		6.4.1
+QT5_VERSION?=		5.15.12
+QT6_VERSION?=		6.6.2
+PYSIDE6_VERSION?=	6.6.1
 
 # We accept the Qt version to be passed by either or all of the three mk files.
 .  if empty(qt_ARGS) && empty(qmake_ARGS) && empty(qt-dist_ARGS)
@@ -111,6 +112,11 @@ PLIST_SUB+=		QT_${dir}DIR="${QT_${dir}DIR_REL}"
 .    endif
 .  endfor
 
+# Suppress warnings from rcc about not using a UTF-8 locale.
+.  if ${_QT_VER:M6}
+USE_LOCALE?=		C.UTF-8
+.  endif
+
 CONFIGURE_ENV+=		QT_SELECT=${_QT_RELNAME}
 MAKE_ENV+=		QT_SELECT=${_QT_RELNAME}
 
@@ -118,6 +124,12 @@ MAKE_ENV+=		QT_SELECT=${_QT_RELNAME}
 # found, with the ones from the port being built having preference.
 CONFIGURE_ENV+=		QMAKEMODULES="${WRKSRC}/mkspecs/modules:${LOCALBASE}/${QT_MKSPECDIR_REL}/modules"
 MAKE_ENV+=		QMAKEMODULES="${WRKSRC}/mkspecs/modules:${LOCALBASE}/${QT_MKSPECDIR_REL}/modules"
+
+# Qt uses generated linker version scripts which always have a qt_version_tag
+# symbol, but that symbol is only defined in the main Qt shared library. For
+# other Qt components, this leads to lld >= 17 erroring out due to the symbol
+# being undefined. Supress these errors.
+LDFLAGS+=		-Wl,--undefined-version
 
 _USES_POST+=		qt
 .endif # _QT_MK_INCLUDED
@@ -130,26 +142,24 @@ _USES_POST+=		qt
 _QT_MK_POST_INCLUDED=	qt.mk
 
 # The Qt components supported by qt.mk: list of shared, and version specific ones
-_USE_QT_COMMON=		3d charts datavis3d declarative doc imageformats multimedia \
-			networkauth quick3d quicktimeline remoteobjects scxml \
-			sensors serialbus serialport svg virtualkeyboard wayland \
-			webchannel websockets
+_USE_QT_COMMON=		3d charts connectivity datavis3d declarative doc examples imageformats location \
+			multimedia networkauth quick3d quicktimeline remoteobjects scxml \
+			sensors serialbus serialport speech svg virtualkeyboard wayland \
+			webchannel webengine websockets webview
 
-_USE_QT5_ONLY=		assistant buildtools concurrent connectivity core dbus \
-			declarative-test designer diag examples gamepad \
-			graphicaleffects gui help l10n linguist linguisttools location \
-			network opengl paths phonon4 pixeltool plugininfo printsupport \
+_USE_QT5_ONLY=		assistant buildtools concurrent core dbus \
+			declarative-test designer diag gamepad \
+			graphicaleffects gui help l10n linguist linguisttools \
+			network opengl paths pixeltool plugininfo printsupport \
 			qdbus qdbusviewer qdoc qdoc-data qev qmake quickcontrols \
-			quickcontrols2 script scripttools speech sql sql-mysql sql-odbc \
+			quickcontrols2 script scripttools sql sql-mysql sql-odbc \
 			sql-pgsql sql-sqlite2 sql-sqlite3 sql-tds testlib uiplugin \
-			uitools webengine webglplugin webkit websockets-qml webview \
+			uitools webglplugin websockets-qml \
 			widgets x11extras xml xmlpatterns
-.  if ${ARCH} == amd64 || ${ARCH} == i386
-_USE_QT5_ONLY+=		sql-ibase
-.  endif
 
-_USE_QT6_ONLY=		5compat base languageserver lottie positioning shadertools \
-			tools translations
+_USE_QT6_ONLY=		5compat base coap graphs httpserver languageserver lottie pdf positioning \
+			quick3dphysics quickeffectmaker shadertools tools translations \
+			sqldriver-sqlite sqldriver-mysql sqldriver-psql sqldriver-odbc
 
 # Dependency tuples: _LIB should be preferred if possible.
 qt-3d_PORT=		graphics/${_QT_RELNAME}-3d
@@ -170,6 +180,9 @@ qt-base_LIB=		libQt${_QT_LIBVER}Core.so
 
 qt-charts_PORT=		x11-toolkits/${_QT_RELNAME}-charts
 qt-charts_LIB=		libQt${_QT_LIBVER}Charts.so
+
+qt-coap_PORT=		net/${_QT_RELNAME}-coap
+qt-coap_LIB=		libQt${_QT_LIBVER}Coap.so
 
 qt-concurrent_PORT=	devel/${_QT_RELNAME}-concurrent
 qt-concurrent_LIB=	libQt${_QT_LIBVER}Concurrent.so
@@ -210,11 +223,17 @@ qt-gamepad_LIB=		libQt${_QT_LIBVER}Gamepad.so
 qt-graphicaleffects_PORT=	graphics/${_QT_RELNAME}-graphicaleffects
 qt-graphicaleffects_PATH=	${LOCALBASE}/${QT_QMLDIR_REL}/QtGraphicalEffects/qmldir
 
+qt-graphs_PORT=		x11-toolkits/${_QT_RELNAME}-graphs
+qt-graphs_LIB=		libQt${_QT_LIBVER}Graphs.so
+
 qt-gui_PORT=		x11-toolkits/${_QT_RELNAME}-gui
 qt-gui_LIB=		libQt${_QT_LIBVER}Gui.so
 
 qt-help_PORT=		devel/${_QT_RELNAME}-help
 qt-help_LIB=		libQt${_QT_LIBVER}Help.so
+
+qt-httpserver_PORT=	www/${_QT_RELNAME}-httpserver
+qt-httpserver_LIB=	libQt${_QT_LIBVER}HttpServer.so
 
 qt-imageformats_PORT=	graphics/${_QT_RELNAME}-imageformats
 qt-imageformats_PATH=	${LOCALBASE}/${QT_PLUGINDIR_REL}/imageformats/libqtiff.so
@@ -252,11 +271,11 @@ qt-opengl_LIB=		libQt${_QT_LIBVER}OpenGL.so
 qt-paths_PORT=		sysutils/${_QT_RELNAME}-qtpaths
 qt-paths_PATH=		${LOCALBASE}/${QT_BINDIR_REL}/qtpaths
 
+qt-pdf_PORT=		print/${_QT_RELNAME}-pdf
+qt-pdf_LIB=		libQt${_QT_LIBVER}Pdf.so
+
 qt-pixeltool_PORT=	graphics/${_QT_RELNAME}-pixeltool
 qt-pixeltool_PATH=	${LOCALBASE}/${QT_BINDIR_REL}/pixeltool
-
-qt-phonon4_PORT=	multimedia/phonon
-qt-phonon4_LIB=		libphonon4${_QT_RELNAME}.so
 
 qt-positioning_PORT=	devel/${_QT_RELNAME}-positioning
 qt-positioning_LIB=	libQt${_QT_LIBVER}Positioning.so
@@ -289,11 +308,17 @@ qt-qmake_PATH=		${_QT_RELNAME}-qmake>=${_QT_VERSION:R}
 qt-quick3d_PORT=	x11-toolkits/${_QT_RELNAME}-quick3d
 qt-quick3d_LIB=		libQt${_QT_LIBVER}Quick3D.so
 
+qt-quick3dphysics_PORT=	science/${_QT_RELNAME}-quick3dphysics
+qt_quick3dphysics_LIB=	libQt${_QT_LIBVER}Quick3DPhysics.so
+
 qt-quickcontrols_PORT=	x11-toolkits/${_QT_RELNAME}-quickcontrols
 qt-quickcontrols_PATH=	${LOCALBASE}/${QT_QMLDIR_REL}/QtQuick/Controls/qmldir
 
 qt-quickcontrols2_PORT=	x11-toolkits/${_QT_RELNAME}-quickcontrols2
 qt-quickcontrols2_LIB=	libQt${_QT_LIBVER}QuickControls2.so
+
+qt-quickeffectmaker_PORT=	graphics/${_QT_RELNAME}-quickeffectmaker
+qt-quickeffectmaker_PATH=	${LOCALBASE}/${QT_BINDIR_REL}/qqem
 
 qt-quicktimeline_PORT=	x11-toolkits/${_QT_RELNAME}-quicktimeline
 qt-quicktimeline_PATH=	${LOCALBASE}/${QT_QMLDIR_REL}/QtQuick/Timeline/libqtquicktimelineplugin.so
@@ -332,9 +357,14 @@ qt-sql-pgsql_PATH=	${LOCALBASE}/${QT_PLUGINDIR_REL}/sqldrivers/libqsqlpsql.so
 
 qt-sql-sqlite3_PATH=	${LOCALBASE}/${QT_PLUGINDIR_REL}/sqldrivers/libqsqlite.so
 
-.  for db in ibase mysql odbc pgsql sqlite2 sqlite3 tds
+.  for db in mysql odbc pgsql sqlite2 sqlite3 tds
 qt-sql-${db}_PORT=	databases/${_QT_RELNAME}-sqldrivers-${db}
 qt-sql-${db}_PATH?=	${LOCALBASE}/${QT_PLUGINDIR_REL}/sqldrivers/libqsql${db:C/^sql//}.so
+.  endfor
+
+.  for db in sqlite mysql psql odbc
+qt-sqldriver-${db}_PORT=	databases/${_QT_RELNAME}-base_sqldriver@${db}
+qt-sqldriver-${db}_PATH?=	${LOCALBASE}/${QT_PLUGINDIR_REL}/sqldrivers/libqsql${db:C/^sql//}.so
 .  endfor
 
 qt-svg_PORT=		graphics/${_QT_RELNAME}-svg
@@ -365,7 +395,7 @@ qt-webchannel_PORT=	www/${_QT_RELNAME}-webchannel
 qt-webchannel_LIB=	libQt${_QT_LIBVER}WebChannel.so
 
 qt-webengine_PORT=	www/${_QT_RELNAME}-webengine
-qt-webengine_LIB=	libQt${_QT_LIBVER}WebEngine.so
+qt-webengine_LIB=	libQt${_QT_LIBVER}WebEngineCore.so
 
 qt-webglplugin_PORT=     www/${_QT_RELNAME}-webglplugin
 qt-webglplugin_PATH=     ${LOCALBASE}/${QT_PLUGINDIR_REL}/platforms/libqwebgl.so
@@ -375,9 +405,6 @@ qt-websockets_LIB=	libQt${_QT_LIBVER}WebSockets.so
 
 qt-websockets-qml_PORT=	www/${_QT_RELNAME}-websockets-qml
 qt-websockets-qml_PATH=	${LOCALBASE}/${QT_QMLDIR_REL}/QtWebSockets/qmldir
-
-qt-webkit_PORT=		www/${_QT_RELNAME}-webkit
-qt-webkit_LIB=		libQt${_QT_LIBVER}WebKit.so
 
 qt-webview_PORT=	www/${_QT_RELNAME}-webview
 qt-webview_LIB=		libQt${_QT_LIBVER}WebView.so

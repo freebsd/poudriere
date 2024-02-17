@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $FreeBSD: head/Tools/make_readmes 340851 2014-01-23 19:55:14Z mat $
 
 $PORTSDIR="/usr/ports";
 $TEMPLATES=$ENV{TEMPLATES} || "${PORTSDIR}/Templates";

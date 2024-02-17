@@ -12,8 +12,6 @@
 # Maxim Sobolev
 # ----------------------------------------------------------------------------
 #
-# $FreeBSD: head/Tools/scripts/checknewver.sh 486557 2018-12-03 21:38:04Z rene $
-#
 # MAINTAINER= ports@FreeBSD.org
 
 display_warn () {

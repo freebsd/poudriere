@@ -1,5 +1,4 @@
 #!/usr/bin/env perl
-# $FreeBSD: head/Tools/scripts/indent_make_if.pl 417014 2016-06-17 14:58:36Z mat $
 # perltidy -bext=/ -i=8 -et=8 -l=132 -pt=2 -ce -cti=1
 
 use strict;

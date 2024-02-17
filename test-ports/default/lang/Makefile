@@ -1,4 +1,4 @@
-SUBDIR += perl5.32
+SUBDIR += perl5.36
 SUBDIR += python
 SUBDIR += python2
 SUBDIR += python27

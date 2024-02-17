@@ -293,6 +293,9 @@ mapfilecmd(int argc, char **argv)
 		modes = "re";
 
 	md = _mapfile_open(file, modes, Fflag, qflag);
+	if (qflag) {
+		assert(is_int_on());
+	}
 	if ((md == NULL) && qflag) {
 		INTON;
 		return (EX_NOINPUT);
@@ -933,14 +936,17 @@ mapfile_writecmd(int argc, char **argv)
 		ret = 0;
 		md_read = _mapfile_open("/dev/fd/0", "r", 1, 0);
 		assert(md_read != NULL);
+		assert(is_int_on());
 		while ((rret = _mapfile_read(md_read, &line, &linelen, NULL)) == 0) {
 			ret = _mapfile_write(md, handle, nflag, Tflag, line,
 			    linelen);
+			assert(is_int_on());
 			if (ret != 0) {
 				md_close(md_read);
 				INTON;
 				err(ret, "mapfile_write");
 			}
+			assert(is_int_on());
 		}
 
 		/* 1 == EOF */

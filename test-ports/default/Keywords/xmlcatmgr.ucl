@@ -1,4 +1,4 @@
-# $FreeBSD: head/Keywords/xmlcatmgr.ucl 417878 2016-07-01 13:09:49Z bapt $
+# MAINTAINER:	portmgr@FreeBSD.org
 
 actions: [file]
 post-install: <<EOD

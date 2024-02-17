@@ -1,5 +1,4 @@
-# $FreeBSD: head/Keywords/terminfo.ucl 398827 2015-10-08 14:12:53Z amdmi3 $
-#
+# MAINTAINER: portmgr@FreeBSD.org
 
 actions: []
 post-install: <<EOD
@@ -7,7 +6,7 @@ post-install: <<EOD
   terminfodb=${terminfodir}/terminfo.db
   if [ -e ${terminfodb}.default ] && which -s tic; then
     cp ${terminfodb}.default ${terminfodb}
-    find -s ${terminfodir} -name "*.terminfo" -exec tic {} \;
+    find -s ${terminfodir} -name "*.terminfo" -exec tic -x {} \;
   fi
 EOD
 post-deinstall: <<EOD
@@ -15,7 +14,7 @@ post-deinstall: <<EOD
   terminfodb=${terminfodir}/terminfo.db
   if [ -e ${terminfodb}.default ] && which -s tic; then
     cp ${terminfodb}.default ${terminfodb}
-    find -s ${terminfodir} -name "*.terminfo" -exec tic {} \;
+    find -s ${terminfodir} -name "*.terminfo" -exec tic -x {} \;
   else
     rm -f ${terminfodb}
   fi

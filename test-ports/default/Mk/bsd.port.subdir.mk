@@ -51,6 +51,11 @@ MOVEDFILE?=		MOVED
 # make -C /usr/ports/category/port/.
 .CURDIR:=		${.CURDIR:tA}
 
+# Ensure .CURDIR doesn't contain a colon, which breaks makefile targets
+.if ${.CURDIR:S/:/\:/g} != ${.CURDIR}
+.error The current directory path contains ':', this is not supported
+.endif
+
 .include "${PORTSDIR}/Mk/bsd.commands.mk"
 
 .MAIN: all
@@ -132,9 +137,7 @@ _JAVA_PORTS_INSTALLED!=		${MAKE} -V _JAVA_PORTS_INSTALLED USE_JAVA=1 -f ${PORTSD
 .  endif
 _EXPORTED_VARS+=	_JAVA_PORTS_INSTALLED
 
-.  if !defined(UID)
-UID!=	${ID} -u
-.  endif
+UID?=	${.MAKE.UID}
 _EXPORTED_VARS+=	UID
 
 .endif
@@ -294,6 +297,26 @@ describe:
 	done
 .  endif
 .endif
+
+# Store last subdir name
+_LAST_DIR = ${SUBDIR:[-1]}
+describe-json:
+	@${ECHO_MSG} "{"
+	@for sub in ${SUBDIR}; do \
+	if ${TEST} -d ${.CURDIR}/$${sub}; then \
+		cd ${.CURDIR}/$${sub}; \
+		${ECHO_MSG} "\"$${sub}\": " ;\
+		${MAKE} -B describe-json || \
+			(${ECHO_CMD} "===> ${DIRPRFX}$${sub} failed" >&2; \
+			exit 1) ;\
+		if [ "$${sub}" != "${_LAST_DIR}" ]; then \
+			(${ECHO_MSG} ",") ; \
+		fi; \
+	else \
+		${ECHO_MSG} "===> ${DIRPRFX}$${sub} non-existent"; \
+	fi; \
+	done
+	@${ECHO_MSG} "}"
 
 .if !target(readmes)
 .  if defined(PORTSTOP)
@@ -505,7 +528,7 @@ _PORTSEARCH=	\
 	        } \
 	    }' ${MOVEDDIR}/${MOVEDFILE}; \
 	  fi \
-	fi 
+	fi
 
 search:
 	@${_PORTSEARCH}

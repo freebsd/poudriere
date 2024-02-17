@@ -1,4 +1,3 @@
-# $FreeBSD: head/Tools/scripts/sunshar/Makefile 340722 2014-01-22 17:00:46Z mat $
 # $Idaemons: /home/cvs/sunshar/Makefile,v 1.1.1.1 2001/09/09 13:49:08 knu Exp $
 
 PREFIX?=	/usr/local

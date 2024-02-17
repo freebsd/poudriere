@@ -42,12 +42,12 @@ USE_PERL5?=	run build
 
 # When adding a version, please keep the comment in
 # Mk/bsd.default-versions.mk in sync.
-.  if ${PERL5_DEFAULT} == 5.32
-.include "${PORTSDIR}/lang/perl5.32/version.mk"
-.  elif ${PERL5_DEFAULT} == 5.34
+.  if ${PERL5_DEFAULT} == 5.34
 .include "${PORTSDIR}/lang/perl5.34/version.mk"
 .  elif ${PERL5_DEFAULT} == 5.36
 .include "${PORTSDIR}/lang/perl5.36/version.mk"
+.  elif ${PERL5_DEFAULT} == 5.38
+.include "${PORTSDIR}/lang/perl5.38/version.mk"
 .  elif ${PERL5_DEFAULT} == devel
 .include "${PORTSDIR}/lang/perl5-devel/version.mk"
 # Force PERL_PORT here in case two identical PERL_VERSION.
@@ -81,12 +81,12 @@ PERL_ARCH?=	mach
 # perl5_default file, or up there in the default versions selection.
 # When adding a version, please keep the comment in
 # Mk/bsd.default-versions.mk in sync.
-.  if   ${PERL_LEVEL} >= 503600
+.  if   ${PERL_LEVEL} >= 503800
+PERL_PORT?=	perl5.38
+.  elif   ${PERL_LEVEL} >= 503600
 PERL_PORT?=	perl5.36
-.  elif   ${PERL_LEVEL} >= 503400
+.  else # ${PERL_LEVEL} < 503600
 PERL_PORT?=	perl5.34
-.  else # ${PERL_LEVEL} < 503400
-PERL_PORT?=	perl5.32
 .  endif
 
 SITE_PERL_REL?=	lib/perl5/site_perl
@@ -193,8 +193,8 @@ CONFIGURE_ARGS+=--install_path lib="${PREFIX}/${SITE_PERL_REL}" \
 		--install_path arch="${PREFIX}/${SITE_ARCH_REL}" \
 		--install_path script="${PREFIX}/bin" \
 		--install_path bin="${PREFIX}/bin" \
-		--install_path libdoc="${MAN3PREFIX}/man/man3" \
-		--install_path bindoc="${MAN1PREFIX}/man/man1"
+		--install_path libdoc="${PERLMANPREFIX}/man/man3" \
+		--install_path bindoc="${PERLMANPREFIX}/man/man1"
 CONFIGURE_SCRIPT?=	Build.PL
 PL_BUILD?=	Build
 CONFIGURE_ARGS+=--destdir ${STAGEDIR}
@@ -208,7 +208,7 @@ CONFIGURE_ARGS+=--create_packlist 1
 .    endif
 .    if ${_USE_PERL5:Mmodbuildtiny}
 .      if ${PORTNAME} != Module-Build-Tiny
-BUILD_DEPENDS+=	p5-Module-Build-Tiny>=0.039:devel/p5-Module-Build-Tiny
+BUILD_DEPENDS+=	p5-Module-Build-Tiny>=0.043:devel/p5-Module-Build-Tiny
 .      endif
 CONFIGURE_ARGS+=--create_packlist 1
 .    endif
@@ -251,8 +251,7 @@ TEST_DEPENDS+=		${PERL5_DEPEND}:lang/${PERL_PORT}
 CONFIGURE_ARGS+=	CC="${CC}" CCFLAGS="${CFLAGS}" LD="${CC}" PREFIX="${PREFIX}" \
 			INSTALLPRIVLIB="${PREFIX}/lib" INSTALLARCHLIB="${PREFIX}/lib"
 CONFIGURE_SCRIPT?=	Makefile.PL
-MAN3PREFIX?=		${PREFIX}/${SITE_PERL_REL}
-MAN1PREFIX?=		${PREFIX}/${SITE_PERL_REL}
+PERLMANPREFIX?=		${PREFIX}/${SITE_PERL_REL}
 .undef HAS_CONFIGURE
 
 .    if !target(do-configure)

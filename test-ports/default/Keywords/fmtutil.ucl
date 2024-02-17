@@ -1,5 +1,3 @@
-# $FreeBSD: head/Keywords/fmtutil.ucl 362833 2014-07-24 17:10:57Z bapt $
-#
 # MAINTAINER:   portmgr@FreeBSD.org
 
 actions: []

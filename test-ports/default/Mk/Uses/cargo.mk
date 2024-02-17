@@ -97,7 +97,7 @@ WRKSRC_crate_${_crate}=	${WRKDIR}/${_wrksrc}
 
 CARGO_BUILDDEP?=	yes
 .  if ${CARGO_BUILDDEP:tl} == "yes"
-BUILD_DEPENDS+=	${RUST_DEFAULT}>=1.64.0:lang/${RUST_DEFAULT}
+BUILD_DEPENDS+=	${RUST_DEFAULT}>=1.75.0:lang/${RUST_DEFAULT}
 .  elif ${CARGO_BUILDDEP:tl} == "any-version"
 BUILD_DEPENDS+=	${RUST_DEFAULT}>=0:lang/${RUST_DEFAULT}
 .  endif
@@ -139,18 +139,18 @@ CARGO_ENV+= \
 CARGO_ENV+=	RUST_BACKTRACE=1
 .  endif
 
+_CARGO_MSG=	"===>   Additional optimization to port applied"
+WITH_LTO=	yes
+
 # Adjust -C target-cpu if -march/-mcpu is set by bsd.cpu.mk
 .  if ${ARCH} == amd64 || ${ARCH} == i386
 RUSTFLAGS+=	${CFLAGS:M-march=*:S/-march=/-C target-cpu=/}
 .  elif ${ARCH:Mpowerpc*}
 RUSTFLAGS+=	${CFLAGS:M-mcpu=*:S/-mcpu=/-C target-cpu=/:S/power/pwr/}
+.  elif ${ARCH} == aarch64 || ${ARCH} == armv7
+RUSTFLAGS+=	-C target-cpu=${CPUTYPE:C/\+.+//g}
 .  else
 RUSTFLAGS+=	${CFLAGS:M-mcpu=*:S/-mcpu=/-C target-cpu=/}
-.  endif
-
-.  if defined(PPC_ABI) && ${PPC_ABI} == ELFv1
-USE_GCC?=	yes
-STRIP_CMD=	${LOCALBASE}/bin/strip # unsupported e_type with base strip
 .  endif
 
 # Helper to shorten cargo calls.
@@ -198,7 +198,7 @@ CARGO_INSTALL_ARGS+=	--debug
 .  endif
 
 .  if ${_CARGO_CRATES:Mcmake}
-BUILD_DEPENDS+=	cmake:devel/cmake
+BUILD_DEPENDS+=	cmake:devel/cmake-core
 .  endif
 
 .  if ${_CARGO_CRATES:Mgettext-sys}
@@ -244,6 +244,11 @@ CARGO_ENV+=	OPENSSL_LIB_DIR=${OPENSSLLIB} \
 .include "${USESDIR}/pkgconfig.mk"
 .  endif
 
+.  if ${_CARGO_CRATES:Mzstd-sys}
+# Use the system's zstd instead of building the bundled version
+CARGO_ENV+=	ZSTD_SYS_USE_PKG_CONFIG=1
+.  endif
+
 .  for _index _crate _name _version in ${_CARGO_CRATES}
 # Split up semantic version and try to sanitize it by removing
 # pre-release identifier (-) or build metadata (+)
@@ -277,7 +282,7 @@ cargo-extract:
 .    if ${_index} != @git
 	@${MV} ${WRKDIR}/${_crate} ${CARGO_VENDOR_DIR}/${_crate}
 	@${PRINTF} '{"package":"%s","files":{}}' \
-		$$(${SHA256} -q ${DISTDIR}/${CARGO_DIST_SUBDIR}/${_crate}${CARGO_CRATE_EXT}) \
+		$$(${SHA256} -q ${_DISTDIR}/${CARGO_DIST_SUBDIR}/${_crate}${CARGO_CRATE_EXT}) \
 		> ${CARGO_VENDOR_DIR}/${_crate}/.cargo-checksum.json
 	@if [ -r ${CARGO_VENDOR_DIR}/${_crate}/Cargo.toml.orig ]; then \
 		${MV} ${CARGO_VENDOR_DIR}/${_crate}/Cargo.toml.orig \
@@ -295,6 +300,9 @@ cargo-configure:
 # Check that the running kernel has COMPAT_FREEBSD11 required by lang/rust post-ino64
 	@${SETENV} CC="${CC}" OPSYS="${OPSYS}" OSVERSION="${OSVERSION}" WRKDIR="${WRKDIR}" \
 		${SH} ${SCRIPTSDIR}/rust-compat11-canary.sh
+.    if defined(_CARGO_MSG)
+	@${ECHO_MSG} ${_CARGO_MSG}
+.    endif
 	@${ECHO_MSG} "===>   Cargo config:"
 	@${MKDIR} ${WRKDIR}/.cargo
 	@: > ${WRKDIR}/.cargo/config.toml

@@ -1,5 +1,3 @@
-# $FreeBSD: /tmp/pcvs/ports/Templates/BSD.local.dist,v 1.3 2010-11-12 20:57:14 pav Exp $
-#
 # Please see the file src/etc/mtree/README before making changes to this file.
 #
 
@@ -272,6 +270,10 @@
         ..
         applications
         ..
+        bash-completion
+            completions
+            ..
+        ..
         dict
         ..
         doc
@@ -283,6 +285,12 @@
             ..
         ..
         examples
+        ..
+        fish
+            vendor_completions.d
+            ..
+        ..
+        icons
         ..
         info
         ..
@@ -645,6 +653,19 @@
             ..
         ..
         man
+            cat1
+            ..
+            cat5
+            ..
+            cat7
+            ..
+            cat8
+            ..
+            ja              uname=root
+/set uname=root
+                man1
+                ..
+            ..
             man1
             ..
             man2
@@ -662,6 +683,10 @@
             man8
             ..
             man9
+            ..
+            manl
+            ..
+            mann
             ..
         ..
         misc
@@ -975,6 +1000,10 @@
         skel
         ..
         xml
+        ..
+        zsh
+            site-functions
+            ..
         ..
     ..
     tests

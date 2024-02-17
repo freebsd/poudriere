@@ -28,8 +28,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# $FreeBSD: head/Tools/scripts/chkorigin.sh 433964 2017-02-12 20:43:04Z rene $
-#
 # MAINTAINER=	portmgr@FreeBSD.org
 #
 # PKGORIGIN connects packaged or installed ports to the directory they
