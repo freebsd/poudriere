@@ -7011,7 +7011,7 @@ gather_port_vars_port() {
 			originspec_encode dep_originspec "${origin}" "${dep_flavor}" "${origin_subpkg}"
 			msg_debug "gather_port_vars_port (${COLOR_PORT}${originspec}${COLOR_RESET}): Adding to flavorqueue FLAVOR=${dep_flavor}"
 			qdir="fqueue/${dep_originspec%/*}!${dep_originspec#*/}"
-			mkdir "${qdir}" ||
+			mkdir -p "${qdir}" ||
 			    err 1 "gather_port_vars_port: Failed to add ${COLOR_PORT}${dep_originspec}${COLOR_RESET} to flavorqueue for ${COLOR_PORT}${originspec}${COLOR_RESET}"
 			# Copy our own reverse dep over.  This should always
 			# just be "listed" in this case ($rdep == listed) but

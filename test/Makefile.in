@@ -482,6 +482,7 @@ JAIL_TESTS = \
 	bulk-build-self-immutable-base-schg.sh \
 	bulk-build-self-immutable-base-yes.sh \
 	bulk-flavor-FLAVORS-misordered.sh \
+	bulk-flavor-all-and-specific.sh \
 	bulk-flavor-default-dep-and-specific-listed.sh \
 	bulk-flavor-default-dep.sh \
 	bulk-flavor-ignore-all.sh \
@@ -989,6 +990,13 @@ bulk-build-self-immutable-base-yes.sh.log: bulk-build-self-immutable-base-yes.sh
 bulk-flavor-FLAVORS-misordered.sh.log: bulk-flavor-FLAVORS-misordered.sh
 	@p='bulk-flavor-FLAVORS-misordered.sh'; \
 	b='bulk-flavor-FLAVORS-misordered.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-flavor-all-and-specific.sh.log: bulk-flavor-all-and-specific.sh
+	@p='bulk-flavor-all-and-specific.sh'; \
+	b='bulk-flavor-all-and-specific.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

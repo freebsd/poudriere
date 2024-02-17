@@ -55,6 +55,7 @@ JAIL_TESTS= \
 	bulk-build-self-immutable-base-schg.sh \
 	bulk-build-self-immutable-base-yes.sh \
 	bulk-flavor-FLAVORS-misordered.sh \
+	bulk-flavor-all-and-specific.sh \
 	bulk-flavor-default-dep-and-specific-listed.sh \
 	bulk-flavor-default-dep.sh \
 	bulk-flavor-ignore-all.sh \
