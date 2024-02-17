@@ -1,0 +1,4 @@
+bin/cmd1
+@@cmd2@@bin/cmd2
+@@data1@@%%DATA%%%%DATADIR%%/data1.txt
+@@data2@@%%DATA%%%%DATADIR%%/data2.txt

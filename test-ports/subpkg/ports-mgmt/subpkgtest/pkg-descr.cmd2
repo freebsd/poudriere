@@ -1,0 +1,2 @@
+port-test-cmd2 only contains cmd2
+The code is only a hello world written in C echoing 'cmd2'

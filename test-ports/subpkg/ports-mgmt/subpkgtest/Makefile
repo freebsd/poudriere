@@ -1,0 +1,51 @@
+PORTNAME=	port-test
+PORTVERSION=	0.0.2
+DISTVERSIONPREFIX=	v
+CATEGORIES=	ports-mgmt
+
+MAINTAINER=	pizzamig@FreeBSD.org
+COMMENT=	Small C project to be used as test
+WWW=		https://github.com/pizzamig/port-test
+
+LICENSE=	BSD3CLAUSE
+LICENSE_FILE=	${WRKSRC}/LICENSE
+
+USE_GITHUB=	yes
+GH_ACCOUNT=	pizzamig
+
+OPTIONS_DEFINE=	DATA DOCS EXAMPLES
+OPTIONS_SUB=	yes
+OPTIONS_DEFAULT=	DATA
+
+DATA_DESC=	Install additional data files
+
+SUBPACKAGES=	cmd2
+SELF_DEPENDS.cmd2=	main data1
+SELF_DEPENDS.data2=	cmd2
+
+DATA_SUBPACKAGES=	data1 data2
+DATA_RUN_DEPENDS.data1=	pstree:sysutils/pstree
+DOCS_SUBPACKAGES=	docs
+EXAMPLES_SUBPACKAGES=	examples
+
+PORTDOCS=	README.md
+PORTEXAMPLES=	EXAMPLES.md
+
+do-install:
+	${INSTALL_PROGRAM} ${WRKSRC}/cmd1 ${STAGEDIR}${PREFIX}/bin
+	${INSTALL_PROGRAM} ${WRKSRC}/cmd2 ${STAGEDIR}${PREFIX}/bin
+
+post-install-DATA-on:
+	${MKDIR} ${STAGEDIR}${DATADIR}
+	${INSTALL_DATA} ${WRKSRC}/data1.txt ${STAGEDIR}${DATADIR}
+	${INSTALL_DATA} ${WRKSRC}/data2.txt ${STAGEDIR}${DATADIR}
+
+post-install-DOCS-on:
+	${MKDIR} ${STAGEDIR}${DOCSDIR}
+	${INSTALL_DATA} ${WRKSRC}/README.md ${STAGEDIR}${DOCSDIR}
+
+post-install-EXAMPLES-on:
+	${MKDIR} ${STAGEDIR}${EXAMPLESDIR}
+	${INSTALL_DATA} ${WRKSRC}/EXAMPLES.md ${STAGEDIR}${EXAMPLESDIR}
+
+.include <bsd.port.mk>
