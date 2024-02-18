@@ -8167,7 +8167,11 @@ load_priorities() {
 	fi
 
 	# Create buckets after loading priorities in case of boosts.
-	( cd "${MASTER_DATADIR}/pool" && mkdir ${POOL_BUCKET_DIRS} )
+	(
+		if cd "${MASTER_DATADIR}/pool"; then
+			mkdir ${POOL_BUCKET_DIRS} || :
+		fi
+	)
 
 	# unbalanced is where everything starts at.  Items are moved in
 	# balance_pool based on their priority in the "priority" hash.
