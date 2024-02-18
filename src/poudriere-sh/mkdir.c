@@ -101,10 +101,16 @@ main(int argc, char *argv[])
 	if (mode == NULL) {
 		omode = S_IRWXU | S_IRWXG | S_IRWXO;
 	} else {
+#ifdef SHELL
+		INTOFF;
+#endif
 		if ((set = setmode(mode)) == NULL)
 			errx(1, "invalid file mode: %s", mode);
 		omode = getmode(set, S_IRWXU | S_IRWXG | S_IRWXO);
 		free(set);
+#ifdef SHELL
+		INTON;
+#endif
 	}
 
 	for (exitval = 0; *argv != NULL; ++argv) {

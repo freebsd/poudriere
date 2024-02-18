@@ -225,6 +225,7 @@ main(int argc, char *argv[])
 #ifdef SHELL
 	timefmt = NULL;
 	linkfail = 0;
+	INTOFF;
 #endif
 
 	am_readlink = 0;
@@ -399,6 +400,9 @@ main(int argc, char *argv[])
 		fn++;
 	} while (argc > 0);
 
+#ifdef SHELL
+	INTON;
+#endif
 	return (am_readlink ? linkfail : errs);
 }
 
@@ -426,6 +430,9 @@ usage(const char *synopsis)
 {
 
 	(void)fprintf(stderr, "usage: %s %s\n", getprogname(), synopsis);
+#ifdef SHELL
+	INTON;
+#endif
 	exit(1);
 }
 

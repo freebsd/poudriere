@@ -94,6 +94,9 @@ main(int argc, char *argv[])
 	if (f_mode) {
 		umask(0);
 		errno = 0;
+#ifdef SHELL
+		INTOFF;
+#endif
 		if ((modep = setmode(modestr)) == NULL) {
 			if (errno)
 				err(1, "setmode");
@@ -102,6 +105,7 @@ main(int argc, char *argv[])
 		fifomode = getmode(modep, BASEMODE);
 #ifdef SHELL
 		free(__DECONST(char *, modep));
+		INTOFF;
 #endif
 	} else {
 		fifomode = BASEMODE;
