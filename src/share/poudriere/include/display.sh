@@ -36,6 +36,7 @@ display_setup() {
 	[ $# -eq 1 ] || [ $# -eq 2 ] || eargs display_setup format [column_sort]
 	local IFS
 	local -; set -f
+	set +x
 
 	_DISPLAY_FORMAT="${1:-dynamic}"
 	_DISPLAY_HEADER=
@@ -68,6 +69,8 @@ _display_cleanup() {
 display_add() {
 	[ $# -gt 0 ] || eargs display_add col [col...]
 	local IFS
+	local -
+	set +x
 
 	if [ -z "${_DISPLAY_HEADER}" ]; then
 		local arg argi line argformat format
@@ -125,6 +128,7 @@ _display_check_lengths() {
 	local cnt arg max_length
 	local IFS
 	local -; set -f
+	set +x
 
 	# decode
 	IFS="${DISPLAY_SEP}"
@@ -148,6 +152,7 @@ _display_check_lengths() {
 _display_output() {
 	[ $# -eq 2 ] || eargs _display_output format data
 	local -; set -f
+	set +x
 	local format="$1"
 	local data="$2"
 	local IFS
@@ -167,6 +172,7 @@ display_output() {
 	local IFS
 	local -
 
+	set +x
 	set -f
 
 	quiet=0
