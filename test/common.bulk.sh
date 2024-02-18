@@ -30,6 +30,7 @@ recache_pkgnames() {
 
 	for var in \
 	    origin-flavors \
+	    origin-subpkgs \
 	    originspec-deps \
 	    originspec-ignore \
 	    originspec-pkgname \
@@ -46,10 +47,11 @@ cache_pkgnames() {
 	local isdep="$1"
 	local originspec="$2"
 	local origin dep_origin spec_flavor flavors pkgname default_flavor ignore
-	local flavor_originspec ret port_flavor other_flavor subpkg
+	local flavor_originspec ret port_flavor other_flavor spec_subpkg
 	local LOCALBASE was_listed_with_flavor
 	local -; set -f
-	local OVERLAYS
+	local OVERLAYS subpkgs subpkg subpkg_originspec
+	local pkgname_var pdeps_var
 
 	OVERLAYS="${REAL_OVERLAYS-}"
 	# XXX: This avoids some exists() checks of the *host* here. Need to
@@ -63,30 +65,40 @@ cache_pkgnames() {
 		return ${ret}
 	fi
 
-	originspec_decode "${originspec}" origin spec_flavor subpkg
+	originspec_decode "${originspec}" origin spec_flavor spec_subpkg
 
 	if [ "${spec_flavor}" = "${FLAVOR_DEFAULT}" ]; then
-		originspec_encode originspec "${origin}" '' "${subpkg}"
+		originspec_encode originspec "${origin}" '' "${spec_subpkg}"
 	elif [ "${spec_flavor}" = "${FLAVOR_ALL}" ]; then
-		originspec_encode originspec "${origin}" '' "${subpkg}"
+		originspec_encode originspec "${origin}" '' "${spec_subpkg}"
 	fi
 
-	# XXX: subpkg
+	if [ -z "${spec_subpkg}" ]; then
+		pdeps_var='${PKG_DEPENDS_ALL} ${EXTRACT_DEPENDS_ALL} ${PATCH_DEPENDS_ALL} ${FETCH_DEPENDS_ALL} ${BUILD_DEPENDS_ALL} ${LIB_DEPENDS_ALL} ${RUN_DEPENDS_ALL}'
+		pkgname_var="PKGNAME"
+	else
+		pdeps_var="\${PKG_DEPENDS.${spec_subpkg}} \${EXTRACT_DEPENDS.${spec_subpkg}} \${PATCH_DEPENDS.${spec_subpkg}} \${FETCH_DEPENDS.${spec_subpkg}} \${BUILD_DEPENDS.${spec_subpkg}} \${LIB_DEPENDS.${spec_subpkg}} \${RUN_DEPENDS.${spec_subpkg}}"
+		pkgname_var="PKGNAME.${spec_subpkg}"
+	fi
+
 	cleanenv port_var_fetch_originspec "${originspec}" \
-	   PKGNAME pkgname \
+	   "${pkgname_var}" pkgname \
 	   FLAVORS flavors \
 	   FLAVOR port_flavor \
+	   SUBPACKAGES subpkgs \
 	   IGNORE ignore \
-	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
+	    _PDEPS="${pdeps_var}" \
 	    '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
 	    pdeps || exit 99
-	if [ -n "${spec_flavor}" ] && ! hash_isset origin-flavors "${origin}"; then
+	if [ -n "${spec_flavor}" ] &&
+	    [ -z "${spec_subpkg}" ] &&
+	    ! hash_isset origin-flavors "${origin}"; then
 		# Make sure we grab the proper default flavors and sort it
 		# appropriately
 		local originspec_default pkgname_default flavors_default \
 		      flavor_default tmp x
 
-		originspec_encode originspec_default "${origin}" '' "${subpkg}"
+		originspec_encode originspec_default "${origin}" '' "${spec_subpkg}"
 		cleanenv port_var_fetch_originspec "${originspec_default}" \
 		   PKGNAME pkgname_default \
 		   FLAVORS flavors_default \
@@ -106,12 +118,17 @@ cache_pkgnames() {
 		esac
 		hash_set origin-flavors "${origin}" "${flavors_default}"
 		flavors="${flavors_default}"
-	elif [ -z "${spec_flavor}" ]; then
+	elif [ -z "${spec_flavor}" ] &&
+	    [ -z "${spec_subpkg}" ]; then
 		hash_set origin-flavors "${origin}" "${flavors}"
 	else
 		hash_get origin-flavors "${origin}" flavors || flavors=
 	fi
-	originspec_encode flavor_originspec "${origin}" "${port_flavor}" "${subpkg}"
+	if [ -z "${spec_subpkg}" ] &&
+	    ! hash_isset origin-subpkgs "${origin}"; then
+		hash_set origin-subpkgs "${origin}" "${subpkgs}"
+	fi
+	originspec_encode flavor_originspec "${origin}" "${port_flavor}" "${spec_subpkg}"
 	fix_default_flavor "${originspec}" originspec
 	assert_not '' "${pkgname}" "cache_pkgnames: ${originspec} has no PKGNAME?"
 	hash_set originspec-pkgname "${originspec}" "${pkgname}"
@@ -157,14 +174,30 @@ cache_pkgnames() {
 		"${ALL:-0}" -eq 1 -o "${FLAVOR_DEFAULT_ALL:-}" = "yes" ]; then
 		default_flavor="${flavors%% *}"
 		for flavor in ${flavors}; do
-			# Don't recurse on the first flavor since we are it.
+			# Dont recurse on the first flavor since we are it.
 			[ "${flavor}" = "${default_flavor}" ] && continue
-			originspec_encode flavor_originspec "${origin}" "${flavor}" "${subpkg}"
+			originspec_encode flavor_originspec "${origin}" \
+			    "${flavor}" "${spec_subpkg}"
 			cache_pkgnames 0 "${flavor_originspec}" || :
+		done
+	fi
+	# And subpackages
+	if [ "${isdep}" -eq "0" -o "${ALL:-0}" -eq 1 ] &&
+		[ -n "${subpkgs}" ] &&
+		[ -z "${spec_subpkg}" ]; then
+		for subpkg in ${subpkgs}; do
+			originspec_encode subpkg_originspec "${origin}" \
+			    "${spec_flavor}" "${subpkg}"
+			cache_pkgnames 0 "${subpkg_originspec}" || :
 		done
 	fi
 
 	[ -n "${ignore}" ]
+}
+
+expand_origins() {
+	expand_origin_flavors "$@"
+	#expand_origin_subpkgs "$@"
 }
 
 expand_origin_flavors() {
@@ -202,6 +235,42 @@ expand_origin_flavors() {
 		fi
 		# Add all FLAVORS in for this one
 		for flavor in ${flavors}; do
+			originspec_encode originspec "${origin}" "${flavor}" \
+			    "${subpkg}"
+			_expanded="${_expanded:+${_expanded} }${originspec}${extra:+:${extra}}"
+		done
+	done
+
+	setvar "${var_return}" "${_expanded}"
+}
+
+expand_origin_subpkgs() {
+	local origins="$1"
+	local var_return="$2"
+	local originspec origin flavor subpkgs _expanded subpkg
+	local IFS extra item
+	local -; set +f
+
+	_expanded=
+	for item in ${origins}; do
+		IFS=:
+		set -- ${item}
+		unset IFS
+		originspec="$1"
+		shift
+		extra="$*"
+
+		originspec_decode "${originspec}" origin flavor subpkg
+		hash_get origin-subpkgs "${origin}" subpkgs || subpkgs=
+		#if [ -z "${subpkg}" ]; then
+		#	_expanded="${originspec}"
+		#	continue
+		#fi
+		# Add all SUBPACKAGES in for this one
+		if [ -z "${subpkg}" ]; then
+			_expanded="${_expanded:+${_expanded} }${originspec}${extra:+:${extra}}"
+		fi
+		for subpkg in ${subpkgs}; do
 			originspec_encode originspec "${origin}" "${flavor}" \
 			    "${subpkg}"
 			_expanded="${_expanded:+${_expanded} }${originspec}${extra:+:${extra}}"
@@ -288,7 +357,7 @@ assert_metadata() {
 	awk -v dep="${dep}" '$3 == dep' "${log}/.poudriere.all_pkgs%" \
 	    > "${tmp}"
 	# First fix the list to expand main port FLAVORS
-	expand_origin_flavors "${origins}" origins_expanded
+	expand_origins "${origins}" origins_expanded
 	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
 	echo "Asserting that only '${origins_expanded}' are in the metadata with dep='${dep}'" >&2
 	for originspec in ${origins_expanded}; do
@@ -351,7 +420,7 @@ assert_queued() {
 	awk -v dep="${dep}" '(dep == "" || $3 == dep)' "${log}/.poudriere.ports.queued" \
 	    > "${tmp}"
 	# First fix the list to expand main port FLAVORS
-	expand_origin_flavors "${origins}" origins_expanded
+	expand_origins "${origins}" origins_expanded
 	# The queue does remove duplicates - do the same here
 	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
 	echo "Asserting that only '${origins_expanded}' are in the dep='${dep}' queue" >&2
@@ -420,7 +489,7 @@ assert_ignored() {
 	tmp="$(mktemp -t queued)"
 	cp -f "${log}/.poudriere.ports.ignored" "${tmp}"
 	# First fix the list to expand main port FLAVORS
-	expand_origin_flavors "${origins}" origins_expanded
+	expand_origins "${origins}" origins_expanded
 	# The queue does remove duplicates - do the same here
 	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
 	echo "Asserting that only '${origins_expanded}' are in the ignored list" >&2
@@ -489,7 +558,7 @@ assert_skipped() {
 	tmp="$(mktemp -t queued)"
 	cp -f "${log}/.poudriere.ports.skipped" "${tmp}"
 	# First fix the list to expand main port FLAVORS
-	expand_origin_flavors "${origins}" origins_expanded
+	expand_origins "${origins}" origins_expanded
 	# The queue does remove duplicates - do the same here
 	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
 	echo "Asserting that only '${origins_expanded}' are in the skipped list" >&2
@@ -555,7 +624,7 @@ assert_tobuild() {
 	tmp="$(mktemp -t queued)"
 	cp -f "${log}/.poudriere.ports.tobuild" "${tmp}"
 	# First fix the list to expand main port FLAVORS
-	expand_origin_flavors "${origins}" origins_expanded
+	expand_origins "${origins}" origins_expanded
 	# The queue does remove duplicates - do the same here
 	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
 	echo "Asserting that only '${origins_expanded}' are in the tobuild list" >&2
@@ -619,7 +688,7 @@ assert_built() {
 	tmp="$(mktemp -t queued)"
 	cp -f "${log}/.poudriere.ports.built" "${tmp}"
 	# First fix the list to expand main port FLAVORS
-	expand_origin_flavors "${origins}" origins_expanded
+	expand_origins "${origins}" origins_expanded
 	# The queue does remove duplicates - do the same here
 	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
 	echo "Asserting that only '${origins_expanded}' are in the built list" >&2
@@ -675,7 +744,7 @@ assert_failed() {
 	tmp="$(mktemp -t queued)"
 	cp -f "${log}/.poudriere.ports.failed" "${tmp}"
 	# First fix the list to expand main port FLAVORS
-	expand_origin_flavors "${origins}" origins_expanded
+	expand_origins "${origins}" origins_expanded
 	# The queue does remove duplicates - do the same here
 	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
 	echo "Asserting that only '${origins_expanded}' are in the failed list" >&2
@@ -928,7 +997,7 @@ _setup_build() {
 		cache_pkgnames 0 "${origin}" || :
 	done
 	echo " done"
-	expand_origin_flavors "${LISTPORTS}" LISTPORTS_EXPANDED
+	expand_origins "${LISTPORTS}" LISTPORTS_EXPANDED
 	fetch_global_port_vars || err 99 "Unable to fetch port vars"
 	assert_not "null" "${P_PORTS_FEATURES-null}" "fetch_global_port_vars should work"
 	echo "Building: $(echo ${LISTPORTS_EXPANDED})"
@@ -1041,7 +1110,7 @@ expand_and_count() {
 	local expected_list="$1"
 	local expanded_list
 
-	expand_origin_flavors "${expected_list?}" expanded_list
+	expand_origins "${expected_list?}" expanded_list
 	count "${expanded_list?}"
 }
 
@@ -1144,7 +1213,7 @@ _assert_bulk_build_results() {
 	assert_ret 0 [ -d "${PACKAGES}" ]
 	assert 0 $? "PACKAGES directory should exist: ${PACKAGES}"
 
-	expand_origin_flavors "${EXPECTED_BUILT?}" built_origins_expanded
+	expand_origins "${EXPECTED_BUILT?}" built_origins_expanded
 	built_pkgnames=
 	TESTPKGNAME=
 	for originspec in ${built_origins_expanded}; do
@@ -1166,7 +1235,7 @@ _assert_bulk_build_results() {
 		esac
 	done
 
-	expand_origin_flavors "${EXPECTED_FAILED-}" failed_origins_expanded
+	expand_origins "${EXPECTED_FAILED-}" failed_origins_expanded
 	failed_pkgnames=
 	for failedspec in ${failed_origins_expanded}; do
 		case "${failedspec}" in
@@ -1192,7 +1261,7 @@ _assert_bulk_build_results() {
 		esac
 	done
 
-	expand_origin_flavors "${EXPECTED_IGNORED-}" ignored_origins_expanded
+	expand_origins "${EXPECTED_IGNORED-}" ignored_origins_expanded
 	ignored_pkgnames=
 	for ignoredspec in ${ignored_origins_expanded}; do
 		case "${ignoredspec}" in
@@ -1218,7 +1287,7 @@ _assert_bulk_build_results() {
 		esac
 	done
 
-	expand_origin_flavors "${EXPECTED_SKIPPED-}" skipped_origins_expanded
+	expand_origins "${EXPECTED_SKIPPED-}" skipped_origins_expanded
 	skipped_pkgnames=
 	for skippedspec in ${skipped_origins_expanded}; do
 		case "${skippedspec}" in

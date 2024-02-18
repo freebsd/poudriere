@@ -11,6 +11,9 @@ EXTRA_DIST= $(TESTS) \
 	    runtest.sh
 
 XFAIL_TESTS= \
+	bulk-build-inc-pkgclean-subpackage.sh \
+	bulk-build-inc-subpackage-new-dep.sh \
+	bulk-build-inc-subpackage.sh \
 	distclean-overlays.sh \
 	err.sh \
 	options-overlays.sh
@@ -109,9 +112,13 @@ JAIL_TESTS= \
 	bulk-build-inc-pkgclean-flavor-default.sh \
 	bulk-build-inc-pkgclean-flavor.sh \
 	bulk-build-inc-pkgclean-origin.sh \
+	bulk-build-inc-pkgclean-subpackage.sh \
 	bulk-build-inc-shlibs-buildrun-deps.sh \
 	bulk-build-inc-shlibs-lib-deps.sh \
 	bulk-build-inc-shlibs.sh \
+	bulk-build-inc-subpackage-deleted-subpackage.sh \
+	bulk-build-inc-subpackage-new-dep.sh \
+	bulk-build-inc-subpackage.sh \
 	bulk-build-inc-trim_orphaned_build_deps-RUN-and-BUILD.sh \
 	bulk-build-inc-trim_orphaned_build_deps-RUN.sh \
 	bulk-build-inc-trim_orphaned_build_deps-double-dep.sh \
@@ -173,6 +180,8 @@ JAIL_TESTS= \
 	bulk-overlay-all.sh \
 	bulk-overlay-specific.sh \
 	bulk-skipped-and-needed-dep.sh \
+	bulk-subpackage-all.sh \
+	bulk-subpackage-specific-port.sh \
 	testport-all-flavors-failure.sh \
 	testport-build-MOVED-default.sh \
 	testport-build-MOVED-flavor.sh \

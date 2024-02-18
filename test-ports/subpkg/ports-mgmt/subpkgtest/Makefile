@@ -25,6 +25,9 @@ SELF_DEPENDS.data2=	cmd2
 
 DATA_SUBPACKAGES=	data1 data2
 DATA_RUN_DEPENDS.data1=	pstree:sysutils/pstree
+.if defined(DATA1_NEWDEP)
+DATA_RUN_DEPENDS.data1+= pciids>0:misc/pciids
+.endif
 DOCS_SUBPACKAGES=	docs
 EXAMPLES_SUBPACKAGES=	examples
 
