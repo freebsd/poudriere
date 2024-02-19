@@ -6291,6 +6291,7 @@ ensure_pkg_installed() {
 		injail_ver="${injail_ver##*/}"
 		injail_ver="${injail_ver##*-}"
 		injail_ver="${injail_ver%.*}"
+		injail_ver="${injail_ver%_*}"
 		host_ver="$(/usr/local/sbin/pkg-static -v)"
 		case "${host_var}" in
 		"${injail_ver}")
