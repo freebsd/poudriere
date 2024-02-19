@@ -62,7 +62,7 @@ zsnapshot_prepare()
 zsnapshot_build()
 {
 
-	do_clone -r ${WRKDIR}/world ${WRKDIR}/mnt
+	do_clone -r ${WRKDIR:?}/world ${WRKDIR:?}/mnt
 }
 
 zsnapshot_generate()

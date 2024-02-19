@@ -71,6 +71,27 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	assert "ports-mgmt/pkg" "${value}" "pkg should match afer shash_remove_var"
 }
 
+# shash_read_mapfile on nonexistent var-key should fail
+{
+	handle=unset
+	assert_ret_not 0 shash_read_mapfile nonexistent key handle
+	assert "unset" "${handle}"
+}
+
+# shash_read_mapfile on existing var-key should pass
+{
+
+	assert_ret 0 shash_set test key "value"
+	handle=unset
+	assert_ret 0 shash_read_mapfile test key handle
+	assert_not "unset" "${handle}"
+	value=unset
+	assert_ret 0 mapfile_read "${handle}" value
+	assert "value" "${value}"
+	assert_ret_not 0 mapfile_read "${handle}" value
+	assert_ret 0 mapfile_close "${handle}"
+}
+
 # Test write / read
 {
 	shash_write pkgmetadata "annotations" <<-EOF
@@ -116,6 +137,131 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	assert 5 "$lines" "shash_read_mapfile pkgmetadata annotations lines"
 	assert_ret 0 mapfile_close "${handle}"
 
+}
+
+# Test blank shash_set does not return newline in shash_read / shash_get
+{
+	shash_set pkgmetadata "annotations-blank1" "bogus"
+	shash_set pkgmetadata "annotations-blank1" ""
+	assert "0" "$?" "shash_set pkgmetadata annotations-blank1"
+
+	lines=0
+	shash_read pkgmetadata "annotations-blank1" |
+	(
+		set -e
+		while mapfile_read_loop_redir value1 rest; do
+			assert "" "${value1}"
+			lines=$((lines + 1))
+		done
+		exit "${lines}"
+	)
+	assert 0 "$?" "shash_read pkgmetadata annotations-blank1 should not read any lines. lines=$?"
+
+	assert_ret 0 shash_exists pkgmetadata "annotations-blank1"
+
+	value=unset
+	assert_ret 0 shash_get pkgmetadata "annotations-blank1" value
+	assert "empty" "${value:-empty}"
+}
+
+# Test blank -n shash_write does not return newline in shash_read / shash_get
+{
+	shash_set pkgmetadata "annotations-blank2" "bogus"
+	echo -n | shash_write pkgmetadata "annotations-blank2"
+	assert "0" "$?" "shash_write pkgmetadata annotations-blank2"
+
+	lines=0
+	shash_read pkgmetadata "annotations-blank2" |
+	(
+		set -e
+		while mapfile_read_loop_redir value1 rest; do
+			assert "" "${value1}"
+			lines=$((lines + 1))
+		done
+		exit "${lines}"
+	)
+	assert 0 "$?" "shash_read pkgmetadata annotations-blank2 should not read any lines. lines=$?"
+
+	lines=0
+	assert_ret 0 shash_read_mapfile pkgmetadata "annotations-blank2" handle
+	while mapfile_read "${handle}" value1 rest; do
+		lines=$((lines + 1))
+	done
+	assert 0 "$lines" "shash_read_mapfile pkgmetadata annotations-blank2 should not read any lines. lines=$lines"
+	assert_ret 0 mapfile_close "${handle}"
+
+	assert_ret 0 shash_exists pkgmetadata "annotations-blank2"
+
+	value=unset
+	assert_ret 0 shash_get pkgmetadata "annotations-blank2" value
+	assert "empty" "${value:-empty}"
+}
+
+# Test blank stdin to shash_write does not return newline in shash_read / shash_get
+{
+	shash_set pkgmetadata "annotations-blank3" "bogus"
+	: | shash_write pkgmetadata "annotations-blank3"
+	assert "0" "$?" "shash_write pkgmetadata annotations-blank3"
+
+	lines=0
+	shash_read pkgmetadata "annotations-blank3" |
+	(
+		set -e
+		while mapfile_read_loop_redir value1 rest; do
+			assert "" "${value1}"
+			lines=$((lines + 1))
+		done
+		exit "${lines}"
+	)
+	assert 0 "$?" "shash_read pkgmetadata annotations-blank3 should not read any lines. lines=$?"
+
+	lines=0
+	assert_ret 0 shash_read_mapfile pkgmetadata "annotations-blank3" handle
+	while mapfile_read "${handle}" value1 rest; do
+		lines=$((lines + 1))
+	done
+	assert 0 "$lines" "shash_read_mapfile pkgmetadata annotations-blank3 should not read any lines. lines=$lines"
+	assert_ret 0 mapfile_close "${handle}"
+
+	assert_ret 0 shash_exists pkgmetadata "annotations-blank3"
+
+	value=unset
+	assert_ret 0 shash_get pkgmetadata "annotations-blank3" value
+	assert "empty" "${value:-empty}"
+}
+
+# Test blank write with newline to shash_write *does* return newline
+# in shash_read / shash_get
+{
+	shash_set pkgmetadata "annotations-blank4" "bogus"
+	echo | shash_write pkgmetadata "annotations-blank4"
+	assert "0" "$?" "shash_write pkgmetadata annotations-blank4"
+
+	lines=0
+	shash_read pkgmetadata "annotations-blank4" |
+	(
+		set -e
+		while mapfile_read_loop_redir value1 rest; do
+			assert "" "${value1}"
+			lines=$((lines + 1))
+		done
+		exit "${lines}"
+	)
+	assert 1 "$?" "shash_read pkgmetadata annotations-blank4 should read 1 line. lines=$?"
+
+	lines=0
+	assert_ret 0 shash_read_mapfile pkgmetadata "annotations-blank4" handle
+	while mapfile_read "${handle}" value1 rest; do
+		lines=$((lines + 1))
+	done
+	assert 1 "$lines" "shash_read_mapfile pkgmetadata annotations-blank4 should read 1 line. lines=$lines"
+	assert_ret 0 mapfile_close "${handle}"
+
+	assert_ret 0 shash_exists pkgmetadata "annotations-blank4"
+
+	value=unset
+	assert_ret 0 shash_get pkgmetadata "annotations-blank4" value
+	assert "empty" "${value:-empty}"
 }
 
 rm -rf "${MASTERMNT}"

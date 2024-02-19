@@ -134,3 +134,6 @@ void mklocal(char *);
 void poplocalvars(void);
 int unsetvar(const char *);
 int setvarsafe(const char *, const char *, int);
+
+extern long shpid;
+void setmypid(void);

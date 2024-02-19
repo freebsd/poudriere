@@ -26,6 +26,7 @@ until [ "${n}" -eq "${max}" ]; do
 
 	# Background waiters
 	(
+		trap - INT
 		set -T
 		got_lock=66
 		trap 'exit ${got_lock}' TERM
@@ -49,6 +50,7 @@ until [ "${n}" -eq "${max}" ]; do
 	) &
 	pid_unlock1=$!
 	(
+		trap - INT
 		set -T
 		got_lock=66
 		trap 'exit ${got_lock}' TERM
@@ -72,6 +74,7 @@ until [ "${n}" -eq "${max}" ]; do
 	) &
 	pid_unlock2=$!
 	(
+		trap - INT
 		set -T
 		got_lock=66
 		trap 'exit ${got_lock}' TERM
@@ -95,6 +98,7 @@ until [ "${n}" -eq "${max}" ]; do
 	) &
 	pid_unlock3=$!
 	(
+		trap - INT
 		set -T
 		got_lock=66
 		trap 'exit ${got_lock}' TERM
@@ -139,10 +143,10 @@ until [ "${n}" -eq "${max}" ]; do
 	kill "${winner}"
 	_wait "${winner}"
 	case ${winner} in
-	${pid_unlock1}) status_unlock1=$? ;;
-	${pid_unlock2}) status_unlock2=$? ;;
-	${pid_unlock3}) status_unlock3=$? ;;
-	${pid_unlock4}) status_unlock4=$? ;;
+	"${pid_unlock1}") status_unlock1=$? ;;
+	"${pid_unlock2}") status_unlock2=$? ;;
+	"${pid_unlock3}") status_unlock3=$? ;;
+	"${pid_unlock4}") status_unlock4=$? ;;
 	esac
 	# New winner
 	sleep 2

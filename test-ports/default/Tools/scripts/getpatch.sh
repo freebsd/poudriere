@@ -24,8 +24,6 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 # 
-# $FreeBSD: head/Tools/scripts/getpatch.sh 382731 2015-03-30 21:13:12Z rodrigo $
-#
 # MAINTAINER=   rodrigo@FreeBSD.org
 #
 

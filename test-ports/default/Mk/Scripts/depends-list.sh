@@ -1,8 +1,8 @@
 #!/bin/sh
 # MAINTAINER: portmgr@FreeBSD.org
-# $FreeBSD: head/Mk/Scripts/depends-list.sh 510950 2019-09-03 14:36:00Z bapt $
 
 set -e
+set -o pipefail
 
 . ${dp_SCRIPTSDIR}/functions.sh
 
@@ -69,6 +69,12 @@ check_dep() {
 			d=${overlay}/${2}
 			f=
 			case "${d}" in
+			*~*/*) ;; # Ignore ~ in the path which would not be a subpkg
+			*~*)
+			    d=${d%~*}
+				;;
+			esac
+			case "${d}" in
 			*@*/*) ;; # Ignore @ in the path which would not be a flavor
 			*@*)
 				f=${d##*@}
@@ -76,7 +82,7 @@ check_dep() {
 				;;
 			esac
 			if [ -f ${d}/Makefile ]; then
-				if [ -n $f ]; then
+				if [ -n "$f" ]; then
 					export FLAVOR=$f
 				fi
 				break
@@ -91,9 +97,9 @@ check_dep() {
 		fi
 
 		case " ${checked} " in
-			*\ ${d}\ *) continue ;; # Already checked
+			*\ ${port_display}\ *) continue ;; # Already checked
 		esac
-		checked="${checked} ${d}"
+		checked="${checked} ${port_display}"
 		# Check if the dependency actually exists or skip otherwise.
 		if [ ! -d "${d}" ]; then
 			echo "${dp_PKGNAME}: \"${port_display}\" non-existent -- dependency list incomplete" >&2

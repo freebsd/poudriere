@@ -26,38 +26,43 @@
 createfs() {
 	[ $# -eq 3 ] || eargs createfs name mnt fs
 	local name mnt fs
-	name=$1
-	mnt=$(echo $2 | sed -e "s,//,/,g")
-	fs=$3
+	name="$1"
+	mnt="$(echo $2 | sed -e "s,//,/,g")"
+	fs="$3"
 
-	[ -z "${NO_ZFS}" ] || fs=none
+	case "${NO_ZFS:+set}" in
+	set) fs=none ;;
+	esac
 
-	if [ -n "${fs}" -a "${fs}" != "none" ]; then
+	case "${fs-}" in
+	""|"none")
+		msg_n "Creating ${name} fs at ${mnt}..."
+		if ! mkdir -p "${mnt:?}"; then
+			echo " fail"
+			err 1 "Failed to create directory ${mnt}"
+		fi
+		# If the directory is non-empty then we didn't create it.
+		if ! dirempty "${mnt:?}"; then
+			echo " fail"
+			err 1 "Directory not empty at ${mnt}"
+		fi
+		echo " done"
+		;;
+	*)
 		msg_n "Creating ${name} fs at ${mnt}..."
 		if ! zfs create -p \
 			-o compression=on \
 			-o atime=off \
-			-o mountpoint=${mnt} ${fs}; then
+			-o mountpoint="${mnt:?}" "${fs:?}"; then
 			echo " fail"
 			err 1 "Failed to create FS ${fs}"
 		fi
 		echo " done"
 		# Must invalidate the zfs_getfs cache now in case of a
 		# negative entry.
-		cache_invalidate _zfs_getfs "${mnt}"
-	else
-		msg_n "Creating ${name} fs at ${mnt}..."
-		if ! mkdir -p "${mnt}"; then
-			echo " fail"
-			err 1 "Failed to create directory ${mnt}"
-		fi
-		# If the directory is non-empty then we didn't create it.
-		if ! dirempty "${mnt}"; then
-			echo " fail"
-			err 1 "Directory not empty at ${mnt}"
-		fi
-		echo " done"
-	fi
+		cache_invalidate _zfs_getfs "${mnt:?}"
+		;;
+	esac
 }
 
 _do_cpdup() {
@@ -67,9 +72,12 @@ _do_cpdup() {
 	local src="$3"
 	local dst="$4"
 
-	if [ "${src}" = "/" -o "${dst}" = "/" ]; then
-		err 1 "Tried to cpdup /; src=${src} dst=${dst}"
-	fi
+	case "${src}" in
+	/) err 1 "Tried to cpdup /; src=${src} dst=${dst}" ;;
+	esac
+	case "${dst}" in
+	/) err 1 "Tried to cpdup /; src=${src} dst=${dst}" ;;
+	esac
 
 	mkdir -p "${dst%/*}"
 	cpdup -i0 ${rflags} ${cpignore} "${src}" "${dst}"
@@ -103,10 +111,16 @@ _do_clone() {
 		common="${1}"
 		src="${2}"
 		dst="${3}"
-		if [ "${common}" = "/" ] &&
-			[ "${src}" = "." -o "${dst}" = "." ]; then
-			err 1 "Tried to cpdup /; common=${common} src=${src} dst=${dst}"
-		fi
+		case "${common}" in
+		/)
+			case "${src}" in
+			".") err 1 "Tried to cpdup /; common=${common} src=${src} dst=${dst}" ;;
+			esac
+			case "${dst}" in
+			".") err 1 "Tried to cpdup /; common=${common} src=${src} dst=${dst}" ;;
+			esac
+			;;
+		esac
 		(
 			cd "${common}" || err 1 "Cannot chdir ${common}"
 			_do_cpdup "${rflags}" "${cpignore}" "${src}" "${dst}"
@@ -145,7 +159,8 @@ rollbackfs() {
 	local fs="${3-$(zfs_getfs ${mnt})}"
 	local sfile tries
 
-	if [ -n "${fs}" ]; then
+	case "${fs:+set}" in
+	set)
 		# ZFS has a race with rollback+snapshot.  If ran concurrently
 		# it is possible that the rollback will "succeed" but the
 		# dataset will be on the newly created snapshot.  Avoid this
@@ -182,9 +197,10 @@ rollbackfs() {
 		# Need to create the file to note which snapshot we're in.
 		: > "${sfile}"
 		return
-	fi
+		;;
+	esac
 
-	do_clone_del -rx "${MASTERMNT}" "${mnt}"
+	do_clone_del -rx "${MASTERMNT:?}" "${mnt:?}"
 }
 
 findmounts() {
@@ -243,9 +259,9 @@ _zfs_getfs() {
 	[ $# -eq 1 ] || eargs _zfs_getfs mnt
 	local mnt="${1}"
 
-	mntres=$(realpath -q "${mnt}" || echo "${mnt}")
-	zfs list -rt filesystem -H -o name,mountpoint ${ZPOOL}${ZROOTFS} | \
-	    awk -vmnt="${mntres}" '$2 == mnt {print $1}'
+	mntres=$(realpath -q "${mnt:?}" || echo "${mnt:?}")
+	zfs list -rt filesystem -H -o name,mountpoint ${ZPOOL:?}${ZROOTFS:?} | \
+	    awk -vmnt="${mntres:?}" '$2 == mnt {print $1}'
 }
 
 zfs_getfs() {
@@ -253,13 +269,17 @@ zfs_getfs() {
 	local mnt="${1}"
 	local value
 
-	[ -n "${NO_ZFS}" ] && return 0
-	[ -z "${ZPOOL}${ZROOTFS}" ] && return 0
+	case "${NO_ZFS:+set}" in
+	set) return 0 ;;
+	esac
+	case "${ZPOOL:+set}${ZROOTFS:+set}" in
+	"") return 0 ;;
+	esac
 
 	cache_call value _zfs_getfs "${mnt}"
-	if [ -n "${value}" ]; then
-		echo "${value}"
-	fi
+	case "${value:+set}" in
+	set) echo "${value}" ;;
+	esac
 }
 
 mnt_tmpfs() {
@@ -280,9 +300,11 @@ mnt_tmpfs() {
 	esac
 
 	size=
-	[ -n "${limit}" ] && size="-o size=${limit}G"
+	case "${limit:+set}" in
+	set) size="-o size=${limit}G" ;;
+	esac
 
-	mount -t tmpfs ${size} tmpfs "${dst}"
+	mount -t tmpfs ${size} tmpfs "${dst:?}"
 }
 
 clonefs() {
@@ -304,34 +326,36 @@ clonefs() {
 		rollbackfs "${snap}" "${from}" "${fs}"
 		unset fs
 	fi
-	if [ -n "${fs}" ]; then
+	case "${fs:+set}" in
+	set)
 		name="${mnt##*/}"
 
-		if [ "${name}" = "ref" ]; then
-			zfs_to=${fs%/*}/${MASTERNAME}-${name}
-		else
-			zfs_to=${fs}/${name}
-		fi
+		case "${name}" in
+		"ref") zfs_to="${fs%/*}/${MASTERNAME}-${name}" ;;
+		*) zfs_to="${fs}/${name}" ;;
+		esac
 
 		zfs clone -o mountpoint=${mnt} \
 			-o sync=disabled \
 			-o atime=off \
 			-o compression=off \
-			${fs}@${snap} \
-			${zfs_to}
+			"${fs}@${snap}" \
+			"${zfs_to}"
 		# Must invalidate the zfs_getfs cache now in case of a
 		# negative entry.
 		cache_invalidate _zfs_getfs "${to}"
 		# Insert this into the zfs_getfs cache.
 		cache_set "${zfs_to}" _zfs_getfs "${to}"
-	else
+		;;
+	"")
 		local cpignore
 
 		cpignore=
 		if [ "${TMPFS_ALL}" -eq 1 ]; then
 			mnt_tmpfs all "${mnt}"
 		fi
-		if [ "${snap}" = "clean" ]; then
+		case "${snap}" in
+		"clean")
 			local skippath skippaths common src dst
 
 			set -- $(relpath_common "${from}" "${mnt}")
@@ -352,13 +376,17 @@ clonefs() {
 				done
 				echo ".cpignore"
 			} > "${cpignore}"
-		fi
-		do_clone -r ${cpignore:+-X "${cpignore}"} "${from}" "${mnt}"
-		if [ "${snap}" = "clean" ]; then
+			;;
+		esac
+		do_clone -r ${cpignore:+-X "${cpignore}"} "${from}" "${mnt:?}"
+		case "${snap}" in
+		"clean")
 			rm -f "${cpignore}"
-			echo "${DATADIR_NAME}" >> "${mnt}/.cpignore"
-		fi
-	fi
+			echo "${DATADIR_NAME}" >> "${mnt:?}/.cpignore"
+			;;
+		esac
+		;;
+	esac
 }
 
 nullfs_paths() {
@@ -367,17 +395,19 @@ nullfs_paths() {
 	local nullpaths
 
 	nullpaths="${NULLFS_PATHS}"
-	if [ "${IMMUTABLE_BASE}" = "nullfs" ]; then
+	case "${IMMUTABLE_BASE}" in
+	"nullfs")
 		# Need to keep /usr/src and /usr/ports on their own.
 		nullpaths="${nullpaths} /usr/bin /usr/include /usr/lib"
 		nullpaths="${nullpaths} /usr/lib32 /usr/libdata /usr/libexec"
 		nullpaths="${nullpaths} /usr/obj /usr/sbin /boot /bin /lib"
 		nullpaths="${nullpaths} /libexec"
 		# Can only add /sbin if not using static ccache
-		if [ -z "${CCACHE_STATIC_PREFIX}" ]; then
-			nullpaths="${nullpaths} /sbin"
-		fi
-	fi
+		case "${CCACHE_STATIC_PREFIX}" in
+		"") nullpaths="${nullpaths} /sbin" ;;
+		esac
+		;;
+	esac
 	echo "${nullpaths}" | tr ' ' '\n' | sort -u
 }
 
@@ -387,31 +417,33 @@ destroyfs() {
 	local type="$2"
 	local fs
 
-	umountfs ${mnt} 1
+	umountfs "${mnt:?}" 1
 	if [ ${TMPFS_ALL} -eq 1 ]; then
-		if [ -d "${mnt}" ]; then
-			if ! umount -n "${mnt}" 2>/dev/null; then
-				umount -f "${mnt}" 2>/dev/null || :
+		if [ -d "${mnt:?}" ]; then
+			if ! umount -n "${mnt:?}" 2>/dev/null; then
+				umount -f "${mnt:?}" 2>/dev/null || :
 			fi
 		fi
 	else
-		if [ -n "${NO_ZFS}" ]; then
-			fs=none
-		else
-			fs=$(zfs_getfs ${mnt})
-		fi
-		if [ -n "${fs}" -a "${fs}" != "none" ]; then
-			zfs destroy -rf ${fs}
-			rmdir ${mnt} || :
-			# Must invalidate the zfs_getfs cache.
-			cache_invalidate _zfs_getfs "${mnt}"
-		else
-			[ -d ${mnt} ] || return 0
-			rm -rfx ${mnt} 2>/dev/null || :
-			if [ -d "${mnt}" ]; then
-				chflags -R 0 ${mnt}
-				rm -rfx ${mnt}
+		case "${NO_ZFS:+set}" in
+		set)  fs=none ;;
+		"") fs="$(zfs_getfs "${mnt:?}")" ;;
+		esac
+		case "${fs-}" in
+		""|"none")
+			[ -d "${mnt:?}" ] || return 0
+			rm -rfx "${mnt:?}" 2>/dev/null || :
+			if [ -d "${mnt:?}" ]; then
+				chflags -R 0 "${mnt:?}"
+				rm -rfx "${mnt:?}"
 			fi
-		fi
+			;;
+		*)
+			zfs destroy -rf "${fs:?}"
+			rmdir "${mnt:?}" || :
+			# Must invalidate the zfs_getfs cache.
+			cache_invalidate _zfs_getfs "${mnt:?}"
+			;;
+		esac
 	fi
 }

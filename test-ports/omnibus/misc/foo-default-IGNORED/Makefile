@@ -24,6 +24,7 @@ NO_BUILD=	yes
 NO_ARCH=	yes
 
 DATADIR=	${PREFIX}/share/freebsd
+FILESDIR=	${.CURDIR:H:H}/misc/freebsd-release-manifests/files
 
 .if ${FLAVOR} == default
 RUN_DEPENDS+=	foo-dep-FLAVORS-unsorted-depignored:misc/foo-dep-FLAVORS-unsorted@depignored

@@ -53,6 +53,7 @@ __FBSDID("$FreeBSD$");
  * Code for dealing with input/output redirection.
  */
 
+#include "eval.h"
 #include "shell.h"
 #include "nodes.h"
 #include "jobs.h"
@@ -83,7 +84,7 @@ static struct redirtab *redirlist;
  * background commands, where we want to redirect fd0 to /dev/null only
  * if it hasn't already been redirected.
 */
-static int fd0_redirected = 0;
+int fd0_redirected = 0;
 
 /* Number of redirtabs that have not been allocated. */
 static unsigned int empty_redirs = 0;
@@ -115,6 +116,7 @@ redirect(union node *redir, int flags)
 	int i;
 	int fd;
 	char memory[10];	/* file descriptors to write to memory */
+	int redirected = 0;
 
 	INTOFF;
 	for (i = 10 ; --i >= 0 ; )
@@ -123,6 +125,7 @@ redirect(union node *redir, int flags)
 	if (flags & REDIR_PUSH) {
 		empty_redirs++;
 		if (redir != NULL) {
+			xtracestr_start("%s", "REDIR");
 			sv = ckmalloc(sizeof (struct redirtab));
 			for (i = 0 ; i < 10 ; i++)
 				sv->renamed[i] = EMPTY;
@@ -136,7 +139,7 @@ redirect(union node *redir, int flags)
 	for (n = redir ; n ; n = n->nfile.next) {
 		fd = n->nfile.fd;
 		if (fd == 0)
-			fd0_redirected = 1;
+			fd0_redirected++;
 		if ((n->nfile.type == NTOFD || n->nfile.type == NFROMFD) &&
 		    n->ndup.dupfd == fd)
 			continue; /* redirect from/to same file descriptor */
@@ -158,9 +161,12 @@ redirect(union node *redir, int flags)
 			INTON;
 		}
 		openredirect(n, memory);
+		redirected = 1;
 		INTON;
 		INTOFF;
 	}
+	if (redirected)
+		xtracestr_flush(" {");
 	if (memory[1])
 		out1 = &memout;
 	if (memory[2])
@@ -182,17 +188,20 @@ openredirect(union node *redir, char memory[10])
 	switch (redir->nfile.type) {
 	case NFROM:
 		fname = redir->nfile.expfname;
+		xtracestr_n(" %d< %s", fd, fname);
 		if ((f = open(fname, O_RDONLY)) < 0)
 			error("cannot open %s: %s", fname, strerror(errno));
 		break;
 	case NFROMTO:
 		fname = redir->nfile.expfname;
+		xtracestr_n(" %d<> %s", fd, fname);
 		if ((f = open(fname, O_RDWR|O_CREAT, 0666)) < 0)
 			error("cannot create %s: %s", fname, strerror(errno));
 		break;
 	case NTO:
 		if (Cflag) {
 			fname = redir->nfile.expfname;
+			xtracestr_n(" %d>| %s", fd, fname);
 			if (stat(fname, &sb) == -1) {
 				if ((f = open(fname, O_WRONLY|O_CREAT|O_EXCL, 0666)) < 0)
 					error("cannot create %s: %s", fname, strerror(errno));
@@ -212,17 +221,20 @@ openredirect(union node *redir, char memory[10])
 		/* FALLTHROUGH */
 	case NCLOBBER:
 		fname = redir->nfile.expfname;
+		xtracestr_n(" %d> %s", fd, fname);
 		if ((f = open(fname, O_WRONLY|O_CREAT|O_TRUNC, 0666)) < 0)
 			error("cannot create %s: %s", fname, strerror(errno));
 		break;
 	case NAPPEND:
 		fname = redir->nfile.expfname;
+		xtracestr_n(" %d>> %s", fd, fname);
 		if ((f = open(fname, O_WRONLY|O_CREAT|O_APPEND, 0666)) < 0)
 			error("cannot create %s: %s", fname, strerror(errno));
 		break;
 	case NTOFD:
 	case NFROMFD:
 		if (redir->ndup.dupfd >= 0) {	/* if not ">&-" */
+			xtracestr_n(" %d>&%d", fd, redir->ndup.dupfd);
 			if (memory[redir->ndup.dupfd])
 				memory[fd] = 1;
 			else {
@@ -231,11 +243,13 @@ openredirect(union node *redir, char memory[10])
 							strerror(errno));
 			}
 		} else {
+			xtracestr_n(" %d>&-", fd);
 			close(fd);
 		}
 		return;
 	case NHERE:
 	case NXHERE:
+		xtracestr_n(" <<");
 		f = openhere(redir);
 		break;
 	default:
@@ -307,7 +321,7 @@ out:
 /*
  * Undo the effects of the last redirection.
  */
-
+void mapfile_read_loop_close_stdin(void);
 void
 popredir(void)
 {
@@ -319,6 +333,10 @@ popredir(void)
 		empty_redirs--;
 		INTON;
 		return;
+	}
+	xtracestr("%s", "} REDIR");
+	if (fd0_redirected != rp->fd0_redirected) {
+		mapfile_read_loop_close_stdin();
 	}
 	for (i = 0 ; i < 10 ; i++) {
 		if (rp->renamed[i] != EMPTY) {

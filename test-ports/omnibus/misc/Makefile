@@ -4,6 +4,7 @@ SUBDIR += foo-all-IGNORED
 SUBDIR += foo-default-DEPIGNORED
 SUBDIR += foo-default-IGNORED
 SUBDIR += foo-dep-FLAVORS-unsorted
+SUBDIR += foo-flavor-double-DEPIGNORED
 SUBDIR += foop-IGNORED
 SUBDIR += foo-FLAVORS-unsorted
 SUBDIR += freebsd-release-manifests

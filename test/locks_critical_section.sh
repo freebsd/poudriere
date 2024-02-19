@@ -55,7 +55,7 @@ assert 1 ${main_siginfo} "INFO should be trapped"
 	assert 0 ${main_sigterm} "TERM should not be trapped in critical section"
 	main_siginfo=0
 	kill -INFO $$
-	assert 1 ${main_siginfo} "INFO should be trapped in critical section"
+	assert 0 ${main_siginfo} "INFO should not be trapped in critical section"
 	main_siginfo=0
 
 	lock_release TEST
@@ -65,7 +65,7 @@ assert 1 ${main_siginfo} "INFO should be trapped"
 	# The signals should have been delivered on the lock_release
 	assert 1 ${main_sigint} "INT should be delivered on lock_release"
 	assert 1 ${main_sigterm} "TERM should be delivered on lock_release"
-	assert 0 ${main_siginfo} "INFO should not be delivered on lock_release"
+	assert 1 ${main_siginfo} "INFO should be delivered on lock_release"
 }
 
 # Forking with a lock does bad things
@@ -73,17 +73,20 @@ assert 1 ${main_siginfo} "INFO should be trapped"
 	lock_acquire TEST 0
 	assert 0 "$?" "lock_acquire"
 
+	set -m
 	(
-		trap - INT
+		_spawn_wrapper :
 		lock_have TEST
 		assert_not 0 "$?" "child should not have lock TEST"
 		sleep 300
 	) &
-	bgpid="$!"
+	set +m
+	jobs -l
+	get_job_id "$!" bgjob
 
 	sleep 2
-	kill_and_wait 10 "${bgpid}"
-	assert 143 "$?" "kill bgpid - it should exit on INT rather than wait"
+	kill_job 10 "%${bgjob}"
+	assert 0 "$?" "kill bgpid - it should exit on TERM rather than wait"
 
 	lock_release TEST
 	assert 0 "$?" "lock_release"

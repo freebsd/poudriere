@@ -38,7 +38,7 @@
 . ${SCRIPTPREFIX}/image_zsnapshot.sh
 
 usage() {
-	[ $# -gt 0 ] && echo "Missing: $@" >&2
+	[ $# -gt 0 ] && echo "Missing: $*" >&2
 	cat << EOF
 poudriere image [parameters] [options]
 
@@ -80,11 +80,11 @@ EOF
 
 delete_image() {
 	[ ! -f "${excludelist}" ] || rm -f ${excludelist}
-	[ -z "${zroot}" ] || zpool destroy -f ${zroot}
+	[ -z "${zroot}" ] || zpool destroy -f ${zroot:?}
 	[ -z "${md}" ] || /sbin/mdconfig -d -u ${md#md}
-	[ -z "${zfs_zsnapshot}" ] || zfs destroy -r ${zfs_zsnapshot}
+	[ -z "${zfs_zsnapshot}" ] || zfs destroy -r ${zfs_zsnapshot:?}
 
-	TMPFS_ALL=0 destroyfs ${WRKDIR} image || :
+	TMPFS_ALL=0 destroyfs ${WRKDIR:?} image || :
 }
 
 cleanup_image() {
@@ -93,20 +93,23 @@ cleanup_image() {
 }
 
 recursecopylib() {
+	local path libs i
+
 	path=$1
 	case $1 in
 	*/*) ;;
 	lib*)
 		if [ -e "${WRKDIR}/world/lib/$1" ]; then
-			cp ${WRKDIR}/world/lib/$1 ${mroot}/lib
+			cp ${WRKDIR}/world/lib/$1 ${mroot:?}/lib
 			path=lib/$1
 		elif [ -e "${WRKDIR}/world/usr/lib/$1" ]; then
-			cp ${WRKDIR}/world/usr/lib/$1 ${mroot}/usr/lib
+			cp ${WRKDIR}/world/usr/lib/$1 ${mroot:?}/usr/lib
 			path=usr/lib/$1
 		fi
 		;;
 	esac
-	for i in $( (readelf -d ${mroot}/$path 2>/dev/null || :) | awk '$2 == "NEEDED" { gsub(/\[/,"", $NF ); gsub(/\]/,"",$NF) ; print $NF }'); do
+	libs="$( (readelf -d "${mroot:?}/${path}" 2>/dev/null || :) | awk '$2 == "NEEDED" { gsub(/\[/,"", $NF ); gsub(/\]/,"",$NF) ; print $NF }')"
+	for i in ${libs}; do
 		[ -f ${mroot}/lib/$i ] || recursecopylib $i
 	done
 }
@@ -114,7 +117,7 @@ recursecopylib() {
 mkminiroot() {
 	msg "Making miniroot"
 	[ -z "${MINIROOT}" ] && err 1 "MINIROOT not defined"
-	mroot=${WRKDIR}/miniroot
+	mroot=${WRKDIR:?}/miniroot
 	dirs="etc dev boot bin usr/bin libexec lib usr/lib sbin"
 	files="bin/kenv"
 	files="${files} bin/ls"
@@ -141,18 +144,18 @@ mkminiroot() {
 	files="${files} usr/bin/sed"
 
 	for d in ${dirs}; do
-		mkdir -p ${mroot}/${d}
+		mkdir -p ${mroot:?}/${d}
 	done
 
 	for f in ${files}; do
-		cp -p ${WRKDIR}/world/${f} ${mroot}/${f}
+		cp -p ${WRKDIR}/world/${f} ${mroot:?}/${f}
 		recursecopylib ${f}
 	done
-	cp -fRPp ${MINIROOT}/ ${mroot}/
+	cp -fRPp ${MINIROOT}/ ${mroot:?}/
 
-	makefs "${OUTPUTDIR}/${IMAGENAME}-miniroot" ${mroot}
-	[ -f "${OUTPUTDIR}/${IMAGENAME}-miniroot.gz" ] && rm "${OUTPUTDIR}/${IMAGENAME}-miniroot.gz"
-	gzip -9 "${OUTPUTDIR}/${IMAGENAME}-miniroot"
+	makefs "${OUTPUTDIR:?}/${IMAGENAME}-miniroot" ${mroot}
+	[ -f "${OUTPUTDIR:?}/${IMAGENAME}-miniroot.gz" ] && rm "${OUTPUTDIR:?}/${IMAGENAME}-miniroot.gz"
+	gzip -9 "${OUTPUTDIR:?}/${IMAGENAME}-miniroot"
 }
 
 get_pkg_abi() {
@@ -194,9 +197,9 @@ make_esp_file() {
     fi
 
     stagedir=$(mktemp -d /tmp/stand-test.XXXXXX)
-    mkdir -p "${stagedir}/EFI/BOOT"
+    mkdir -p "${stagedir:?}/EFI/BOOT"
     efibootname=$(get_uefi_bootname)
-    cp "${loader}" "${stagedir}/EFI/BOOT/${efibootname}.efi"
+    cp "${loader}" "${stagedir:?}/EFI/BOOT/${efibootname}.efi"
     makefs -t msdos \
 	-o fat_type=${fatbits} \
 	-o sectors_per_cluster=1 \
@@ -204,7 +207,7 @@ make_esp_file() {
 	-s ${size}m \
 	"${file}" "${stagedir}" \
 	>/dev/null 2>&1
-    rm -rf "${stagedir}"
+    rm -rf "${stagedir:?}"
     msg "ESP Image created"
 }
 
@@ -218,7 +221,7 @@ convert_package_list() {
 	REPOS_DIR=$(mktemp -dt poudriere_repo)
 	# This pkg rquery is always ran in host so we need a host-centric
 	# repo.conf always.
-	cat > "${REPOS_DIR}/repo.conf" <<-EOF
+	cat > "${REPOS_DIR:?}/repo.conf" <<-EOF
 	FreeBSD: { enabled: false }
 	local: { url: file:///${WRKDIR}/world/tmp/packages }
 	EOF
@@ -230,26 +233,26 @@ convert_package_list() {
 	pkg rquery '%At %o@%Av %n-%v' | \
 	    awk -v pkglist="${PACKAGELIST}" \
 	    -f "${AWKPREFIX}/unique_pkgnames_from_flavored_origins.awk"
-	rm -rf "${PKG_DBDIR}" "${REPOS_DIR}"
+	rm -rf "${PKG_DBDIR:?}" "${REPOS_DIR:?}"
 }
 
 install_world_from_pkgbase()
 {
 	OSVERSION=$(awk -F '"' '/REVISION=/ { print $2 }' ${mnt}/usr/src/sys/conf/newvers.sh | cut -d '.' -f 1)
-	mkdir -p ${WRKDIR}/world/etc/pkg/
+	mkdir -p ${WRKDIR:?}/world/etc/pkg/
 	pkg_abi=$(get_pkg_abi)
-	cat << -EOF > ${WRKDIR}/world/etc/pkg/FreeBSD-base.conf
+	cat << -EOF > ${WRKDIR:?}/world/etc/pkg/FreeBSD-base.conf
 	local: {
                url: file://${POUDRIERE_DATA}/images/${JAILNAME}-repo/FreeBSD:${OSVERSION}:${pkg_abi}/latest,
                enabled: true
 	       }
 -EOF
-	pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world update ${PKG_QUIET}
+	pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR:?}/world update ${PKG_QUIET}
 	msg "Installing base packages"
 	while read line; do
-		pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world install -r local ${PKG_QUIET} -y ${line}
+		pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR:?}/world install -r local ${PKG_QUIET} -y ${line}
 	done < ${PKGBASELIST}
-	rm ${WRKDIR}/world/etc/pkg/FreeBSD-base.conf
+	rm ${WRKDIR:?}/world/etc/pkg/FreeBSD-base.conf
 	msg "Base packages installed"
 }
 
@@ -257,13 +260,13 @@ install_world()
 {
     # Use of tar given cpdup has a pretty useless -X option for this case
 	msg "Installing world with tar"
-	tar -C ${mnt} -X ${excludelist} -cf - . | tar -xf - -C ${WRKDIR}/world
-	touch ${WRKDIR}/src.conf
-	[ ! -f ${POUDRIERED}/src.conf ] || cat ${POUDRIERED}/src.conf > ${WRKDIR}/src.conf
-	[ ! -f ${POUDRIERED}/${JAILNAME}-src.conf ] || cat ${POUDRIERED}/${JAILNAME}-src.conf >> ${WRKDIR}/src.conf
-	[ ! -f ${POUDRIERED}/image-${JAILNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-src.conf >> ${WRKDIR}/src.conf
-	[ ! -f ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf >> ${WRKDIR}/src.conf
-	make -s -C ${mnt}/usr/src DESTDIR=${WRKDIR}/world BATCH_DELETE_OLD_FILES=yes SRCCONF=${WRKDIR}/src.conf delete-old delete-old-libs
+	tar -C ${mnt:?} -X ${excludelist} -cf - . | tar -xf - -C ${WRKDIR:?}/world
+	touch ${WRKDIR:?}/src.conf
+	[ ! -f ${POUDRIERED}/src.conf ] || cat ${POUDRIERED}/src.conf > ${WRKDIR:?}/src.conf
+	[ ! -f ${POUDRIERED}/${JAILNAME}-src.conf ] || cat ${POUDRIERED}/${JAILNAME}-src.conf >> ${WRKDIR:?}/src.conf
+	[ ! -f ${POUDRIERED}/image-${JAILNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-src.conf >> ${WRKDIR:?}/src.conf
+	[ ! -f ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf >> ${WRKDIR:?}/src.conf
+	make -s -C ${mnt:?}/usr/src DESTDIR=${WRKDIR:?}/world BATCH_DELETE_OLD_FILES=yes SRCCONF=${WRKDIR:?}/src.conf delete-old delete-old-libs
 	msg "Installing world done"
 }
 
@@ -387,7 +390,7 @@ while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:R:s:S:t:vw:X:z:" FLAG; do
 	esac
 done
 
-saved_argv="$@"
+encode_args saved_argv "$@"
 shift $((OPTIND-1))
 post_getopts
 
@@ -428,15 +431,15 @@ msg "Preparing the image '${IMAGENAME}'"
 md=""
 CLEANUP_HOOK=cleanup_image
 [ -d "${POUDRIERE_DATA}/images" ] || \
-    mkdir "${POUDRIERE_DATA}/images"
+    mkdir "${POUDRIERE_DATA:?}/images"
 WRKDIR=$(mktemp -d ${POUDRIERE_DATA}/images/${IMAGENAME}-XXXX)
 _jget mnt ${JAILNAME} mnt || err 1 "Missing mnt metadata for jail"
 excludelist=$(mktemp -t excludelist)
-mkdir -p ${WRKDIR}/world
-mkdir -p ${WRKDIR}/out
-WORLDDIR="${WRKDIR}/world"
-[ -z "${EXCLUDELIST}" ] || cat ${EXCLUDELIST} > ${excludelist}
-cat >> ${excludelist} << EOF
+mkdir -p ${WRKDIR:?}/world
+mkdir -p ${WRKDIR:?}/out
+WORLDDIR="${WRKDIR:?}/world"
+[ -z "${EXCLUDELIST}" ] || cat ${EXCLUDELIST:?} > ${excludelist:?}
+cat >> ${excludelist:?} << EOF
 .poudriere-snap-*
 usr/src
 var/db/freebsd-update
@@ -481,7 +484,7 @@ if [ -n "${IMAGESIZE}" ]; then
 fi
 
 if [ -n "${SWAPSIZE}" ]; then
-	SWAPSIZE_UNIT=$(printf ${SWAPSIZE} | tail -c 1)
+	SWAPSIZE_UNIT=$(printf "%s" "${SWAPSIZE}" | tail -c 1)
 	SWAPSIZE_VALUE=${SWAPSIZE%?}
 	NEW_SWAPSIZE_UNIT=""
 	NEW_SWAPSIZE_SIZE=""
@@ -522,26 +525,26 @@ fi
 # Run the install world function
 ${INSTALLWORLD}
 
-[ ! -d "${EXTRADIR}" ] || cp -fRPp "${EXTRADIR}/" ${WRKDIR}/world/
+[ ! -d "${EXTRADIR}" ] || cp -fRPp "${EXTRADIR:?}/" ${WRKDIR:?}/world/
 if [ -f "${WRKDIR}/world/etc/login.conf.orig" ]; then
-	mv -f "${WRKDIR}/world/etc/login.conf.orig" \
-	    "${WRKDIR}/world/etc/login.conf"
+	mv -f "${WRKDIR:?}/world/etc/login.conf.orig" \
+	    "${WRKDIR:?}/world/etc/login.conf"
 fi
-cap_mkdb ${WRKDIR}/world/etc/login.conf
-pwd_mkdb -d ${WRKDIR}/world/etc -p ${WRKDIR}/world/etc/master.passwd
+cap_mkdb ${WRKDIR:?}/world/etc/login.conf
+pwd_mkdb -d ${WRKDIR:?}/world/etc -p ${WRKDIR:?}/world/etc/master.passwd
 
 # Set hostname
 if [ -n "${HOSTNAME}" ]; then
-	sysrc -q -R "${WRKDIR}/world" hostname="${HOSTNAME}"
+	sysrc -q -R "${WRKDIR:?}/world" hostname="${HOSTNAME}"
 fi
 
 msg "Installing packages"
 # install packages if any is needed
 if [ -n "${PACKAGELIST}" ]; then
-	mkdir -p ${WRKDIR}/world/tmp/packages
-	${NULLMOUNT} ${POUDRIERE_DATA}/packages/${MASTERNAME} ${WRKDIR}/world/tmp/packages
+	mkdir -p ${WRKDIR:?}/world/tmp/packages
+	${NULLMOUNT} ${POUDRIERE_DATA:?}/packages/${MASTERNAME} ${WRKDIR:?}/world/tmp/packages
 	if [ "${arch}" == "${host_arch}" ]; then
-		cat > "${WRKDIR}/world/tmp/repo.conf" <<-EOF
+		cat > "${WRKDIR:?}/world/tmp/repo.conf" <<-EOF
 		FreeBSD: { enabled: false }
 		local: { url: file:///tmp/packages }
 		EOF
@@ -550,7 +553,7 @@ if [ -n "${PACKAGELIST}" ]; then
 		    REPOS_DIR=/tmp ASSUME_ALWAYS_YES=yes \
 		    pkg install
 	else
-		cat > "${WRKDIR}/world/tmp/repo.conf" <<-EOF
+		cat > "${WRKDIR:?}/world/tmp/repo.conf" <<-EOF
 		FreeBSD: { enabled: false }
 		local: { url: file:///${WRKDIR}/world/tmp/packages }
 		EOF
@@ -558,15 +561,15 @@ if [ -n "${PACKAGELIST}" ]; then
 			export ASSUME_ALWAYS_YES=yes SYSLOG=no \
 			    REPOS_DIR="${WRKDIR}/world/tmp/" \
 			    ABI_FILE="${WRKDIR}/world/usr/lib/crt1.o"
-			pkg -r "${WRKDIR}/world/" install pkg
+			pkg -r "${WRKDIR:?}/world/" install pkg
 			convert_package_list "${PACKAGELIST}" | \
-			    xargs pkg -r "${WRKDIR}/world/" install
+			    xargs pkg -r "${WRKDIR:?}/world/" install
 		)
 	fi
-	rm -rf ${WRKDIR}/world/var/cache/pkg
-	umount ${WRKDIR}/world/tmp/packages
-	rmdir ${WRKDIR}/world/tmp/packages
-	rm ${WRKDIR}/world/var/db/pkg/repo-* 2>/dev/null || :
+	rm -rf ${WRKDIR:?}/world/var/cache/pkg
+	umount ${WRKDIR:?}/world/tmp/packages
+	rmdir ${WRKDIR:?}/world/tmp/packages
+	rm ${WRKDIR:?}/world/var/db/pkg/repo-* 2>/dev/null || :
 fi
 
 if [ -f "${POST_BUILD_SCRIPT}" ]; then

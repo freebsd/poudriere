@@ -1,5 +1,3 @@
-# $FreeBSD: head/Mk/Uses/desktop-file-utils.mk 411970 2016-03-27 01:23:25Z bapt $
-#
 # handle dependency depends on desktop-file-utils and package regen
 #
 # Feature:	desktop-file-utils
@@ -11,12 +9,11 @@
 .if !defined(_INCLUDE_USES_DESKTOP_FILE_UTILS_MK)
 _INCLUDE_USES_DESKTOP_FILE_UTILS_MK=	yes
 
-.if !empty(desktop-file-utils_ARGS)
+.  if !empty(desktop-file-utils_ARGS)
 IGNORE=	USES=desktop-file-utils does not require args
-.endif
+.  endif
 
 BUILD_DEPENDS+=	update-desktop-database:devel/desktop-file-utils
 RUN_DEPENDS+=	update-desktop-database:devel/desktop-file-utils
-PLIST_FILES+=	"@desktop-file-utils"
 
 .endif

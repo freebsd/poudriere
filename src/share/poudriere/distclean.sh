@@ -129,6 +129,12 @@ gather_distfiles() {
 	    "${distinfo_file}"
 }
 
+case "${DISTFILES_CACHE}" in
+no)
+	err "${EX_USAGE}" "DISTFILES_CACHE is 'no'. No cache is used."
+	;;
+esac
+
 [ -d ${DISTFILES_CACHE:-/nonexistent} ] ||
     err 1 "The DISTFILES_CACHE directory does not exist (cf. poudriere.conf)"
 
@@ -138,8 +144,6 @@ CLEANUP_HOOK=distfiles_cleanup
 read_packages_from_params "$@"
 
 for PTNAME in ${PTNAMES}; do
-	: ${DEP_FATAL_ERROR_FILE:=dep_fatal_error-$$}
-	clear_dep_fatal_error
 	parallel_start
 
 	PORTSDIR=$(pget ${PTNAME} mnt)
@@ -157,18 +161,19 @@ for PTNAME in ${PTNAMES}; do
 		echo "PACKAGE_BUILDING_FLAVORS=yes"
 	fi >> "${__MAKE_CONF}"
 	unset P_PORTS_FEATURES
-	fetch_global_port_vars
-
+	MASTERMNT= fetch_global_port_vars
 	MASTERMNT= MASTERMNTREL= load_moved
 	msg "Gathering all expected distfiles for ports tree '${PTNAME}'"
 
-	for originspec in $(listed_ports show_moved); do
+	ports="$(MASTERMNTREL= listed_ports show_moved)" ||
+	    err "$?" "Failed to find ports for ${PTNAME}"
+	for originspec in ${ports}; do
 		parallel_run \
 		    prefix_stderr_quick \
 		    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
 		    gather_distfiles "${originspec}"
 	done
-	if ! parallel_stop || check_dep_fatal_error; then
+	if ! parallel_stop; then
 		err 1 "Fatal errors encountered gathering distfiles metadata"
 	fi
 	rm -f "${__MAKE_CONF}"
@@ -183,7 +188,7 @@ msg "Gathering list of actual distfiles"
 # This is redundant but here for paranoia.
 [ -n "${DISTFILES_CACHE}" ] ||
     err 1 "DISTFILES_CACHE must be set (cf. poudriere.conf)"
-find -x ${DISTFILES_CACHE}/ -type f ! -name '.*' | \
+find -x ${DISTFILES_CACHE:?}/ -type f ! -name '.*' | \
     sort -o "${DISTFILES_LIST}.actual"
 
 comm -1 -3 ${DISTFILES_LIST}.expected ${DISTFILES_LIST}.actual \
@@ -199,5 +204,5 @@ if [ ${ret} -eq 2 ]; then
 	exit 0
 fi
 if [ "${DRY_RUN}" -eq 0 ]; then
-	find -x ${DISTFILES_CACHE}/ -type d -mindepth 1 -empty -delete
+	find -x ${DISTFILES_CACHE:?}/ -type d -mindepth 1 -empty -delete
 fi

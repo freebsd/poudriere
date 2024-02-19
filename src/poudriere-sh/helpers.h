@@ -24,6 +24,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <assert.h>
 #include <signal.h>
 #include <stdbool.h>
 
@@ -171,9 +172,26 @@ void verrorwithstatus(int, const char *, va_list) __printf0like(2, 0) __dead2;
 
 #undef getopt
 #define getopt pgetopt
-#undef optopt
 #undef opterr
 #undef optreset
-int pgetopt(int argc, char *argv[], const char *optstring);
+#undef optarg
+#define optarg shoptarg
+static inline int
+pgetopt(const int argc, char *argv[], const char *optstring)
+{
+	int ch;
+
+	assert(optind != 1 || argptr == argv + optind);
+	argptr = argv + optind;
+	ch = nextopt(optstring);
+	if (ch == '\0') {
+		ch = -1;
+		optind = 1;
+	}
+	optind = argptr - argv;
+	assert(argc - optind == argc - (argptr - argv));
+	assert(argv + optind == argptr);
+	return ((optopt = ch));
+}
 
 #endif

@@ -53,7 +53,7 @@ _mfs_configure_boot()
 	if [ ${MFSROOTSIZE} -ge 268435456 ]; then
 		echo "WARNING: MFSROOT too large, boot failure likely"
 	fi
-	do_clone -r ${WRKDIR}/world/boot ${WRKDIR}/out/boot
+	do_clone -r ${WRKDIR:?}/world/boot ${WRKDIR:?}/out/boot
 	cat >> ${WRKDIR}/out/boot/loader.conf <<-EOF
 	tmpfs_load="YES"
 	mfs_load="YES"

@@ -22,7 +22,8 @@ STDERR=$(mktemp -ut poudriere)
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-) || ret=1
+)
+assert 0 "$?"
 
 # Prefix changing
 (
@@ -56,7 +57,8 @@ STDERR=$(mktemp -ut poudriere)
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-) || ret=1
+)
+assert 0 "$?"
 
 # Prefix changing
 (
@@ -88,7 +90,8 @@ STDERR=$(mktemp -ut poudriere)
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-) || ret=1
+)
+assert 0 "$?"
 
 (
 	TIME_START=$(clock -monotonic -nsec)
@@ -108,7 +111,8 @@ STDERR=$(mktemp -ut poudriere)
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-) || ret=1
+)
+assert 0 "$?"
 
 (
 	TIME_START=$(clock -monotonic -nsec)
@@ -128,7 +132,8 @@ STDERR=$(mktemp -ut poudriere)
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-) || ret=1
+)
+assert 0 "$?"
 
 (
 	TIME_START=$(clock -monotonic -nsec)
@@ -149,7 +154,8 @@ STDERR=$(mktemp -ut poudriere)
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-) || ret=1
+)
+assert 0 "$?"
 
 # durations
 (
@@ -172,7 +178,7 @@ STDERR=$(mktemp -ut poudriere)
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-) || ret=1
+)
+assert 0 "$?"
 
 rm -f ${STDOUT}* ${STDERR}*
-exit ${ret:-0}

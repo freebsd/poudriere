@@ -1,0 +1,44 @@
+diff --git external/sh/error.c external/sh/error.c
+index 6a7e2609e..b42fff078 100644
+--- external/sh/error.c
++++ external/sh/error.c
+@@ -135,9 +135,10 @@ vwarning(const char *msg, va_list ap)
+ 
+ 	funcname = lookupvar("FUNCNAME");
+ 	if (commandname)
+-		outfmt(out2, "Error: (%d) %s:%s%s ", getpid(), commandname,
++		outfmt(out2, "Error: (%d) %s:%s%s%d: ", getpid(), commandname,
+ 		    funcname != NULL ? funcname : "",
+-		    funcname != NULL ? ":" : "");
++		    funcname != NULL ? ":" : "",
++		    plinno);
+ 	else if (arg0) {
+ 		outfmt(out2, "Error: (%d) %s:%s%s%d: ", getpid(), arg0,
+ 		    funcname != NULL ? funcname : "",
+diff --git external/sh/eval.c external/sh/eval.c
+index ea0bbf81a..0791d6942 100644
+--- external/sh/eval.c
++++ external/sh/eval.c
+@@ -187,7 +187,7 @@ evalstring(const char *s, int flags)
+  * Evaluate a parse tree.  The value is left in the global variable
+  * exitstatus.
+  */
+-
++extern int rootshell;
+ void
+ evaltree(union node *n, int flags)
+ {
+@@ -303,8 +303,12 @@ out:
+ 	popstackmark(&smark);
+ 	if (pendingsig)
+ 		dotrap();
+-	if (eflag && exitstatus != 0 && do_etest)
++	if (eflag && exitstatus != 0 && do_etest) {
++		if (rootshell) {
++			warning("set -e error: status = %d", exitstatus);
++		}
+ 		exitshell(exitstatus);
++	}
+ 	if (flags & EV_EXIT)
+ 		exraise(EXEXIT);
+ }

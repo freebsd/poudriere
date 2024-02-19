@@ -30,6 +30,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <fnmatch.h>
+#include <limits.h>
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
@@ -166,6 +167,36 @@ trap_pop(int signo, struct sigdata *sd)
 }
 
 int
+randintcmd(int argc, char **argv)
+{
+	char *endp;
+	char valstr[20];
+	int ret;
+	uint32_t value;
+	unsigned long max_val;
+
+	if (argc != 2 && argc != 3)
+		errx(EX_USAGE, "%s", "Usage: randint <max_val> [var_return]");
+
+	ret = 0;
+	errno = 0;
+	endp = NULL;
+	max_val = strtoul(argv[1], &endp, 10);
+	if (*endp != '\0' || errno != 0) {
+		err(EX_USAGE, "Invalid max_val");
+	}
+	INTOFF;
+	value = arc4random_uniform(max_val);
+	INTON;
+	if (argc == 3) {
+		snprintf(valstr, sizeof(valstr), "%u", value);
+		setvar(argv[2], valstr, 0);
+	} else
+		printf("%u\n", value);
+	return (ret);
+}
+
+int
 getvarcmd(int argc, char **argv)
 {
 	const char *value;
@@ -182,9 +213,11 @@ getvarcmd(int argc, char **argv)
 		goto out;
 	}
 out:
-	if (argc == 3)
+	if (argc == 3 &&
+	    argv[2][0] != '\0' &&
+	    strcmp(argv[2], "-") != 0) {
 		setvar(argv[2], value, 0);
-	else
+	} else if (strcmp(value, "") != 0)
 		printf("%s\n", value);
 	return (ret);
 }
@@ -475,25 +508,12 @@ gsubcmd(int argc, char **argv)
 	return (_gsub(argv, var_return));
 }
 
-int
-pgetopt(int argc, char *argv[], const char *optstring)
-{
-	int ch;
-
-	shoptarg = NULL;
-	ch = nextopt(optstring);
-	if (ch == '\0')
-		ch = -1;
-	optarg = shoptarg;
-	optind = argptr - argv;
-	return (ch);
-}
-
 /* $$ is not correct in subshells. */
 int
 getpidcmd(int argc, char **argv)
 {
 
-	fprintf(stdout, "%ld\n", (long)getpid());
+	assert(getpid() == shpid);
+	fprintf(stdout, "%ld\n", shpid);
 	return (0);
 }

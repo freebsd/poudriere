@@ -23,6 +23,27 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+pkg_get_originspec() {
+	[ $# -eq 2 ] || eargs pkg_get_originspec var_return pkg
+	local pgo_originspec_var="$1"
+	local pkg="$2"
+	local origin flavor subpkg
+
+	pkg_get_origin origin "${pkg}" || return
+	if have_ports_feature FLAVORS; then
+		pkg_get_flavor flavor "${pkg}" || return
+	else
+		flavor=
+	fi
+	if have_ports_feature SUBPACKAGES; then
+		pkg_get_subpkg subpkg "${pkg}" || return
+	else
+		subpkg=
+	fi
+	originspec_encode "${pgo_originspec_var}" "${origin}" "${flavor}" \
+	    "${subpkg}"
+}
+
 pkg_get_origin() {
 	[ $# -ge 2 ] || eargs pkg_get_origin var_return pkg [origin]
 	local var_return="$1"
@@ -31,36 +52,46 @@ pkg_get_origin() {
 	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
-	if [ -n "${_origin}" ] || ! shash_get 'pkg' 'origin' _origin; then
-		if [ -z "${_origin}" ]; then
+	case "${_origin}" in
+	"")
+		if ! shash_get 'pkg' 'origin' _origin; then
 			_origin=$(injail "${PKG_BIN:?}" query -F \
 			    "/packages/All/${pkg##*/}" "%o") || return
 		fi
+		;& # FALLTHROUGH
+	*)
 		shash_set 'pkg' 'origin' "${_origin}"
-	fi
-	if [ -n "${var_return}" ]; then
-		setvar "${var_return}" "${_origin}"
-	fi
-	if [ -z "${_origin}" ]; then
-		return 1
-	fi
+		;;
+	esac
+	case "${var_return}" in
+	"") ;;
+	-) echo "${_origin}" ;;
+	*) setvar "${var_return}" "${_origin}" ;;
+	esac
 }
 
 pkg_get_annotations() {
 	[ $# -eq 2 ] || eargs pkg_get_annotations mapfile_handle_var pkg
-	local mapfile_handle_var="$1"
+	local pga_mapfile_var="$1"
 	local pkg="$2"
 	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
 	if ! shash_exists 'pkg' 'annotations'; then
-		injail ${PKG_BIN} query -F "/packages/All/${pkg##*/}" \
+		injail ${PKG_BIN:?} query -F "/packages/All/${pkg##*/}" \
 		    '%At %Av' | sort |
 		    shash_write 'pkg' 'annotations'
 	fi
-	if [ -n "${mapfile_handle_var}" ]; then
-		shash_read_mapfile 'pkg' 'annotations' "${mapfile_handle_var}"
-	fi
+	case "${pga_mapfile_var}" in
+	"") ;;
+	-)
+		shash_read 'pkg' 'annotations'
+		;;
+	*)
+		shash_read_mapfile 'pkg' 'annotations' "${pga_mapfile_var}"
+		;;
+	esac ||
+	    err "${EX_SOFTWARE}" "pkg_get_annotations: Failed to read cache just written"
 }
 
 pkg_get_annotation() {
@@ -74,16 +105,18 @@ pkg_get_annotation() {
 	pkg_get_annotations mapfile_handle "${pkg}"
 	while mapfile_read "${mapfile_handle}" fkey fvalue; do
 		case "${fkey}" in
-		${key})
+		"${key}")
 			value="${fvalue}"
 			break
 			;;
 		esac
 	done
 	mapfile_close "${mapfile_handle}" || :
-	if [ -n "${pga_var_return}" ]; then
-		setvar "${pga_var_return}" "${value}"
-	fi
+	case "${pga_var_return}" in
+	"") ;;
+	-) echo "${value}" ;;
+	*) setvar "${pga_var_return}" "${value}" ;;
+	esac
 }
 
 pkg_get_flavor() {
@@ -109,19 +142,22 @@ pkg_get_arch() {
 	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
-	if [ -n "${_arch}" ] || ! shash_get 'pkg' 'arch' _arch; then
-		if [ -z "${_arch}" ]; then
+	case "${_arch}" in
+	"")
+		if ! shash_get 'pkg' 'arch' _arch; then
 			_arch=$(injail "${PKG_BIN:?}" query -F \
 			    "/packages/All/${pkg##*/}" "%q") || return
 		fi
+		;& # FALLTHROUGH
+	*)
 		shash_set 'pkg' 'arch' "${_arch}"
-	fi
-	if [ -n "${var_return}" ]; then
-		setvar "${var_return}" "${_arch}"
-	fi
-	if [ -z "${_arch}" ]; then
-		return 1
-	fi
+		;;
+	esac
+	case "${var_return}" in
+	"") ;;
+	-) echo "${_arch}" ;;
+	*) setvar "${var_return}" "${_arch}" ;;
+	esac
 }
 
 pkg_get_dep_origin_pkgnames() {
@@ -145,8 +181,9 @@ pkg_get_dep_origin_pkgnames() {
 		    tr '\n' ' ') || return
 		shash_set 'pkg' 'deps' "${fetched_data}"
 	fi
-	[ -n "${var_return_origins}" -o -n "${var_return_pkgnames}" ] || \
-	    return 0
+	case "${var_return_origins}${var_return_pkgnames}" in
+	"") return 0 ;;
+	esac
 	# Split the data
 	set -- ${fetched_data}
 	while [ $# -ne 0 ]; do
@@ -156,12 +193,16 @@ pkg_get_dep_origin_pkgnames() {
 		compiled_dep_pkgnames="${compiled_dep_pkgnames:+${compiled_dep_pkgnames} }${pkgname}"
 		shift 2
 	done
-	if [ -n "${var_return_origins}" ]; then
-		setvar "${var_return_origins}" "${compiled_dep_origins-}"
-	fi
-	if [ -n "${var_return_pkgnames}" ]; then
-		setvar "${var_return_pkgnames}" "${compiled_dep_pkgnames-}"
-	fi
+	case "${var_return_origins}" in
+	"") ;;
+	-) echo "${compiled_dep_origins-}" ;;
+	*) setvar "${var_return_origins}" "${compiled_dep_origins-}" ;;
+	esac
+	case "${var_return_pkgnames}" in
+	"") ;;
+	-) echo "${compiled_dep_pkgnames-}" ;;
+	*) setvar "${var_return_pkgnames}" "${compiled_dep_pkgnames-}" ;;
+	esac
 }
 
 pkg_get_options() {
@@ -192,9 +233,11 @@ pkg_get_options() {
 		EOF
 		shash_set 'pkg' 'options2' "${_compiled_options-}"
 	fi
-	if [ -n "${var_return}" ]; then
-		setvar "${var_return}" "${_compiled_options-}"
-	fi
+	case "${var_return}" in
+	"") ;;
+	-) echo "${_compiled_options-}" ;;
+	*) setvar "${var_return}" "${_compiled_options-}" ;;
+	esac
 }
 
 pkg_cache_data() {
@@ -207,8 +250,8 @@ pkg_cache_data() {
 	ensure_pkg_installed || return 0
 	{
 		pkg_get_options '' "${pkg}"
-		pkg_get_origin '' "${pkg}" "${origin}" || :
-		pkg_get_arch '' "${pkg}" || :
+		pkg_get_origin '' "${pkg}" "${origin}"
+		pkg_get_arch '' "${pkg}"
 		pkg_get_annotations '' "${pkg}"
 		pkg_get_dep_origin_pkgnames '' '' "${pkg}"
 	} >/dev/null
@@ -220,18 +263,19 @@ pkg_cacher_queue() {
 
 	encode_args encoded_data "$@"
 
-	echo "${encoded_data}" > ${MASTER_DATADIR}/pkg_cacher.pipe
+	echo "${encoded_data}" > ${MASTER_DATADIR:?}/pkg_cacher.pipe
 }
 
 pkg_cacher_main() {
 	local pkg work pkgname origin flavor
-	local IFS
+	local IFS -
 
-	mkfifo ${MASTER_DATADIR}/pkg_cacher.pipe
-	exec 6<> ${MASTER_DATADIR}/pkg_cacher.pipe
+	set +e +u
 
-	trap exit TERM
-	trap pkg_cacher_cleanup EXIT
+	setup_traps pkg_cacher_cleanup
+
+	mkfifo ${MASTER_DATADIR:?}/pkg_cacher.pipe
+	exec 6<> ${MASTER_DATADIR:?}/pkg_cacher.pipe
 
 	# Wait for packages to process.
 	while :; do
@@ -248,11 +292,11 @@ pkg_cacher_main() {
 pkg_cacher_cleanup() {
 	local IFS; unset IFS;
 
-	unlink ${MASTER_DATADIR}/pkg_cacher.pipe
+	unlink ${MASTER_DATADIR:?}/pkg_cacher.pipe
 }
 
 get_cache_dir() {
-	setvar "${1}" "${POUDRIERE_DATA}/cache/${MASTERNAME:?}"
+	setvar "${1}" "${POUDRIERE_DATA:?}/cache/${MASTERNAME:?}"
 }
 
 # Return the cache dir for the given pkg
@@ -278,7 +322,7 @@ get_pkg_cache_dir() {
 		pkg_mtime=$(stat -f %m "${pkg}")
 	fi
 
-	pkg_dir="${cache_dir}/${pkg_file}/${pkg_mtime}"
+	pkg_dir="${cache_dir:?}/${pkg_file:?}/${pkg_mtime}"
 
 	if [ "${use_mtime}" -eq 1 ]; then
 		[ -d "${pkg_dir}" ] || mkdir -p "${pkg_dir}"
@@ -318,6 +362,26 @@ delete_stale_pkg_cache() {
 	done
 
 	return 0
+}
+
+# If the user ran pkg-repo in the wrong directory we need to undo that.
+delete_bad_pkg_repo_files() {
+	local ext file
+
+	for ext in "${PKG_EXT:?}" "txz"; do
+		for file in \
+		    meta \
+		    digests \
+		    filesite \
+		    packagesite; do
+			pkg="${PACKAGES:?}/All/${file}.${ext}"
+			if [ ! -f "${pkg}" ]; then
+				continue
+			fi
+			msg "Removing invalid pkg repo file: ${pkg}"
+			unlink "${pkg}"
+		done
+	done
 }
 
 delete_all_pkgs() {
@@ -450,13 +514,16 @@ sign_pkg() {
 	local pkgfile="$2"
 
 	msg "Signing pkg bootstrap with method: ${sigtype}"
-	if [ "${sigtype}" = "fingerprint" ]; then
+	case "${sigtype}" in
+	"fingerprint")
 		unlink "${pkgfile}.sig"
 		sha256 -q "${pkgfile}" | ${SIGNING_COMMAND} > "${pkgfile}.sig"
-	elif [ "${sigtype}" = "pubkey" ]; then
+		;;
+	"pubkey")
 		unlink "${pkgfile}.pubkeysig"
 		echo -n $(sha256 -q "${pkgfile}") | \
 		    openssl dgst -sha256 -sign "${PKG_REPO_SIGNING_KEY}" \
 		    -binary -out "${pkgfile}.pubkeysig"
-	fi
+		;;
+	esac
 }

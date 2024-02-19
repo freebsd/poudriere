@@ -1,5 +1,3 @@
-# $FreeBSD: head/Mk/Uses/grantlee.mk 520520 2019-12-20 19:10:44Z tcberner $
-#
 # Handle dependency on grantlee
 #
 # Feature:	grantlee
@@ -33,7 +31,7 @@ _INCLUDE_USES_GRANTLEE_MK=	YES
 
 GRANTLEE_SUPPORTED=	5
 
-GRANTLEE5_VER=	5.2.0
+GRANTLEE5_VER=	5.3.0
 
 GRANTLEE5_LIB_DEPEND=	libGrantlee_Templates.so:devel/grantlee5
 

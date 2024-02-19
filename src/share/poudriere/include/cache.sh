@@ -39,7 +39,7 @@ cache_invalidate() {
 
 	var="cached-${function}"
 	encode_args key "$@"
-	msg_dev "cache_invalidate: Invalidating ${function}($@)"
+	msg_dev "cache_invalidate: Invalidating ${function}($*)"
 	shash_unset "${var}" "${key}" || :
 }
 
@@ -75,8 +75,54 @@ cache_set() {
 
 	var="cached-${function}"
 	encode_args key "$@"
-	msg_dev "cache_set: Caching value for ${function}($@)"
+	msg_dev "cache_set: Caching value for ${function}($*)"
 	_cache_set "${var}" "${key}" "${value}"
+}
+
+_cache_get() {
+	local -; set +x
+	[ "$#" -eq 3 ] || eargs _cache_get var key var_return
+	local cg_var="$1"
+	local cg_key="$2"
+	local cg_var_return="$3"
+
+	shash_get "${cg_var}" "${cg_key}" "${cg_var_return}"
+}
+
+_cache_read() {
+	local -; set +x
+	[ "$#" -eq 2 ] || eargs _cache_read var key
+	local cr_var="$1"
+	local cr_key="$2"
+
+	shash_read "${cr_var}" "${cr_key}"
+}
+
+_cache_write() {
+	local -; set +x
+	[ "$#" -eq 2 ] || eargs _cache_write var key
+	local cw_var="$1"
+	local cw_key="$2"
+
+	shash_write "${cw_var}" "${cw_key}"
+}
+
+_cache_tee() {
+	local -; set +x
+	[ "$#" -eq 2 ] || eargs _cache_tee var key
+	local cw_var="$1"
+	local cw_key="$2"
+
+	shash_tee "${cw_var}" "${cw_key}"
+}
+
+_cache_exists() {
+	local -; set +x
+	[ "$#" -eq 2 ] || eargs _cache_exists var key
+	local ce_var="$1"
+	local ce_key="$2"
+
+	shash_exists "${ce_var}" "${ce_key}"
 }
 
 # Execute a function and store its results in the cache.  Use the
@@ -84,29 +130,38 @@ cache_set() {
 # Usage: cache_call result_var function args
 cache_call() {
 	local -; set +x
-	[ $# -ge 2 ] || eargs cache_call var_return function [params]
+	[ $# -ge 2 ] || eargs cache_call "<var_return | ->" function [params]
 	local var_return="$1"
 	local function="$2"
 	shift 2
 	local -; set +e # Need to capture error without ||
-	local var key _value ret
+	local cc_var cc_key _cc_value ret
+
+	case "${var_return}" in
+	-)
+		_cache_call_pipe "${function}" "$@"
+		return
+		;;
+	esac
 
 	# If the value is not already in the cache then
 	# look it up and store the result in the cache.
-	var="cached-${function}"
-	encode_args key "$@"
+	cc_var="cached-${function}"
+	encode_args cc_key "$@"
 
-	if [ ${USE_CACHE_CALL} -eq 0 ] || \
-	    ! shash_get "${var}" "${key}" "${var_return}"; then
-		msg_dev "cache_call: Fetching ${function}($@)"
-		_value=$(${function} "$@")
+	if [ "${USE_CACHE_CALL}" -eq 0 ] ||
+	    ! _cache_get "${cc_var}" "${cc_key}" "${var_return}"; then
+		msg_dev "cache_call: Fetching ${function}($*)"
+		_cc_value=$(${function} "$@")
 		ret=$?
-		_cache_set "${var}" "${key}" "${_value}"
-		setvar "${var_return}" "${_value}"
+		if [ "${USE_CACHE_CALL}" -eq 1 ]; then
+			_cache_set "${cc_var}" "${cc_key}" "${_cc_value}"
+		fi
+		setvar "${var_return}" "${_cc_value}"
 	else
-		msg_dev "cache_call: Using cached ${function}($@)"
+		msg_dev "cache_call: Using cached ${function}($*)"
 		ret=0
-		# Value set by shash_get already
+		# Value set by _cache_get already
 	fi
 	return ${ret}
 }
@@ -123,30 +178,68 @@ cache_call_sv() {
 	local function="$2"
 	shift 2
 	local -; set +e # Need to capture error without ||
-	local var key sv_value ret
+	local cc_var cc_key sv_value ret
 
 	# If the value is not already in the cache then
 	# look it up and store the result in the cache.
-	var="cached-${function}"
-	encode_args key "$@"
+	cc_var="cached-${function}"
+	encode_args cc_key "$@"
 
-	if [ ${USE_CACHE_CALL} -eq 0 ] || \
-	    ! shash_get "${var}" "${key}" "${var_return}"; then
-		msg_dev "cache_call_sv: Fetching ${function}($@)"
+	if [ "${USE_CACHE_CALL}" -eq 0 ] ||
+	    ! _cache_get "${cc_var}" "${cc_key}" "${var_return}"; then
+		msg_dev "cache_call_sv: Fetching ${function}($*)"
 		sv_value=sv__null
 		${function} "$@"
 		ret=$?
-		if [ "${sv_value}" = "sv__null" ] && [ ${ret} -eq 0 ]; then
+		case "${ret}.${sv_value}" in
+		"0.sv__null")
 			# Function did not properly set sv_value,
 			# so ensure ret is >0
 			ret=76
+			;;
+		esac
+		if [ "${USE_CACHE_CALL}" -eq 1 ]; then
+			_cache_set "${cc_var}" "${cc_key}" "${sv_value}"
 		fi
-		shash_set "${var}" "${key}" "${sv_value}"
 		setvar "${var_return}" "${sv_value}"
 	else
-		msg_dev "cache_call_sv: Using cached ${function}($@)"
+		msg_dev "cache_call_sv: Using cached ${function}($*)"
 		ret=0
-		# Value set by shash_get already
+		# Value set by _cache_get already
 	fi
 	return ${ret}
+}
+
+# Execute a function and store its results in the cache.  Use the
+# cached value after that.
+# Send output to stdout.
+# Usage: cache_call function args
+_cache_call_pipe() {
+	local -; set +x
+	[ $# -ge 1 ] || eargs _cache_call_pipe function [params]
+	local function="$1"
+	shift 1
+	local -; set +e # Need to capture error without ||
+	local ccp_var ccp_key ccp_value ccp_line ret
+	local IFS
+
+	# If the value is not already in the cache then
+	# look it up and store the result in the cache.
+	ccp_var="cached-${function}"
+	encode_args ccp_key "$@"
+
+	if [ "${USE_CACHE_CALL}" -eq 0 ]; then
+		${function} "$@"
+		return
+	elif ! _cache_exists "${ccp_var}" "${ccp_key}"; then
+		msg_dev "_cache_call_pipe: Fetching ${function}($*)"
+		${function} "$@" | _cache_tee "${ccp_var}" "${ccp_key}"
+		ret="$?"
+	else
+		msg_dev "_cache_call_pipe: Using cached ${function}($*)"
+		ret=0
+		# Value set by _cache_get already
+		_cache_read "${ccp_var}" "${ccp_key}"
+	fi
+	return "${ret}"
 }

@@ -215,7 +215,7 @@ if [ ${ALL} -eq 1 -a ${CLEAN_LISTED} -eq 1 ]; then
 	CLEAN_LISTED=0
 fi
 
-saved_argv="$@"
+encode_args saved_argv "$@"
 shift $((OPTIND-1))
 post_getopts
 

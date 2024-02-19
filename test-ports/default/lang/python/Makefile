@@ -1,6 +1,3 @@
-# Created by: jkh
-# $FreeBSD: head/lang/python/Makefile 522489 2020-01-09 13:33:08Z mat $
-
 PORTNAME=	python
 PORTVERSION=	${PYTHON_DEFAULT}
 PORTREVISION=	3
@@ -12,6 +9,7 @@ EXTRACT_ONLY=	# empty
 
 MAINTAINER=	python@FreeBSD.org
 COMMENT=	"meta-port" for the default version of Python interpreter
+WWW=		https://www.python.org/
 
 RUN_DEPENDS=	python${PYTHON_MAJOR_VER}:lang/python${PYTHON_MAJOR_VER}
 

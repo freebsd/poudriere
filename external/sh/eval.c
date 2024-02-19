@@ -187,7 +187,7 @@ evalstring(const char *s, int flags)
  * Evaluate a parse tree.  The value is left in the global variable
  * exitstatus.
  */
-
+extern int rootshell;
 void
 evaltree(union node *n, int flags)
 {
@@ -303,8 +303,12 @@ out:
 	popstackmark(&smark);
 	if (pendingsig)
 		dotrap();
-	if (eflag && exitstatus != 0 && do_etest)
+	if (eflag && exitstatus != 0 && do_etest) {
+		if (rootshell) {
+			warning("set -e error: status = %d", exitstatus);
+		}
 		exitshell(exitstatus);
+	}
 	if (flags & EV_EXIT)
 		exraise(EXEXIT);
 }
@@ -459,6 +463,7 @@ evalredir(union node *n, int flags)
 	volatile int in_redirect = 1;
 
 	oexitstatus = exitstatus;
+	xtracestr("%s", "{");
 	expredir(n->nredir.redirect);
 	savehandler = handler;
 	if (setjmp(jmploc.loc)) {
@@ -466,6 +471,7 @@ evalredir(union node *n, int flags)
 
 		handler = savehandler;
 		e = exception;
+		xtracestr("%s", "}!");
 		popredir();
 		if (e == EXERROR && in_redirect) {
 			FORCEINTON;
@@ -483,6 +489,7 @@ evalredir(union node *n, int flags)
 	INTOFF;
 	handler = savehandler;
 	popredir();
+	xtracestr("%s", "}");
 	INTON;
 }
 
@@ -754,8 +761,121 @@ isdeclarationcmd(struct narg *arg)
 		(have_command || !isfunc("local"))));
 }
 
+void
+xtracestr(const char *fmt, ...)
+{
+	if (xflag == 0)
+		return;
+
+	const char *ps4;
+	va_list ap;
+
+	ps4 = expandstr(ps4val());
+	out2str(ps4 != NULL ? ps4 : ps4val());
+	va_start(ap, fmt);
+	doformat(out2, fmt, ap);
+	va_end(ap);
+	out2c('\n');
+	flushout(&errout);
+}
+
+void
+xtracestr_start(const char *fmt, ...)
+{
+	if (xflag == 0)
+		return;
+
+	va_list ap;
+	const char *ps4val = ps4val();
+	const char *ps4 = expandstr(ps4val);
+
+	out2str(ps4 != NULL ? ps4 : ps4val);
+	va_start(ap, fmt);
+	doformat(out2, fmt, ap);
+	va_end(ap);
+}
+
+void
+xtracestr_n(const char *fmt, ...)
+{
+	if (xflag == 0)
+		return;
+
+	va_list ap;
+
+	va_start(ap, fmt);
+	doformat(out2, fmt, ap);
+	va_end(ap);
+}
+
+void
+xtracestr_flush(const char *fmt, ...)
+{
+	if (xflag == 0)
+		return;
+
+	va_list ap;
+
+	va_start(ap, fmt);
+	doformat(out2, fmt, ap);
+	va_end(ap);
+	out2c('\n');
+	flushout(&errout);
+}
+
+void
+xtraceredir(union node *cmd)
+{
+	const char *fname;
+	union node *redir;
+	int fd;
+
+	redir = cmd->ncmd.redirect;
+	fd = redir->nfile.fd;
+
+	switch (redir->nfile.type) {
+	case NFROM:
+		fname = redir->nfile.expfname;
+		xtracestr_n(" %d< %s", fd, fname);
+		break;
+	case NFROMTO:
+		fname = redir->nfile.expfname;
+		xtracestr_n(" %d<> %s", fd, fname);
+		break;
+	case NTO:
+		if (Cflag) {
+			fname = redir->nfile.expfname;
+			xtracestr_n(" %d>| %s", fd, fname);
+			break;
+		}
+		/* FALLTHROUGH */
+	case NCLOBBER:
+		fname = redir->nfile.expfname;
+		xtracestr_n(" %d> %s", fd, fname);
+		break;
+	case NAPPEND:
+		fname = redir->nfile.expfname;
+		xtracestr_n(" %d>> %s", fd, fname);
+		break;
+	case NTOFD:
+	case NFROMFD:
+		if (redir->ndup.dupfd >= 0) {	/* if not ">&-" */
+			xtracestr_n(" %d>&%d", fd, redir->ndup.dupfd);
+		} else {
+			xtracestr_n(" %d>&-", fd);
+		}
+		return;
+	case NHERE:
+	case NXHERE:
+		xtracestr_n(" << XXX");
+		break;
+	default:
+		abort();
+	}
+}
+
 static void
-xtracecommand(struct arglist *varlist, int argc, char **argv)
+xtracecommand(union node *cmd, struct arglist *varlist, int argc, char **argv)
 {
 	char sep = 0;
 	const char *text, *p, *ps4;
@@ -782,6 +902,9 @@ xtracecommand(struct arglist *varlist, int argc, char **argv)
 			out2c(' ');
 		out2qstr(text);
 		sep = ' ';
+	}
+	if (cmd->ncmd.redirect) {
+		xtraceredir(cmd);
 	}
 	out2c('\n');
 	flushout(&errout);
@@ -877,7 +1000,7 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 
 	/* Print the command if xflag is set. */
 	if (xflag)
-		xtracecommand(&varlist, argc, argv);
+		xtracecommand(cmd, &varlist, argc, argv);
 
 	/* Now locate the command. */
 	if (argc == 0) {
@@ -1049,6 +1172,24 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 		}
 		handler = &jmploc;
 		funcnest++;
+		mklocal("FUNCNAME");
+		setvar("FUNCNAME", argv[0], 0);
+		mklocal("FUNCNAMESTACK");
+		char *funcstack;
+		int exitstatus_save = exitstatus, oexitstatus_save = oexitstatus;
+		asprintf(&funcstack,
+		    "FUNCNAMESTACK=\"${FUNCNAMESTACK:-${0}:%d:}${FUNCNAMESTACK:+:}${FUNCNAME}\"", plinno);
+		evalstring(funcstack, 0);
+		if (!is_int_on()) {
+			/*
+			 * evalstring may have FORCEINTON
+			 */
+			INTOFF;
+		}
+		assert(is_int_on());
+		exitstatus = exitstatus_save;
+		oexitstatus = oexitstatus_save;
+		free(funcstack);
 		redirect(cmd->ncmd.redirect, REDIR_PUSH);
 		INTON;
 		for (i = 0; i < varlist.count; i++)
@@ -1107,6 +1248,7 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 		commandname = argv[0];
 		argptr = argv + 1;
 		nextopt_optptr = NULL;		/* initialize nextopt */
+		optind = 1;
 		builtin_flags = flags;
 #ifndef NDEBUG
 		savesuppressint = suppressint;
@@ -1143,7 +1285,7 @@ cmddone:
 			memout.buf = NULL;
 			memout.nextc = NULL;
 			memout.bufend = NULL;
-			memout.bufsize = 64;
+			memout.bufsize = BUFSIZ;
 		}
 		if (cmdentry.u.index != EXECCMD)
 			popredir();

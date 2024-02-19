@@ -5,8 +5,7 @@
 # can do whatever you want with this stuff. If we meet some day, and you think
 # this stuff is worth it, you can buy me a beer in return.   Anton Berezin
 # ----------------------------------------------------------------------------
-#
-# $FreeBSD: head/Tools/scripts/splitpatch.pl 391618 2015-07-09 06:49:28Z ehaupt $
+
 use strict;
 use warnings;
 

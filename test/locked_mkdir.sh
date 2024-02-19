@@ -44,6 +44,7 @@ assert 0 $? "Lock dir should exist"
 time=$(clock -monotonic)
 # Background process to drop the lock
 (
+	trap - INT
 	sleep 5
 	rmdir "${LOCK1}"
 	assert 0 $? "rmdir should succeed"

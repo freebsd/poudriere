@@ -17,8 +17,16 @@ NO_BUILD=	yes
 NO_ARCH=	yes
 
 DATADIR=	${PREFIX}/share/freebsd
+FILESDIR=	${.CURDIR:H:H}/misc/freebsd-release-manifests/files
+
+OPTIONS_DEFINE=	NESTEDDEP
+NESTEDDEP_DESC= Depend on misc/foo for TRIM_ORPHANED_BUILD_DEPS test
 
 .include <bsd.port.options.mk>
+
+.if ${PORT_OPTIONS:MNESTEDDEP}
+BUILD_DEPENDS+=	foo:misc/foo
+.endif
 
 .if empty(FLAVOR)
 FLAVOR=	default
@@ -34,8 +42,7 @@ IGNORE=		dep ignored
 .endif
 
 do-install:
-	@${MKDIR} ${STAGEDIR}${DATADIR}/MANIFESTS
-	${INSTALL_DATA} ${FILESDIR}/MANIFESTS/* \
-	    ${STAGEDIR}${DATADIR}/MANIFESTS/
+	@${ECHO} "#! /bin/sh" > ${STAGEDIR}${PREFIX}/bin/foo
+	@${CHMOD} +x ${STAGEDIR}${PREFIX}/bin/foo
 
 .include <bsd.port.mk>

@@ -1,5 +1,3 @@
-# $FreeBSD: head/Mk/Uses/uidfix.mk 413204 2016-04-13 12:20:40Z mi $
-#
 # Changes some default behaviour of build systems to allow installing as user.
 #
 # Feature:	uidfix
@@ -10,10 +8,8 @@
 
 .if !defined(_INCLUDE_USES_UIDFIX_MK)
 _INCLUDE_USES_UIDFIX_MK=	yes
-.if !defined(GID)
-GID!=	id -g
-.endif
-.if ${UID} != 0
+GID?=	${.MAKE.GID}
+.  if ${UID} != 0
 MAKE_ENV+=	BINOWN=${UID} SHAREOWN=${UID} CONFOWN=${UID} LIBOWN=${UID}
 MAKE_ENV+=	BINGRP=${GID} SHAREGRP=${GID} CONFGRP=${GID} LIBGRP=${GID}
 MAKE_ENV+=	INCSOWN=${UID} INCSGRP=${GID}
@@ -27,5 +23,5 @@ SHAREGRP=	${GID}
 WWWGRP=	${GID}
 INCSOWN=	${UID}
 INCSGRP=	${GID}
-.endif
+.  endif
 .endif

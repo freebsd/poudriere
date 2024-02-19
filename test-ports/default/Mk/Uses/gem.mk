@@ -1,41 +1,43 @@
-# $FreeBSD: head/Mk/Uses/gem.mk 511765 2019-09-10 17:38:00Z sunpoet $
-#
 # Support rubygem packages
 #
 # Feature:	gem
 # Usage:	USES=gem[:noautoplist]
 # Valid args:	noautoplist	Don't generate the plist automatically
 #
-# MAINTAINER: portmgr@FreeBSD.org
+# MAINTAINER: ruby@FreeBSD.org
 
 .if !defined(_INCLUDE_USES_GEM_MK)
 
 _INCLUDE_USES_GEM_MK=        yes
 
-_valid_ARGS=			noautoplist
+_valid_ARGS=	noautoplist
 
 # Sanity check
-.for arg in ${gem_ARGS}
+.  for arg in ${gem_ARGS}
 .    if empty(_valid_ARGS:M${arg})
 IGNORE= Incorrect 'USES+= gem:${gem_ARGS}' usage: argument [${arg}] is not recognized
 .    endif
-.endfor
+.  endfor
 
-BUILD_DEPENDS+=	${RUBYGEMBIN}:devel/ruby-gems
-RUN_DEPENDS+=	${RUBYGEMBIN}:devel/ruby-gems
+# "USES=gem" implies "USES=ruby"
+.include "${USESDIR}/ruby.mk"
 
 PKGNAMEPREFIX?=	rubygem-
 EXTRACT_SUFX=	.gem
-EXTRACT_ONLY=
-DIST_SUBDIR=	rubygem
+# disabled to be able that extract other archives into the gem folder like cargo archives which are required to compile gems that require rust
+#EXTRACT_ONLY?=
 
+BUILD_DEPENDS+=	${RUBYGEMBIN}:devel/ruby-gems
 EXTRACT_DEPENDS+=	${RUBYGEMBIN}:devel/ruby-gems
+RUN_DEPENDS+=	${RUBYGEMBIN}:devel/ruby-gems
+
 GEMS_BASE_DIR=	lib/ruby/gems/${RUBY_VER}
-GEMS_DIR=	${GEMS_BASE_DIR}/gems
-DOC_DIR=	${GEMS_BASE_DIR}/doc
 CACHE_DIR=	${GEMS_BASE_DIR}/cache
-SPEC_DIR=	${GEMS_BASE_DIR}/specifications
+DOC_DIR=	${GEMS_BASE_DIR}/doc
 EXT_DIR=	${GEMS_BASE_DIR}/extensions
+GEMS_DIR=	${GEMS_BASE_DIR}/gems
+PLUGINS_DIR=	${GEMS_BASE_DIR}/plugins
+SPEC_DIR=	${GEMS_BASE_DIR}/specifications
 GEM_NAME?=	${DISTNAME}
 GEM_LIB_DIR?=	${GEMS_DIR}/${GEM_NAME}
 GEM_DOC_DIR?=	${DOC_DIR}/${GEM_NAME}
@@ -49,13 +51,13 @@ GEM_ENV+=	LANG=${USE_LOCALE} LC_ALL=${USE_LOCALE}
 
 PLIST_SUB+=	PORTVERSION="${PORTVERSION}" \
 		REV="${RUBY_GEM}" \
-		GEMS_BASE_DIR="lib/ruby/gems/${RUBY_VER}" \
+		GEMS_BASE_DIR="${GEMS_BASE_DIR}" \
 		GEMS_DIR="${GEMS_DIR}" \
 		DOC_DIR="${DOC_DIR}" \
 		CACHE_DIR="${CACHE_DIR}" \
 		SPEC_DIR="${SPEC_DIR}" \
 		EXT_DIR="${EXT_DIR}" \
-		PORT="${PORTNAME}-${PORTVERSION}" \
+		PLUGINS_DIR="${PLUGINS_DIR}" \
 		GEM_NAME="${GEM_NAME}" \
 		GEM_LIB_DIR="${GEM_LIB_DIR}" \
 		GEM_DOC_DIR="${GEM_DOC_DIR}" \
@@ -63,24 +65,34 @@ PLIST_SUB+=	PORTVERSION="${PORTVERSION}" \
 		GEM_CACHE="${GEM_CACHE}" \
 		EXTRACT_SUFX="${EXTRACT_SUFX}"
 
-RUBYGEMBIN=	${LOCALBASE}/bin/gem${RUBY_VER:S/.//}
+RUBYGEMBIN=	${LOCALBASE}/bin/gem
 
-. if defined(DISTFILES)
-GEMFILES=	${DISTFILES:C/:[^:]+$//}
-. else
-GEMFILES=	${DISTNAME}${EXTRACT_SUFX}
-. endif
+.  if defined(GEMS_SKIP_SUBDIR)
+# do not define a DIST_SUBDIR, currently required to have cargo archives available in the gem source directory to be able to compile it
+#DIST_SUBDIR=
+.  else
+DIST_SUBDIR=	rubygem
+.  endif
+
+.  if defined(DISTFILES)
+# this should maybe be reworked, as if a gem port is used together with cargo archives, the DISTFILES also includes the cargo archives
+# this is currently overwritten in the port that requires this
+# the cargo archives should be filtered out here or better we should only have here gem archives included
+GEMFILES?=	${DISTFILES:C/:[^:]+$//}
+.  else
+GEMFILES?=	${DISTNAME}${EXTRACT_SUFX}
+.  endif
 
 RUBYGEM_ARGS=-l --no-update-sources --install-dir ${STAGEDIR}${PREFIX}/lib/ruby/gems/${RUBY_VER} --ignore-dependencies --bindir=${STAGEDIR}${PREFIX}/bin
 
-.if ${PORT_OPTIONS:MDOCS}
+.  if ${PORT_OPTIONS:MDOCS}
 RUBYGEM_ARGS+=	--document rdoc,ri
-.else
+.  else
 RUBYGEM_ARGS+=	--no-document
-.endif
+.  endif
 
-.if !target(do-extract)
-do-extract:
+_USES_extract+=	590:gem-extract
+gem-extract:
 	@${SETENV} ${GEM_ENV} ${RUBYGEMBIN} unpack --target=${WRKDIR} ${DISTDIR}/${DIST_SUBDIR}/${GEMFILES}
 	@(cd ${BUILD_WRKSRC}; if ! ${SETENV} ${GEM_ENV} ${RUBYGEMBIN} spec --ruby ${DISTDIR}/${DIST_SUBDIR}/${GEMFILES} > ${GEMSPEC} ; then \
 		if [ -n "${BUILD_FAIL_MESSAGE}" ] ; then \
@@ -89,9 +101,8 @@ do-extract:
 			fi; \
 		${FALSE}; \
 		fi)
-.endif
 
-.if !target(do-build)
+.  if !target(do-build)
 do-build:
 	@(cd ${BUILD_WRKSRC}; if ! ${SETENV} ${GEM_ENV} ${RUBYGEMBIN} build --force ${GEMSPEC} ; then \
 		if [ -n "${BUILD_FAIL_MESSAGE}" ] ; then \
@@ -100,9 +111,9 @@ do-build:
 			fi; \
 		${FALSE}; \
 		fi)
-.endif
+.  endif
 
-.if !target(do-install)
+.  if !target(do-install)
 do-install:
 	(cd ${BUILD_WRKSRC}; ${SETENV} ${GEM_ENV} ${RUBYGEMBIN} install ${RUBYGEM_ARGS} ${GEMFILES} -- ${CONFIGURE_ARGS})
 	${RM} -r ${STAGEDIR}${PREFIX}/${GEMS_BASE_DIR}/build_info/
@@ -112,25 +123,30 @@ do-install:
 	${FIND} ${STAGEDIR}${PREFIX}/${GEM_LIB_DIR}/ext -type d -empty -delete 2> /dev/null || ${TRUE}
 	${RM} -r ${STAGEDIR}${PREFIX}/${CACHE_DIR} 2> /dev/null || ${TRUE}
 	${RMDIR} ${STAGEDIR}${PREFIX}/${EXT_DIR} 2> /dev/null || ${TRUE}
-.if !${PORT_OPTIONS:MDOCS}
+	${RMDIR} ${STAGEDIR}${PREFIX}/${PLUGINS_DIR} 2> /dev/null || ${TRUE}
+.    if !${PORT_OPTIONS:MDOCS}
 	-@${RMDIR} ${STAGEDIR}${PREFIX}/${DOC_DIR}
-.endif
-.endif
+.    endif
+.  endif
 
-.if empty(gem_ARGS:Mnoautoplist)
+.  if empty(gem_ARGS:Mnoautoplist)
 _USES_install+=	820:gem-autoplist
 gem-autoplist:
-	@${ECHO} ${GEM_SPEC} >> ${TMPPLIST}
-.if ${PORT_OPTIONS:MDOCS}
+	@${ECHO_CMD} ${GEM_SPEC} >> ${TMPPLIST}
+.    if ${PORT_OPTIONS:MDOCS}
 	@${FIND} -ds ${STAGEDIR}${PREFIX}/${DOC_DIR} -type f -print | ${SED} -E -e \
 		's,^${STAGEDIR}${PREFIX}/?,,' >> ${TMPPLIST}
-.endif
+.    endif
 	@${FIND} -ds ${STAGEDIR}${PREFIX}/${GEM_LIB_DIR} -type f -print | ${SED} -E -e \
 		's,^${STAGEDIR}${PREFIX}/?,,' >> ${TMPPLIST}
 	@if [ -d ${STAGEDIR}${PREFIX}/${EXT_DIR} ]; then \
 		${FIND} -ds ${STAGEDIR}${PREFIX}/${EXT_DIR} -type f -print | ${SED} -E -e \
 		's,^${STAGEDIR}${PREFIX}/?,,' >> ${TMPPLIST} ; \
 	fi
-.endif
+	@if [ -d ${STAGEDIR}${PREFIX}/${PLUGINS_DIR} ]; then \
+		${FIND} -ds ${STAGEDIR}${PREFIX}/${PLUGINS_DIR} -type f -print | ${SED} -E -e \
+		's,^${STAGEDIR}${PREFIX}/?,,' >> ${TMPPLIST} ; \
+	fi
+.  endif
 
 .endif

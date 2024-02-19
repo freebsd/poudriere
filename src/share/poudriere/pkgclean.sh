@@ -135,7 +135,7 @@ while getopts "AaCj:J:f:nNO:p:rRuvyz:" FLAG; do
 	esac
 done
 
-saved_argv="$@"
+encode_args saved_argv "$@"
 shift $((OPTIND-1))
 post_getopts
 
@@ -164,15 +164,17 @@ else
 	read_packages_from_params "$@"
 fi
 
-PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
-if [ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ]; then
-	if [ -d "${PACKAGES}/.building" ]; then
+PACKAGES="${POUDRIERE_DATA:?}/packages/${MASTERNAME:?}"
+case "${ATOMIC_PACKAGE_REPOSITORY}" in
+yes)
+	if [ -d "${PACKAGES:?}/.building" ]; then
 		msg "Cleaning in previously failed build directory"
-		PACKAGES="${PACKAGES}/.building"
+		PACKAGES="${PACKAGES:?}/.building"
 	else
-		PACKAGES="${PACKAGES}/.latest"
+		PACKAGES="${PACKAGES:?}/.latest"
 	fi
-fi
+	;;
+esac
 
 PKG_EXT='*' package_dir_exists_and_has_packages ||
     err 0 "No packages exist for ${MASTERNAME}"
@@ -201,49 +203,52 @@ bset status "pkgclean:"
 
 CLEANUP_HOOK=pkgclean_cleanup
 pkgclean_cleanup() {
-	rm -f ${BADFILES_LIST} ${FOUND_ORIGINS} 2>/dev/null
+	rm -f "${BADFILES_LIST:?}" "${FOUND_ORIGINS:?}" 2>/dev/null
 }
-BADFILES_LIST=$(mktemp -t poudriere_pkgclean)
-FOUND_ORIGINS=$(mktemp -t poudriere_pkgclean)
+BADFILES_LIST="$(mktemp -t poudriere_pkgclean)"
+FOUND_ORIGINS="$(mktemp -t poudriere_pkgclean)"
 
 should_delete() {
 	[ $# -eq 1 ] || eargs should_delete pkgfile
 	local pkgfile="$1"
-	local pkgname origin ret
+	local pkgname originspec ret
 
 	pkgname="${pkgfile##*/}"
 	pkgname="${pkgname%.*}"
 	ret=0
 
-	if ! pkg_get_origin origin "${pkgfile}"; then
+	originspec=
+	if ! pkg_get_originspec originspec "${pkgfile}"; then
 		msg_verbose "Found corrupt package: ${pkgfile}"
 		return 0 # delete
 	fi
+
 	if [ "${CLEAN_LISTED}" -eq 0 ]; then
-		should_delete_unlisted "${pkgfile}" "${origin}" "${pkgname}" ||
+		should_delete_unlisted "${pkgfile}" "${originspec}" \
+		    "${pkgname}" ||
 		    ret="$?"
 	elif [ "${CLEAN_LISTED}" -eq 1 ]; then
-		should_delete_listed "${pkgfile}" "${origin}" "${pkgname}" ||
+		should_delete_listed "${pkgfile}" "${originspec}" \
+		    "${pkgname}" ||
 		    ret="$?"
-	else
-		echo "${pkgfile} ${origin}" >> "${FOUND_ORIGINS}"
 	fi
+	echo "${pkgfile} ${originspec}" >> "${FOUND_ORIGINS:?}"
 	return "${ret}"
 }
 
 # Handle NO -C
 should_delete_unlisted() {
-	[ $# -eq 3 ] || eargs should_delete_unlisted pkgfile origin pkgname
+	[ $# -eq 3 ] || eargs should_delete_unlisted pkgfile originspec pkgname
 	local pkgfile="$1"
-	local origin="$2"
+	local originspec="$2"
 	local pkgname="$3"
 	local forbidden
 
 	if shash_remove pkgname-forbidden "${pkgname}" forbidden; then
-		msg_verbose "Found forbidden package (${COLOR_PORT}${origin}${COLOR_RESET}) (${forbidden}): ${pkgfile}"
+		msg_verbose "Found forbidden package (${COLOR_PORT}${originspec}${COLOR_RESET}) (${forbidden}): ${pkgfile}"
 		return 0 # delete
 	elif ! pkgbase_is_needed "${pkgname}"; then
-		msg_verbose "Found unwanted package (${COLOR_PORT}${origin}${COLOR_RESET}): ${pkgfile}"
+		msg_verbose "Found unwanted package (${COLOR_PORT}${originspec}${COLOR_RESET}): ${pkgfile}"
 		return 0 # delete
 	fi
 	return 1 # keep
@@ -251,17 +256,18 @@ should_delete_unlisted() {
 
 # Handle -C and -r
 should_delete_listed() {
-	[ $# -eq 3 ] || eargs should_delete_listed pkgfile origin pkgname
+	[ $# -eq 3 ] || eargs should_delete_listed pkgfile originspec pkgname
 	local pkgfile="$1"
-	local origin="$2"
+	local originspec="$2"
 	local pkgname="$3"
 	local dep_origin compiled_deps
 
-	if originspec_is_listed "${origin}"; then
-		msg_verbose "Found specified package (${COLOR_PORT}${origin}${COLOR_RESET}): ${pkgfile}"
+	compiled_deps=
+	if originspec_is_listed "${originspec}"; then
+		msg_verbose "Found specified package (${COLOR_PORT}${originspec}${COLOR_RESET}): ${pkgfile}"
 		return 0 # delete
 	elif ! pkg_get_dep_origin_pkgnames compiled_deps '' "${pkgfile}"; then
-		msg_verbose "Found corrupt package (${COLOR_PORT}${origin}${COLOR_RESET}) (deps): ${pkgfile}"
+		msg_verbose "Found corrupt package (${COLOR_PORT}${originspec}${COLOR_RESET}) (deps): ${pkgfile}"
 		return 0 # delete
 	fi
 	if [ "${CLEAN_RDEPS}" -eq 1 ]; then
@@ -275,11 +281,14 @@ should_delete_listed() {
 	return 1 # keep
 }
 
-for file in ${PACKAGES}/All/*; do
-	case ${file} in
-	*.${PKG_EXT})
+check_should_delete_pkg() {
+	[ "$#" -eq 1 ] || eargs check_should_delete_pkg file
+	local file="$1"
+
+	case "${file}" in
+	*".${PKG_EXT}")
 		if should_delete "${file}"; then
-			echo "${file}" >> "${BADFILES_LIST}"
+			echo "${file}" >> "${BADFILES_LIST:?}"
 		fi
 		;;
 	*.txz)
@@ -295,26 +304,67 @@ for file in ${PACKAGES}/All/*; do
 		;&
 	*)
 		msg_verbose "Found incorrect format file: ${file}"
-		echo "${file}" >> ${BADFILES_LIST}
+		echo "${file}" >> "${BADFILES_LIST:?}"
 		;;
 	esac
-done
-
-pkg_compare() {
-	[ $# -eq 2 ] || eargs pkg_compare oldversion newversion
-	local oldversion="$1"
-	local newversion="$2"
-
-	ensure_pkg_installed ||
-	    err 1 \
-	    "ports-mgmt/pkg is missing. First build it with bulk, then re-run pkgclean"
-
-	injail ${PKG_VERSION} -t "${oldversion}" "${newversion}"
 }
 
+parallel_start
+for file in "${PACKAGES:?}"/All/*; do
+	parallel_run check_should_delete_pkg "${file}"
+done
+if ! parallel_stop; then
+	err 1 "Fatal errors processing packages"
+fi
+
+check_duplicated_packages() {
+	[ "$#" -eq 2 ] || eargs check_duplicated_packages origin packages
+	local origin="$1"
+	local packages="$2"
+	local lastpkg lastver pkgversion pkg
+
+	lastpkg=
+	lastver=0
+	for pkg in ${packages}; do
+		pkgversion="${pkg##*-}"
+		pkgversion="${pkgversion%.*}"
+
+		case "${lastpkg}" in
+		"")
+			lastpkg="${pkg}"
+			lastver="${pkgversion}"
+			continue
+			;;
+		esac
+
+		case "$(pkg_version -t "${pkgversion}" "${lastver}")" in
+			'>')
+				msg_verbose "Found old package: ${lastpkg}"
+				echo "${lastpkg}" >> "${BADFILES_LIST:?}"
+				lastpkg="${pkg}"
+				lastver="${pkgversion}"
+				;;
+			'<')
+				msg_verbose "Found old package: ${pkg}"
+				echo "${pkg}" >> "${BADFILES_LIST:?}"
+				;;
+			'=')
+				# This should be impossible now due to the
+				# earlier pkgbase_is_needed() comparison
+				# (by PKGBASE) and that this check is grouped
+				# by PKGBASE.  Any renamed package is trimmed
+				# out by the failed pkgbase_is_needed() check.
+				err 1 "Found duplicated packages ${pkg} vs ${lastpkg} with origin ${origin}"
+				;;
+		esac
+	done
+	msg_verbose "Keeping latest package: ${lastpkg##*/}"
+}
+
+parallel_start
 # Check for duplicated origins (older packages) and keep only newer ones
 # This also grouped by pkgbase to respect PKGNAME uniqueness
-sort ${FOUND_ORIGINS} | awk '
+sort "${FOUND_ORIGINS:?}" | awk '
 {
 	pkg = $1
 	origin = $2
@@ -339,42 +389,11 @@ END {
 			print origins[pkgbase],packages[pkgbase]
 }
 ' | while mapfile_read_loop_redir origin packages; do
-	lastpkg=
-	lastver=0
-	for pkg in $packages; do
-		pkgversion="${pkg##*-}"
-		pkgversion="${pkgversion%.*}"
-
-		if [ -z "${lastpkg}" ]; then
-			lastpkg="${pkg}"
-			lastver="${pkgversion}"
-			continue
-		fi
-
-		pkg_compare="$(pkg_compare "${pkgversion}" "${lastver}")"
-		case ${pkg_compare} in
-			'>')
-				msg_verbose "Found old package: ${lastpkg}"
-				echo "${lastpkg}" >> ${BADFILES_LIST}
-				lastpkg="${pkg}"
-				lastver="${pkgversion}"
-				;;
-			'<')
-				msg_verbose "Found old package: ${pkg}"
-				echo "${pkg}" >> ${BADFILES_LIST}
-				;;
-			'=')
-				# This should be impossible now due to the
-				# earlier pkgbase_is_needed() comparison
-				# (by PKGBASE) and that this check is grouped
-				# by PKGBASE.  Any renamed package is trimmed
-				# out by the failed pkgbase_is_needed() check.
-				err 1 "Found duplicated packages ${pkg} vs ${lastpkg} with origin ${origin}"
-				;;
-		esac
-	done
-	msg_verbose "Keeping latest package: ${lastpkg##*/}"
+	parallel_run check_duplicated_packages "${origin}" "${packages}"
 done
+if ! parallel_stop; then
+	err 1 "Fatal errors processing packages"
+fi
 
 ret=0
 do_confirm_delete "${BADFILES_LIST}" "stale packages" \
@@ -393,14 +412,14 @@ if [ "${ret}" -eq 1 ] || [ "${FORCE_BUILD_REPO}" -eq 1 ]; then
 	if [ ${BUILD_REPO} -eq 1 ]; then
 		if [ ${DO_ALL} -eq 1 ]; then
 			msg "Removing pkg repository files"
-			rm -f "${PACKAGES}/meta.txz" \
-				"${PACKAGES}/meta.${PKG_EXT}" \
-				"${PACKAGES}/digests.txz" \
-				"${PACKAGES}/digests.${PKG_EXT}" \
-				"${PACKAGES}/filesite.txz" \
-				"${PACKAGES}/filesite.${PKG_EXT}" \
-				"${PACKAGES}/packagesite.txz" \
-				"${PACKAGES}/packagesite.${PKG_EXT}"
+			rm -f "${PACKAGES:?}/meta.txz" \
+				"${PACKAGES:?}/meta.${PKG_EXT}" \
+				"${PACKAGES:?}/digests.txz" \
+				"${PACKAGES:?}/digests.${PKG_EXT}" \
+				"${PACKAGES:?}/filesite.txz" \
+				"${PACKAGES:?}/filesite.${PKG_EXT}" \
+				"${PACKAGES:?}/packagesite.txz" \
+				"${PACKAGES:?}/packagesite.${PKG_EXT}"
 		else
 			build_repo
 		fi

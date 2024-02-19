@@ -1,0 +1,78 @@
+diff --git external/sh/expand.c external/sh/expand.c
+index 922bf5c3c..b08101a7d 100644
+--- external/sh/expand.c
++++ external/sh/expand.c
+@@ -950,6 +950,9 @@ varvalue(const char *name, int quoted, int subtype, int flag,
+ 	case '$':
+ 		num = rootpid;
+ 		break;
++	case '%':
++		num = shpid;
++		break;
+ 	case '?':
+ 		num = oexitstatus;
+ 		break;
+diff --git external/sh/jobs.c external/sh/jobs.c
+index ff36bfa6d..43246a3f0 100644
+--- external/sh/jobs.c
++++ external/sh/jobs.c
+@@ -914,6 +914,7 @@ forkshell(struct job *jp, union node *n, int mode)
+ 		int i;
+ 
+ 		TRACE(("Child shell %d\n", (int)getpid()));
++		setmypid();
+ 		wasroot = rootshell;
+ 		rootshell = 0;
+ 		handler = &main_handler;
+diff --git external/sh/main.c external/sh/main.c
+index bc8744080..f7312eeb0 100644
+--- external/sh/main.c
++++ external/sh/main.c
+@@ -131,6 +131,7 @@ main(int argc, char *argv[])
+ 	trputs("Shell args:  ");  trargs(argv);
+ #endif
+ 	rootpid = getpid();
++	setmypid();
+ 	rootshell = 1;
+ 	INTOFF;
+ 	initvar();
+diff --git external/sh/mksyntax.c external/sh/mksyntax.c
+index 24b118f64..fc92ff1a0 100644
+--- external/sh/mksyntax.c
++++ external/sh/mksyntax.c
+@@ -225,7 +225,7 @@ main(int argc __unused, char **argv __unused)
+ 	add("abcdefghijklmnopqrstuvwxyz", "ISLOWER");
+ 	add("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "ISUPPER");
+ 	add("_", "ISUNDER");
+-	add("#?$!-*@", "ISSPECL");
++	add("#%?$!-*@", "ISSPECL");
+ 	finish();
+ 
+ 	exit(0);
+diff --git external/sh/var.c external/sh/var.c
+index 075828915..175f65195 100644
+--- external/sh/var.c
++++ external/sh/var.c
+@@ -969,3 +969,11 @@ find_var(const char *name, struct var ***vppp, int *lenp)
+ 	}
+ 	return NULL;
+ }
++
++long shpid = -1;
++void
++setmypid(void)
++{
++
++	shpid = getpid();
++}
+diff --git external/sh/var.h external/sh/var.h
+index eaf4f427f..93a043a1e 100644
+--- external/sh/var.h
++++ external/sh/var.h
+@@ -130,3 +130,6 @@ void mklocal(char *);
+ void poplocalvars(void);
+ int unsetvar(const char *);
+ int setvarsafe(const char *, const char *, int);
++
++extern long shpid;
++void setmypid(void);

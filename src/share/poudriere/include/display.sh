@@ -53,7 +53,7 @@ display_setup() {
 	# encode
 	set -- ${_DISPLAY_FORMAT}
 	IFS="${DISPLAY_SEP}"
-	_DISPLAY_FORMAT="$@"
+	_DISPLAY_FORMAT="$*"
 	unset IFS
 }
 
@@ -72,7 +72,8 @@ display_add() {
 	local -
 	set +x
 
-	if [ -z "${_DISPLAY_HEADER}" ]; then
+	case "${_DISPLAY_HEADER:+set}" in
+	"")
 		local arg argi line argformat format
 
 		argi=1
@@ -80,7 +81,8 @@ display_add() {
 		format=
 		for arg do
 			# Collect header custom formats if using dynamic
-			if [ "${_DISPLAY_FORMAT}" == "dynamic" ]; then
+			case "${_DISPLAY_FORMAT}" in
+			"dynamic")
 				case "${arg}" in
 				*:*%%*)
 					argformat="${arg#*:}"
@@ -91,25 +93,27 @@ display_add() {
 					;;
 				esac
 				format="${format:+${format}${DISPLAY_SEP}}${argformat}"
-			fi
+				;;
+			esac
 			line="${line:+${line}${DISPLAY_SEP}}${arg}"
 			hash_set _display_header "${arg}" "${argi}"
 			argi=$((argi + 1))
 		done
 		_DISPLAY_COLS=$((argi - 1))
 		_DISPLAY_HEADER="${line}"
-		if [ "${_DISPLAY_FORMAT}" == "dynamic" ]; then
-			_DISPLAY_FORMAT="${format}"
-		fi
+		case "${_DISPLAY_FORMAT}" in
+		"dynamic") _DISPLAY_FORMAT="${format}" ;;
+		esac
 
 		return
-	fi
+		;;
+	esac
 
 	# Add in newline
 	_DISPLAY_LINES=$((_DISPLAY_LINES + 1))
 	# encode
 	IFS="${DISPLAY_SEP}"
-	line="$@"
+	line="$*"
 	unset IFS
 	mapfile_write "${_DISPLAY_MAPFILE}" -- "${line}" ||
 	    err ${EX_SOFTWARE} "mapfile_write"
@@ -120,7 +124,7 @@ display_footer() {
 
 	# encode
 	IFS="${DISPLAY_SEP}"
-	_DISPLAY_FOOTER="$@"
+	_DISPLAY_FOOTER="$*"
 	unset IFS
 }
 
@@ -138,9 +142,9 @@ _display_check_lengths() {
 	cnt=0
 	for arg in "$@"; do
 		cnt=$((cnt + 1))
-		if [ -z "${arg}" ]; then
-			continue
-		fi
+		case "${arg:+set}" in
+		"") continue ;;
+		esac
 		stripansi "${arg}" arg
 		hash_get _display_lengths "${cnt}" max_length || max_length=0
 		if [ "${#arg}" -gt "${max_length}" ]; then
@@ -161,6 +165,7 @@ _display_output() {
 	IFS="${DISPLAY_SEP}"
 	set -- ${data}
 	unset IFS
+	# shellcheck disable=SC2059
 	printf "${format}\n" "$@"
 }
 
@@ -231,9 +236,9 @@ display_output() {
 				_DISPLAY_HEADER="${line}"
 				;;
 			"$((_DISPLAY_LINES + 1))")
-				if [ -n "${_DISPLAY_FOOTER}" ]; then
-					_DISPLAY_FOOTER="${line}"
-				fi
+				case "${_DISPLAY_FOOTER:+set}" in
+				set) _DISPLAY_FOOTER="${line}" ;;
+				esac
 				;;
 			*)
 				echo "${line}"
@@ -258,9 +263,9 @@ display_output() {
 				echo "${_DISPLAY_HEADER}"
 			fi
 			mapfile_cat_file "${_DISPLAY_TMP}.filtered"
-			if [ -n "${_DISPLAY_FOOTER}" ]; then
-				echo "${_DISPLAY_FOOTER}"
-			fi
+			case "${_DISPLAY_FOOTER:+set}" in
+			set) echo "${_DISPLAY_FOOTER}" ;;
+			esac
 		} | column -t -s "${DISPLAY_SEP}"
 		_display_cleanup
 		return
@@ -269,18 +274,20 @@ display_output() {
 	# Determine optimal format from filtered data
 	_display_check_lengths "${_DISPLAY_HEADER}"
 	_display_check_lengths "${_DISPLAY_FOOTER}"
-	if [ -z "${cols}" ]; then
+	case "${cols:+set}" in
+	"")
 		while IFS= mapfile_read_loop "${_DISPLAY_TMP}.filtered" line; do
 			_display_check_lengths "${line}"
 		done
-	fi
+		;;
+	esac
 
 	# Set format lengths if format is dynamic width
 	# decode
 	IFS="${DISPLAY_SEP}"
 	set -- ${_DISPLAY_FORMAT}
 	unset IFS
-	format="$@"
+	format="$*"
 	case "${format}" in
 	*%%*)
 		local length
@@ -311,6 +318,7 @@ display_output() {
 			esac
 			n=$((n + 1))
 		done
+		# shellcheck disable=SC2059
 		format=$(printf "${format}" ${lengths})
 		;;
 	esac
@@ -328,8 +336,8 @@ display_output() {
 	done
 
 	# Footer
-	if [ -n "${_DISPLAY_FOOTER}" ]; then
-		_display_output "${format}" "${_DISPLAY_FOOTER}"
-	fi
+	case "${_DISPLAY_FOOTER:+set}" in
+	set) _display_output "${format}" "${_DISPLAY_FOOTER}" ;;
+	esac
 	_display_cleanup
 }

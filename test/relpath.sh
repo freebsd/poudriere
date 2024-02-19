@@ -17,6 +17,13 @@ dirs="\
 /appdata/poudriere/data/.m/101x64-adm5-default/ref/var/db/ports /appdata/poudriere-etc/poudriere.d/101x64-adm5-options - ../../../poudriere/data/.m/101x64-adm5-default/ref/var/db/ports \
 "
 
+assert_dir() {
+	local expected_rel_dir="$1"
+	local expected_abs_dir="$2"
+	assert "${expected_rel_dir}" "${PWD}"
+	assert "${expected_abs_dir}" "$(realpath "${PWD}")"
+}
+
 set -- ${dirs}
 while [ $# -gt 0 ]; do
 	dir1="$1"
@@ -50,7 +57,8 @@ cd /tmp
 assert "../dev/null" "${DEVNULL}"
 assert "/dev/null" "${DEVNULL_ABS}"
 
-foo="/tmp"
+foo="$(mktemp -udt foo)"
+mkdir -p "${foo}/FOO"
 bar=".."
 foo_real=$(realpath ${foo})
 bar_real=$(realpath ${bar})
@@ -59,27 +67,50 @@ for var in foo bar; do
 done
 assert "${foo_real}" "${foo_ABS}"
 assert "${bar_real}" "${bar_ABS}"
+assert_true in_reldir foo assert_dir "${foo_real}" "${foo_ABS}"
+assert_true in_reldir foo/FOO assert_dir "${foo_real}/FOO" "${foo_ABS}/FOO"
+(
+	cd "${foo_real}/FOO"
+	assert_true in_reldir foo/FOO assert_dir "${foo_real}/FOO" "${foo_ABS}/FOO"
+)
+assert 0 "$?"
+(
+	cd "${foo_real}"
+	assert_true in_reldir foo/FOO assert_dir "${foo_real}/FOO" "${foo_ABS}/FOO"
+)
+assert 0 "$?"
+assert_true in_reldir bar assert_dir "${bar_real}" "${bar_ABS}"
 
 cd /
 assert "dev/null" "${DEVNULL}"
 assert "/dev/null" "${DEVNULL_ABS}"
-assert "tmp" "${foo}" 1
+assert "${foo_real#/}" "${foo}" 1
 assert "." "${bar}" 2
 assert "${foo_real}" "${foo_ABS}"
 assert "${bar_real}" "${bar_ABS}"
+assert_true in_reldir foo assert_dir "${foo_real}" "${foo_ABS}"
+assert_true in_reldir bar assert_dir "${bar_real}" "${bar_ABS}"
 
 cd etc
 assert "../dev/null" "${DEVNULL}"
 assert "/dev/null" "${DEVNULL_ABS}"
-assert "../tmp" "${foo}" 5
+assert "..${foo_real}" "${foo}" 5
 assert ".." "${bar}" 6
 assert "${foo_real}" "${foo_ABS}"
 assert "${bar_real}" "${bar_ABS}"
+assert_true in_reldir foo assert_dir "${foo_real}" "${foo_ABS}"
+assert_true in_reldir bar assert_dir "${bar_real}" "${bar_ABS}"
 
 cd /var/run
 assert "../../dev/null" "${DEVNULL}"
 assert "/dev/null" "${DEVNULL_ABS}"
-assert "../../tmp" "${foo}" 5
+assert "../..${foo_real}" "${foo}" 5
 assert "../.." "${bar}" 6
 assert "${foo_real}" "${foo_ABS}"
 assert "${bar_real}" "${bar_ABS}"
+assert_true in_reldir foo assert_dir "${foo_real}" "${foo_ABS}"
+assert_true in_reldir bar assert_dir "${bar_real}" "${bar_ABS}"
+
+rm -rf "${foo}"
+
+cd "${POUDRIERE_TMPDIR:?}"

@@ -5,12 +5,14 @@ LISTPORTS="misc/foo-default-DEPIGNORED@default"
 OVERLAYS="overlay omnibus"
 . common.bulk.sh
 
-do_bulk -n ${LISTPORTS}
+do_bulk -c -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
 EXPECTED_IGNORED="misc/foo-dep-FLAVORS-unsorted@depignored"
 EXPECTED_SKIPPED="misc/foo-default-DEPIGNORED@default"
-EXPECTED_QUEUED="ports-mgmt/pkg"
-EXPECTED_LISTED="misc/foo-default-DEPIGNORED"
+EXPECTED_TOBUILD="ports-mgmt/pkg"
+EXPECTED_QUEUED="${EXPECTED_TOBUILD} ${EXPECTED_IGNORED} ${EXPECTED_SKIPPED}"
+EXPECTED_LISTED="misc/foo-default-DEPIGNORED@default"
 
 assert_bulk_queue_and_stats
+assert_bulk_dry_run

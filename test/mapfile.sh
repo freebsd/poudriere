@@ -8,8 +8,7 @@ JAILED=$(sysctl -n security.jail.jailed 2>/dev/null || echo 0)
 
 LINES=20
 
-cleanup() {
-	kill_jobs
+test_cleanup() {
 	if [ -n "${TMP}" ]; then
 		rm -rf "${TMP}"
 		unset TMP
@@ -19,7 +18,6 @@ cleanup() {
 		unset TMP2
 	fi
 }
-trap cleanup EXIT
 
 writer() {
 	local stdout="$1"
@@ -35,7 +33,7 @@ writer() {
 	until [ $n -eq ${LINES} ]; do
 		case ${type} in
 		pipe) echo "${n}\\" ;;
-		mapfile) mapfile_write "${out}" "${n}\\" ;;
+		mapfile) mapfile_write "${out}" -- "${n}\\" ;;
 		esac
 		n=$((n + 1))
 	done
@@ -46,8 +44,71 @@ writer() {
 
 {
 	TMP=$(mktemp -u)
+	assert_ret_not 0 [ -e "${TMP}" ]
 	assert_ret_not 0 mapfile handle "${TMP}" "re"
 	rm -f "${TMP}"
+}
+
+# non-builtin can still do writing to multiple files concurrently. Just
+# not reading.
+{
+	TMP=$(mktemp -u)
+	TMP2=$(mktemp -u)
+	TMP3=$(mktemp -u)
+	assert_true cat > "${TMP}" <<-EOF
+	file_read0
+	read0
+	EOF
+	assert_true cat > "${TMP2}" <<-EOF
+	TMP2 start
+	EOF
+	assert_true cat > "${TMP3}" <<-EOF
+	TMP3 start
+	EOF
+	assert_true mapfile file_read "${TMP}" "re"
+	assert_true mapfile file_write1 "${TMP2}" "ae"
+	assert_true mapfile file_write2 "${TMP3}" "we"
+	assert_true mapfile_write "${file_write1}" "file_write1"
+	assert_true mapfile_write "${file_write2}" "file_write2"
+	assert_true mapfile_read "${file_read}" line
+	assert "file_read0" "${line}"
+	assert_true mapfile_write "${file_write1}" "data1"
+	assert_true mapfile_write "${file_write2}" "data2"
+	assert_true mapfile_read "${file_read}" line
+	assert "read0" "${line}"
+	assert_false mapfile_read "${file_read}" line
+	assert_true mapfile_close "${file_read}"
+	assert_true mapfile_close "${file_write1}"
+	assert_true mapfile_close "${file_write2}"
+	assert_file - "${TMP}" <<-EOF
+	file_read0
+	read0
+	EOF
+
+	assert_file - "${TMP2}" <<-EOF
+	TMP2 start
+	file_write1
+	data1
+	EOF
+
+	assert_file - "${TMP3}" <<-EOF
+	file_write2
+	data2
+	EOF
+
+	rm -f "${TMP}" "${TMP2}" "${TMP3}"
+}
+
+{
+	echo blah | {
+		n=0
+		while mapfile_read_loop - line; do
+			assert "blah" "${line}"
+			n=$((n + 1))
+		done
+		assert 1 "${n}"
+	}
+	assert 0 "$?"
 }
 
 if mapfile_builtin; then
@@ -101,7 +162,8 @@ if mapfile_builtin; then
 	assert_not 0 $? "mapfile_read on a closed handle should not succeed"
 	assert '' "$line" "mapfile_read on a closed handle should not modify line"
 
-	kill_jobs
+	kill_all_jobs || :
+	rm -f "${TMP}" "${TMP2}"
 }
 
 # Test normal files
@@ -210,6 +272,7 @@ if mapfile_builtin; then
 
 	assert_ret 0 mapfile_close "${file_in}"
 	assert_ret 0 mapfile_close "${file_out}"
+	rm -f "${TMP}"
 }
 fi
 
@@ -311,12 +374,57 @@ fi
 		echo "${n}"
 		i=$((i + 1))
 		mapfile_read_loop_redir n < "${TMP}.2"
-		assert "$n" "inner" "nested call on stdin"
+		assert "inner" "$n" "nested call on stdin"
 	done < "${TMP}"
 	assert 10 "$i"
 	rm -f "${TMP}" "${TMP}.2"
 	fds=$(procstat -f $$|wc -l)
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 2"
+}
+
+{
+	TDIR=$(mktemp -dt mapfile)
+	i=0
+	max=100
+	{
+		z=0
+		until [ $z -eq $max ]; do
+			echo "$z"
+			z=$((z + 1))
+		done
+	} | while mapfile_read_loop_redir n; do
+		assert "${i}" "${n}"
+		echo "$((n + 1))"
+		i=$((i + 1))
+	done | while mapfile_read_loop_redir n; do
+		assert "$((i + 1))" "${n}"
+		echo "$((n + 1))"
+		i=$((i + 1))
+	done | while mapfile_read_loop_redir n; do
+		assert "$((i + 2))" "${n}"
+		echo "$((n + 1))"
+		i=$((i + 1))
+	done | while mapfile_read_loop_redir n; do
+		assert "$((i + 3))" "${n}"
+		echo "$((n + 1))"
+		i=$((i + 1))
+	done | while mapfile_read_loop_redir n; do
+		assert "$((i + 4))" "${n}"
+		echo "$((n + 1))"
+		i=$((i + 1))
+	done | while mapfile_read_loop_redir n; do
+		assert "$((i + 5))" "${n}"
+		touch "${TDIR:?}/${n}"
+		i=$((i + 1))
+	done
+	assert_false rmdir "${TDIR:?}"
+	n=5
+	until [ $n -eq $((max + 5)) ]; do
+		assert_true [ -e "${TDIR:?}/${n}" ]
+		assert_true unlink "${TDIR:?}/${n}"
+		n=$((n + 1))
+	done
+	assert_true rmdir "${TDIR:?}"
 }
 
 # Test mapfile_read_loop_redir with early return
@@ -501,6 +609,7 @@ fi
 	procstat -f $$ >&2
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 7"
 	rm -rf "${TDIR}"
+	rm -f "${TMP}"
 }
 
 {
@@ -514,6 +623,35 @@ fi
 	assert_ret 0 mapfile_close "${handle}"
 	[ ! -s "${TMP2}" ]
 	assert 0 "$?" "'cat <empty file> | mapfile_write' should not write anything --"$'\n'"$(cat -vet "${TMP2}")"
+	rm -f "${TMP}" "${TMP2}"
+}
+
+{
+	TMP=$(mktemp -t mapfile)
+	TMP2=$(mktemp -t mapfile)
+
+	:>"${TMP}"
+	assert_ret 0 mapfile handle "${TMP2}" "we"
+	mapfile_write "${handle}" -n "blah"
+	assert 0 "$?" "pipe exit status"
+	assert_ret 0 mapfile_close "${handle}"
+	assert "blah" "$(cat -vet "${TMP2}")"
+	assert_ret 0 [ -s "${TMP2}" ]
+	rm -f "${TMP}" "${TMP2}"
+}
+
+
+{
+	TMP=$(mktemp -t mapfile)
+	TMP2=$(mktemp -t mapfile)
+
+	:>"${TMP}"
+	assert_ret 0 mapfile handle "${TMP2}" "we"
+	echo blah | mapfile_write "${handle}" -n
+	assert 0 "$?" "pipe exit status"
+	assert_ret 0 mapfile_close "${handle}"
+	assert "blah" "$(cat -vet "${TMP2}")"
+	assert_ret 0 [ -s "${TMP2}" ]
 	rm -f "${TMP}" "${TMP2}"
 }
 
@@ -549,12 +687,26 @@ fi
 	rm -f "${TMP2}"
 	:>"${TMP2}"
 	assert_ret 0 mapfile handle "${TMP2}" "we"
-	mapfile_write "${handle}" <<-EOF
+	assert_ret 0 mapfile_write "${handle}" <<-EOF
 	$(cat "${TMP}")
 	EOF
 	assert_ret 0 mapfile_close "${handle}"
 	assert_ret 0 diff -u "${TMP}" "${TMP2}"
 
+	rm -f "${TMP}" "${TMP2}"
+}
+
+{
+	TMP=$(mktemp -t mapfile)
+	TMP2=$(mktemp -t mapfile)
+
+	ps uaxwd > "${TMP}"
+
+	:>"${TMP2}"
+	assert_ret 0 mapfile read_handle "${TMP}" "re"
+	assert_ret 0 mapfile_cat "${read_handle}" > "${TMP2}"
+	assert_ret 0 mapfile_close "${read_handle}"
+	assert_ret 0 diff -u "${TMP}" "${TMP2}"
 	rm -f "${TMP}" "${TMP2}"
 }
 
@@ -578,7 +730,7 @@ fi
 	rm -f "${TMP2}"
 	:>"${TMP2}"
 	assert_ret 0 mapfile handle "${TMP2}" "we"
-	mapfile_write "${handle}" <<-EOF
+	assert_ret 0 mapfile_write "${handle}" <<-EOF
 	$(cat "${TMP}")
 	EOF
 	assert_ret 0 mapfile_close "${handle}"
@@ -603,7 +755,7 @@ fi
 	rm -f "${TMP2}"
 	:>"${TMP2}"
 	assert_ret 0 mapfile handle "${TMP2}" "we"
-	mapfile_write "${handle}" <<-EOF
+	assert_ret 0 mapfile_write "${handle}" <<-EOF
 	$(cat "${TMP}")
 	EOF
 	assert_ret 0 mapfile_close "${handle}"
@@ -619,10 +771,11 @@ fi
 	ps uaxwd > "${TMP}"
 
 	{ cat "${TMP}"; rm -f "${TMP2}"; } | write_atomic "${TMP2}"
+	assert 0 "$?" "pipe exit status"
 	assert_ret 0 diff -u "${TMP}" "${TMP2}"
 
 	rm -f "${TMP2}"
-	write_atomic "${TMP2}" <<-EOF
+	assert_ret 0 write_atomic "${TMP2}" <<-EOF
 	$(cat "${TMP}"; rm -f "${TMP2}")
 	EOF
 	assert_ret 0 diff -u "${TMP}" "${TMP2}"
@@ -630,4 +783,181 @@ fi
 	rm -f "${TMP}" "${TMP2}"
 }
 
+# Test newline write handling
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -t mapfile)
+	assert_ret 0 mapfile file_out "${TMP}" "we"
+	assert_ret 0 mapfile_write "${file_out}" ""
+	assert_ret 0 mapfile_close "${file_out}"
+	size=$(stat -f %z "${TMP}")
+	assert "0" "$?"
+	assert "1" "${size}"
+	assert '$' "$(cat -vet "${TMP}")"
+	value="$(mapfile_cat_file "${TMP}")"
+	assert "empty" "${value:-empty}"
+	assert_ret 0 mapfile_cat_file "${TMP}" | (
+		lines=0
+		while read -r line; do
+			assert "empty" "${line:-empty}"
+			lines=$((lines + 1))
+		done
+		assert 1 "${lines}"
+	)
+	assert 0 "$?"
+	assert_ret 0 mapfile file_in "${TMP}" "re"
+	lines=0
+	while mapfile_read "${file_in}" line; do
+		assert "empty" "${line:-empty}"
+		lines=$((lines + 1))
+	done
+	assert 1 "${lines}"
+	assert_ret 0 mapfile_close "${file_in}"
+	lines=0
+	while mapfile_read_loop "${TMP}" line; do
+		assert "empty" "${line:-empty}"
+		lines=$((lines + 1))
+	done
+	assert 1 "${lines}"
+}
+
+# Test newline write handling in pipe
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -t mapfile)
+	assert_ret 0 mapfile file_out "${TMP}" "we"
+	echo | assert_ret 0 mapfile_write "${file_out}"
+	assert 0 "$?"
+	assert_ret 0 mapfile_close "${file_out}"
+	size=$(stat -f %z "${TMP}")
+	assert "0" "$?"
+	assert "1" "${size}"
+	assert '$' "$(cat -vet "${TMP}")"
+	value="$(mapfile_cat_file "${TMP}")"
+	assert "empty" "${value:-empty}"
+	assert_ret 0 mapfile_cat_file "${TMP}" | (
+		lines=0
+		while read -r line; do
+			assert "empty" "${line:-empty}"
+			lines=$((lines + 1))
+		done
+		assert 1 "${lines}"
+	)
+	assert 0 "$?"
+	assert_ret 0 mapfile file_in "${TMP}" "re"
+	lines=0
+	while mapfile_read "${file_in}" line; do
+		assert "empty" "${line:-empty}"
+		lines=$((lines + 1))
+	done
+	assert 1 "${lines}"
+	assert_ret 0 mapfile_close "${file_in}"
+	lines=0
+	while mapfile_read_loop "${TMP}" line; do
+		assert "empty" "${line:-empty}"
+		lines=$((lines + 1))
+	done
+	assert 1 "${lines}"
+}
+
+# Test blank write handling
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -t mapfile)
+	assert_ret 0 mapfile file_out "${TMP}" "we"
+	assert_ret 0 mapfile_write "${file_out}" -n ""
+	assert_ret 0 mapfile_close "${file_out}"
+	size=$(stat -f %z "${TMP}")
+	assert "0" "$?"
+	assert "0" "${size}"
+	assert '' "$(cat -vet "${TMP}")"
+	value="$(mapfile_cat_file "${TMP}")"
+	assert "empty" "${value:-empty}"
+	assert_ret 0 mapfile_cat_file "${TMP}" | (
+		lines=0
+		while read -r line; do
+			assert "empty" "${line:-empty}"
+			lines=$((lines + 1))
+		done
+		assert 0 "${lines}"
+	)
+	assert 0 "$?"
+	assert_ret 0 mapfile file_in "${TMP}" "re"
+	lines=0
+	while mapfile_read "${file_in}" line; do
+		assert "empty" "${line:-empty}"
+		lines=$((lines + 1))
+	done
+	assert 0 "${lines}"
+	assert_ret 0 mapfile_close "${file_in}"
+	lines=0
+	while mapfile_read_loop "${TMP}" line; do
+		assert "empty" "${line:-empty}"
+		lines=$((lines + 1))
+	done
+	assert 0 "${lines}"
+}
+
+# Test blank write handling in pipe
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -t mapfile)
+	assert_ret 0 mapfile file_out "${TMP}" "we"
+	: | assert_ret 0 mapfile_write "${file_out}" -n ""
+	assert 0 "$?"
+	assert_ret 0 mapfile_close "${file_out}"
+	size=$(stat -f %z "${TMP}")
+	assert "0" "$?"
+	assert "0" "${size}"
+	assert '' "$(cat -vet "${TMP}")"
+	value="$(mapfile_cat_file "${TMP}")"
+	assert "empty" "${value:-empty}"
+	assert_ret 0 mapfile_cat_file "${TMP}" | (
+		lines=0
+		while read -r line; do
+			assert "empty" "${line:-empty}"
+			lines=$((lines + 1))
+		done
+		assert 0 "${lines}"
+	)
+	assert 0 "$?"
+	assert_ret 0 mapfile file_in "${TMP}" "re"
+	lines=0
+	while mapfile_read "${file_in}" line; do
+		assert "empty" "${line:-empty}"
+		lines=$((lines + 1))
+	done
+	assert 0 "${lines}"
+	assert_ret 0 mapfile_close "${file_in}"
+	lines=0
+	while mapfile_read_loop "${TMP}" line; do
+		assert "empty" "${line:-empty}"
+		lines=$((lines + 1))
+	done
+	assert 0 "${lines}"
+	rm -f "${TMP}"
+}
+
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -ut mapfile)
+	assert_true mapfile file_out "${TMP}" "we"
+	assert_true mapfile_write "${file_out}" -- "-n blah"
+	assert_true mapfile_close "${file_out}"
+	assert_file - "${TMP}" <<-EOF
+	-n blah
+	EOF
+}
+
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -ut mapfile)
+	assert_true mapfile file_out "${TMP}" "we"
+	echo "-n blah" | assert_true mapfile_write "${file_out}"
+	assert 0 "$?"
+	assert_true mapfile_close "${file_out}"
+	assert_file - "${TMP}" <<-EOF
+	-n blah
+	EOF
+}
 exit 0

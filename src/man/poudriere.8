@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 4, 2019
+.Dd December 24, 2022
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -296,8 +296,6 @@ The first (default) FLAVOR for a port is built by specifying the FLAVOR
 .Bl -bullet -compat
 .It
 An invalid FLAVOR for a port will cause an error during dependency calculation.
-.It
-MOVED entries do not support a source FLAVOR, only a target one.
 .El
 .Sh CUSTOMIZATION
 For bulk building, you can customize binary packages produced by
@@ -342,6 +340,23 @@ to
 .Ss Blacklist ports
 You can also specify a blacklist which will disallow the lists port origins
 from building on the matched jail.
+.Pp
+FLAVOR handling is different than described in the
+.Sx FLAVORS
+section.
+.Bl -tag -width "devel/foo@bar" -compact
+.It Cm devel/foo
+Blacklist every FLAVOR.
+.It Cm devel/foo@all
+Blacklist every FLAVOR.
+.It Cm devel/foo@-
+Blacklist only the default FLAVOR.
+.It Cm devel/foo@bar
+Blacklist only the
+.Sy bar
+FLAVOR.
+.El
+.Pp
 Any of the following are allowed and will all be used in the order shown:
 .Pp
 .Dl Pa /usr/local/etc/poudriere.d/blacklist

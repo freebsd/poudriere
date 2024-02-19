@@ -461,7 +461,7 @@ expbackq(union node *cmd, int quoted, int flag, struct worddest *dst)
 {
 	struct backcmd in;
 	int i;
-	char buf[128];
+	char buf[BUFSIZ];
 	char *p;
 	char *dest = expdest;
 	char lastc;
@@ -949,6 +949,12 @@ varvalue(const char *name, int quoted, int subtype, int flag,
 	switch (*name) {
 	case '$':
 		num = rootpid;
+		break;
+	case '%':
+		num = shpid;
+		break;
+	case '+':
+		num = funcnest;
 		break;
 	case '?':
 		num = oexitstatus;
@@ -1453,6 +1459,7 @@ casematch(union node *pattern, const char *val)
 	STPUTC('\0', expdest);
 	p = grabstackstr(expdest);
 	result = patmatch(p, val);
+	xtracestr("case %s in %s result=%d", val, p, result);
 	popstackmark(&smark);
 	return result;
 }

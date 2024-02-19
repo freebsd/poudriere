@@ -13,8 +13,6 @@
 # Bartek Rutkowski
 # ----------------------------------------------------------------------------
 #
-# $FreeBSD: head/Tools/scripts/bump-revision.sh 477615 2018-08-20 00:39:32Z gerald $
-#
 # MAINTAINER= robak@FreeBSD.org
 
 #

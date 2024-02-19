@@ -969,3 +969,11 @@ find_var(const char *name, struct var ***vppp, int *lenp)
 	}
 	return NULL;
 }
+
+long shpid = -1;
+void
+setmypid(void)
+{
+
+	shpid = getpid();
+}

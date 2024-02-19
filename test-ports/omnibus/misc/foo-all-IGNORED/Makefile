@@ -22,6 +22,7 @@ NO_BUILD=	yes
 NO_ARCH=	yes
 
 DATADIR=	${PREFIX}/share/freebsd
+FILESDIR=	${.CURDIR:H:H}/misc/freebsd-release-manifests/files
 
 do-install:
 	@${MKDIR} ${STAGEDIR}${DATADIR}/MANIFESTS

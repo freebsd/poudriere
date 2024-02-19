@@ -29,6 +29,18 @@ real_func() {
 	echo "$# $@"
 }
 
+nop_func() {
+	msg_warn "in nop_func $# $@"
+	local lookup lookup_key
+
+	_lookup_key lookup_key "nop_func" "$@"
+	shash_get lookupcnt "${lookup_key}" lookup || lookup=0
+	lookup=$((lookup + 1))
+	shash_set lookupcnt "${lookup_key}" ${lookup}
+
+	:
+}
+
 real_func_sv() {
 	msg_warn "in real_func_sv $# $@"
 	local var_return="$1"
@@ -98,6 +110,29 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	get_lookup_cnt lookup real_func "1"
 	assert 0 $? "lookupcnt real_func-1 2"
 	assert 1 ${lookup} "real_func 1 lookup count 2"
+}
+
+# test with nop function
+{
+	# . at end to preserve newlines.
+	# First lookup, will call into the real function
+	lookup=0
+	value=
+	cache_call value nop_func "1"
+	assert 0 $? "nop_func 1 return status"
+	assert "empty" "${value:-empty}"
+	get_lookup_cnt lookup nop_func "1"
+	assert 0 $? "lookupcnt nop_func-1"
+	assert 1 ${lookup} "nop_func 1 lookup count"
+
+	# Second lookup, should not call into the function
+	value=
+	cache_call value nop_func "1"
+	assert 0 $? "nop_func 1 return status 2"
+	assert "empty" "${value:-empty}"
+	get_lookup_cnt lookup nop_func "1"
+	assert 0 $? "lookupcnt nop_func-1 2"
+	assert 1 ${lookup} "nop_func 1 lookup count 2"
 }
 
 # More complex argument test

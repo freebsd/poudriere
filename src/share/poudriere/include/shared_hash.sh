@@ -50,24 +50,32 @@ shash_get() {
 	local var="$1"
 	local key="$2"
 	local var_return="$3"
-	local _shash_varkey_file _f _value _values
-	local ret
+	local _shash_varkey_file _f _sh_value _sh_values
+	local ret handle IFS
 
-	ret=1
-	_values=
+	ret=0
+	_sh_values=
 	_shash_varkey_file "${var}" "${key}"
 	# This assumes globbing works
 	for _f in ${_shash_varkey_file}; do
 		case "${_f}" in
-		*"*"*) break ;; # no file found
+		# no file found
+		*"*"*)
+			ret=1
+			break
+			;;
 		esac
-		if read_line _value "${_f}"; then
-			_values="${_values}${_values:+ }${_value}"
-			ret=0
+		if ! mapfile -qF handle "${_f}" "r"; then
+			ret=1
+			continue
 		fi
+		if IFS= mapfile_read "${handle}" _sh_value; then
+			_sh_values="${_sh_values:+${_sh_values} }${_sh_value}"
+		fi
+		mapfile_close "${handle}" || :
 	done
 
-	setvar "${var_return}" "${_values}"
+	setvar "${var_return}" "${_sh_values}"
 
 	return ${ret}
 }
@@ -100,7 +108,9 @@ shash_set() {
 	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
-	echo "${value}" > "${_shash_varkey_file}"
+	case "${value:+set}" in
+	set) echo "${value}" ;;
+	esac > "${_shash_varkey_file}"
 }
 
 shash_read() {
@@ -108,22 +118,22 @@ shash_read() {
 	[ $# -eq 2 ] || eargs shash_read var key
 	local var="$1"
 	local key="$2"
-	local _shash_varkey_file
+	local _shash_varkey_file handle line
 
 	_shash_varkey_file "${var}" "${key}"
-	mapfile_cat_file "${_shash_varkey_file}"
+	mapfile_cat_file -q "${_shash_varkey_file}"
 }
 
 shash_read_mapfile() {
 	local -; set +x
-	[ $# -eq 3 ] || eargs shash_read var key mapfile_handle_var
+	[ $# -eq 3 ] || eargs shash_read_mapfile var key mapfile_handle_var
 	local var="$1"
 	local key="$2"
 	local mapfile_handle_var="$3"
 	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
-	mapfile "${mapfile_handle_var}" "${_shash_varkey_file}" "re"
+	mapfile -q "${mapfile_handle_var}" "${_shash_varkey_file}" "re"
 }
 
 shash_write() {
@@ -137,6 +147,17 @@ shash_write() {
 	write_atomic "${_shash_varkey_file}"
 }
 
+shash_tee() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs shash_tee var key
+	local var="$1"
+	local key="$2"
+	local _shash_varkey_file
+
+	_shash_varkey_file "${var}" "${key}"
+	write_atomic_tee "${_shash_varkey_file}"
+}
+
 shash_remove_var() {
 	local -; set +x
 	[ $# -eq 1 ] || eargs shash_remove_var var
@@ -145,7 +166,7 @@ shash_remove_var() {
 
 	# This assumes globbing works
 	_shash_var_name "${var}%*"
-	find -x "${SHASH_VAR_PATH}" \
+	find -x "${SHASH_VAR_PATH:?}" \
 	    -name "${SHASH_VAR_PREFIX}${_shash_var_name}" \
 	    -delete || :
 }

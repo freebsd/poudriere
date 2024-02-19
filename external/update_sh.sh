@@ -22,6 +22,11 @@ paths=$(make -V '${.PATH:N.*bltin*}'|xargs realpath)
 {
 	echo builtins.def
 	echo mkbuiltins
+	echo mksyntax.c
+	echo mknodes.c
+	echo nodetypes
+	echo nodes.c.pat
+	echo mktokens
 	for src in *.h $(make -V SRCS); do
 		if [ -f "${src}" ]; then
 			echo "${PWD}/${src}"
@@ -54,12 +59,12 @@ external/sh_compat/strchrnul.c
 external/sh_compat/utimensat.c
 EOF
 find "${DESTDIR}" -name '*.c' -o -name '*.h' -o -name '*.def' -o -name 'mk*'
-} | sed -e 's,^,	,' | sort | \
+} | egrep -v "(mk(nodes|syntax)\.c|mktokens)" | sed -e 's,^,	,' | sort | \
 {
 	echo "sh_SOURCES="
 	cat
 } | sed -e '$ ! s,$, \\,' \
     > external/sh/Makefile.sources
 git add -f external/sh/Makefile.sources
-find external/patches/sh -type f -name '*.patch' -exec \
+find -s external/patches/sh -type f -name '*.patch' -exec \
     git apply -v --index --directory=external {} +

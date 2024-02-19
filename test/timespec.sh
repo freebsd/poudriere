@@ -6,6 +6,9 @@ set +e
 # at N.9 rather than N.0. (or else seconds tend to not match randomly)
 assert 1.0 "$(timespecsub 6 5)" "timespecsub result"
 assert 1.0 "$(timespecsub 6.0 5)" "timespecsub result"
+result=
+timespecsub 6 5.0 result
+assert 1.0 "${result}"
 assert 1.0 "$(timespecsub 6 5.0)" "timespecsub result"
 assert 1.0 "$(timespecsub 6.0 5.0)" "timespecsub result"
 assert 0.$((5 * 100000000)) "$(timespecsub 5.$((5 * 100000000)) 5)" "timespecsub result"

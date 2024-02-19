@@ -1,6 +1,5 @@
 #!/bin/sh
 # ports/Mk/Scripts/check-stagedir.sh - called from ports/Mk/bsd.stage.mk
-# $FreeBSD: head/Mk/Scripts/check-stagedir.sh 517011 2019-11-07 20:49:17Z bdrewery $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 #
@@ -12,6 +11,7 @@
 #  c. Files in plist which are owned by dependencies/MTREEs
 
 set -e
+set -o pipefail
 
 . ${SCRIPTSDIR}/functions.sh
 

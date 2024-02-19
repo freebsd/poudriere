@@ -1,5 +1,6 @@
 CLEANFILES=	$(dist_rc_SCRIPTS)
 MOSTLYCLEANFILES=
+noinst_PROGRAMS=
 
 ACLOCAL_AMFLAGS=	-I m4
 AM_CFLAGS=	-Wall -pipe -O2 @AM_CFLAGS@
@@ -88,6 +89,7 @@ dist_pkgdata_DATA=	\
 			src/share/poudriere/testport.sh
 
 dist_include_HEADERS= \
+			src/share/poudriere/include/asserts.sh \
 			src/share/poudriere/include/cache.sh \
 			src/share/poudriere/include/colors.sh \
 			src/share/poudriere/include/colors.pre.sh \
@@ -109,6 +111,7 @@ dist_awk_DATA= src/share/poudriere/awk/dependency_loop.awk \
 		src/share/poudriere/awk/json_jail.awk \
 		src/share/poudriere/awk/json_top.awk \
 		src/share/poudriere/awk/parse_MOVED.awk \
+		src/share/poudriere/awk/processonelog.awk \
 		src/share/poudriere/awk/processonelog2.awk \
 		src/share/poudriere/awk/siginfo_buildtime.awk \
 		src/share/poudriere/awk/unique_pkgnames_from_flavored_origins.awk
@@ -215,12 +218,14 @@ sh_SOURCES+=		\
 			src/libexec/poudriere/rename/rename.c \
 			external/rm/rm.c \
 			src/poudriere-sh/builtins-poudriere.def \
+			src/poudriere-sh/cut.c \
 			src/poudriere-sh/helpers.c \
 			src/poudriere-sh/helpers.h \
 			src/poudriere-sh/mapfile.c \
 			src/poudriere-sh/mkdir.c \
 			src/poudriere-sh/mkfifo.c \
 			src/poudriere-sh/mktemp.c \
+			src/poudriere-sh/paste.c \
 			src/poudriere-sh/realpath.c \
 			src/poudriere-sh/rmdir.c \
 			src/poudriere-sh/setproctitle.c \
@@ -228,18 +233,56 @@ sh_SOURCES+=		\
 			src/poudriere-sh/stat.c \
 			src/poudriere-sh/touch.c \
 			src/poudriere-sh/traps.c \
-			src/poudriere-sh/unlink.c
+			src/poudriere-sh/unlink.c \
+			src/poudriere-sh/wc.c
+
+noinst_PROGRAMS+=	external/sh/mknodes
+external_sh_mknodes_SOURCES= external/sh/mknodes.c
+external/sh/nodes.c: external/sh/mknodes \
+    $(abs_top_srcdir)/external/sh/nodetypes \
+    $(abs_top_srcdir)/external/sh/nodes.c.pat
+	$(AM_V_GEN)cd external/sh && \
+	    $(abs_top_builddir)/external/sh/mknodes \
+	    $(abs_top_srcdir)/external/sh/nodetypes \
+	    $(abs_top_srcdir)/external/sh/nodes.c.pat
+external/sh/nodes.h: external/sh/nodes.c
+EXTRA_DIST+=	\
+		external/sh/nodetypes \
+		external/sh/nodes.c.pat
+CLEANFILES+=	\
+		external/sh/nodes.c \
+		external/sh/nodes.h
+$(sh_OBJECTS):	external/sh/nodes.h
+
+external_sh_mksyntax_SOURCES= external/sh/mksyntax.c
+noinst_PROGRAMS+=	external/sh/mksyntax
+external/sh/syntax.c: external/sh/mksyntax
+	$(AM_V_GEN)cd external/sh && \
+	    $(abs_top_builddir)/external/sh/mksyntax
+external/sh/syntax.h: external/sh/syntax.c
+CLEANFILES+=	\
+		external/sh/syntax.c \
+		external/sh/syntax.h
+$(sh_OBJECTS):	external/sh/syntax.h
+
+external/sh/token.h: $(abs_top_srcdir)/external/sh/mktokens
+	$(AM_V_GEN)cd external/sh && \
+	    sh $(abs_top_srcdir)/external/sh/mktokens
+CLEANFILES+=	external/sh/token.h
+EXTRA_DIST+=	external/sh/mktokens
+external/sh/sh-parser.$(OBJEXT):	external/sh/token.h
 
 sh_CFLAGS+=		-I$(top_srcdir)/src/poudriere-sh \
 			-I$(top_builddir)/src/poudriere-sh
 src/poudriere-sh/builtins.def: external/sh/builtins.def \
     src/poudriere-sh/builtins-poudriere.def
-	cat $^${.ALLSRC} > $@
+	$(AM_V_GEN)cat $^${.ALLSRC} > $@
 src/poudriere-sh/shell.h:
 	@ln -fs $(abs_top_srcdir)/external/sh/shell.h $@
 src/poudriere-sh/builtins.h: src/poudriere-sh/builtins.def \
-      src/poudriere-sh/shell.h external/sh/mkbuiltins
-	cd src/poudriere-sh && \
+      src/poudriere-sh/shell.h \
+      $(abs_top_srcdir)/external/sh/mkbuiltins
+	$(AM_V_GEN)cd src/poudriere-sh && \
 	    sh $(abs_top_srcdir)/external/sh/mkbuiltins .
 src/poudriere-sh/builtins.c: src/poudriere-sh/builtins.h
 sh_SOURCES+=		src/poudriere-sh/builtins.c

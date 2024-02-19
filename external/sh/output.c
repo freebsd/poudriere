@@ -75,7 +75,7 @@ static int doformat_wr(void *, const char *, int);
 
 struct output output = {NULL, NULL, NULL, OUTBUFSIZ, 1, 0};
 struct output errout = {NULL, NULL, NULL, 256, 2, 0};
-struct output memout = {NULL, NULL, NULL, 64, MEM_OUT, 0};
+struct output memout = {NULL, NULL, NULL, BUFSIZ, MEM_OUT, 0};
 struct output *out1 = &output;
 struct output *out2 = &errout;
 

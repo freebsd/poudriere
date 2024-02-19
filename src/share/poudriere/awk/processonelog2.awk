@@ -1,13 +1,27 @@
 # Read a single errorlogfile and output a phase
-/Filesystem touched during build/	{ res[0]="build_fs_violation" }
-/Filesystem touched during stage/	{ res[1]="stage_fs_violation" }
-/check\-plist failures/			{ res[2]="check-plist" }
-/stage\-qa failures/			{ res[3]="stage-qa" }
-/Files or directories (left over|removed|modified)/	{ res[4]="leftovers" }
+function found(reason) {
+	if (!REASON && !REASON_LAST) {
+		REASON = reason
+	}
+}
+function found_last(reason) {
+	if (!REASON) {
+		REASON_LAST = reason
+	}
+}
+/Filesystem touched during build/	{ found("build_fs_violation") }
+/Filesystem touched during stage/	{ found("stage_fs_violation") }
+/check\-plist failures/			{ found("check-plist") }
+/stage\-qa failures/			{ found("stage-qa") }
+/Files or directories (left over|removed|modified)/	{ found("leftovers") }
+/=======================<phase: .*/     { found_last($2); }
 
 END {
-	for(i=0; i<5; i++) {
-		if (res[i]) { print res[i]; exit; }
+	if (REASON_LAST) {
+		REASON = REASON_LAST
 	}
-	print "???"
+	if (!REASON) {
+		REASON = "???"
+	}
+	print REASON
 }

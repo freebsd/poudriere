@@ -135,7 +135,7 @@ while getopts "B:cDFuU:dklp:qf:nM:m:v" FLAG; do
 	esac
 done
 
-saved_argv="$@"
+encode_args saved_argv "$@"
 shift $((OPTIND-1))
 post_getopts
 
@@ -177,7 +177,7 @@ cleanup_new_ports() {
 	if [ "${CREATED_FS}" -eq 1 ] && [ "${METHOD}" != "null" ]; then
 		TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
 	fi
-	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
+	rm -rf "${POUDRIERED:?}/ports/${PTNAME:?}" || :
 }
 
 check_portsnap_interactive() {
@@ -201,7 +201,7 @@ list)
 		display_setup "${format}" "-d"
 		display_add "PORTSTREE"
 	fi
-	while read ptname ptmethod ptpath; do
+	while mapfile_read_loop_redir ptname ptmethod ptpath; do
 		[ -z "${ptname}" ] && break
 		if [ ${NAMEONLY} -eq 0 ]; then
 			_pget timestamp ${ptname} timestamp || :
@@ -339,7 +339,7 @@ delete)
 			TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
 		fi
 	fi
-	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
+	rm -rf "${POUDRIERED:?}/ports/${PTNAME:?}" || :
 	echo " done"
 	;;
 

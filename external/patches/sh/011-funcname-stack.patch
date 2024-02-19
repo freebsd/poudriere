@@ -1,0 +1,35 @@
+commit 04bedfe2d10a45b6e61b7454346799a484aed2bf
+Author: Bryan Drewery <bryan@shatow.net>
+Date:   Mon Dec 19 08:30:43 2022 -0800
+
+    sh: Add $FUNCNAMESTACK
+
+diff --git external/sh/eval.c external/sh/eval.c
+index cd1504213..ea0bbf81a 100644
+--- external/sh/eval.c
++++ external/sh/eval.c
+@@ -1049,6 +1172,24 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
+ 		}
+ 		handler = &jmploc;
+ 		funcnest++;
++		mklocal("FUNCNAME");
++		setvar("FUNCNAME", argv[0], 0);
++		mklocal("FUNCNAMESTACK");
++		char *funcstack;
++		int exitstatus_save = exitstatus, oexitstatus_save = oexitstatus;
++		asprintf(&funcstack,
++		    "FUNCNAMESTACK=\"${FUNCNAMESTACK:-${0}:%d:}${FUNCNAMESTACK:+:}${FUNCNAME}\"", plinno);
++		evalstring(funcstack, 0);
++		if (!is_int_on()) {
++			/*
++			 * evalstring may have FORCEINTON
++			 */
++			INTOFF;
++		}
++		assert(is_int_on());
++		exitstatus = exitstatus_save;
++		oexitstatus = oexitstatus_save;
++		free(funcstack);
+ 		redirect(cmd->ncmd.redirect, REDIR_PUSH);
+ 		INTON;
+ 		for (i = 0; i < varlist.count; i++)

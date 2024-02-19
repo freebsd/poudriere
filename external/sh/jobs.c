@@ -914,6 +914,7 @@ forkshell(struct job *jp, union node *n, int mode)
 		int i;
 
 		TRACE(("Child shell %d\n", (int)getpid()));
+		setmypid();
 		wasroot = rootshell;
 		rootshell = 0;
 		handler = &main_handler;

@@ -54,11 +54,12 @@ hybridiso_build()
 	/dev/iso9660/${imageupper} / cd9660 ro 0 0
 	tmpfs /tmp tmpfs rw,mode=1777 0 0
 	EOF
-	do_clone -r ${WRKDIR}/world/boot ${WRKDIR}/out/boot
+	do_clone -r ${WRKDIR:?}/world/boot ${WRKDIR:?}/out/boot
 }
 
 hybridiso_generate()
 {
+	local entry entries
 
 	FINALIMAGE=${IMAGENAME}.iso
 	espfilename=$(mktemp /tmp/efiboot.XXXXXX)
@@ -73,7 +74,8 @@ hybridiso_generate()
 	       -o no-emul-boot "${OUTPUTDIR}/${FINALIMAGE}" ${WRKDIR}/world
 
 	# Find the EFI System Partition on the ISO.
-	for entry in $(etdump --format shell ${OUTPUTDIR}/${FINALIMAGE}); do
+	entries="$(etdump --format shell ${OUTPUTDIR}/${FINALIMAGE})"
+	for entry in ${entries}; do
 		eval $entry
 		if [ "$et_platform" = "efi" ]; then
 			espstart=$(expr $et_lba \* 2048)

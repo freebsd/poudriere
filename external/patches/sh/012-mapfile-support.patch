@@ -1,0 +1,41 @@
+diff --git external/sh/redir.c external/sh/redir.c
+index 0c49c0f6f..154fd52b5 100644
+--- external/sh/redir.c
++++ external/sh/redir.c
+@@ -84,7 +84,7 @@ static struct redirtab *redirlist;
+  * background commands, where we want to redirect fd0 to /dev/null only
+  * if it hasn't already been redirected.
+ */
+-static int fd0_redirected = 0;
++int fd0_redirected = 0;
+ 
+ /* Number of redirtabs that have not been allocated. */
+ static unsigned int empty_redirs = 0;
+@@ -139,7 +139,7 @@ redirect(union node *redir, int flags)
+ 	for (n = redir ; n ; n = n->nfile.next) {
+ 		fd = n->nfile.fd;
+ 		if (fd == 0)
+-			fd0_redirected = 1;
++			fd0_redirected++;
+ 		if ((n->nfile.type == NTOFD || n->nfile.type == NFROMFD) &&
+ 		    n->ndup.dupfd == fd)
+ 			continue; /* redirect from/to same file descriptor */
+@@ -321,7 +321,7 @@ out:
+ /*
+  * Undo the effects of the last redirection.
+  */
+-
++void mapfile_read_loop_close_stdin(void);
+ void
+ popredir(void)
+ {
+@@ -335,6 +335,9 @@ popredir(void)
+ 		return;
+ 	}
+ 	xtracestr("%s", "} REDIR");
++	if (fd0_redirected != rp->fd0_redirected) {
++		mapfile_read_loop_close_stdin();
++	}
+ 	for (i = 0 ; i < 10 ; i++) {
+ 		if (rp->renamed[i] != EMPTY) {
+ 			if (rp->renamed[i] >= 0) {

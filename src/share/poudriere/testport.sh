@@ -165,7 +165,7 @@ while getopts "b:B:o:cniIj:J:kNO:p:PSvwz:" FLAG; do
 	esac
 done
 
-saved_argv="$@"
+encode_args saved_argv "$@"
 shift $((OPTIND-1))
 post_getopts
 
@@ -180,7 +180,7 @@ if [ -z "${JAILNAME}" ]; then
 	err 1 "Don't know on which jail to run please specify -j"
 fi
 
-maybe_run_queued "$@"
+maybe_run_queued "${saved_argv}"
 
 : ${BUILD_PARALLEL_JOBS:=${PARALLEL_JOBS}}
 : ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
@@ -203,56 +203,90 @@ ORIGIN="${ORIGIN#/}"
 ORIGIN="${ORIGIN%/}"
 originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
 if have_ports_feature FLAVORS; then
-	[ "${FLAVOR}" = "${FLAVOR_DEFAULT}" ] && FLAVOR=
-	[ "${FLAVOR}" = "${FLAVOR_ALL}" ] && \
-	    err 1 "Cannot testport on multiple flavors, use 'bulk -t' instead."
+	case "${FLAVOR}" in
+	"${FLAVOR_ALL}")
+		err 1 "Cannot testport on multiple flavors, use 'bulk -t' instead."
+		;;
+	esac
+	case "${FLAVOR_DEFAULT_ALL}" in
+	"yes")
+		err 1 "FLAVOR_DEFAULT_ALL is set. Cannot testport on multiple flavors, use 'bulk -t' instead."
+		;;
+	esac
 else
-	[ -n "${FLAVOR}" ] && \
-	    err 1 "Trying to build FLAVOR-specific ${ORIGINSPEC} but ports tree has no FLAVORS support."
+	case "${FLAVOR}" in
+	"")
+		err 1 "Trying to build FLAVOR-specific ${ORIGINSPEC} but ports tree has no FLAVORS support."
+		;;
+	esac
 fi
-new_origin=$(grep -v '^#' ${portsdir}/MOVED | awk -vorigin="${ORIGIN}" \
-    -F\| '$1 == origin && $2 != "" {print $2}')
-if [ -n "${new_origin}" ]; then
-	msg "MOVED: ${COLOR_PORT}${ORIGIN}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
-	# The ORIGIN may have a FLAVOR or SUBPKG in it which overrides
-	# whatever the user specified.
-	originspec_decode "${new_origin}" ORIGIN NEW_FLAVOR NEW_SUBPKG
-	if [ -n "${NEW_FLAVOR}" ]; then
-		FLAVOR="${NEW_FLAVOR}"
-	fi
-	if [ -n "${NEW_SUBPKG}" ]; then
-		SUBPKG="${NEW_SUBPKG}"
-	fi
-	# Update ORIGINSPEC for the new ORIGIN
-	originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
-fi
-_lookup_portdir portdir "${ORIGIN}"
-if [ "${portdir}" = "${PORTSDIR}/${ORIGIN}" ] && [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../Mk" ]; then
-	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
-fi
-
-injail /usr/bin/make -C ${portdir} maintainer ECHO_CMD=true || \
-    err 1 "Port is broken"
 
 if [ $CONFIGSTR -eq 1 ]; then
 	command -v portconfig >/dev/null 2>&1 || \
 	    command -v dialog4ports >/dev/null 2>&1 || \
 	    err 1 "You must have ports-mgmt/dialog4ports or ports-mgmt/portconfig installed on the host to use -c."
-	__MAKE_CONF=$(mktemp -t poudriere-make.conf)
+	__MAKE_CONF="$(mktemp -t poudriere-make.conf)"
 	setup_makeconf "${__MAKE_CONF}" "${JAILNAME}" "${PTNAME}" "${SETNAME}"
-	PORTSDIR=${portsdir} \
-	    __MAKE_CONF="${__MAKE_CONF}" \
-	    PORT_DBDIR=${MASTERMNT}/var/db/ports \
+	PORTSDIR="${portsdir:?}" \
+	    __MAKE_CONF="${__MAKE_CONF:?}" \
+	    PORT_DBDIR="${MASTERMNT:?}/var/db/ports" \
 	    TERM=${SAVED_TERM} \
-	    make -C "${MASTERMNT}${portdir}" \
-	    ${FLAVOR:+FLAVOR=${FLAVOR}} \
+	    make -C "${MASTERMNT:?}${portdir:?}" \
+	    ${FLAVOR:+"FLAVOR=${FLAVOR}"} \
 	    config
-	rm -f "${__MAKE_CONF}"
+	rm -f "${__MAKE_CONF:?}"
 fi
 
 # deps_fetch_vars lookup for dependencies moved to prepare_ports()
-# This will set LISTPORTS/PKGNAME/FLAVOR/FLAVORS as well.
+LISTPORTS="${ORIGINSPEC:?}"
 prepare_ports
+if check_moved "${ORIGINSPEC}" new_originspec 1; then
+	msg "MOVED: ${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET} moved to ${COLOR_PORT}${new_originspec}${COLOR_RESET}"
+	case "${new_originspec}" in
+	"EXPIRED "*) ;;
+	"") ;;
+	*)
+		# The ORIGIN may have a FLAVOR in it which overrides what
+		# user specified.
+		originspec_decode "${new_originspec}" ORIGIN NEW_FLAVOR NEW_SUBPKG
+		case "${NEW_FLAVOR:+set}" in
+		set) FLAVOR="${NEW_FLAVOR}" ;;
+		esac
+		case "${NEW_SUBPKG:+set}" in
+		set) SUBPKG="${NEW_SUBPKG}" ;;
+		esac
+		# Update ORIGINSPEC for the new ORIGIN
+		originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
+		;;
+	esac
+fi
+# Ensure the port exists after handling MOVED.
+_lookup_portdir portdir "${ORIGIN}"
+if [ "${portdir:?}" = "${PORTSDIR:?}/${ORIGIN:?}" ] &&
+	[ ! -f "${portsdir:?}/${ORIGIN:?}/Makefile" ] ||
+	[ -d "${portsdir:?}/${ORIGIN:?}/../Mk" ]; then
+	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
+fi
+get_pkgname_from_originspec "${ORIGINSPEC:?}" PKGNAME ||
+    err "${EX_SOFTWARE}" "Failed to find PKGNAME for ${ORIGINSPEC}"
+shash_get pkgname-ignore "${PKGNAME:?}" IGNORE || :
+if have_ports_feature FLAVORS; then
+	shash_get origin-flavors "${ORIGIN:?}" FLAVORS || FLAVORS=
+	case "${FLAVORS:+set}" in
+	set)
+		case "${FLAVOR}" in
+		""|"${FLAVOR_DEFAULT}")
+			FLAVOR="${FLAVORS%% *}"
+			originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" \
+			    "${SUBPKG}"
+			;;
+		esac
+		;;
+	esac
+fi
+# Unqueue our test port so parallel_build() does not build it.
+echo "${PKGNAME:?}" | pkgqueue_remove_many_pipe
+
 show_dry_run_summary
 markfs prepkg ${MASTERMNT}
 
@@ -274,6 +308,7 @@ if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then
 	fi
 
 	bset_job_status "failed/depends" "${ORIGINSPEC}" "${PKGNAME}"
+	show_build_summary
 	show_log_info
 	set +e
 	exit 1
@@ -288,9 +323,7 @@ commit_packages
 
 bset_job_status "testing" "${ORIGINSPEC}" "${PKGNAME}"
 
-LOCALBASE=`injail /usr/bin/make -C ${portdir} -VLOCALBASE`
 [ -n "${LOCALBASE}" ] || err 1 "Port has empty LOCALBASE?"
-: ${PREFIX:=$(injail /usr/bin/make -C ${portdir} -VPREFIX)}
 [ -n "${PREFIX}" ] || err 1 "Port has empty PREFIX?"
 if [ "${USE_PORTLINT}" = "yes" ]; then
 	if [ ! -x `command -v portlint` ]; then
@@ -298,9 +331,10 @@ if [ "${USE_PORTLINT}" = "yes" ]; then
 	fi
 	msg "Portlint check"
 	(
-		cd ${MASTERMNT}${portdir} &&
-			PORTSDIR="${MASTERMNT}${PORTSDIR}" portlint -C | \
-			tee ${log}/logs/${PKGNAME}.portlint.log
+		if cd "${MASTERMNT:?}${portdir:?}"; then
+			PORTSDIR="${MASTERMNT:?}${PORTSDIR:?}" portlint -C |
+			    tee "${log:?}/logs/${PKGNAME:?}.portlint.log"
+		fi
 	) || :
 fi
 if [ ${NOPREFIX} -ne 1 ]; then
@@ -311,10 +345,10 @@ if [ "${PREFIX}" != "${LOCALBASE}" ]; then
 fi
 msg "Building with flags: ${PORT_FLAGS}"
 
-if [ -d ${MASTERMNT}${PREFIX} -a "${PREFIX}" != "/usr" ]; then
+if [ -d "${MASTERMNT:?}${PREFIX:?}" -a "${PREFIX:?}" != "/usr" ]; then
 	msg "Removing existing ${PREFIX}"
-	if [ "${PREFIX}" != "${LOCALBASE}" ]; then
-		rm -rf "${MASTERMNT}${PREFIX}"
+	if [ "${PREFIX:?}" != "${LOCALBASE:?}" ]; then
+		rm -rf "${MASTERMNT:?}${PREFIX}"
 	fi
 fi
 
@@ -329,7 +363,7 @@ if ! [ -t 1 ]; then
 	export WARNING_WAIT=0
 	export DEV_WARNING_WAIT=0
 fi
-sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' ${MASTERMNT}/etc/make.conf
+sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' "${MASTERMNT:?}/etc/make.conf"
 _gsub_var_name "${PKGNAME%-*}" PKGNAME_VARNAME
 eval "MAX_FILES=\${MAX_FILES_${PKGNAME_VARNAME}:-${DEFAULT_MAX_FILES}}"
 eval "MAX_MEMORY=\${MAX_MEMORY_${PKGNAME_VARNAME}:-${MAX_MEMORY:-}}"
@@ -347,27 +381,28 @@ NO_ELAPSED_IN_MSG=1
 TIME_START_JOB=$(clock -monotonic)
 build_port "${ORIGINSPEC}" "${PKGNAME}" || ret=$?
 unset NO_ELAPSED_IN_MSG
-
 now=$(clock -monotonic)
 elapsed=$((now - TIME_START_JOB))
 
 if [ ${ret} -ne 0 ]; then
 	if [ ${ret} -eq 2 ]; then
-		failed_phase=$(awk -f ${AWKPREFIX}/processonelog2.awk \
-			${log}/logs/${PKGNAME}.log \
+		failed_phase=$(awk -f ${AWKPREFIX:?}/processonelog2.awk \
+			"${log:?}/logs/${PKGNAME:?}.log" \
 			2> /dev/null)
 	else
 		failed_status=$(bget status)
 		failed_phase=${failed_status%%:*}
 	fi
 
-	save_wrkdir "${MASTERMNT}" "${ORIGINSPEC}" "${PKGNAME}" \
+	save_wrkdir "${MASTERMNT:?}" "${ORIGINSPEC}" "${PKGNAME}" \
 	    "${failed_phase}" || :
 
-	ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
-	errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
-		${log}/logs/errors/${PKGNAME}.log \
-		2> /dev/null)
+	ln -s "../${PKGNAME:?}.log" "${log:?}/logs/errors/${PKGNAME:?}.log"
+	bset_job_status "processlog" "${ORIGINSPEC}" "${PKGNAME}"
+	errortype="$(awk -f ${AWKPREFIX:?}/processonelog.awk \
+		"${log:?}/logs/errors/${PKGNAME:?}.log" \
+		2> /dev/null)" || :
+	bset_job_status "${status%%:*}" "${ORIGINSPEC}" "${PKGNAME}"
 	badd ports.failed "${ORIGINSPEC} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
 	update_stats || :
 
@@ -377,14 +412,16 @@ if [ ${ret} -ne 0 ]; then
 		bset_job_status "failed/${failed_phase}" "${ORIGINSPEC}" \
 		    "${PKGNAME}"
 		msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
+		show_build_summary
 		show_log_info
 		set +e
 		exit 1
 	fi
 else
+	ln -s "../${PKGNAME:?}.log" "${log:?}/logs/built/${PKGNAME:?}.log"
 	badd ports.built "${ORIGINSPEC} ${PKGNAME} ${elapsed}"
-	if [ -f ${MASTERMNT}${portdir}/.keep ]; then
-		save_wrkdir "${MASTERMNT}" "${ORIGINSPEC}" "${PKGNAME}" \
+	if [ -f "${MASTERMNT:?}${portdir:?}/.keep" ]; then
+		save_wrkdir "${MASTERMNT:?}" "${ORIGINSPEC}" "${PKGNAME}" \
 		    "noneed" || :
 	fi
 	update_stats || :
@@ -405,6 +442,7 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 			bset_job_status "failed/${failed_phase}" \
 			    "${ORIGINSPEC}" "${PKGNAME}"
 			msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
+			show_build_summary
 			show_log_info
 			set +e
 			exit 1
@@ -413,7 +451,7 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 		exit 0
 	fi
 else
-	if [ -f ${MASTERMNT}/tmp/pkgs/${PKGNAME}.${PKG_EXT} ]; then
+	if [ -f "${MASTERMNT:?}/tmp/pkgs/${PKGNAME:?}.${PKG_EXT}" ]; then
 		msg "Installing from package"
 		if ! ensure_pkg_installed; then
 			stop_build "${PKGNAME}" "${ORIGINSPEC}" 1
@@ -421,18 +459,18 @@ else
 			bset_job_status "crashed" "${ORIGINSPEC}" "${PKGNAME}"
 			err 1 "Unable to extract pkg."
 		fi
-		injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT} || :
+		injail ${PKG_ADD} "/tmp/pkgs/${PKGNAME:?}.${PKG_EXT}" || :
 	fi
 fi
 
 msg "Cleaning up"
-injail /usr/bin/make -C ${portdir} -DNOCLEANDEPENDS clean \
+injail /usr/bin/make -C "${portdir:?}" -DNOCLEANDEPENDS clean \
     ${MAKE_ARGS}
 
 if [ -z "${POUDRIERE_INTERACTIVE_NO_INSTALL-}" ]; then
 	msg "Deinstalling package"
 	ensure_pkg_installed
-	injail ${PKG_DELETE} ${PKGNAME}
+	injail ${PKG_DELETE} "${PKGNAME:?}"
 fi
 
 stop_build "${PKGNAME}" "${ORIGINSPEC}" ${ret}
@@ -442,6 +480,7 @@ bset_job_status "stopped" "${ORIGINSPEC}" "${PKGNAME}"
 
 bset status "done:"
 
+show_build_summary
 show_log_info
 
 set +e

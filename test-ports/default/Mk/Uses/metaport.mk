@@ -1,5 +1,3 @@
-# $FreeBSD: head/Mk/Uses/metaport.mk 382933 2015-04-01 17:59:57Z bapt $
-#
 # Sets the default variables to handle metaports
 #
 # Feature:	metaport
@@ -10,6 +8,11 @@
 .if !defined(_INCLUDE_USES_METAPORT_MK)
 _INCLUDE_USES_METAPORT_MK=	yes
 
+LICENSE=	NA
+LICENSE_COMB=	single
+LICENSE_NAME=	Non applicable
+LICENSE_TEXT=	No licenses are applicable to metaports
+LICENSE_PERMS=	dist-mirror dist-sell pkg-mirror pkg-sell auto-accept
 MASTER_SITES=	#
 DISTFILES=	#
 EXTRACT_ONLY=	#

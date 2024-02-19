@@ -1,7 +1,4 @@
-# $FreeBSD: head/Keywords/ldconfig.ucl 509644 2019-08-23 12:46:14Z bapt $
-#
 # MAINTAINER: portmgr@FreeBSD.org
-#
 
 post-install: <<EOD
 	if ! /usr/sbin/service ldconfig restart >/dev/null; then

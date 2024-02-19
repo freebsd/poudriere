@@ -3,7 +3,10 @@
 PORTNAME=	freebsd-release-manifests
 DISTVERSION=	20161010
 PORTREVISION=	0
-FLAVORS=	default foo bar
+# test/bulk-build-origin_has_pkgbase.sh depends on the ordering here such that
+# foo comes after bar which comes after the first FLAVOR. More FLAVORS may be
+# inserted anywhere.
+FLAVORS=	default bar foo
 FLAVOR?=	default
 .if ${FLAVOR} != default && !empty(FLAVORS:M${FLAVOR})
 PKGNAMESUFFIX=	-${FLAVOR:tu}
