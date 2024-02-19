@@ -62,6 +62,7 @@ Options:
                      default is 'default'.
     -q            -- When used with -l, remove the header in the list view.
     -v            -- Show more verbose output.
+    -y            -- Do not prompt for confirmation when deleting a ports tree.
 EOF
 	exit ${EX_USAGE}
 }
@@ -79,7 +80,7 @@ set_command() {
 	COMMAND="$1"
 }
 
-while getopts "B:cDFuU:dklp:qf:nM:m:v" FLAG; do
+while getopts "B:cDFuU:dklp:qf:nM:m:vy" FLAG; do
 	case "${FLAG}" in
 		B)
 			BRANCH="${OPTARG}"
@@ -128,6 +129,9 @@ while getopts "B:cDFuU:dklp:qf:nM:m:v" FLAG; do
 			;;
 		v)
 			VERBOSE=$((VERBOSE + 1))
+			;;
+		y)
+			YES=1
 			;;
 		*)
 			usage
@@ -320,8 +324,10 @@ delete)
 	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
 	${NULLMOUNT} | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
-	confirm_if_tty "Are you sure you want to delete the ports tree ${PTNAME} at ${PTMNT}?" || \
-	    err 1 "Not deleting ports tree"
+	if [ -z "${YES}" ]; then
+		confirm_if_tty "Are you sure you want to delete the ports tree ${PTNAME} at ${PTMNT}?" || \
+		    err 1 "Not deleting ports tree"
+	fi
 	maybe_run_queued "${saved_argv}"
 	msg_n "Deleting portstree \"${PTNAME}\"..."
 	# Regarding -F, older system ports trees will have method=- and
