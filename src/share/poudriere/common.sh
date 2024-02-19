@@ -5594,22 +5594,27 @@ deps_fetch_vars() {
 	# Discovered a new originspec->pkgname mapping.
 	msg_debug "deps_fetch_vars: discovered ${COLOR_PORT}${originspec}${COLOR_RESET} is ${COLOR_PORT}${_pkgname}${COLOR_RESET}"
 	shash_set originspec-pkgname "${originspec}" "${_pkgname}"
-	[ -n "${_flavor}" ] && \
-	    shash_set pkgname-flavor "${_pkgname}" "${_flavor}"
+	if [ -n "${_flavor}" ]; then
+		shash_set pkgname-flavor "${_pkgname}" "${_flavor}"
+	fi
 	# Set origin-flavors only for the default origin
 	if [ -n "${_flavors}" ]; then
 		if [ -z "${_origin_flavor}" ]; then
 			shash_set origin-flavors "${origin}" "${_flavors}"
 		fi
 	fi
-	[ -n "${_ignore}" ] && \
-	    shash_set pkgname-ignore "${_pkgname}" "${_ignore}"
-	[ -n "${_prefix}" ] && \
-	    shash_set pkgname-prefix "${_pkgname}" "${_prefix}"
-	[ -n "${_forbidden}" ] && \
-	    shash_set pkgname-forbidden "${_pkgname}" "${_forbidden}"
-	[ -n "${_no_arch}" ] && \
-	    shash_set pkgname-no_arch "${_pkgname}" "${_no_arch}"
+	if [ -n "${_ignore}" ]; then
+		shash_set pkgname-ignore "${_pkgname}" "${_ignore}"
+	fi
+	if [ -n "${_prefix}" ]; then
+		shash_set pkgname-prefix "${_pkgname}" "${_prefix}"
+	fi
+	if [ -n "${_forbidden}" ]; then
+		shash_set pkgname-forbidden "${_pkgname}" "${_forbidden}"
+	fi
+	if [ -n "${_no_arch}" ]; then
+		shash_set pkgname-no_arch "${_pkgname}" "${_no_arch}"
+	fi
 	if [ -n "${_depend_specials}" ]; then
 		shash_set pkgname-depend_specials "${_pkgname}" \
 		    "${_depend_specials}"
