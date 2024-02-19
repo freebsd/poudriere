@@ -6277,7 +6277,7 @@ originspec_encode() {
 deps_fetch_vars() {
 	[ $# -eq 6 ] || eargs deps_fetch_vars originspec deps_var \
 	    pkgname_var flavor_var flavors_var ignore_var
-	local originspec="$1"
+	local originspec="${1:?}"
 	local deps_var="$2"
 	local pkgname_var="$3"
 	local flavor_var="$4"
@@ -6285,12 +6285,12 @@ deps_fetch_vars() {
 	local ignore_var="$6"
 	local _pkgname _pkg_deps= _lib_depends= _run_depends= _selected_options=
 	local _build_deps= _run_deps=
-	local _changed_options= _changed_deps= _lookup_flavors=
+	local _changed_options= _changed_deps= _lookup_flavors= _lookup_subpkgs=
 	local _existing_origin _existing_originspec pkgcategory _ignore
 	local _forbidden _default_originspec _default_pkgname _no_arch
 	local origin _dep _new_pkg_deps
 	local _origin_flavor _flavor _flavors _default_flavor
-	local _origin_subpkg
+	local _origin_subpkg _subpkgs
 	local _prefix _pkgname_var _pdeps_var _bdeps_var _rdeps_var
 	local _depend_specials=
 
@@ -6322,7 +6322,7 @@ deps_fetch_vars() {
 	no) ;;
 	*)
 		if have_ports_feature SUBPACKAGES; then
-			_changed_deps="LIB_DEPENDS_ALL _lib_depends RUN_DEPENDS_ALL _run_depends"
+			_changed_deps="LIB_DEPENDS${_origin_subpkg:+.${_origin_subpkg}} _lib_depends RUN_DEPENDS${_origin_subpkg:+.${_origin_subpkg}} _run_depends"
 		else
 			_changed_deps="LIB_DEPENDS _lib_depends RUN_DEPENDS _run_depends"
 		fi
@@ -6332,10 +6332,23 @@ deps_fetch_vars() {
 		_lookup_flavors="FLAVOR _flavor FLAVORS _flavors"
 	fi
 	if have_ports_feature SUBPACKAGES; then
-		_pkgname_var="PKGNAME${_origin_subpkg:+.${_origin_subpkg}}"
-		_pdeps_var='${PKG_DEPENDS_ALL} ${EXTRACT_DEPENDS_ALL} ${PATCH_DEPENDS_ALL} ${FETCH_DEPENDS_ALL} ${BUILD_DEPENDS_ALL} ${LIB_DEPENDS_ALL} ${RUN_DEPENDS_ALL}'
-		_bdeps_var='${PKG_DEPENDS_ALL} ${EXTRACT_DEPENDS_ALL} ${PATCH_DEPENDS_ALL} ${FETCH_DEPENDS_ALL} ${BUILD_DEPENDS_ALL} ${LIB_DEPENDS_ALL}'
-		_rdeps_var='${LIB_DEPENDS_ALL} ${RUN_DEPENDS_ALL}'
+		_lookup_subpkgs="SUBPACKAGES _subpkgs"
+		case "${_origin_subpkg:+set}" in
+		# This :+ syntax could cover both cases but is easier
+		# to understand split out.
+		set)
+			_pkgname_var="PKGNAME${_origin_subpkg:+.${_origin_subpkg}}"
+			_pdeps_var="\${PKG_DEPENDS${_origin_subpkg:+.${_origin_subpkg}}} \${EXTRACT_DEPENDS${_origin_subpkg:+.${_origin_subpkg}}} \${PATCH_DEPENDS${_origin_subpkg:+.${_origin_subpkg}}} \${FETCH_DEPENDS${_origin_subpkg:+.${_origin_subpkg}}} \${BUILD_DEPENDS${_origin_subpkg:+.${_origin_subpkg}}} \${LIB_DEPENDS${_origin_subpkg:+.${_origin_subpkg}}} \${RUN_DEPENDS${_origin_subpkg:+.${_origin_subpkg}}}"
+			_bdeps_var="\${PKG_DEPENDS${_origin_subpkg:+.${_origin_subpkg}}} \${EXTRACT_DEPENDS${_origin_subpkg:+.${_origin_subpkg}}} \${PATCH_DEPENDS${_origin_subpkg:+.${_origin_subpkg}}} \${FETCH_DEPENDS${_origin_subpkg:+.${_origin_subpkg}}} \${BUILD_DEPENDS${_origin_subpkg:+.${_origin_subpkg}}} \${LIB_DEPENDS${_origin_subpkg:+.${_origin_subpkg}}}"
+			_rdeps_var="\${LIB_DEPENDS${_origin_subpkg:+.${_origin_subpkg}}} \${RUN_DEPENDS${_origin_subpkg:+.${_origin_subpkg}}}"
+			;;
+		*)
+			_pkgname_var="PKGNAME"
+			_pdeps_var='${PKG_DEPENDS_ALL} ${EXTRACT_DEPENDS_ALL} ${PATCH_DEPENDS_ALL} ${FETCH_DEPENDS_ALL} ${BUILD_DEPENDS_ALL} ${LIB_DEPENDS_ALL} ${RUN_DEPENDS_ALL}'
+			_bdeps_var='${PKG_DEPENDS_ALL} ${EXTRACT_DEPENDS_ALL} ${PATCH_DEPENDS_ALL} ${FETCH_DEPENDS_ALL} ${BUILD_DEPENDS_ALL} ${LIB_DEPENDS_ALL}'
+			_rdeps_var='${LIB_DEPENDS_ALL} ${RUN_DEPENDS_ALL}'
+			;;
+		esac
 	else
 		_pkgname_var="PKGNAME"
 		_pdeps_var='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}'
@@ -6345,6 +6358,7 @@ deps_fetch_vars() {
 	if ! port_var_fetch_originspec "${originspec}" \
 		${_pkgname_var} _pkgname \
 		${_lookup_flavors} \
+		${_lookup_subpkgs} \
 		'${_DEPEND_SPECIALS:C,^${PORTSDIR}/,,}' _depend_specials \
 		PKGCATEGORY pkgcategory \
 		IGNORE _ignore \
@@ -6498,6 +6512,18 @@ deps_fetch_vars() {
 	case "${_selected_options:+set}" in
 	set) shash_set pkgname-options "${_pkgname}" "${_selected_options}" ;;
 	esac
+
+	if [ -z "${_origin_subpkg}" ] && [ -n "${_subpkgs}" ]; then
+		local _subpkg _originspec_subpkg
+		local __deps __pkgname __flavor __flavors __ignore
+
+		for _subpkg in ${_subpkgs}; do
+			originspec_encode _originspec_subpkg "${origin}" \
+			    "${_flavor}" "${_subpkg}"
+			deps_fetch_vars "${_originspec_subpkg}" \
+			    __deps __pkgname __flavor __flavors __ignore || :
+		done
+	fi
 }
 
 ensure_pkg_installed() {
