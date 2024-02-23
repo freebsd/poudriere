@@ -61,8 +61,6 @@ pkgqueue_get_next() {
 				;;
 			esac
 		fi
-		# Update timestamp for buildtime accounting
-		touch "${MASTER_DATADIR:?}/building/${_pkgname}"
 		;;
 	esac
 
