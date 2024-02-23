@@ -225,10 +225,14 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Use the following to allow it anyway
 # ALLOW_MAKE_JOBS=yes
 
-# List of packages that will always be allowed to use MAKE_JOBS
+# List of package name globs that will always be allowed to use MAKE_JOBS
 # regardless of ALLOW_MAKE_JOBS. This is useful for allowing ports
 # which holdup the rest of the queue to build more quickly.
 #ALLOW_MAKE_JOBS_PACKAGES="pkg ccache py*"
+
+# List of package name globs that should never build at the same time.
+# Default: none
+#MUTUALLY_EXCLUSIVE_BUILD_PACKAGES="llvm* rust* gcc*"
 
 # Timestamp every line of build logs
 # Default: no

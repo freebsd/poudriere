@@ -95,6 +95,8 @@ pkgqueue_get_next() {
 		2) continue ;;
 		# This job was queued for ordering only; No build is needed.
 		3) continue ;;
+		# This job is delayed
+		4) continue ;;
 		esac
 		# Success or general error
 		__pkgqueue_job="${pkgq_dir##*/}"
@@ -113,10 +115,59 @@ pkgqueue_job_done() {
 	[ "$#" -eq 2 ] || eargs pkgqueue_job_done job_type job_name
 	local job_type="$1"
 	local job_name="$2"
-	local pkgqueue_job
+	local pkgqueue_job pkgq_dir delayed_pkgqueue_job
+	local delayed_pkgname delayed_job_type
 
 	pkgqueue_job_encode pkgqueue_job "${job_type}" "${job_name}"
 	rmdir "${MASTER_DATADIR:?}/running/${pkgqueue_job:?}"
+
+	# Should we undelay anything?
+	if ! pkgqueue_job_is_mutually_exclusive "${pkgqueue_job}"; then
+		return 0
+	fi
+	# This was a mutually exclusive package so it is
+	# possible something else was delayed because of it.
+	# Pick 1 delayed job to reinject.
+	for pkgq_dir in ${MASTER_DATADIR:?}/pool/delayed/*; do
+		case "${pkgq_dir}" in
+		# Dir is empty
+		"${MASTER_DATADIR}/pool/delayed/*") return 0 ;;
+		esac
+		delayed_pkgqueue_job="${pkgq_dir##*/}"
+		pkgqueue_job_decode "${delayed_pkgqueue_job}" \
+		    delayed_job_type delayed_pkgname
+		msg_debug "pkgqueue_job_done: Undelaying ${delayed_job_type} for ${COLOR_PORT}${delayed_pkgname}${COLOR_RESET}"
+		rename "${pkgq_dir}" \
+		    "${MASTER_DATADIR:?}/pool/unbalanced/${delayed_pkgqueue_job:?}"
+		break
+	done
+}
+
+pkgqueue_job_is_mutually_exclusive() {
+	[ $# -eq 1 ] || eargs pkgqueue_job_is_mutually_exclusive pkgqueue_job
+	local pkgqueue_job="$1"
+	local job_type job_name pkgname pkgbase pkgglob
+	local -
+
+	pkgqueue_job_decode "${pkgqueue_job}" job_type job_name
+	case "${job_type}.${IN_TEST:-0}" in
+	"build".*)
+		pkgname="${job_name}"
+		pkgbase="${pkgname%-*}"
+		set -o noglob
+		for pkgglob in ${MUTUALLY_EXCLUSIVE_BUILD_PACKAGES-}; do
+			# shellcheck disable=SC2254
+			case "${pkgbase}" in
+			${pkgglob}) return 0 ;;
+			esac
+		done
+		set +o noglob
+		;;
+	"run".*) ;;
+	"test".1) ;;
+	*) err "${EX_SOFTWARE}" "pkgqueue_job_is_mutually_exclusive: Unhandled job_type ${job_type}"
+	esac
+	return 1
 }
 
 _pkgqueue_job_start() {
@@ -124,7 +175,7 @@ _pkgqueue_job_start() {
 	required_env _pkgqueue_job_start PWD "${MASTER_DATADIR_ABS:?}/pool"
 	local pkgq_dir="$1"
 	local job_name
-	local job_type
+	local job_type running_job running_jobs exclusive_jobs
 	local pkgqueue_job running_dir
 
 	pkgqueue_job="${pkgq_dir##*/}"
@@ -156,12 +207,37 @@ _pkgqueue_job_start() {
 		# ... and then try again.
 		return 3
 	fi
+
+	# Should we delay this job?
+	# Handle MUTUALLY_EXCLUSIVE_BUILD_PACKAGES
+	if pkgqueue_job_is_mutually_exclusive "${pkgqueue_job}"; then
+		running_jobs="$(pkgqueue_running)"
+		# This new job wants to be mutually exclusive.  Are
+		# there any others from the list running?
+		for running_job in ${running_jobs}; do
+			case "${running_job}" in
+			"${pkgqueue_job}") continue ;;
+			esac
+			pkgqueue_job_is_mutually_exclusive "${running_job}" ||
+			    continue
+			exclusive_jobs="${exclusive_jobs:+${exclusive_jobs} }${running_job}"
+		done
+		case "${exclusive_jobs:+set}" in
+		set)
+			msg_debug "_pkgqueue_job_start: Delaying ${job_type} for ${COLOR_PORT}${job_name}${COLOR_RESET}: exclusive jobs running: ${COLOR_PORT}${exclusive_jobs}${COLOR_RESET}"
+			rename "${running_dir}" \
+			    "${MASTER_DATADIR:?}/pool/delayed/${pkgqueue_job:?}"
+			return 4
+			;;
+		esac
+	fi
 }
 
 pkgqueue_init() {
 	mkdir -p "${MASTER_DATADIR:?}/running" \
 		"${MASTER_DATADIR:?}/pool" \
 		"${MASTER_DATADIR:?}/pool/unbalanced" \
+		"${MASTER_DATADIR:?}/pool/delayed" \
 		"${MASTER_DATADIR:?}/deps" \
 		"${MASTER_DATADIR:?}/rdeps" \
 		"${MASTER_DATADIR:?}/cleaning/deps" \
