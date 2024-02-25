@@ -7289,17 +7289,21 @@ get_originspec_from_pkgname() {
 # Look for PKGNAME and strip away @DEFAULT if it is the default FLAVOR.
 get_pkgname_from_originspec() {
 	[ $# -eq 2 ] || eargs get_pkgname_from_originspec originspec var_return
-	local _originspec="$1"
+	local _originspec_lookup="$1"
 	local var_return="$2"
 	local _pkgname _origin _flavor _default_flavor _flavors _subpkg
+	local _originspec
 
-	# This function is primarily for FLAVORS handling.
-	if ! have_ports_feature FLAVORS; then
-		shash_get originspec-pkgname "${_originspec}" \
-		    "${var_return}" || return 1
+	if shash_get originspec-pkgname "${_originspec_lookup}" \
+	    "${var_return}"; then
 		return 0
 	fi
 
+	# This function is primarily for FLAVORS handling.
+	if ! have_ports_feature FLAVORS; then
+		return 1
+	fi
+	_originspec="${_originspec_lookup}"
 	originspec_decode "${_originspec}" _origin _flavor _subpkg
 	# Trim away FLAVOR_DEFAULT if present
 	case "${_flavor}" in
@@ -7309,7 +7313,10 @@ get_pkgname_from_originspec() {
 		    "${_subpkg}"
 		;;
 	esac
-	if shash_get originspec-pkgname "${_originspec}" "${var_return}"; then
+	if shash_get originspec-pkgname "${_originspec}" _pkgname; then
+		shash_set originspec-pkgname "${_originspec_lookup}" \
+		    "${_pkgname}" || :
+		setvar "${var_return}" "${_pkgname}"
 		return 0
 	fi
 	# If the FLAVOR is empty then it is fatal to not have a result yet.
@@ -7330,6 +7337,7 @@ get_pkgname_from_originspec() {
 	*) return 1 ;;
 	esac
 	# Yup, this was the default FLAVOR
+	shash_set originspec-pkgname "${_originspec_lookup}" "${_pkgname}" || :
 	setvar "${var_return}" "${_pkgname}"
 }
 
