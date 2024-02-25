@@ -7311,17 +7311,17 @@ get_pkgname_from_originspec() {
 		_flavor=
 		originspec_encode _originspec "${_origin}" "${_flavor}" \
 		    "${_subpkg}"
+		if shash_get originspec-pkgname "${_originspec}" _pkgname; then
+			shash_set originspec-pkgname "${_originspec_lookup}" \
+			    "${_pkgname}" || :
+			setvar "${var_return}" "${_pkgname}"
+			return 0
+		fi
 		;;
-	esac
-	if shash_get originspec-pkgname "${_originspec}" _pkgname; then
-		shash_set originspec-pkgname "${_originspec_lookup}" \
-		    "${_pkgname}" || :
-		setvar "${var_return}" "${_pkgname}"
-		return 0
-	fi
 	# If the FLAVOR is empty then it is fatal to not have a result yet.
-	case "${_flavor}" in
-	"") return 1 ;;
+	"")
+		return 1
+		;;
 	esac
 	# See if the FLAVOR is the default and lookup that PKGNAME if so.
 	originspec_encode _originspec "${_origin}" '' "${_subpkg}"
