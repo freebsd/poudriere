@@ -11,10 +11,6 @@ EXTRA_DIST= $(TESTS) \
 	    runtest.sh
 
 XFAIL_TESTS= \
-	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh \
-	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
-	bulk-build-inc-trim_orphaned_build_deps-RUN-and-BUILD.sh \
-	bulk-build-inc-trim_orphaned_build_deps-RUN.sh \
 	distclean-overlays.sh \
 	err.sh \
 	options-overlays.sh
@@ -61,6 +57,7 @@ TESTS=\
 	parallel_run.sh \
 	pkg_version.sh \
 	pkgqueue_basic.sh \
+	pkgqueue_build_and_test.sh \
 	pkgqueue_failure_cleanup.sh \
 	pkgqueue_find_all_pool_references.sh \
 	pkgqueue_prioritize.sh \

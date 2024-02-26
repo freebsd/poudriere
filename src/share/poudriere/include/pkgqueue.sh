@@ -74,37 +74,35 @@ pkgqueue_get_next() {
 	local pgn_job_type_var="$1"
 	local pgn_pkgname_var="$2"
 	local pgn_job_type pkgq_dir pgn_pkgname __pkgqueue_job ret
-	local running_dir
 
-	# CWD is MASTER_DATADIR/pool
-
-	pkgq_dir="$(find ${POOL_BUCKET_DIRS:?} \
-	    -type d -depth 1 -empty -print -quit)" ||
-	    err "${EX_SOFTWARE}" "pkgqueue_get_next: Failed to search queue"
-	case "${pkgq_dir:+set}" in
-	set)
+	# May need to try multiple times due to races and queued-for-order jobs
+	while :; do
+		pkgq_dir="$(find ${POOL_BUCKET_DIRS:?} \
+		    -type d -depth 1 -empty -print -quit)" ||
+		    err "${EX_SOFTWARE}" "pkgqueue_get_next: Failed to search queue"
+		# No more eligible work!
+		case "${pkgq_dir}" in
+		"")
+			pgn_job_type=
+			pgn_pkgname=
+			break
+			;;
+		esac
+		ret=0
+		_pkgqueue_job_start "${pkgq_dir}" || ret="$?"
+		case "${ret}" in
+		# Lost a race
+		2) continue ;;
+		# This job was queued for ordering only; No build is needed.
+		3) continue ;;
+		esac
+		# Success or general error
 		__pkgqueue_job="${pkgq_dir##*/}"
 		pkgqueue_job_decode "${__pkgqueue_job}" pgn_job_type pgn_pkgname
-		running_dir="${MASTER_DATADIR:?}/running/${__pkgqueue_job:?}"
-		if ! rename "${pkgq_dir}" "${running_dir}" 2>/dev/null; then
-			# Was the failure from /unbalanced?
-			case "${pkgq_dir}" in
-			"unbalanced/"*)
-				# We lost the race with a child running
-				# pkgqueue_balance_pool(). The file is already
-				# gone and moved to a bucket. Try again.
-				ret=0
-				pkgqueue_get_next "$@" || ret=$?
-				return "${ret}"
-				;;
-			*)
-				# Failure to move a balanced item??
-				err 1 "pkgqueue_get_next: Failed to mv ${pkgq_dir} to ${MASTER_DATADIR}/${running_dir#../}"
-				;;
-			esac
-		fi
-		;;
-	esac
+		case "${__pkgqueue_job:+set}" in
+		set) break ;;
+		esac
+	done
 
 	setvar "${pgn_job_type_var}" "${pgn_job_type}"
 	setvar "${pgn_pkgname_var}" "${pgn_pkgname}"
@@ -119,6 +117,45 @@ pkgqueue_job_done() {
 
 	pkgqueue_job_encode pkgqueue_job "${job_type}" "${job_name}"
 	rmdir "${MASTER_DATADIR:?}/running/${pkgqueue_job:?}"
+}
+
+_pkgqueue_job_start() {
+	[ $# -eq 1 ] || eargs _pkgqueue_job_start pkgq_dir
+	required_env _pkgqueue_job_start PWD "${MASTER_DATADIR_ABS:?}/pool"
+	local pkgq_dir="$1"
+	local job_name
+	local job_type
+	local pkgqueue_job running_dir
+
+	pkgqueue_job="${pkgq_dir##*/}"
+	pkgqueue_job_decode "${pkgqueue_job}" job_type job_name
+	# We may race with pkgqueue_balance_pool()
+	running_dir="${MASTER_DATADIR:?}/running/${pkgqueue_job:?}"
+	if ! rename "${pkgq_dir}" "${running_dir}" 2>/dev/null; then
+		# Was the failure from /unbalanced?
+		case "${pkgq_dir}" in
+		"unbalanced/"*)
+			# We lost the race with a child running
+			# pkgqueue_balance_pool(). The file is already
+			# gone and moved to a bucket. Try again.
+			return 2
+			;;
+		*)
+			# Failure to move a balanced item??
+			err 1 "_pkgqueue_job_start: Failed to mv ${pkgq_dir} to ${MASTER_DATADIR}/${running_dir#../}"
+			;;
+		esac
+	fi
+	# Do we actually need to run this job or was it just for ordering?
+	if ! _pkgqueue_might_run "${pkgqueue_job}"; then
+		msg_debug "Skipping ordering/inspection ${job_type} job ${COLOR_PORT}${job_name}${COLOR_RESET}"
+		# Trim this from the queue...
+		pkgqueue_job_done "${job_type}" "${job_name}"
+		pkgqueue_clean_queue "${job_type}" "${job_name}" "" ||
+		    err $? "_pkgqueue_job_start: Failure to clean queue for ${pkgqueue_job}"
+		# ... and then try again.
+		return 3
+	fi
 }
 
 pkgqueue_init() {
@@ -143,6 +180,28 @@ pkgqueue_contains() {
 	if [ ! -d "deps/${pkg_dir_name}" ]; then
 		return 1
 	fi
+	_pkgqueue_might_run "${pkgqueue_job}"
+}
+
+# XXX: layer violation
+_pkgqueue_might_run() {
+	[ $# -eq 1 ] || eargs _pkgqueue_might_run pkgqueue_job
+	local pkgqueue_job="$1"
+	local job_type job_name pkgname PACKAGES
+
+	pkgqueue_job_decode "${pkgqueue_job}" job_type job_name
+	case "${job_type}.${IN_TEST:-0}" in
+	"run".*) return 1 ;;
+	"build".*) ;;
+	"test".1) return 0 ;;
+	*) err "${EX_SOFTWARE}" "_pkgqueue_might_run: Unhandled job_type ${job_type}" ;;
+	esac
+	pkgname="${job_name}"
+	PACKAGES="${MASTER_DATADIR:?}/../packages"
+	if [ -f "${PACKAGES:?}/All/${pkgname}.${PKG_EXT}" ]; then
+		return 1
+	fi
+	return 0
 }
 
 pkgqueue_add() {
@@ -750,18 +809,27 @@ _pkgqueue_find_all_pool_references() {
 
 pkgqueue_unqueue_existing_packages() {
 	required_env pkgqueue_unqueue_existing_packages PWD "${MASTER_DATADIR_ABS:?}"
-	local pn
+	local pkgname pkgqueue_job
 
 	bset status "cleaning:"
 	msg "Unqueueing existing packages"
 
 	# Delete from the queue all that already have a current package.
-	pkgqueue_list "build" | while mapfile_read_loop_redir pn; do
-		if [ -f "../packages/All/${pn}.${PKG_EXT}" ]; then
-			echo "${pn}"
+	pkgqueue_list "build" | while mapfile_read_loop_redir pkgname; do
+		pkgqueue_job_encode pkgqueue_job "build" "${pkgname}"
+		if ! _pkgqueue_might_run "${pkgqueue_job}"; then
+			echo "${pkgname}"
 		fi
 	done | _pkgqueue_remove_many_pipe "build"
 }
+
+# We look at the queue and decide we do not need to BUILD ruby19 we just
+# need to RUN it. So we can trim out stuff like this:
+#   build:ruby19 run:gmake
+#   build:ruby19 run:autoconf
+#   build:ruby19 run:libyaml
+# We must keep these though:
+#   run:ruby19 run:libyaml
 
 # Delete from the queue orphaned build deps. This can happen if
 # the specified-to-build ports have all their deps satisifed
@@ -793,8 +861,8 @@ pkgqueue_trim_orphaned_build_deps() {
 				echo "${pkgname}"
 			fi
 		done
-	} | pkgqueue_list_deps_pipe "build" > "${tmp}"
-	pkgqueue_list "build" | sort -o "${tmp}.actual"
+	} | pkgqueue_list_deps_pipe "run" > "${tmp}"
+	pkgqueue_list "run" | sort -o "${tmp}.actual"
 	comm -13 "${tmp}" "${tmp}.actual" | _pkgqueue_remove_many_pipe "build"
 	rm -f "${tmp}" "${tmp}.actual"
 }

@@ -463,10 +463,6 @@ EXTRA_DIST = $(TESTS) \
 	    runtest.sh
 
 XFAIL_TESTS = \
-	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh \
-	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
-	bulk-build-inc-trim_orphaned_build_deps-RUN-and-BUILD.sh \
-	bulk-build-inc-trim_orphaned_build_deps-RUN.sh \
 	distclean-overlays.sh \
 	err.sh \
 	options-overlays.sh
@@ -485,7 +481,8 @@ TESTS = array.sh builtins.sh cache.sh cache_pipe.sh \
 	locked_mkdir_waiters_all_lose.sh logging.sh mapfile.sh \
 	mktemp.sh options-badorigin.sh options-overlays.sh \
 	options-smoke.sh originspec.sh parallel_run.sh pkg_version.sh \
-	pkgqueue_basic.sh pkgqueue_failure_cleanup.sh \
+	pkgqueue_basic.sh pkgqueue_build_and_test.sh \
+	pkgqueue_failure_cleanup.sh \
 	pkgqueue_find_all_pool_references.sh pkgqueue_prioritize.sh \
 	pkgqueue_remove_many_pipe.sh pkgqueue_trimmed_misordered.sh \
 	pipe_func.sh pipe_hold.sh port_var_fetch.sh prefix_output.sh \
@@ -1068,6 +1065,13 @@ pkg_version.sh.log: pkg_version.sh
 pkgqueue_basic.sh.log: pkgqueue_basic.sh
 	@p='pkgqueue_basic.sh'; \
 	b='pkgqueue_basic.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pkgqueue_build_and_test.sh.log: pkgqueue_build_and_test.sh
+	@p='pkgqueue_build_and_test.sh'; \
+	b='pkgqueue_build_and_test.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

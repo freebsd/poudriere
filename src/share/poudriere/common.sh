@@ -5684,6 +5684,9 @@ clean_pool() {
 	    while mapfile_read_loop_redir skipped_pkgqueue_job; do
 		pkgqueue_job_decode "${skipped_pkgqueue_job}" \
 		    skipped_job_type skipped_pkgname
+		case "${skipped_job_type}" in
+		"run") continue ;;
+		esac
 		get_originspec_from_pkgname skipped_originspec "${skipped_pkgname}"
 		originspec_decode "${skipped_originspec}" skipped_origin \
 		    skipped_flavor ''
@@ -6075,14 +6078,15 @@ deps_fetch_vars() {
 	local flavor_var="$4"
 	local flavors_var="$5"
 	local ignore_var="$6"
-	local _pkgname _pkg_deps _lib_depends= _run_depends= _selected_options=
+	local _pkgname _pkg_deps= _lib_depends= _run_depends= _selected_options=
+	local _build_deps= _run_deps=
 	local _changed_options= _changed_deps= _lookup_flavors=
 	local _existing_origin _existing_originspec categories _ignore
 	local _forbidden _default_originspec _default_pkgname _no_arch
 	local origin _dep _new_pkg_deps
 	local _origin_flavor _flavor _flavors _default_flavor
 	local _origin_subpkg
-	local _prefix _pkgname_var _pdeps_var
+	local _prefix _pkgname_var _pdeps_var _bdeps_var _rdeps_var
 	local _depend_specials=
 
 	originspec_decode "${originspec}" origin _origin_flavor _origin_subpkg
@@ -6125,9 +6129,13 @@ deps_fetch_vars() {
 	if have_ports_feature SUBPACKAGES; then
 		_pkgname_var="PKGNAME${_origin_subpkg:+.${_origin_subpkg}}"
 		_pdeps_var='${PKG_DEPENDS_ALL} ${EXTRACT_DEPENDS_ALL} ${PATCH_DEPENDS_ALL} ${FETCH_DEPENDS_ALL} ${BUILD_DEPENDS_ALL} ${LIB_DEPENDS_ALL} ${RUN_DEPENDS_ALL}'
+		_bdeps_var='${PKG_DEPENDS_ALL} ${EXTRACT_DEPENDS_ALL} ${PATCH_DEPENDS_ALL} ${FETCH_DEPENDS_ALL} ${BUILD_DEPENDS_ALL} ${LIB_DEPENDS_ALL}'
+		_rdeps_var='${LIB_DEPENDS_ALL} ${RUN_DEPENDS_ALL}'
 	else
 		_pkgname_var="PKGNAME"
 		_pdeps_var='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}'
+		_bdeps_var='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS}'
+		_rdeps_var='${LIB_DEPENDS} ${RUN_DEPENDS}'
 	fi
 	if ! port_var_fetch_originspec "${originspec}" \
 		${_pkgname_var} _pkgname \
@@ -6141,6 +6149,12 @@ deps_fetch_vars() {
 		${_changed_deps} \
 		${_changed_options:+_PRETTY_OPTS='${SELECTED_OPTIONS:@opt@${opt}+@} ${DESELECTED_OPTIONS:@opt@${opt}-@}'} \
 		${_changed_options:+'${_PRETTY_OPTS:O:C/(.*)([+-])$/\2\1/}' _selected_options} \
+		_BDEPS="${_bdeps_var}" \
+		'${_BDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
+		_build_deps \
+		_RDEPS="${_rdeps_var}" \
+		'${_RDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
+		_run_deps \
 		_PDEPS="${_pdeps_var}" \
 		'${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
 		_pkg_deps; then
@@ -6267,6 +6281,8 @@ deps_fetch_vars() {
 		;;
 	esac
 	shash_set pkgname-deps "${_pkgname}" "${_pkg_deps}"
+	shash_set pkgname-deps-build "${_pkgname}" "${_build_deps}"
+	shash_set pkgname-deps-run "${_pkgname}" "${_run_deps}"
 	# Store for delete_old_pkg with CHECK_CHANGED_DEPS==yes
 	case "${_lib_depends:+set}" in
 	set) shash_set pkgname-lib_deps "${_pkgname}" "${_lib_depends}" ;;
@@ -8151,39 +8167,78 @@ generate_queue_pkg() {
 	local pkg_deps="$3"
 	local deps dep_pkgname dep_originspec dep_origin dep_flavor dep_subpkg
 	local raw_deps d key dpath dep_real_pkgname err_type
+	local deps_type
+
+	# build_deps=compiler
+	# run_deps=
+	# run compiler: build compiler
+	# build foo: run compiler
 
 	# Safe to remove pkgname-deps now, it won't be needed later.
-	shash_remove pkgname-deps "${pkgname}" deps || \
+	shash_remove pkgname-deps "${pkgname}" deps ||
 	    err 1 "generate_queue_pkg failed to find deps for ${COLOR_PORT}${pkgname}${COLOR_RESET}"
 	msg_debug "generate_queue_pkg: Will build ${COLOR_PORT}${pkgname}${COLOR_RESET}"
-	pkgqueue_add "build" "${pkgname}" || \
-	    err 1 "generate_queue_pkg: Error creating queue entry for ${COLOR_PORT}${pkgname}${COLOR_RESET}: There may be a duplicate origin in a category Makefile"
-
-	for dep_originspec in ${deps}; do
-		if ! get_pkgname_from_originspec "${dep_originspec}" \
-		    dep_pkgname; then
-			originspec_decode "${dep_originspec}" dep_origin \
-			    dep_flavor dep_subpkg
-			if [ ${ALL} -eq 0 ]; then
-				msg_error "generate_queue_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET}${dep_flavor:+ -- Does ${COLOR_PORT}${dep_origin}${COLOR_RESET} provide the '${dep_flavor}' FLAVOR?}"
-			else
-				msg_error "generate_queue_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET} -- Is SUBDIR+=${COLOR_PORT}${dep_origin#*/}${COLOR_RESET} missing in ${COLOR_PORT}${dep_origin%/*}${COLOR_RESET}/Makefile?${dep_flavor:+ And does the port provide the '${dep_flavor}' FLAVOR?}"
-			fi
-			set_pipe_fatal_error
-			continue
-		fi
-		msg_debug "generate_queue_pkg: Will build ${COLOR_PORT}${dep_originspec}${COLOR_RESET} for ${COLOR_PORT}${pkgname}${COLOR_RESET}"
-		pkgqueue_add_dep "build" "${pkgname}" "build" "${dep_pkgname}"
-		echo "${pkgname} ${dep_pkgname}"
-		case "${CHECK_CHANGED_DEPS}" in
-		"no") ;;
-		*)
-			# Cache for call later in this func
-			hash_set generate_queue_originspec-pkgname \
-			    "${dep_originspec}" "${dep_pkgname}"
-			;;
-		esac
-	done >> "${pkg_deps}"
+	# We may need to "run" this package during the build. This type is
+	# just for ordering and will not execute anything.
+	pkgqueue_add "run" "${pkgname}" ||
+	    err 1 "generate_queue_pkg: Error creating run queue entry for ${COLOR_PORT}${pkgname}${COLOR_RESET}: There may be a duplicate origin in a category Makefile"
+	pkgqueue_add "build" "${pkgname}" ||
+	    err 1 "generate_queue_pkg: Error creating build queue entry for ${COLOR_PORT}${pkgname}${COLOR_RESET}: There may be a duplicate origin in a category Makefile"
+	# To "run" this package we must first build, or fetch, it.
+	pkgqueue_add_dep "run" "${pkgname}" "build" "${pkgname}" ||
+	    err 1 "generate_queue_pkg: Error creating build-run queue entry for ${COLOR_PORT}${pkgname}${COLOR_RESET}: There may be a duplicate origin in a category Makefile"
+	{
+		echo "run:${pkgname} build:${pkgname}"
+		for deps_type in build run; do
+			shash_remove "pkgname-deps-${deps_type}" "${pkgname}" \
+			    deps ||
+			    err 1 "generate_queue_pkg failed to find deps-${deps_type} for ${COLOR_PORT}${pkgname}${COLOR_RESET}"
+			for dep_originspec in ${deps}; do
+				if ! get_pkgname_from_originspec \
+				    "${dep_originspec}" dep_pkgname; then
+					originspec_decode "${dep_originspec}" \
+					    dep_origin \
+					    dep_flavor dep_subpkg
+					if [ ${ALL} -eq 0 ]; then
+						msg_error "generate_queue_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET}${dep_flavor:+ -- Does ${COLOR_PORT}${dep_origin}${COLOR_RESET} provide the '${dep_flavor}' FLAVOR?}"
+					else
+						msg_error "generate_queue_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET} -- Is SUBDIR+=${COLOR_PORT}${dep_origin#*/}${COLOR_RESET} missing in ${COLOR_PORT}${dep_origin%/*}${COLOR_RESET}/Makefile?${dep_flavor:+ And does the port provide the '${dep_flavor}' FLAVOR?}"
+					fi
+					set_pipe_fatal_error
+					continue
+				fi
+				msg_debug "generate_queue_pkg: Will build ${COLOR_PORT}${dep_originspec}${COLOR_RESET} for ${COLOR_PORT}${pkgname}${COLOR_RESET}"
+				case "${deps_type}" in
+				build)
+					# To build this package we need to be
+					# able to run/install our BUILD_DEPENDS.
+					pkgqueue_add_dep "build" "${pkgname}" \
+					    "run" "${dep_pkgname}"
+					echo "build:${pkgname} run:${dep_pkgname}"
+					;;
+				run)
+					# To build or run this package we need
+					# to be able to run/install our
+					# RUN_DEPENDS.
+					pkgqueue_add_dep "build" "${pkgname}" \
+					    "run" "${dep_pkgname}"
+					echo "build:${pkgname} run:${dep_pkgname}"
+					pkgqueue_add_dep "run" "${pkgname}" \
+					    "run" "${dep_pkgname}"
+					echo "run:${pkgname} run:${dep_pkgname}"
+					;;
+				esac
+				case "${CHECK_CHANGED_DEPS}" in
+				"no") ;;
+				*)
+					# Cache for call later in this func
+					hash_set generate_queue_originspec-pkgname \
+					    "${dep_originspec}" "${dep_pkgname}"
+					;;
+				esac
+			done
+		done
+	} >> "${pkg_deps}"
 
 	# Check for invalid PKGNAME dependencies which break later incremental
 	# 'new dependency' detection.  This is done here rather than
@@ -8905,6 +8960,7 @@ trim_ignored_pkg() {
 	fi
 	badd ports.ignored "${originspec} ${pkgname} ${ignore}"
 	clean_pool "build" "${pkgname}" "${originspec}" "ignored"
+	clean_pool "run" "${pkgname}" "${originspec}" "ignored"
 }
 
 # PWD will be MASTER_DATADIR after this
@@ -9172,6 +9228,8 @@ prepare_ports() {
 			    pkgname-ignore \
 			    pkgname-options \
 			    pkgname-deps \
+			    pkgname-deps-build \
+			    pkgname-deps-run \
 			    pkgname-run_deps \
 			    pkgname-lib_deps \
 			    pkgname-prefix \
