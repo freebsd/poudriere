@@ -21,7 +21,7 @@ assert_out "" pkgqueue_find_dead_packages
 assert_true pkgqueue_move_ready_to_pool
 
 assert_out - pkgqueue_remaining <<EOF
-build:pkg ready-to-build
+build:pkg ready-to-run
 bash waiting-on-dependency
 patchutils waiting-on-dependency
 EOF
@@ -49,7 +49,7 @@ assert_true pkgqueue_clean_queue "${job_type}" "${pkgname}" "${clean_rdepends-}"
 assert_true pkgqueue_job_done "${job_type}" "${pkgname}"
 
 assert_out - pkgqueue_remaining <<EOF
-build:bash ready-to-build
+build:bash ready-to-run
 patchutils waiting-on-dependency
 EOF
 
@@ -70,7 +70,7 @@ assert_true pkgqueue_clean_queue "${job_type}" "${pkgname}" "${clean_rdepends-}"
 assert_true pkgqueue_job_done "${job_type}" "${pkgname}"
 
 assert_out - pkgqueue_remaining <<EOF
-build:patchutils ready-to-build
+build:patchutils ready-to-run
 EOF
 
 assert_out - pkgqueue_graph <<-EOF

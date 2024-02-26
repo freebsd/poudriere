@@ -5407,8 +5407,8 @@ build_queue() {
 
 			case "${job_name}" in
 			"")
-				# Check if the ready-to-build pool and need-to-build pools
-				# are empty
+				# Check if the ready-to-run pool and
+				# need-to-run pools are empty.
 				if pkgqueue_empty; then
 					queue_empty=1
 				fi

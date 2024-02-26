@@ -529,7 +529,7 @@ pkgqueue_balance_pool() {
 		return 0
 	fi
 
-	# For everything ready-to-build...
+	# For everything ready-to-run...
 	for pkgq_dir in pool/unbalanced/*; do
 		# May be empty due to racing with pkgqueue_get_next()
 		case "${pkgq_dir}" in
@@ -548,7 +548,7 @@ pkgqueue_balance_pool() {
 	rmdir "${lock}"
 }
 
-# Create a pool of ready-to-build from the deps pool
+# Create a pool of ready-to-run from the deps pool
 pkgqueue_move_ready_to_pool() {
 	required_env pkgqueue_move_ready_to_pool PWD "${MASTER_DATADIR_ABS:?}"
 	[ $# -eq 0 ] || eargs pkgqueue_move_ready_to_pool
@@ -645,10 +645,10 @@ pkgqueue_remaining() {
 	local -; set +e
 
 	{
-		# Find items in pool ready-to-build
+		# Find items in pool ready-to-run
 		( cd "${MASTER_DATADIR:?}/pool"; find . -type d -depth 2 | \
-		    sed -e 's,$, ready-to-build,' )
-		# Find items in queue not ready-to-build.
+		    sed -e 's,$, ready-to-run,' )
+		# Find items in queue not ready-to-run.
 		( cd "${MASTER_DATADIR:?}"; pkgqueue_list "build" ) |
 		    sed -e 's,$, waiting-on-dependency,'
 	} 2>/dev/null | sed -e 's,.*/,,'
@@ -707,7 +707,7 @@ pkgqueue_sanity_check() {
 	set) err 1 "Crashed package builds detected: ${crashed_packages}" ;;
 	esac
 
-	# Check if there's a cycle in the need-to-build queue
+	# Check if there's a cycle in the need-to-run queue
 	dependency_cycles=$(\
 		find deps -mindepth 3 | \
 		sed -e "s,^deps/[^/]*/,," -e 's:/: :' | \
