@@ -6374,6 +6374,7 @@ delete_old_pkg() {
 
 	set -f
 	for fpkg_glob in ${FORCE_REBUILD_PACKAGES-}; do
+		# shellcheck disable=SC2254
 		case "${pkgbase}" in
 		${fpkg_glob})
 			msg_warn "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: In FORCE_REBUILD_PACKAGES"
