@@ -20,6 +20,12 @@ assert "$(sorted "bash patchutils pkg")" "${pkgqueue_list}"
 assert_out "" pkgqueue_find_dead_packages
 assert_true pkgqueue_move_ready_to_pool
 
+assert_out - pkgqueue_remaining <<EOF
+pkg ready-to-build
+bash waiting-on-dependency
+patchutils waiting-on-dependency
+EOF
+
 assert_true cd "${MASTER_DATADIR:?}/pool"
 
 assert_false pkgqueue_empty
@@ -28,11 +34,20 @@ assert "pkg" "${pkgname}"
 assert_true pkgqueue_clean_queue "${pkgname}" "${clean_rdepends-}"
 assert_true pkgqueue_job_done "${pkgname}"
 
+assert_out - pkgqueue_remaining <<EOF
+bash ready-to-build
+patchutils waiting-on-dependency
+EOF
+
 assert_false pkgqueue_empty
 assert_true pkgqueue_get_next pkgname porttesting
 assert "bash" "${pkgname}"
 assert_true pkgqueue_clean_queue "${pkgname}" "${clean_rdepends-}"
 assert_true pkgqueue_job_done "${pkgname}"
+
+assert_out - pkgqueue_remaining <<EOF
+patchutils ready-to-build
+EOF
 
 assert_false pkgqueue_empty
 assert_true pkgqueue_get_next pkgname porttesting
