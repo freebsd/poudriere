@@ -9053,6 +9053,7 @@ prepare_ports() {
 		# Stash dependency graph
 		cp -f "${MASTER_DATADIR}/all_pkgs_not_ignored" "${log:?}/.poudriere.all_pkgs_not_ignored%"
 		cp -f "${MASTER_DATADIR}/pkg_deps" "${log:?}/.poudriere.pkg_deps%"
+		pkgqueue_graph_dot > "${log:?}/.poudriere.pkg_deps.dot%" || :
 		cp -f "${MASTER_DATADIR}/pkg_pool" \
 		    "${log:?}/.poudriere.pkg_pool%"
 		cp -f "${MASTER_DATADIR}/all_pkgs" "${log:?}/.poudriere.all_pkgs%"
@@ -9183,6 +9184,13 @@ prepare_ports() {
 
 		pkgqueue_unqueue_existing_packages
 		pkgqueue_trim_orphaned_build_deps
+
+		( cd "${MASTER_DATADIR:?}"; find deps rdeps ) > \
+		    "${log:?}/.poudriere.pkg_deps_trimmed%" || :
+		( cd "${MASTER_DATADIR:?}"; find pool ) > \
+		    "${log:?}/.poudriere.pkg_pool_trimmed%" || :
+		pkgqueue_graph_dot > \
+		    "${log:?}/.poudriere.pkg_deps_trimmed.dot%" || :
 
 		# Call the deadlock code as non-fatal which will check for cycles
 		msg "Sanity checking build queue"

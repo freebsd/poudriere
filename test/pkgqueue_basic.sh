@@ -26,6 +26,19 @@ bash waiting-on-dependency
 patchutils waiting-on-dependency
 EOF
 
+assert_out - pkgqueue_graph <<-EOF
+build:pkg build:bash
+build:bash build:patchutils
+build:pkg build:patchutils
+EOF
+assert_out - pkgqueue_graph_dot <<EOF
+digraph Q {
+	"build:patchutils" -> "build:bash";
+	"build:bash" -> "build:pkg";
+	"build:patchutils" -> "build:pkg";
+}
+EOF
+
 assert_true cd "${MASTER_DATADIR:?}/pool"
 
 assert_false pkgqueue_empty
@@ -40,6 +53,15 @@ build:bash ready-to-build
 patchutils waiting-on-dependency
 EOF
 
+assert_out - pkgqueue_graph <<-EOF
+build:bash build:patchutils
+EOF
+assert_out - pkgqueue_graph_dot <<EOF
+digraph Q {
+	"build:patchutils" -> "build:bash";
+}
+EOF
+
 assert_false pkgqueue_empty
 assert_true pkgqueue_get_next job_type pkgname
 assert "bash" "${pkgname}"
@@ -49,6 +71,13 @@ assert_true pkgqueue_job_done "${job_type}" "${pkgname}"
 
 assert_out - pkgqueue_remaining <<EOF
 build:patchutils ready-to-build
+EOF
+
+assert_out - pkgqueue_graph <<-EOF
+EOF
+assert_out - pkgqueue_graph_dot <<EOF
+digraph Q {
+}
 EOF
 
 assert_false pkgqueue_empty

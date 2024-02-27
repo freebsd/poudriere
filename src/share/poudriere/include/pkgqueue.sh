@@ -520,6 +520,25 @@ pkgqueue_remaining() {
 	return 0
 }
 
+# Output a dependency file
+pkgqueue_graph() {
+	[ $# -eq 0 ] || eargs pkgqueue_graph
+
+	(
+		cd "${MASTER_DATADIR:?}"
+		find deps -mindepth 2 -maxdepth 3 -type f -print |
+		    awk -F / '{print $NF " " $(NF-1)}'
+	)
+}
+
+pkgqueue_graph_dot() {
+	[ $# -eq 0 ] || eargs pkgqueue_graph_dot
+	echo "digraph Q {"
+	pkgqueue_graph | tr '-' '_' | sort |
+	    awk '{print "\t" "\"" $2 "\"" " -> " "\"" $1 "\"" ";"}'
+	echo "}"
+}
+
 # Return directory name for given job
 pkgqueue_dir() {
 	[ $# -eq 2 ] || eargs pkgqueue_dir var_return pkgqueue_job
