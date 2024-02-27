@@ -5356,7 +5356,7 @@ build_queue() {
 	local jname="$1"
 	local ptname="$2"
 	local setname="$3"
-	# jobid is analgous to MY_JOB_ID: builder number
+	# jobid is analgous to MY_JOBID: builder number
 	# jobno is from $(jobs)
 	local j jobid jobno pkgname builders_active queue_empty
 	local builders_idle idle_only timeout porttesting
