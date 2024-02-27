@@ -520,6 +520,7 @@ JAIL_TESTS = \
 	bulk-build-inc-trim_orphaned_build_deps.sh \
 	bulk-build-multiple-eligible-in-queue.sh \
 	bulk-build-origin_has_pkgbase.sh \
+	bulk-build-porttesting.sh \
 	bulk-build-self-immutable-base-no.sh \
 	bulk-build-self-immutable-base-nullfs.sh \
 	bulk-build-self-immutable-base-schg.sh \
@@ -581,6 +582,7 @@ JAIL_TESTS = \
 	testport-build-default-flavor-default.sh \
 	testport-build-default-flavor.sh \
 	testport-build-no-deps.sh \
+	testport-build-porttesting.sh \
 	testport-build-specific-flavor.sh \
 	testport-build-specific-port.sh \
 	testport-default-all-flavors-failure.sh \
@@ -1427,6 +1429,13 @@ bulk-build-origin_has_pkgbase.sh.log: bulk-build-origin_has_pkgbase.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-porttesting.sh.log: bulk-build-porttesting.sh
+	@p='bulk-build-porttesting.sh'; \
+	b='bulk-build-porttesting.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 bulk-build-self-immutable-base-no.sh.log: bulk-build-self-immutable-base-no.sh
 	@p='bulk-build-self-immutable-base-no.sh'; \
 	b='bulk-build-self-immutable-base-no.sh'; \
@@ -1850,6 +1859,13 @@ testport-build-default-flavor.sh.log: testport-build-default-flavor.sh
 testport-build-no-deps.sh.log: testport-build-no-deps.sh
 	@p='testport-build-no-deps.sh'; \
 	b='testport-build-no-deps.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-build-porttesting.sh.log: testport-build-porttesting.sh
+	@p='testport-build-porttesting.sh'; \
+	b='testport-build-porttesting.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
