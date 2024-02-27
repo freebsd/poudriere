@@ -649,7 +649,7 @@ pkgqueue_remaining() {
 		( cd "${MASTER_DATADIR:?}/pool"; find . -type d -depth 2 | \
 		    sed -e 's,$, ready-to-run,' )
 		# Find items in queue not ready-to-run.
-		( cd "${MASTER_DATADIR:?}"; pkgqueue_list "build" ) |
+		( cd "${MASTER_DATADIR:?}"; pkgqueue_list ) |
 		    sed -e 's,$, waiting-on-dependency,'
 	} 2>/dev/null | sed -e 's,.*/,,'
 	return 0

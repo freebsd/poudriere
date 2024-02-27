@@ -22,8 +22,8 @@ assert_true pkgqueue_move_ready_to_pool
 
 assert_out - pkgqueue_remaining <<EOF
 build:pkg ready-to-run
-bash waiting-on-dependency
-patchutils waiting-on-dependency
+build:bash waiting-on-dependency
+build:patchutils waiting-on-dependency
 EOF
 
 assert_out - pkgqueue_graph <<-EOF
@@ -50,7 +50,7 @@ assert_true pkgqueue_job_done "${job_type}" "${pkgname}"
 
 assert_out - pkgqueue_remaining <<EOF
 build:bash ready-to-run
-patchutils waiting-on-dependency
+build:patchutils waiting-on-dependency
 EOF
 
 assert_out - pkgqueue_graph <<-EOF
