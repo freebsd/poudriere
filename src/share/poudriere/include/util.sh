@@ -1917,9 +1917,17 @@ stripansi() {
 }
 
 sorted() {
-	[ $# -gt 0 ] || eargs sorted string...
-	echo "$@" | tr ' ' '\n' | LC_ALL=C sort -u | sed -e '/^$/d' |
-	    paste -s -d ' ' -
+	[ "$#" -ge 0 ] || eargs sorted string...
+	local LC_ALL
+
+	case "$#" in
+	0)
+		LC_ALL=C sort -u
+		;;
+	*)
+		echo "$@" | tr ' ' '\n' | LC_ALL=C sort -u
+		;;
+	esac | sed -e '/^$/d' | paste -s -d ' ' -
 }
 
 # Wrapper to make wc -l only return a number.
