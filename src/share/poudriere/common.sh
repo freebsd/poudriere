@@ -5359,9 +5359,7 @@ build_queue() {
 	# jobid is analgous to MY_JOB_ID: builder number
 	# jobno is from $(jobs)
 	local j jobid jobno pkgname builders_active queue_empty
-	local builders_idle idle_only timeout log porttesting
-
-	_log_path log
+	local builders_idle idle_only timeout porttesting
 
 	run_hook build_queue start
 
