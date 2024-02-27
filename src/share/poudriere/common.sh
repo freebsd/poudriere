@@ -5359,7 +5359,7 @@ build_queue() {
 	# jobid is analgous to MY_JOBID: builder number
 	# jobno is from $(jobs)
 	local j jobid jobno pkgname builders_active queue_empty
-	local builders_idle idle_only timeout porttesting
+	local builders_idle idle_only timeout
 
 	run_hook build_queue start
 
@@ -5400,7 +5400,7 @@ build_queue() {
 
 			[ ${queue_empty} -eq 0 ] || continue
 
-			pkgqueue_get_next pkgname porttesting || \
+			pkgqueue_get_next pkgname || \
 			    err 1 "Failed to find a package from the queue."
 
 			case "${pkgname}" in
@@ -5419,7 +5419,7 @@ build_queue() {
 			MY_JOBID="${j}" spawn_job_protected \
 			    maybe_start_builder "${j}" "${jname}" \
 			        "${ptname}" "${setname}" \
-			    build_pkg "${pkgname}" "${porttesting}"
+			    build_pkg "${pkgname}"
 			jobno="%${spawn_jobid:?}"
 			hash_set builder_jobs "${j}" "${jobno}"
 			hash_set builder_pkgnames "${j}" "${pkgname}"
@@ -5721,9 +5721,8 @@ print_phase_footer() {
 }
 
 build_pkg() {
-	[ $# -eq 2 ] || eargs build_pkg pkgname PORTTESTING
+	[ "$#" -eq 1 ] || eargs build_pkg pkgname
 	local pkgname="$1"
-	PORTTESTING="$2"
 	local port portdir subpkg
 	local build_failed=0
 	local name pkgbase
@@ -5735,6 +5734,7 @@ build_pkg() {
 	local ret=0
 	local tmpfs_blacklist_dir
 	local elapsed now pkgname_varname jpkg_glob originspec status
+	local PORTTESTING
 	local -
 
 	_my_path mnt
@@ -5743,6 +5743,8 @@ build_pkg() {
 	clean_rdepends=
 	trap '' TSTP
 	setproctitle "build_pkg (${pkgname})" || :
+
+	get_porttesting "${pkgname}" PORTTESTING
 
 	# Don't show timestamps in msg() which goes to logs, only job_msg()
 	# which goes to master
@@ -8540,19 +8542,20 @@ originspec_is_listed() {
 }
 
 get_porttesting() {
-	[ $# -eq 1 ] || eargs get_porttesting pkgname
+	[ "$#" -eq 2 ] || eargs get_porttesting pkgname var_return
 	local pkgname="$1"
+	local var_return="$2"
 	local porttesting
 
 	porttesting=0
 	if [ "${PORTTESTING}" -eq 1 ]; then
-		if [ ${ALL} -eq 1 -o ${PORTTESTING_RECURSIVE} -eq 1 ]; then
+		if [ "${ALL}" -eq 1 -o "${PORTTESTING_RECURSIVE}" -eq 1 ]; then
 			porttesting=1
 		elif pkgname_is_listed "${pkgname}"; then
 			porttesting=1
 		fi
 	fi
-	echo "${porttesting}"
+	setvar "${var_return}" "${porttesting}"
 }
 
 delete_stale_symlinks_and_empty_dirs() {

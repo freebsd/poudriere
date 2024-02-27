@@ -31,9 +31,8 @@
 ## This is only ran from 1 process
 pkgqueue_get_next() {
 	required_env pkgqueue_get_next PWD "${MASTER_DATADIR_ABS:?}/pool"
-	[ $# -eq 2 ] || eargs pkgqueue_get_next pkgname_var porttesting_var
+	[ "$#" -eq 1 ] || eargs pkgqueue_get_next pkgname_var
 	local pkgname_var="$1"
-	local porttesting_var="$2"
 	local p _pkgname ret
 
 	# CWD is MASTER_DATADIR/pool
@@ -65,9 +64,6 @@ pkgqueue_get_next() {
 	esac
 
 	setvar "${pkgname_var}" "${_pkgname}"
-	# XXX: All of this should be passed in the queue rather than determined
-	# here.
-	setvar "${porttesting_var}" $(get_porttesting "${_pkgname}")
 }
 
 # This is expected to run from the master process.

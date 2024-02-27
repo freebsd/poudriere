@@ -29,7 +29,7 @@ EOF
 assert_true cd "${MASTER_DATADIR:?}/pool"
 
 assert_false pkgqueue_empty
-assert_true pkgqueue_get_next pkgname porttesting
+assert_true pkgqueue_get_next pkgname
 assert "pkg" "${pkgname}"
 assert_true pkgqueue_clean_queue "${pkgname}" "${clean_rdepends-}"
 assert_true pkgqueue_job_done "${pkgname}"
@@ -40,7 +40,7 @@ patchutils waiting-on-dependency
 EOF
 
 assert_false pkgqueue_empty
-assert_true pkgqueue_get_next pkgname porttesting
+assert_true pkgqueue_get_next pkgname
 assert "bash" "${pkgname}"
 assert_true pkgqueue_clean_queue "${pkgname}" "${clean_rdepends-}"
 assert_true pkgqueue_job_done "${pkgname}"
@@ -50,14 +50,14 @@ patchutils ready-to-build
 EOF
 
 assert_false pkgqueue_empty
-assert_true pkgqueue_get_next pkgname porttesting
+assert_true pkgqueue_get_next pkgname
 assert "patchutils" "${pkgname}"
 assert_true pkgqueue_clean_queue "${pkgname}" "${clean_rdepends-}"
 assert_true pkgqueue_job_done "${pkgname}"
 
 assert_true pkgqueue_empty
 assert_true pkgqueue_sanity_check 0
-assert_true pkgqueue_get_next pkgname porttesting
+assert_true pkgqueue_get_next pkgname
 assert "" "${pkgname}"
 
 assert_true cd "${POUDRIERE_TMPDIR:?}"

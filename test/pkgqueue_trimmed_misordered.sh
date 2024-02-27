@@ -74,11 +74,11 @@ while get_test_context; do
 	# asserted here as proof of a possible queue issue that is tested
 	# fully in bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh
 	assert_false pkgqueue_empty
-	assert_true pkgqueue_get_next pkgname porttesting
+	assert_true pkgqueue_get_next pkgname
 	assert "patchutils-meta" "${pkgname}"
 
 	assert_false pkgqueue_empty
-	assert_true pkgqueue_get_next pkgname porttesting
+	assert_true pkgqueue_get_next pkgname
 	assert "bash" "${pkgname}"
 
 
@@ -89,7 +89,7 @@ while get_test_context; do
 
 	assert_true pkgqueue_empty
 	assert_true pkgqueue_sanity_check 0
-	assert_true pkgqueue_get_next pkgname porttesting
+	assert_true pkgqueue_get_next pkgname
 	assert "" "${pkgname}"
 
 

@@ -33,13 +33,13 @@ assert_true pkgqueue_move_ready_to_pool
 assert_true cd "${MASTER_DATADIR:?}/pool"
 
 assert_false pkgqueue_empty
-assert_true pkgqueue_get_next pkgname porttesting
+assert_true pkgqueue_get_next pkgname
 assert "pkg" "${pkgname}"
 assert_true pkgqueue_clean_queue "${pkgname}" "${clean_rdepends-}"
 assert_true pkgqueue_job_done "${pkgname}"
 
 assert_false pkgqueue_empty
-assert_true pkgqueue_get_next pkgname porttesting
+assert_true pkgqueue_get_next pkgname
 assert "bash" "${pkgname}"
 # Consider it a failure: Clean all rdeps out of the queue.
 skipped="$(pkgqueue_clean_queue "${pkgname}" "1")"
@@ -48,14 +48,14 @@ assert "$(sorted "devtools patchutils")" "$(sorted "${skipped}")"
 assert_true pkgqueue_job_done "${pkgname}"
 
 assert_false pkgqueue_empty
-assert_true pkgqueue_get_next pkgname porttesting
+assert_true pkgqueue_get_next pkgname
 assert "zsh" "${pkgname}"
 assert_true pkgqueue_clean_queue "${pkgname}" "${clean_rdepends-}"
 assert_true pkgqueue_job_done "${pkgname}"
 
 assert_true pkgqueue_empty
 assert_true pkgqueue_sanity_check 0
-assert_true pkgqueue_get_next pkgname porttesting
+assert_true pkgqueue_get_next pkgname
 assert "" "${pkgname}"
 
 assert_true cd "${POUDRIERE_TMPDIR:?}"
