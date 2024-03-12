@@ -929,7 +929,7 @@ function updateData() {
 }
 
 /* Force minimum width on mobile, will zoom to fit. */
-function fix_viewport() {
+function fixViewport() {
   const minimum_width = parseInt($('body').css('min-width'), 10);
   if (minimum_width !== 0 && window.innerWidth < minimum_width) {
     $('meta[name=viewport]').attr('content', `width=${minimum_width}`);
@@ -1355,9 +1355,9 @@ $(document).ready(() => {
   });
   /* Force minimum width on mobile, will zoom to fit. */
   $(window).on('orientationchange', () => {
-    fix_viewport();
+    fixViewport();
   });
-  fix_viewport();
+  fixViewport();
   /* Handle resize needs */
   $(window).on('resize', () => {
     doResize($(this));
