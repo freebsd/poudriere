@@ -40,7 +40,7 @@ const impulseTargetPeriod = 600;
 const impulseFirstInterval = impulseFirstPeriod / updateInterval;
 const impulseInterval = impulseTargetPeriod / updateInterval;
 let pageType;
-let page_buildname;
+let pageBuildName;
 let page_mastername;
 let data_url = '';
 
@@ -287,8 +287,8 @@ function format_buildname(mastername, buildname) {
   if (
     page_mastername
     && mastername === page_mastername
-    && page_buildname
-    && buildname === page_buildname
+    && pageBuildName
+    && buildname === pageBuildName
     && pageType === 'build'
   ) {
     html = `<a href="#top" onclick="scrollToElement('#top'); return false;">${
@@ -540,7 +540,7 @@ function process_data_build(data) {
   }
 
   // Redirect from /latest/ to the actual build.
-  if (page_buildname === 'latest') {
+  if (pageBuildName === 'latest') {
     window.location.href = build_url(page_mastername, data.buildname);
     return undefined;
   }
@@ -859,7 +859,7 @@ function process_data(data) {
     }
     pageType = 'build';
     if (data.buildname) {
-      page_buildname = data.buildname;
+      pageBuildName = data.buildname;
     }
   } else if (data.builds) {
     pageType = 'jail';
@@ -1283,14 +1283,14 @@ $(document).ready(() => {
   if (pageType === 'build') {
     if (serverStyle === 'hosted') {
       page_mastername = getParameterByName('mastername');
-      page_buildname = getParameterByName('build');
-      if (!page_mastername || !page_buildname) {
+      pageBuildName = getParameterByName('build');
+      if (!page_mastername || !pageBuildName) {
         $('#loading p')
           .text('Invalid request. Mastername and Build required.')
           .addClass('error');
         return;
       }
-      data_url = `data/${page_mastername}/${page_buildname}/`;
+      data_url = `data/${page_mastername}/${pageBuildName}/`;
       $('a.data_url').each(() => {
         const href = $(this).attr('href');
         $(this).attr('href', data_url + href);
