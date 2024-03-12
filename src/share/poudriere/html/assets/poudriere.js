@@ -852,6 +852,10 @@ function doResize() {
     .css('padding-bottom', $('footer').outerHeight(true));
 }
 
+function delay(ms) {
+  return new Promise((resolve) => { setTimeout(resolve, ms); });
+}
+
 function processData(data) {
   let shouldReload;
 
@@ -906,7 +910,7 @@ function processData(data) {
   }
 
   if (shouldReload) {
-    setTimeout(updateData, updateInterval * 1000);
+    delay(updateInterval * 1000).then(updateData);
   }
 }
 
@@ -925,7 +929,7 @@ function updateData() {
       loadAttempts += 1;
       if (loadAttempts < maxLoadAttempts) {
         /* May not be there yet, try again shortly */
-        setTimeout(updateData, firstLoadInterval * 1000);
+        delay(firstLoadInterval * 1000).then(updateData);
       } else {
         $('#loading p')
           .text('Invalid request or no data available yet.')
