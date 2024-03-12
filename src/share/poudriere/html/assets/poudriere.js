@@ -31,7 +31,7 @@ const updateInterval = 8;
 let firstRun = true;
 let loadAttempts = 0;
 const maxLoadAttempts = 8;
-const first_load_interval = 2;
+const firstLoadInterval = 2;
 let canvas_width;
 const impulseData = [];
 let tracker = 0;
@@ -918,7 +918,7 @@ function update_data() {
       loadAttempts += 1;
       if (loadAttempts < maxLoadAttempts) {
         /* May not be there yet, try again shortly */
-        setTimeout(update_data, first_load_interval * 1000);
+        setTimeout(update_data, firstLoadInterval * 1000);
       } else {
         $('#loading p')
           .text('Invalid request or no data available yet.')
