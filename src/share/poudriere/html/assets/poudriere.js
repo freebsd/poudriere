@@ -167,7 +167,7 @@ function updateCanvas(stats) {
   $('#stats_remaining').html(remaining);
 }
 
-function display_pkghour(stats, snap) {
+function displayPkgHour(stats, snap) {
   let pkghour;
   let hours;
 
@@ -636,7 +636,7 @@ function process_data_build(data) {
         }
         $(`#snap_${stat}`).html(count);
       });
-      display_pkghour(data.stats, data.snap);
+      displayPkgHour(data.stats, data.snap);
       display_impulse(data.stats, data.snap);
       $('#snap').fadeIn(1400);
     }
