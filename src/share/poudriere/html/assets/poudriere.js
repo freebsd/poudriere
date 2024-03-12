@@ -24,6 +24,8 @@
  * SUCH DAMAGE.
  */
 
+'use strict';
+
 // server_style = ['hosted', 'inline'];
 const serverStyle = 'hosted';
 
