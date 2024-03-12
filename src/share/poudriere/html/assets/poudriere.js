@@ -735,7 +735,8 @@ function process_data_build(data) {
       ) {
         table_rows = [];
         if (stat !== 'remaining') {
-          if ((n = $(`#${stat}_body`).data('index')) === undefined) {
+          n = $(`#${stat}_body`).data('index');
+          if (n === undefined) {
             n = 0;
             $(`#${stat}_div`).show();
             $(`#nav_${stat}`).removeClass('disabled');
