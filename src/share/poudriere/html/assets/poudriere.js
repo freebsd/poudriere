@@ -846,7 +846,7 @@ function doResize() {
 }
 
 function processData(data) {
-  let should_reload;
+  let shouldReload;
 
   // Determine what kind of data this file actually is. Due to handling
   // file:// and inline-style setups, it may be unknown what was fetched.
@@ -877,13 +877,13 @@ function processData(data) {
   }
 
   if (pageType === 'build') {
-    should_reload = processDataBuild(data);
+    shouldReload = processDataBuild(data);
   } else if (pageType === 'jail') {
-    should_reload = processDataJail(data);
+    shouldReload = processDataJail(data);
   } else if (pageType === 'index') {
-    should_reload = processDataIndex(data);
+    shouldReload = processDataIndex(data);
   } else {
-    should_reload = false;
+    shouldReload = false;
   }
 
   if (firstRun) {
@@ -898,7 +898,7 @@ function processData(data) {
     firstRun = false;
   }
 
-  if (should_reload) {
+  if (shouldReload) {
     setTimeout(update_data, updateInterval * 1000);
   }
 }
