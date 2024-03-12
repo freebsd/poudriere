@@ -351,7 +351,7 @@ function formatDuration(duration) {
   return `${hours}:${minutes}:${seconds}`;
 }
 
-function format_start_to_end(start, end) {
+function formatStartToEnd(start, end) {
   let duration;
 
   if (!start) {
@@ -607,7 +607,7 @@ function process_data_build(data) {
         ? formatLog(builder.pkgname, false, builder.status)
         : builder.status.split(':')[0];
       row.elapsed = builder.started
-        ? format_start_to_end(builder.started, now)
+        ? formatStartToEnd(builder.started, now)
         : '';
 
       /* Hide idle builders when the build is stopped. */
@@ -622,7 +622,7 @@ function process_data_build(data) {
   if (data.stats) {
     $.each(data.stats, (stat, count) => {
       if (stat === 'elapsed') {
-        count = format_start_to_end(count);
+        count = formatStartToEnd(count);
       }
       $(`#stats_${stat}`).html(count);
     });
@@ -632,7 +632,7 @@ function process_data_build(data) {
     if (data.snap) {
       $.each(data.snap, (stat, count) => {
         if (stat === 'elapsed') {
-          count = format_start_to_end(count);
+          count = formatStartToEnd(count);
         }
         $(`#snap_${stat}`).html(count);
       });
