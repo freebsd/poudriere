@@ -432,7 +432,7 @@ function formatSkipped(skippedCnt, pkgname) {
     return 0;
   }
   return (
-    `<a href="#skipped" onclick="filter_skipped('${
+    `<a href="#skipped" onclick="filterSkipped('${
       pkgname
     }'); return false;"><span class="glyphicon `
     + `glyphicon-filter"></span>${
