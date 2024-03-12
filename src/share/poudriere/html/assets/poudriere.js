@@ -75,7 +75,8 @@ function update_data() {
       process_data(data);
     },
     error(data) {
-      if (++load_attempts < max_load_attempts) {
+      load_attempts += 1;
+      if (load_attempts < max_load_attempts) {
         /* May not be there yet, try again shortly */
         setTimeout(update_data, first_load_interval * 1000);
       } else {
@@ -280,7 +281,7 @@ function display_impulse(stats, snap) {
   } else {
     title = 'Package build rate. Still calculating...';
   }
-  tracker++;
+  tracker += 1;
   $('#snap .impulse').attr('title', title);
   $('#snap_impulse').html(pkghour);
 }
@@ -664,7 +665,7 @@ function process_data_build(data) {
   /* Builder status */
   if (data.jobs) {
     dtrow = new DTRow('builders_table', 'jobs_div');
-    for (n = 0; n < data.jobs.length; n++) {
+    for (n = 0; n < data.jobs.length; n += 1) {
       row = {};
       builder = data.jobs[n];
 
@@ -743,7 +744,7 @@ function process_data_build(data) {
         } else {
           n = 0;
         }
-        for (; n < data.ports[status].length; n++) {
+        for (; n < data.ports[status].length; n += 1) {
           const row = data.ports[status][n];
           // Add in skipped counts for failures and ignores
           if (status === 'failed' || status === 'ignored') {
