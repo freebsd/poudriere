@@ -845,7 +845,7 @@ function doResize() {
     .css('padding-bottom', $('footer').outerHeight(true));
 }
 
-function process_data(data) {
+function processData(data) {
   let should_reload;
 
   // Determine what kind of data this file actually is. Due to handling
@@ -912,7 +912,7 @@ function update_data() {
     },
     success(data) {
       loadAttempts = 0;
-      process_data(data);
+      processData(data);
     },
     error() {
       loadAttempts += 1;
