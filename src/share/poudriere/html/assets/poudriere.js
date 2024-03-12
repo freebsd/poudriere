@@ -37,7 +37,7 @@ const impulseData = [];
 let tracker = 0;
 const impulseFirstPeriod = 120;
 const impulseTargetPeriod = 600;
-const impulse_first_interval = impulseFirstPeriod / updateInterval;
+const impulseFirstInterval = impulseFirstPeriod / updateInterval;
 const impulse_interval = impulseTargetPeriod / updateInterval;
 let page_type;
 let page_buildname;
@@ -192,7 +192,7 @@ function display_impulse(stats, snap) {
     impulseData[index].pkgs = attempted;
     impulseData[index].time = snap.elapsed;
   }
-  if (tracker >= impulse_first_interval) {
+  if (tracker >= impulseFirstInterval) {
     if (tracker < impulse_interval) {
       tail = 0;
       title = `Package build rate over last ${
