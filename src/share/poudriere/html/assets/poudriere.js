@@ -253,7 +253,7 @@ function formatJailName(jailname) {
   return jailname;
 }
 
-function format_setname(setname) {
+function formatSetName(setname) {
   return setname;
 }
 
@@ -555,7 +555,7 @@ function process_data_build(data) {
   $('#mastername').html(formatMasterName(data.mastername));
   $('#buildname').html(format_buildname(data.mastername, data.buildname));
   $('#jail').html(formatJailName(data.jailname));
-  $('#setname').html(format_setname(data.setname));
+  $('#setname').html(formatSetName(data.setname));
   $('#ptname').html(format_ptname(data.ptname));
   if (data.overlays) {
     $('#overlays').html(data.overlays);
@@ -764,7 +764,7 @@ function process_data_jail(data) {
       $('#mastername').html(formatMasterName(latest.mastername));
       $('#status').text(translate_status(latest.status));
       $('#jail').html(formatJailName(latest.jailname));
-      $('#setname').html(format_setname(latest.setname));
+      $('#setname').html(formatSetName(latest.setname));
       $('#ptname').html(format_ptname(latest.ptname));
       $('#latest_url').attr(
         'href',
@@ -1196,7 +1196,7 @@ function setup_index() {
     {
       data: 'setname',
       render(data, type) {
-        return type === 'display' ? format_setname(data) : data;
+        return type === 'display' ? formatSetName(data) : data;
       },
       sWidth: '10em',
       visible: false,
