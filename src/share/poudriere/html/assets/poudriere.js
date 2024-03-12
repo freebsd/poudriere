@@ -527,7 +527,6 @@ class DTRow {
   constructor(tableID, divID) {
     this.Table = $(`#${tableID}`).DataTable();
     this.new_rows = [];
-    this.first_load = this.Table.row(0).length === 0;
     this.div_id = divID;
   }
 
@@ -540,15 +539,15 @@ class DTRow {
      * first load.
      */
     row.DT_RowId = `data_row_${row.id}`;
-    if (!this.first_load) {
-      existingRow = this.Table.row(`#${row.DT_RowId}`);
+    if (this.Table.row(`#${row.DT_RowId}`).data() !== undefined) {
+      existingRow = this.Table.row(`#${row.DT_RowId}`).data();
     } else {
-      existingRow = {};
+      existingRow = undefined;
     }
-    if (existingRow.length) {
+    if (existingRow !== undefined) {
       /* Only update the row if it doesn't match the existing. */
-      if (JSON.stringify(row) !== JSON.stringify(existingRow.data())) {
-        existingRow.data(row).nodes().to$().hide()
+      if (JSON.stringify(row) !== JSON.stringify(existingRow)) {
+        this.Table.row(`#${row.DT_RowId}`).data(row).to$().hide()
           .fadeIn(800);
       }
     } else {
@@ -559,12 +558,8 @@ class DTRow {
 
   commit() {
     if (this.new_rows.length) {
-      const nodes = this.Table.rows.add(this.new_rows).draw().nodes();
-      if (this.first_load) {
-        $(`#${this.div_id}`).show();
-      } else {
-        nodes.to$().hide().fadeIn(1500);
-      }
+      this.Table.rows.add(this.new_rows).draw().nodes();
+      $(`#${this.div_id}`).show();
     }
   }
 }
@@ -1282,6 +1277,10 @@ function setupIndex() {
         targets: '_all',
       },
     ],
+    responsive: true,
+    rowGroup: {
+      dataSrc: ["ptname", "setname"],
+    },
   });
 
   // table.rowGrouping({
