@@ -37,7 +37,6 @@ const impulseData = [];
 let tracker = 0;
 const impulse_first_period = 120;
 const impulse_target_period = 600;
-const impulse_period = impulse_first_period;
 const impulse_first_interval = impulse_first_period / updateInterval;
 const impulse_interval = impulse_target_period / updateInterval;
 let page_type;
@@ -94,51 +93,8 @@ function format_origin(origin, flavor) {
   );
 }
 
-function format_githash(githash) {
-  if (!githash) {
-    return '';
-  }
-  return (
-    `<a target="_new" title="cgit for ${
-      githash
-    }" href="https://cgit.freebsd.org/ports/commit/?id=${
-      githash
-    }"><span `
-    + `class="glyphicon glyphicon-envelope"></span>${
-      githash
-    }</a>`
-  );
-}
-
 function format_pkgname(pkgname) {
   return pkgname;
-}
-
-function minidraw(x, height, width, context, color, queued, variable) {
-  let newx;
-
-  /* Calculate how much percentage this value should display */
-  const pct = Math.floor((variable * 100) / queued);
-  if (pct === 0) {
-    return 0;
-  }
-  newx = width * (pct / 100);
-  if (x + newx >= width) {
-    newx = width - x;
-  }
-  /* Cap total bar to 99%, so it's clear something is remaining */
-  const total_pct = ((x + newx) / width) * 100;
-  if (total_pct >= 99.0 && total_pct < 100.0) {
-    newx = Math.ceil(width * (99 / 100));
-  }
-  /* Always start at 1 */
-  if (newx === 0) {
-    newx = 1;
-  }
-  context.fillStyle = color;
-  context.fillRect(x, 1, newx, height);
-
-  return newx;
 }
 
 function determine_canvas_width() {
@@ -156,8 +112,8 @@ function determine_canvas_width() {
 
 function update_canvas(stats) {
   let pctdone;
-  let height; let width; let x; let
-    pctdonetxt;
+  let height; let width;
+  let pctdonetxt;
 
   if (stats.queued === undefined) {
     return;
@@ -191,17 +147,11 @@ function update_canvas(stats) {
   height -= 2;
   /* Start at 1 and save 1 for border */
   width -= 1;
-  x = 1;
   context.fillStyle = '#E3E3E3';
   context.fillRect(1, 1, width, height);
   context.lineWidth = 1;
   context.strokeStyle = 'black';
   context.stroke();
-  x += minidraw(x, height, width, context, '#00CC00', queued, built);
-  x += minidraw(x, height, width, context, '#E00000', queued, failed);
-  x += minidraw(x, height, width, context, '#FF9900', queued, ignored);
-  x += minidraw(x, height, width, context, '#228B22', queued, fetched);
-  x += minidraw(x, height, width, context, '#CC6633', queued, skipped);
 
   pctdone = ((queued - remaining) * 100) / queued;
   if (Number.isNaN(pctdone)) {
@@ -218,7 +168,8 @@ function update_canvas(stats) {
 }
 
 function display_pkghour(stats, snap) {
-  let pkghour; let hours;
+  let pkghour;
+  let hours;
 
   const attempted = parseInt(stats.built, 10) + parseInt(stats.failed, 10);
   pkghour = '--';
@@ -440,7 +391,7 @@ function filter_skipped(pkgname) {
         + 'pull-right" id="resetsearch"></span>',
     );
 
-    $('#resetsearch').click((e) => {
+    $('#resetsearch').click(() => {
       table.fnFilter('', 3);
       search_filter.val('');
       search_filter.prop('disabled', false);
@@ -578,7 +529,7 @@ DTRow.prototype = {
 };
 
 function process_data_build(data) {
-  let html; let a; let n; let table_rows; let status; let builder; let now; let row; let dtrow;
+  let n; let table_rows; let status; let builder; let now; let row; let dtrow;
 
   if (data.snap && data.snap.now) {
     // New data is relative to the 'job.started' time, not epoch.
@@ -700,7 +651,7 @@ function process_data_build(data) {
     if (data.ports.remaining === undefined) {
       data.ports.remaining = [];
     }
-    $.each(data.ports, (stat, ports) => {
+    $.each(data.ports, (stat) => {
       if (stat === 'tobuild') {
         return;
       }
@@ -833,7 +784,7 @@ function process_data_jail(data) {
 }
 
 function process_data_index(data) {
-  let master; let mastername; let stat; let types; let latest; let remaining;
+  let master; let mastername; let stat; let types; let remaining;
   let row; let count; let dtrow;
 
   if (data.masternames) {
@@ -882,7 +833,7 @@ function process_data_index(data) {
 }
 
 /* Disable static navbar at the breakpoint */
-function do_resize(win) {
+function do_resize() {
   /* Redraw canvas to new width */
   if ($('#stats').data()) {
     determine_canvas_width();
@@ -963,7 +914,7 @@ function update_data() {
       load_attempts = 0;
       process_data(data);
     },
-    error(data) {
+    error() {
       load_attempts += 1;
       if (load_attempts < max_load_attempts) {
         /* May not be there yet, try again shortly */
@@ -988,23 +939,6 @@ function fix_viewport() {
       'width=device-width, initial-scale=1.0',
     );
   }
-}
-
-function applyHovering(table_id) {
-  const lastIdx = null;
-  const Table = $(`#${table_id}`).DataTable();
-  $(`#${table_id} tbody`)
-    .on('mouseover', 'td', () => {
-      const colIdx = Table.cell(this).index().column;
-
-      if (colIdx !== lastIdx) {
-        $(Table.cells().nodes()).removeClass('highlight');
-        $(Table.column(colIdx).nodes()).addClass('highlight');
-      }
-    })
-    .on('mouseleave', () => {
-      $(Table.cells().nodes()).removeClass('highlight');
-    });
 }
 
 function setup_build() {
@@ -1162,8 +1096,6 @@ function setup_build() {
 }
 
 function setup_jail() {
-  let status; let types; let i;
-
   const stat_column = {
     sWidth: '1em',
     sType: 'numeric',
@@ -1173,7 +1105,7 @@ function setup_jail() {
   const columns = [
     {
       data: 'buildname',
-      render(data, type, row) {
+      render(data, type) {
         return type === 'display'
           ? format_buildname(page_mastername, data)
           : data;
@@ -1215,7 +1147,7 @@ function setup_jail() {
         targets: '_all',
       },
     ],
-    createdRow(row, data, index) {
+    createdRow(row, data) {
       if (data.buildname === $('#latest_build').text()) {
         $('td.latest').removeClass('latest');
         $('td', row).addClass('latest');
@@ -1223,13 +1155,9 @@ function setup_jail() {
     },
     order: [[0, 'asc']], // Sort by buildname
   });
-
-  // applyHovering('builds_table');
 }
 
 function setup_index() {
-  let status; let types; let i;
-
   const stat_column = {
     sWidth: '1em',
     sType: 'numeric',
@@ -1243,7 +1171,7 @@ function setup_index() {
     },
     {
       data: 'mastername',
-      render(data, type, row) {
+      render(data, type) {
         return type === 'display' ? format_mastername(data) : data;
       },
       sWidth: '22em',
@@ -1259,7 +1187,7 @@ function setup_index() {
     },
     {
       data: 'jailname',
-      render(data, type, row) {
+      render(data, type) {
         return type === 'display' ? format_jailname(data) : data;
       },
       sWidth: '10em',
@@ -1267,7 +1195,7 @@ function setup_index() {
     },
     {
       data: 'setname',
-      render(data, type, row) {
+      render(data, type) {
         return type === 'display' ? format_setname(data) : data;
       },
       sWidth: '10em',
@@ -1275,7 +1203,7 @@ function setup_index() {
     },
     {
       data: 'ptname',
-      render(data, type, row) {
+      render(data, type) {
         return type === 'display' ? format_ptname(data) : data;
       },
       sWidth: '10em',
@@ -1426,7 +1354,7 @@ $(document).ready(() => {
     }
   });
   /* Force minimum width on mobile, will zoom to fit. */
-  $(window).on('orientationchange', (e) => {
+  $(window).on('orientationchange', () => {
     fix_viewport();
   });
   fix_viewport();
