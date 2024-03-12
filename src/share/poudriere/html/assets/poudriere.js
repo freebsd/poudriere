@@ -32,7 +32,7 @@ let firstRun = true;
 let loadAttempts = 0;
 const maxLoadAttempts = 8;
 const firstLoadInterval = 2;
-let canvas_width;
+let canvasWidth;
 const impulseData = [];
 let tracker = 0;
 const impulse_first_period = 120;
@@ -107,7 +107,7 @@ function determine_canvas_width() {
   $('#progresspct').text('100%');
   width = width - $('#progresspct').width() - 20;
   $('#progresspct').text('');
-  canvas_width = width;
+  canvasWidth = width;
 }
 
 function update_canvas(stats) {
@@ -126,7 +126,7 @@ function update_canvas(stats) {
   }
 
   height = 10;
-  width = canvas_width;
+  width = canvasWidth;
 
   canvas.height = height;
   canvas.width = width;
