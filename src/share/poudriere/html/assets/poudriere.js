@@ -850,8 +850,8 @@ function process_data_jail(data) {
 }
 
 function process_data_index(data) {
-  let master; let mastername; let stat; let types; let latest; let remaining; let row; let count; let
-    dtrow;
+  let master; let mastername; let stat; let types; let latest; let remaining;
+  let row; let count; let dtrow;
 
   if (data.masternames) {
     types = ['queued', 'built', 'failed', 'skipped', 'ignored', 'fetched'];
