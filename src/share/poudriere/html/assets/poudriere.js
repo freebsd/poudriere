@@ -84,7 +84,7 @@ function update_data() {
         setTimeout(update_data, first_load_interval * 1000);
       } else {
         $('#loading p')
-          .text('Invalid request or no data available ' + ' yet.')
+          .text('Invalid request or no data available yet.')
           .addClass('error');
       }
     },
