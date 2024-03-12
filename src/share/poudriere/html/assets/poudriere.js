@@ -24,6 +24,9 @@
  * SUCH DAMAGE.
  */
 
+// server_style = ['hosted', 'inline'];
+const server_style = 'hosted';
+
 const updateInterval = 8;
 let first_run = true;
 let load_attempts = 0;
