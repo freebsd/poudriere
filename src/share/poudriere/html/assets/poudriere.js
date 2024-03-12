@@ -990,7 +990,7 @@ function setupBuild() {
     bSearchable: false,
   };
 
-  const pkgname_column = {
+  const PkgNameColumn = {
     sWidth: '15em',
   };
   const origin_column = {
@@ -1000,7 +1000,7 @@ function setupBuild() {
   const columns = {
     built: [
       buildOrderColumn,
-      pkgname_column,
+      PkgNameColumn,
       origin_column,
       {
         sWidth: '4.25em',
@@ -1014,7 +1014,7 @@ function setupBuild() {
     ],
     failed: [
       buildOrderColumn,
-      pkgname_column,
+      PkgNameColumn,
       origin_column,
       {
         sWidth: '6em',
@@ -1036,13 +1036,13 @@ function setupBuild() {
     ],
     skipped: [
       buildOrderColumn,
-      pkgname_column,
+      PkgNameColumn,
       origin_column,
-      pkgname_column,
+      PkgNameColumn,
     ],
     ignored: [
       buildOrderColumn,
-      pkgname_column,
+      PkgNameColumn,
       origin_column,
       {
         sWidth: '2em',
@@ -1055,15 +1055,15 @@ function setupBuild() {
         sWidth: '25em',
       },
     ],
-    fetched: [buildOrderColumn, pkgname_column, origin_column],
+    fetched: [buildOrderColumn, PkgNameColumn, origin_column],
     remaining: [
       buildOrderColumn,
-      pkgname_column,
+      PkgNameColumn,
       {
         sWidth: '7em',
       },
     ],
-    queued: [buildOrderColumn, pkgname_column, origin_column, origin_column],
+    queued: [buildOrderColumn, PkgNameColumn, origin_column, origin_column],
   };
 
   const types = [
