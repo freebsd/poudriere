@@ -241,7 +241,7 @@ function update_canvas(stats) {
 function display_pkghour(stats, snap) {
   let pkghour; let hours;
 
-  const attempted = parseInt(stats.built) + parseInt(stats.failed);
+  const attempted = parseInt(stats.built, 10) + parseInt(stats.failed, 10);
   pkghour = '--';
   if (attempted > 0 && snap.elapsed) {
     hours = snap.elapsed / 3600;
@@ -253,7 +253,7 @@ function display_pkghour(stats, snap) {
 function display_impulse(stats, snap) {
   let pkghour; let tail; let d_pkgs; let d_secs; let title;
 
-  const attempted = parseInt(stats.built) + parseInt(stats.failed);
+  const attempted = parseInt(stats.built, 10) + parseInt(stats.failed, 10);
   pkghour = '--';
   const index = tracker % impulse_interval;
   if (tracker < impulse_interval) {
@@ -401,7 +401,7 @@ function format_start_to_end(start, end) {
   if (!start) {
     return '';
   }
-  start = parseInt(start);
+  start = parseInt(start, 10);
   if (isNaN(start)) {
     return '';
   }
@@ -804,17 +804,17 @@ function process_data_jail(data) {
       row.buildname = buildname;
       for (stat in types) {
         count = build.stats && build.stats[types[stat]] !== undefined
-          ? parseInt(build.stats[types[stat]])
+          ? parseInt(build.stats[types[stat]], 10)
           : 0;
         row[`stat_${types[stat]}`] = isNaN(count) ? 0 : count;
       }
       remaining = build.stats
-        ? parseInt(build.stats.queued)
-          - (parseInt(build.stats.built)
-            + parseInt(build.stats.failed)
-            + parseInt(build.stats.skipped)
-            + parseInt(build.stats.ignored)
-            + parseInt(build.stats.fetched))
+        ? parseInt(build.stats.queued, 10)
+          - (parseInt(build.stats.built, 10)
+            + parseInt(build.stats.failed, 10)
+            + parseInt(build.stats.skipped, 10)
+            + parseInt(build.stats.ignored, 10)
+            + parseInt(build.stats.fetched, 10))
         : 0;
       if (isNaN(remaining)) {
         remaining = 0;
@@ -869,17 +869,17 @@ function process_data_index(data) {
       row.ptname = master.ptname;
       for (stat in types) {
         count = master.stats && master.stats[types[stat]] !== undefined
-          ? parseInt(master.stats[types[stat]])
+          ? parseInt(master.stats[types[stat]], 10)
           : 0;
         row[`stat_${types[stat]}`] = isNaN(count) ? 0 : count;
       }
       remaining = master.stats
-        ? parseInt(master.stats.queued)
-          - (parseInt(master.stats.built)
-            + parseInt(master.stats.failed)
-            + parseInt(master.stats.skipped)
-            + parseInt(master.stats.ignored)
-            + parseInt(master.stats.fetched))
+        ? parseInt(master.stats.queued, 10)
+          - (parseInt(master.stats.built, 10)
+            + parseInt(master.stats.failed, 10)
+            + parseInt(master.stats.skipped, 10)
+            + parseInt(master.stats.ignored, 10)
+            + parseInt(master.stats.fetched, 10))
         : 0;
       row.stat_remaining = isNaN(remaining) ? 0 : remaining;
       row.status = translate_status(master.status);
@@ -967,7 +967,7 @@ function do_resize(win) {
 
 /* Force minimum width on mobile, will zoom to fit. */
 function fix_viewport() {
-  const minimum_width = parseInt($('body').css('min-width'));
+  const minimum_width = parseInt($('body').css('min-width'), 10);
   if (minimum_width !== 0 && window.innerWidth < minimum_width) {
     $('meta[name=viewport]').attr('content', `width=${minimum_width}`);
   } else {
