@@ -439,49 +439,49 @@ function formatSkipped(skippedCnt, pkgname) {
 }
 
 function formatStatusRow(status, row, n) {
-  const table_row = [];
+  const tableRow = [];
 
-  table_row.push(n + 1);
+  tableRow.push(n + 1);
   if (status === 'built') {
-    table_row.push(formatPkgName(row.pkgname));
-    table_row.push(formatOrigin(row.origin, row.flavor));
-    table_row.push(formatLog(row.pkgname, false, 'success'));
-    table_row.push(formatDuration(row.elapsed ? row.elapsed : ''));
+    tableRow.push(formatPkgName(row.pkgname));
+    tableRow.push(formatOrigin(row.origin, row.flavor));
+    tableRow.push(formatLog(row.pkgname, false, 'success'));
+    tableRow.push(formatDuration(row.elapsed ? row.elapsed : ''));
   } else if (status === 'failed') {
-    table_row.push(formatPkgName(row.pkgname));
-    table_row.push(formatOrigin(row.origin, row.flavor));
-    table_row.push(row.phase);
-    table_row.push(row.skipped_cnt);
-    table_row.push(formatLog(row.pkgname, true, row.errortype));
-    table_row.push(formatDuration(row.elapsed ? row.elapsed : ''));
+    tableRow.push(formatPkgName(row.pkgname));
+    tableRow.push(formatOrigin(row.origin, row.flavor));
+    tableRow.push(row.phase);
+    tableRow.push(row.skipped_cnt);
+    tableRow.push(formatLog(row.pkgname, true, row.errortype));
+    tableRow.push(formatDuration(row.elapsed ? row.elapsed : ''));
   } else if (status === 'skipped') {
-    table_row.push(formatPkgName(row.pkgname));
-    table_row.push(formatOrigin(row.origin, row.flavor));
-    table_row.push(formatPkgName(row.depends));
+    tableRow.push(formatPkgName(row.pkgname));
+    tableRow.push(formatOrigin(row.origin, row.flavor));
+    tableRow.push(formatPkgName(row.depends));
   } else if (status === 'ignored') {
-    table_row.push(formatPkgName(row.pkgname));
-    table_row.push(formatOrigin(row.origin, row.flavor));
-    table_row.push(row.skipped_cnt);
-    table_row.push(row.reason);
+    tableRow.push(formatPkgName(row.pkgname));
+    tableRow.push(formatOrigin(row.origin, row.flavor));
+    tableRow.push(row.skipped_cnt);
+    tableRow.push(row.reason);
   } else if (status === 'fetched') {
-    table_row.push(formatPkgName(row.pkgname));
-    table_row.push(formatOrigin(row.origin, row.flavor));
+    tableRow.push(formatPkgName(row.pkgname));
+    tableRow.push(formatOrigin(row.origin, row.flavor));
   } else if (status === 'remaining') {
-    table_row.push(formatPkgName(row.pkgname));
-    table_row.push(row.status);
+    tableRow.push(formatPkgName(row.pkgname));
+    tableRow.push(row.status);
   } else if (status === 'queued') {
-    table_row.push(formatPkgName(row.pkgname));
-    table_row.push(formatOrigin(row.origin, row.flavor));
+    tableRow.push(formatPkgName(row.pkgname));
+    tableRow.push(formatOrigin(row.origin, row.flavor));
     if (row.reason === 'listed') {
-      table_row.push(row.reason);
+      tableRow.push(row.reason);
     } else {
-      table_row.push(formatOrigin(row.reason));
+      tableRow.push(formatOrigin(row.reason));
     }
   } else {
     throw new Error(`Unknown data type "${status}". Try flushing cache.`);
   }
 
-  return table_row;
+  return tableRow;
 }
 
 function DTRow(table_id, div_id) {
