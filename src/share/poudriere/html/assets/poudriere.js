@@ -257,7 +257,7 @@ function formatSetName(setname) {
   return setname;
 }
 
-function format_ptname(ptname) {
+function formatPtName(ptname) {
   return ptname;
 }
 
@@ -556,7 +556,7 @@ function process_data_build(data) {
   $('#buildname').html(format_buildname(data.mastername, data.buildname));
   $('#jail').html(formatJailName(data.jailname));
   $('#setname').html(formatSetName(data.setname));
-  $('#ptname').html(format_ptname(data.ptname));
+  $('#ptname').html(formatPtName(data.ptname));
   if (data.overlays) {
     $('#overlays').html(data.overlays);
   } else {
@@ -765,7 +765,7 @@ function process_data_jail(data) {
       $('#status').text(translate_status(latest.status));
       $('#jail').html(formatJailName(latest.jailname));
       $('#setname').html(formatSetName(latest.setname));
-      $('#ptname').html(format_ptname(latest.ptname));
+      $('#ptname').html(formatPtName(latest.ptname));
       $('#latest_url').attr(
         'href',
         build_url(latest.mastername, latest.buildname),
@@ -1204,7 +1204,7 @@ function setup_index() {
     {
       data: 'ptname',
       render(data, type) {
-        return type === 'display' ? format_ptname(data) : data;
+        return type === 'display' ? formatPtName(data) : data;
       },
       sWidth: '10em',
       visible: false,
