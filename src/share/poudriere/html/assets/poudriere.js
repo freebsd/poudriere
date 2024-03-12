@@ -438,7 +438,7 @@ function formatSkipped(skippedCnt, pkgname) {
   );
 }
 
-function format_status_row(status, row, n) {
+function formatStatusRow(status, row, n) {
   const table_row = [];
 
   table_row.push(n + 1);
@@ -682,7 +682,7 @@ function process_data_build(data) {
               : 0;
           }
 
-          table_rows.push(format_status_row(stat, fetchedRow, n));
+          table_rows.push(formatStatusRow(stat, fetchedRow, n));
         }
         if (stat !== 'remaining') {
           $(`#${stat}_body`).data('index', n);
