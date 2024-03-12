@@ -65,7 +65,7 @@ function scrollToElement(element) {
   $('body,html,document').scrollTop(ele.offset().top + scrollOffset());
 }
 
-function format_origin(origin, flavor) {
+function formatOrigin(origin, flavor) {
   if (!origin) {
     return '';
   }
@@ -444,38 +444,38 @@ function format_status_row(status, row, n) {
   table_row.push(n + 1);
   if (status === 'built') {
     table_row.push(format_pkgname(row.pkgname));
-    table_row.push(format_origin(row.origin, row.flavor));
+    table_row.push(formatOrigin(row.origin, row.flavor));
     table_row.push(format_log(row.pkgname, false, 'success'));
     table_row.push(format_duration(row.elapsed ? row.elapsed : ''));
   } else if (status === 'failed') {
     table_row.push(format_pkgname(row.pkgname));
-    table_row.push(format_origin(row.origin, row.flavor));
+    table_row.push(formatOrigin(row.origin, row.flavor));
     table_row.push(row.phase);
     table_row.push(row.skipped_cnt);
     table_row.push(format_log(row.pkgname, true, row.errortype));
     table_row.push(format_duration(row.elapsed ? row.elapsed : ''));
   } else if (status === 'skipped') {
     table_row.push(format_pkgname(row.pkgname));
-    table_row.push(format_origin(row.origin, row.flavor));
+    table_row.push(formatOrigin(row.origin, row.flavor));
     table_row.push(format_pkgname(row.depends));
   } else if (status === 'ignored') {
     table_row.push(format_pkgname(row.pkgname));
-    table_row.push(format_origin(row.origin, row.flavor));
+    table_row.push(formatOrigin(row.origin, row.flavor));
     table_row.push(row.skipped_cnt);
     table_row.push(row.reason);
   } else if (status === 'fetched') {
     table_row.push(format_pkgname(row.pkgname));
-    table_row.push(format_origin(row.origin, row.flavor));
+    table_row.push(formatOrigin(row.origin, row.flavor));
   } else if (status === 'remaining') {
     table_row.push(format_pkgname(row.pkgname));
     table_row.push(row.status);
   } else if (status === 'queued') {
     table_row.push(format_pkgname(row.pkgname));
-    table_row.push(format_origin(row.origin, row.flavor));
+    table_row.push(formatOrigin(row.origin, row.flavor));
     if (row.reason === 'listed') {
       table_row.push(row.reason);
     } else {
-      table_row.push(format_origin(row.reason));
+      table_row.push(formatOrigin(row.reason));
     }
   } else {
     throw new Error(`Unknown data type "${status}". Try flushing cache.`);
@@ -601,7 +601,7 @@ function process_data_build(data) {
       row.job_id = builder.id;
       row.pkgname = builder.pkgname ? format_pkgname(builder.pkgname) : '';
       row.origin = builder.origin
-        ? format_origin(builder.origin, builder.flavor)
+        ? formatOrigin(builder.origin, builder.flavor)
         : '';
       row.status = builder.pkgname
         ? format_log(builder.pkgname, false, builder.status)
