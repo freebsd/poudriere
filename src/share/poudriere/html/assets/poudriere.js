@@ -66,31 +66,6 @@ function scrollToElement(element) {
   $('body,html,document').scrollTop(ele.offset().top + scrollOffset());
 }
 
-function update_data() {
-  $.ajax({
-    url: `${data_url}.data.json`,
-    dataType: 'json',
-    headers: {
-      'Cache-Control': 'max-age=0',
-    },
-    success(data) {
-      load_attempts = 0;
-      process_data(data);
-    },
-    error(data) {
-      load_attempts += 1;
-      if (load_attempts < max_load_attempts) {
-        /* May not be there yet, try again shortly */
-        setTimeout(update_data, first_load_interval * 1000);
-      } else {
-        $('#loading p')
-          .text('Invalid request or no data available yet.')
-          .addClass('error');
-      }
-    },
-  });
-}
-
 function format_origin(origin, flavor) {
   if (!origin) {
     return '';
@@ -399,30 +374,6 @@ function format_log(pkgname, errors, text) {
   return html;
 }
 
-function format_start_to_end(start, end) {
-  let duration;
-
-  if (!start) {
-    return '';
-  }
-  start = parseInt(start, 10);
-  if (Number.isNaN(start)) {
-    return '';
-  }
-
-  if (end === undefined) {
-    duration = start;
-  } else {
-    duration = end - start;
-  }
-
-  if (duration < 0) {
-    duration = 0;
-  }
-
-  return format_duration(duration);
-}
-
 function format_duration(duration) {
   let hours; let minutes; let
     seconds;
@@ -447,6 +398,30 @@ function format_duration(duration) {
   }
 
   return `${hours}:${minutes}:${seconds}`;
+}
+
+function format_start_to_end(start, end) {
+  let duration;
+
+  if (!start) {
+    return '';
+  }
+  start = parseInt(start, 10);
+  if (Number.isNaN(start)) {
+    return '';
+  }
+
+  if (end === undefined) {
+    duration = start;
+  } else {
+    duration = end - start;
+  }
+
+  if (duration < 0) {
+    duration = 0;
+  }
+
+  return format_duration(duration);
 }
 
 function filter_skipped(pkgname) {
@@ -906,6 +881,19 @@ function process_data_index(data) {
   return true;
 }
 
+/* Disable static navbar at the breakpoint */
+function do_resize(win) {
+  /* Redraw canvas to new width */
+  if ($('#stats').data()) {
+    determine_canvas_width();
+    update_canvas($('#stats').data());
+  }
+  /* Resize padding for navbar/footer heights */
+  $('body')
+    .css('padding-top', $('#header').outerHeight(true))
+    .css('padding-bottom', $('footer').outerHeight(true));
+}
+
 function process_data(data) {
   let should_reload;
 
@@ -964,17 +952,29 @@ function process_data(data) {
   }
 }
 
-/* Disable static navbar at the breakpoint */
-function do_resize(win) {
-  /* Redraw canvas to new width */
-  if ($('#stats').data()) {
-    determine_canvas_width();
-    update_canvas($('#stats').data());
-  }
-  /* Resize padding for navbar/footer heights */
-  $('body')
-    .css('padding-top', $('#header').outerHeight(true))
-    .css('padding-bottom', $('footer').outerHeight(true));
+function update_data() {
+  $.ajax({
+    url: `${data_url}.data.json`,
+    dataType: 'json',
+    headers: {
+      'Cache-Control': 'max-age=0',
+    },
+    success(data) {
+      load_attempts = 0;
+      process_data(data);
+    },
+    error(data) {
+      load_attempts += 1;
+      if (load_attempts < max_load_attempts) {
+        /* May not be there yet, try again shortly */
+        setTimeout(update_data, first_load_interval * 1000);
+      } else {
+        $('#loading p')
+          .text('Invalid request or no data available yet.')
+          .addClass('error');
+      }
+    },
+  });
 }
 
 /* Force minimum width on mobile, will zoom to fit. */
