@@ -833,7 +833,7 @@ function processDataIndex(data) {
 }
 
 /* Disable static navbar at the breakpoint */
-function do_resize() {
+function doResize() {
   /* Redraw canvas to new width */
   if ($('#stats').data()) {
     determineCanvasWidth();
@@ -888,7 +888,7 @@ function process_data(data) {
 
   if (firstRun) {
     /* Resize due to full content. */
-    do_resize($(window));
+    doResize($(window));
     // Hide loading overlay
     $('#loading_overlay').fadeOut(900);
     /* Now that page is loaded, scroll to anchor. */
@@ -1360,9 +1360,9 @@ $(document).ready(() => {
   fix_viewport();
   /* Handle resize needs */
   $(window).on('resize', () => {
-    do_resize($(this));
+    doResize($(this));
   });
-  do_resize($(window));
+  doResize($(window));
 
   update_data();
 });
