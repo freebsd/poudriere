@@ -30,7 +30,7 @@ const serverStyle = 'hosted';
 const updateInterval = 8;
 let firstRun = true;
 let loadAttempts = 0;
-const max_load_attempts = 8;
+const maxLoadAttempts = 8;
 const first_load_interval = 2;
 let canvas_width;
 const impulseData = [];
@@ -916,7 +916,7 @@ function update_data() {
     },
     error() {
       loadAttempts += 1;
-      if (loadAttempts < max_load_attempts) {
+      if (loadAttempts < maxLoadAttempts) {
         /* May not be there yet, try again shortly */
         setTimeout(update_data, first_load_interval * 1000);
       } else {
