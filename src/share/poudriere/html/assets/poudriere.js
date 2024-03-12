@@ -45,7 +45,7 @@ let data_url = '';
 function getParameterByName(name) {
   name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
   const regex = new RegExp(`[\\?&]${name}=([^&#]*)`);
-  const results = regex.exec(location.search);
+  const results = regex.exec(window.location.search);
   return results == null
     ? ''
     : decodeURIComponent(results[1].replace(/\+/g, ' '));
@@ -626,7 +626,7 @@ function process_data_build(data) {
 
   // Redirect from /latest/ to the actual build.
   if (page_buildname === 'latest') {
-    document.location.href = build_url(page_mastername, data.buildname);
+    window.location.href = build_url(page_mastername, data.buildname);
     return;
   }
 
@@ -917,7 +917,7 @@ function process_data(data) {
     // If the current page is not build.html, then redirect for the
     // sake of file:// loading.
     if (page_type !== 'build') {
-      location.href = 'build.html';
+      window.location.href = 'build.html';
       return;
     }
     page_type = 'build';
@@ -955,8 +955,8 @@ function process_data(data) {
     // Hide loading overlay
     $('#loading_overlay').fadeOut(900);
     /* Now that page is loaded, scroll to anchor. */
-    if (location.hash) {
-      scrollToElement(location.hash);
+    if (window.location.hash) {
+      scrollToElement(window.location.hash);
     }
     first_run = false;
   }
@@ -1357,8 +1357,8 @@ function setup_index() {
 $(document).ready(() => {
   let pathname;
 
-  pathname = location.pathname.substring(
-    location.pathname.lastIndexOf('/') + 1,
+  pathname = window.location.pathname.substring(
+    window.location.pathname.lastIndexOf('/') + 1,
   );
   if (pathname === '') {
     page_type = 'index';
@@ -1432,8 +1432,8 @@ $(document).ready(() => {
     if (href !== '#') {
       $(this).on('click', (e) => {
         e.preventDefault();
-        if (location.hash !== href) {
-          location.hash = href;
+        if (window.location.hash !== href) {
+          window.location.hash = href;
         }
         scrollToElement(href);
       });
