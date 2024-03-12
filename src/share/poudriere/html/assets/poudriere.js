@@ -484,11 +484,11 @@ function formatStatusRow(status, row, n) {
   return tableRow;
 }
 
-function DTRow(tableID, div_id) {
+function DTRow(tableID, divID) {
   this.Table = $(`#${tableID}`).DataTable();
   this.new_rows = [];
   this.first_load = this.Table.row(0).length === 0;
-  this.div_id = div_id;
+  this.div_id = divID;
 }
 
 DTRow.prototype = {
