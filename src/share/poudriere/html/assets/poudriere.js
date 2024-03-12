@@ -714,7 +714,7 @@ function processDataBuild(data) {
   return !isStopped;
 }
 
-function process_data_jail(data) {
+function processDataJail(data) {
   let row; let build; let buildname; let stat; let types; let latest; let remaining; let count; let
     dtrow;
 
@@ -879,7 +879,7 @@ function process_data(data) {
   if (pageType === 'build') {
     should_reload = processDataBuild(data);
   } else if (pageType === 'jail') {
-    should_reload = process_data_jail(data);
+    should_reload = processDataJail(data);
   } else if (pageType === 'index') {
     should_reload = process_data_index(data);
   } else {
