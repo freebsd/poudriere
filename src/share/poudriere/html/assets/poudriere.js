@@ -25,7 +25,7 @@
  */
 
 // server_style = ['hosted', 'inline'];
-const server_style = 'hosted';
+const serverStyle = 'hosted';
 
 const updateInterval = 8;
 let first_run = true;
@@ -216,7 +216,7 @@ function display_impulse(stats, snap) {
 }
 
 function jail_url(mastername) {
-  if (server_style === 'hosted') {
+  if (serverStyle === 'hosted') {
     if (mastername) {
       return `jail.html?mastername=${encodeURIComponent(mastername)}`;
     }
@@ -1281,7 +1281,7 @@ $(document).ready(() => {
   }
 
   if (page_type === 'build') {
-    if (server_style === 'hosted') {
+    if (serverStyle === 'hosted') {
       page_mastername = getParameterByName('mastername');
       page_buildname = getParameterByName('build');
       if (!page_mastername || !page_buildname) {
@@ -1296,13 +1296,13 @@ $(document).ready(() => {
         $(this).attr('href', data_url + href);
       });
       $('#master_link').attr('href', jail_url(page_mastername));
-    } else if (server_style === 'inline') {
+    } else if (serverStyle === 'inline') {
       $('#master_link').attr('href', '../');
       $('#index_link').attr('href', '../../');
     }
     setup_build();
   } else if (page_type === 'jail') {
-    if (server_style === 'hosted') {
+    if (serverStyle === 'hosted') {
       page_mastername = getParameterByName('mastername');
       if (!page_mastername) {
         $('#loading p')
@@ -1316,12 +1316,12 @@ $(document).ready(() => {
         $(this).attr('href', data_url + href);
       });
       $('#latest_url').attr('href', build_url(page_mastername, 'latest'));
-    } else if (server_style === 'inline') {
+    } else if (serverStyle === 'inline') {
       $('#index_link').attr('href', '../');
     }
     setup_jail();
   } else if (page_type === 'index') {
-    if (server_style === 'hosted') {
+    if (serverStyle === 'hosted') {
       data_url = 'data/';
       $('a.data_url').each(() => {
         const href = $(this).attr('href');
