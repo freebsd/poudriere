@@ -215,7 +215,7 @@ function displayImpulse(stats, snap) {
   $('#snap_impulse').html(pkghour);
 }
 
-function jail_url(mastername) {
+function jailURL(mastername) {
   if (serverStyle === 'hosted') {
     if (mastername) {
       return `jail.html?mastername=${encodeURIComponent(mastername)}`;
@@ -240,7 +240,7 @@ function format_mastername(mastername) {
     html = `<a title="List builds for ${
       mastername
     }" href="${
-      jail_url(mastername)
+      jailURL(mastername)
     }">${
       mastername
     }</a>`;
@@ -1295,7 +1295,7 @@ $(document).ready(() => {
         const href = $(this).attr('href');
         $(this).attr('href', dataURL + href);
       });
-      $('#master_link').attr('href', jail_url(pageMasterName));
+      $('#master_link').attr('href', jailURL(pageMasterName));
     } else if (serverStyle === 'inline') {
       $('#master_link').attr('href', '../');
       $('#index_link').attr('href', '../../');
