@@ -42,7 +42,7 @@ const impulseInterval = impulseTargetPeriod / updateInterval;
 let pageType;
 let pageBuildName;
 let pageMasterName;
-let data_url = '';
+let dataURL = '';
 
 function getParameterByName(name) {
   name = name.replace(/[[]/, '\\[').replace(/[\]]/, '\\]');
@@ -315,7 +315,7 @@ function format_log(pkgname, errors, text) {
   const html = `<a target="logs" title="Log for ${
     pkgname
   }" href="${
-    data_url
+    dataURL
   }logs/${
     errors ? 'errors/' : ''
   }${pkgname
@@ -905,7 +905,7 @@ function process_data(data) {
 
 function update_data() {
   $.ajax({
-    url: `${data_url}.data.json`,
+    url: `${dataURL}.data.json`,
     dataType: 'json',
     headers: {
       'Cache-Control': 'max-age=0',
@@ -1290,10 +1290,10 @@ $(document).ready(() => {
           .addClass('error');
         return;
       }
-      data_url = `data/${pageMasterName}/${pageBuildName}/`;
+      dataURL = `data/${pageMasterName}/${pageBuildName}/`;
       $('a.data_url').each(() => {
         const href = $(this).attr('href');
-        $(this).attr('href', data_url + href);
+        $(this).attr('href', dataURL + href);
       });
       $('#master_link').attr('href', jail_url(pageMasterName));
     } else if (serverStyle === 'inline') {
@@ -1310,10 +1310,10 @@ $(document).ready(() => {
           .addClass('error');
         return;
       }
-      data_url = `data/${pageMasterName}/`;
+      dataURL = `data/${pageMasterName}/`;
       $('a.data_url').each(() => {
         const href = $(this).attr('href');
-        $(this).attr('href', data_url + href);
+        $(this).attr('href', dataURL + href);
       });
       $('#latest_url').attr('href', build_url(pageMasterName, 'latest'));
     } else if (serverStyle === 'inline') {
@@ -1322,10 +1322,10 @@ $(document).ready(() => {
     setup_jail();
   } else if (pageType === 'index') {
     if (serverStyle === 'hosted') {
-      data_url = 'data/';
+      dataURL = 'data/';
       $('a.data_url').each(() => {
         const href = $(this).attr('href');
-        $(this).attr('href', data_url + href);
+        $(this).attr('href', dataURL + href);
       });
     }
     setup_index();
