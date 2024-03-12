@@ -694,21 +694,21 @@ function process_data_build(data) {
 
   /* Stats */
   if (data.stats) {
-    $.each(data.stats, (status, count) => {
-      if (status === 'elapsed') {
+    $.each(data.stats, (stat, count) => {
+      if (stat === 'elapsed') {
         count = format_start_to_end(count);
       }
-      $(`#stats_${status}`).html(count);
+      $(`#stats_${stat}`).html(count);
     });
     $('#stats').data(data.stats);
     $('#stats').fadeIn(1400);
 
     if (data.snap) {
-      $.each(data.snap, (status, count) => {
-        if (status === 'elapsed') {
+      $.each(data.snap, (stat, count) => {
+        if (stat === 'elapsed') {
           count = format_start_to_end(count);
         }
-        $(`#snap_${status}`).html(count);
+        $(`#snap_${stat}`).html(count);
       });
       display_pkghour(data.stats, data.snap);
       display_impulse(data.stats, data.snap);
@@ -725,59 +725,59 @@ function process_data_build(data) {
     if (data.ports.remaining === undefined) {
       data.ports.remaining = [];
     }
-    $.each(data.ports, (status, ports) => {
-      if (status === 'tobuild') {
+    $.each(data.ports, (stat, ports) => {
+      if (stat === 'tobuild') {
         return;
       }
       if (
-        data.ports[status]
-        && (data.ports[status].length > 0 || status === 'remaining')
+        data.ports[stat]
+        && (data.ports[stat].length > 0 || stat === 'remaining')
       ) {
         table_rows = [];
-        if (status !== 'remaining') {
-          if ((n = $(`#${status}_body`).data('index')) === undefined) {
+        if (stat !== 'remaining') {
+          if ((n = $(`#${stat}_body`).data('index')) === undefined) {
             n = 0;
-            $(`#${status}_div`).show();
-            $(`#nav_${status}`).removeClass('disabled');
+            $(`#${stat}_div`).show();
+            $(`#nav_${stat}`).removeClass('disabled');
           }
-          if (n === data.ports[status].length) {
+          if (n === data.ports[stat].length) {
             return;
           }
         } else {
           n = 0;
         }
-        for (; n < data.ports[status].length; n += 1) {
-          const row = data.ports[status][n];
+        for (; n < data.ports[stat].length; n += 1) {
+          const fetchedRow = data.ports[stat][n];
           // Add in skipped counts for failures and ignores
-          if (status === 'failed' || status === 'ignored') {
-            row.skipped_cnt = data.skipped && data.skipped[row.pkgname]
-              ? data.skipped[row.pkgname]
+          if (stat === 'failed' || stat === 'ignored') {
+            fetchedRow.skipped_cnt = data.skipped && data.skipped[fetchedRow.pkgname]
+              ? data.skipped[fetchedRow.pkgname]
               : 0;
           }
 
-          table_rows.push(format_status_row(status, row, n));
+          table_rows.push(format_status_row(stat, fetchedRow, n));
         }
-        if (status !== 'remaining') {
-          $(`#${status}_body`).data('index', n);
-          $(`#${status}_table`)
+        if (stat !== 'remaining') {
+          $(`#${stat}_body`).data('index', n);
+          $(`#${stat}_table`)
             .DataTable()
             .rows.add(table_rows)
             .draw(false);
         } else {
-          $(`#${status}_table`)
+          $(`#${stat}_table`)
             .DataTable()
             .clear()
             .draw();
-          $(`#${status}_table`)
+          $(`#${stat}_table`)
             .DataTable()
             .rows.add(table_rows)
             .draw(false);
           if (table_rows.length > 0) {
-            $(`#${status}_div`).show();
-            $(`#nav_${status}`).removeClass('disabled');
+            $(`#${stat}_div`).show();
+            $(`#nav_${stat}`).removeClass('disabled');
           } else {
-            $(`#${status}_div`).hide();
-            $(`#nav_${status}`).addClass('disabled');
+            $(`#${stat}_div`).hide();
+            $(`#nav_${stat}`).addClass('disabled');
           }
         }
       }
