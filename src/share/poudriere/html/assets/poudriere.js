@@ -484,8 +484,8 @@ function formatStatusRow(status, row, n) {
   return tableRow;
 }
 
-function DTRow(table_id, div_id) {
-  this.Table = $(`#${table_id}`).DataTable();
+function DTRow(tableID, div_id) {
+  this.Table = $(`#${tableID}`).DataTable();
   this.new_rows = [];
   this.first_load = this.Table.row(0).length === 0;
   this.div_id = div_id;
