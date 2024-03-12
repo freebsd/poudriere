@@ -1152,16 +1152,15 @@ function setup_build() {
 }
 
 function setup_jail() {
-  let columns; let status; let types; let i; let
-    stat_column;
+  let status; let types; let i;
 
-  stat_column = {
+  const stat_column = {
     sWidth: '1em',
     sType: 'numeric',
     bSearchable: false,
   };
 
-  columns = [
+  const columns = [
     {
       data: 'buildname',
       render(data, type, row) {
