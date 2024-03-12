@@ -796,38 +796,42 @@ function process_data_jail(data) {
     types = ['queued', 'built', 'failed', 'skipped', 'ignored', 'fetched'];
     dtrow = new DTRow('builds_table', 'builds_div');
     for (buildname in data.builds) {
-      row = {};
+      if (buildname !== undefined) {
+        row = {};
 
-      build = data.builds[buildname];
-      if (buildname === 'latest') {
-        latest = data.builds[build];
-        continue;
-      }
+        build = data.builds[buildname];
+        if (buildname === 'latest') {
+          latest = data.builds[build];
+          continue;
+        }
 
-      row.id = buildname;
-      row.buildname = buildname;
-      for (stat in types) {
-        count = build.stats && build.stats[types[stat]] !== undefined
-          ? parseInt(build.stats[types[stat]], 10)
-          : 0;
-        row[`stat_${types[stat]}`] = Number.isNaN(count) ? 0 : count;
-      }
-      remaining = build.stats
-        ? parseInt(build.stats.queued, 10)
+        row.id = buildname;
+        row.buildname = buildname;
+        for (stat in types) {
+          if (stat !== undefined) {
+            count = build.stats && build.stats[types[stat]] !== undefined
+              ? parseInt(build.stats[types[stat]], 10)
+              : 0;
+            row[`stat_${types[stat]}`] = Number.isNaN(count) ? 0 : count;
+          }
+        }
+        remaining = build.stats
+          ? parseInt(build.stats.queued, 10)
           - (parseInt(build.stats.built, 10)
             + parseInt(build.stats.failed, 10)
             + parseInt(build.stats.skipped, 10)
             + parseInt(build.stats.ignored, 10)
             + parseInt(build.stats.fetched, 10))
-        : 0;
-      if (Number.isNaN(remaining)) {
-        remaining = 0;
-      }
-      row.stat_remaining = remaining;
-      row.status = translate_status(build.status);
-      row.elapsed = build.elapsed ? build.elapsed : '';
+          : 0;
+        if (Number.isNaN(remaining)) {
+          remaining = 0;
+        }
+        row.stat_remaining = remaining;
+        row.status = translate_status(build.status);
+        row.elapsed = build.elapsed ? build.elapsed : '';
 
-      dtrow.queue(row);
+        dtrow.queue(row);
+      }
     }
 
     if (latest) {
@@ -861,35 +865,39 @@ function process_data_index(data) {
     types = ['queued', 'built', 'failed', 'skipped', 'ignored', 'fetched'];
     dtrow = new DTRow('latest_builds_table', 'latest_builds_div');
     for (mastername in data.masternames) {
-      row = {};
-      master = data.masternames[mastername].latest;
+      if (mastername !== undefined) {
+        row = {};
+        master = data.masternames[mastername].latest;
 
-      row.id = master.mastername;
-      row.portset = format_portset(master.ptname, master.setname);
-      row.mastername = master.mastername;
-      row.buildname = master.buildname;
-      row.jailname = master.jailname;
-      row.setname = master.setname;
-      row.ptname = master.ptname;
-      for (stat in types) {
-        count = master.stats && master.stats[types[stat]] !== undefined
-          ? parseInt(master.stats[types[stat]], 10)
-          : 0;
-        row[`stat_${types[stat]}`] = Number.isNaN(count) ? 0 : count;
-      }
-      remaining = master.stats
-        ? parseInt(master.stats.queued, 10)
+        row.id = master.mastername;
+        row.portset = format_portset(master.ptname, master.setname);
+        row.mastername = master.mastername;
+        row.buildname = master.buildname;
+        row.jailname = master.jailname;
+        row.setname = master.setname;
+        row.ptname = master.ptname;
+        for (stat in types) {
+          if (stat !== undefined) {
+            count = master.stats && master.stats[types[stat]] !== undefined
+              ? parseInt(master.stats[types[stat]], 10)
+              : 0;
+            row[`stat_${types[stat]}`] = Number.isNaN(count) ? 0 : count;
+          }
+        }
+        remaining = master.stats
+          ? parseInt(master.stats.queued, 10)
           - (parseInt(master.stats.built, 10)
             + parseInt(master.stats.failed, 10)
             + parseInt(master.stats.skipped, 10)
             + parseInt(master.stats.ignored, 10)
             + parseInt(master.stats.fetched, 10))
-        : 0;
-      row.stat_remaining = Number.isNaN(remaining) ? 0 : remaining;
-      row.status = translate_status(master.status);
-      row.elapsed = master.elapsed ? master.elapsed : '';
+          : 0;
+        row.stat_remaining = Number.isNaN(remaining) ? 0 : remaining;
+        row.status = translate_status(master.status);
+        row.elapsed = master.elapsed ? master.elapsed : '';
 
-      dtrow.queue(row);
+        dtrow.queue(row);
+      }
     }
     dtrow.commit();
   }
@@ -1134,20 +1142,22 @@ function setup_build() {
     'queued',
   ];
   for (i in types) {
-    status = types[i];
-    $(`#${status}_table`).dataTable({
-      bAutoWidth: false,
-      processing: true, // Show processing icon
-      deferRender: true, // Defer creating TR/TD until needed
-      aoColumns: columns[status],
-      stateSave: true, // Enable cookie for keeping state
-      lengthMenu: [
-        [5, 10, 25, 50, 100, 200, -1],
-        [5, 10, 25, 50, 100, 200, 'All'],
-      ],
-      pageLength: 10,
-      order: [[0, 'asc']], // Sort by build order
-    });
+    if (i !== undefined) {
+      status = types[i];
+      $(`#${status}_table`).dataTable({
+        bAutoWidth: false,
+        processing: true, // Show processing icon
+        deferRender: true, // Defer creating TR/TD until needed
+        aoColumns: columns[status],
+        stateSave: true, // Enable cookie for keeping state
+        lengthMenu: [
+          [5, 10, 25, 50, 100, 200, -1],
+          [5, 10, 25, 50, 100, 200, 'All'],
+        ],
+        pageLength: 10,
+        order: [[0, 'asc']], // Sort by build order
+      });
+    }
   }
 }
 
