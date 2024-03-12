@@ -529,7 +529,7 @@ DTRow.prototype = {
 };
 
 function processDataBuild(data) {
-  let n; let table_rows; let status; let builder; let now; let row; let dtrow;
+  let n; let tableRows; let status; let builder; let now; let row; let dtrow;
 
   if (data.snap && data.snap.now) {
     // New data is relative to the 'job.started' time, not epoch.
@@ -659,7 +659,7 @@ function processDataBuild(data) {
         data.ports[stat]
         && (data.ports[stat].length > 0 || stat === 'remaining')
       ) {
-        table_rows = [];
+        tableRows = [];
         if (stat !== 'remaining') {
           n = $(`#${stat}_body`).data('index');
           if (n === undefined) {
@@ -682,13 +682,13 @@ function processDataBuild(data) {
               : 0;
           }
 
-          table_rows.push(formatStatusRow(stat, fetchedRow, n));
+          tableRows.push(formatStatusRow(stat, fetchedRow, n));
         }
         if (stat !== 'remaining') {
           $(`#${stat}_body`).data('index', n);
           $(`#${stat}_table`)
             .DataTable()
-            .rows.add(table_rows)
+            .rows.add(tableRows)
             .draw(false);
         } else {
           $(`#${stat}_table`)
@@ -697,9 +697,9 @@ function processDataBuild(data) {
             .draw();
           $(`#${stat}_table`)
             .DataTable()
-            .rows.add(table_rows)
+            .rows.add(tableRows)
             .draw(false);
-          if (table_rows.length > 0) {
+          if (tableRows.length > 0) {
             $(`#${stat}_div`).show();
             $(`#nav_${stat}`).removeClass('disabled');
           } else {
