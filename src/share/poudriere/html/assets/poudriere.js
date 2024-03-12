@@ -45,6 +45,7 @@ let pageType;
 let pageBuildName;
 let pageMasterName;
 let dataURL = '';
+let x;
 
 function getParameterByName(name) {
   const tmpName = name.replace(/[[]/, '\\[').replace(/[\]]/, '\\]');
@@ -100,6 +101,33 @@ function formatPkgName(pkgname) {
   return pkgname;
 }
 
+function minidraw(dx, height, width, context, color, queued, variable) {
+  let newx;
+
+  /* Calculate how much percentage this value should display */
+  const pct = Math.floor((variable * 100) / queued);
+  if (pct === 0) {
+    return 0;
+  }
+  newx = width * (pct / 100);
+  if (dx + newx >= width) {
+    newx = width - dx;
+  }
+  /* Cap total bar to 99%, so it's clear something is remaining */
+  const totalPct = ((dx + newx) / width) * 100;
+  if (totalPct >= 99.0 && totalPct < 100.0) {
+    newx = Math.ceil(width * (99 / 100));
+  }
+  /* Always start at 1 */
+  if (newx === 0) {
+    newx = 1;
+  }
+  context.fillStyle = color;
+  context.fillRect(dx, 1, newx, height);
+
+  return newx;
+}
+
 function determineCanvasWidth() {
   let width;
 
@@ -150,11 +178,17 @@ function updateCanvas(stats) {
   height -= 2;
   /* Start at 1 and save 1 for border */
   width -= 1;
+  x = 1;
   context.fillStyle = '#E3E3E3';
   context.fillRect(1, 1, width, height);
   context.lineWidth = 1;
   context.strokeStyle = 'black';
   context.stroke();
+  x += minidraw(x, height, width, context, '#00CC00', queued, built);
+  x += minidraw(x, height, width, context, '#E00000', queued, failed);
+  x += minidraw(x, height, width, context, '#FF9900', queued, ignored);
+  x += minidraw(x, height, width, context, '#228B22', queued, fetched);
+  x += minidraw(x, height, width, context, '#CC6633', queued, skipped);
 
   pctdone = ((queued - remaining) * 100) / queued;
   if (Number.isNaN(pctdone)) {
