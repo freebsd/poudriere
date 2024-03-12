@@ -39,7 +39,7 @@ const impulseFirstPeriod = 120;
 const impulseTargetPeriod = 600;
 const impulseFirstInterval = impulseFirstPeriod / updateInterval;
 const impulseInterval = impulseTargetPeriod / updateInterval;
-let page_type;
+let pageType;
 let page_buildname;
 let page_mastername;
 let data_url = '';
@@ -232,7 +232,7 @@ function format_mastername(mastername) {
     return '';
   }
 
-  if (page_mastername && mastername === page_mastername && page_type === 'jail') {
+  if (page_mastername && mastername === page_mastername && pageType === 'jail') {
     html = `<a href="#top" onclick="scrollToElement('#top'); return false;">${
       mastername
     }</a>`;
@@ -289,7 +289,7 @@ function format_buildname(mastername, buildname) {
     && mastername === page_mastername
     && page_buildname
     && buildname === page_buildname
-    && page_type === 'build'
+    && pageType === 'build'
   ) {
     html = `<a href="#top" onclick="scrollToElement('#top'); return false;">${
       buildname
@@ -853,18 +853,18 @@ function process_data(data) {
   if (data.buildname) {
     // If the current page is not build.html, then redirect for the
     // sake of file:// loading.
-    if (page_type !== 'build') {
+    if (pageType !== 'build') {
       window.location.href = 'build.html';
       return;
     }
-    page_type = 'build';
+    pageType = 'build';
     if (data.buildname) {
       page_buildname = data.buildname;
     }
   } else if (data.builds) {
-    page_type = 'jail';
+    pageType = 'jail';
   } else if (data.masternames) {
-    page_type = 'index';
+    pageType = 'index';
   } else {
     $('#loading p')
       .text('Invalid request. Unknown data type.')
@@ -876,11 +876,11 @@ function process_data(data) {
     page_mastername = data.mastername;
   }
 
-  if (page_type === 'build') {
+  if (pageType === 'build') {
     should_reload = process_data_build(data);
-  } else if (page_type === 'jail') {
+  } else if (pageType === 'jail') {
     should_reload = process_data_jail(data);
-  } else if (page_type === 'index') {
+  } else if (pageType === 'index') {
     should_reload = process_data_index(data);
   } else {
     should_reload = false;
@@ -1275,12 +1275,12 @@ $(document).ready(() => {
     window.location.pathname.lastIndexOf('/') + 1,
   );
   if (pathname === '') {
-    page_type = 'index';
+    pageType = 'index';
   } else {
-    page_type = pathname.substr(0, pathname.length - 5);
+    pageType = pathname.substr(0, pathname.length - 5);
   }
 
-  if (page_type === 'build') {
+  if (pageType === 'build') {
     if (serverStyle === 'hosted') {
       page_mastername = getParameterByName('mastername');
       page_buildname = getParameterByName('build');
@@ -1301,7 +1301,7 @@ $(document).ready(() => {
       $('#index_link').attr('href', '../../');
     }
     setup_build();
-  } else if (page_type === 'jail') {
+  } else if (pageType === 'jail') {
     if (serverStyle === 'hosted') {
       page_mastername = getParameterByName('mastername');
       if (!page_mastername) {
@@ -1320,7 +1320,7 @@ $(document).ready(() => {
       $('#index_link').attr('href', '../');
     }
     setup_jail();
-  } else if (page_type === 'index') {
+  } else if (pageType === 'index') {
     if (serverStyle === 'hosted') {
       data_url = 'data/';
       $('a.data_url').each(() => {
@@ -1331,7 +1331,7 @@ $(document).ready(() => {
     setup_index();
   } else {
     $('#loading p')
-      .text(`Invalid request. Unhandled page type '${page_type}'`)
+      .text(`Invalid request. Unhandled page type '${pageType}'`)
       .addClass('error');
     return;
   }
