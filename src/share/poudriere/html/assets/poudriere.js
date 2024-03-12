@@ -930,9 +930,9 @@ function updateData() {
 
 /* Force minimum width on mobile, will zoom to fit. */
 function fixViewport() {
-  const minimum_width = parseInt($('body').css('min-width'), 10);
-  if (minimum_width !== 0 && window.innerWidth < minimum_width) {
-    $('meta[name=viewport]').attr('content', `width=${minimum_width}`);
+  const minimumWidth = parseInt($('body').css('min-width'), 10);
+  if (minimumWidth !== 0 && window.innerWidth < minimumWidth) {
+    $('meta[name=viewport]').attr('content', `width=${minimumWidth}`);
   } else {
     $('meta[name=viewport]').attr(
       'content',
