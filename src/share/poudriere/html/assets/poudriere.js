@@ -984,7 +984,7 @@ function setupBuild() {
     order: [[0, 'asc']], // Sort by Job ID
   });
 
-  const build_order_column = {
+  const buildOrderColumn = {
     sWidth: '1em',
     sType: 'numeric',
     bSearchable: false,
@@ -999,7 +999,7 @@ function setupBuild() {
 
   const columns = {
     built: [
-      build_order_column,
+      buildOrderColumn,
       pkgname_column,
       origin_column,
       {
@@ -1013,7 +1013,7 @@ function setupBuild() {
       },
     ],
     failed: [
-      build_order_column,
+      buildOrderColumn,
       pkgname_column,
       origin_column,
       {
@@ -1035,13 +1035,13 @@ function setupBuild() {
       },
     ],
     skipped: [
-      build_order_column,
+      buildOrderColumn,
       pkgname_column,
       origin_column,
       pkgname_column,
     ],
     ignored: [
-      build_order_column,
+      buildOrderColumn,
       pkgname_column,
       origin_column,
       {
@@ -1055,15 +1055,15 @@ function setupBuild() {
         sWidth: '25em',
       },
     ],
-    fetched: [build_order_column, pkgname_column, origin_column],
+    fetched: [buildOrderColumn, pkgname_column, origin_column],
     remaining: [
-      build_order_column,
+      buildOrderColumn,
       pkgname_column,
       {
         sWidth: '7em',
       },
     ],
-    queued: [build_order_column, pkgname_column, origin_column, origin_column],
+    queued: [buildOrderColumn, pkgname_column, origin_column, origin_column],
   };
 
   const types = [
