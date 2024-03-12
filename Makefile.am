@@ -19,9 +19,8 @@ assetsdir= $(htmldir)/assets
 bootstrapdir= $(assetsdir)/bootstrap-5.3.3
 btcssdir= $(bootstrapdir)/css
 btjsdir= $(bootstrapdir)/js
-datatablesdir= $(assetsdir)/DataTables-1.13.11
-dtcssdir= $(datatablesdir)/css
-dtjsdir= $(datatablesdir)/js
+dtcssdir= $(assetsdir)
+dtjsdir= $(assetsdir)
 jquerydir= $(assetsdir)/jquery-3.7.1
 rcdir= $(sysconfdir)/rc.d
 hookdir= $(sysconfdir)/poudriere.d/hooks
@@ -121,15 +120,13 @@ dist_html_DATA= 	src/share/poudriere/html/build.html \
 dist_assets_DATA=	src/share/poudriere/html/assets/poudriere.js \
 			src/share/poudriere/html/assets/logo-light.png \
 			src/share/poudriere/html/assets/logo-dark.png \
-			src/share/poudriere/html/assets/favicon.png \
-			src/share/poudriere/html/assets/jquery.dataTables.rowGrouping-1.2.9.js
+			src/share/poudriere/html/assets/favicon.png
 dist_btjs_DATA=		src/share/poudriere/html/assets/bootstrap-5.3.3/js/bootstrap.bundle.min.js \
 									src/share/poudriere/html/assets/bootstrap-5.3.3/js/bootstrap.bundle.min.js.map
 dist_btcss_DATA=	src/share/poudriere/html/assets/bootstrap-5.3.3/css/bootstrap.min.css \
 									src/share/poudriere/html/assets/bootstrap-5.3.3/css/bootstrap.min.css.map
-dist_dtcss_DATA=	src/share/poudriere/html/assets/DataTables-1.13.11/css/dataTables.bootstrap5.min.css
-dist_dtjs_DATA=		src/share/poudriere/html/assets/DataTables-1.13.11/js/jquery.dataTables.min.js \
-			src/share/poudriere/html/assets/DataTables-1.13.11/js/dataTables.bootstrap5.min.js
+dist_dtcss_DATA=	src/share/poudriere/html/assets/datatables.min.css
+dist_dtjs_DATA=		src/share/poudriere/html/assets/datatables.min.js
 dist_jquery_DATA=	src/share/poudriere/html/assets/jquery-3.7.1/jquery-3.7.1.min.js
 
 dist_rc_SCRIPTS=	src/etc/rc.d/poudriered
