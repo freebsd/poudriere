@@ -88,13 +88,11 @@ function update_data() {
 }
 
 function format_origin(origin, flavor) {
-  let data;
-
   if (!origin) {
     return '';
   }
 
-  data = origin.split('/');
+  const data = origin.split('/');
 
   if (flavor) {
     flavor = `@${flavor}`;
@@ -138,11 +136,10 @@ function format_pkgname(pkgname) {
 }
 
 function minidraw(x, height, width, context, color, queued, variable) {
-  let pct; let total_pct; let
-    newx;
+  let newx;
 
   /* Calculate how much percentage this value should display */
-  pct = Math.floor((variable * 100) / queued);
+  const pct = Math.floor((variable * 100) / queued);
   if (pct === 0) {
     return 0;
   }
@@ -151,7 +148,7 @@ function minidraw(x, height, width, context, color, queued, variable) {
     newx = width - x;
   }
   /* Cap total bar to 99%, so it's clear something is remaining */
-  total_pct = ((x + newx) / width) * 100;
+  const total_pct = ((x + newx) / width) * 100;
   if (total_pct >= 99.0 && total_pct < 100.0) {
     newx = Math.ceil(width * (99 / 100));
   }
@@ -179,16 +176,15 @@ function determine_canvas_width() {
 }
 
 function update_canvas(stats) {
-  let queued; let built; let failed; let skipped; let ignored; let fetched; let remaining; let
-    pctdone;
-  let height; let width; let x; let context; let canvas; let
+  let pctdone;
+  let height; let width; let x; let
     pctdonetxt;
 
   if (stats.queued === undefined) {
     return;
   }
 
-  canvas = document.getElementById('progressbar');
+  const canvas = document.getElementById('progressbar');
   if (!canvas || canvas.getContext === undefined) {
     /* Not supported */
     return;
@@ -200,15 +196,15 @@ function update_canvas(stats) {
   canvas.height = height;
   canvas.width = width;
 
-  queued = stats.queued;
-  built = stats.built;
-  failed = stats.failed;
-  skipped = stats.skipped;
-  ignored = stats.ignored;
-  fetched = stats.fetched;
-  remaining = queued - built - failed - skipped - ignored - fetched;
+  const { queued } = stats;
+  const { built } = stats;
+  const { failed } = stats;
+  const { skipped } = stats;
+  const { ignored } = stats;
+  const { fetched } = stats;
+  const remaining = queued - built - failed - skipped - ignored - fetched;
 
-  context = canvas.getContext('2d');
+  const context = canvas.getContext('2d');
 
   context.beginPath();
   context.rect(0, 0, width, height);
@@ -243,10 +239,9 @@ function update_canvas(stats) {
 }
 
 function display_pkghour(stats, snap) {
-  let attempted; let pkghour; let
-    hours;
+  let pkghour; let hours;
 
-  attempted = parseInt(stats.built) + parseInt(stats.failed);
+  const attempted = parseInt(stats.built) + parseInt(stats.failed);
   pkghour = '--';
   if (attempted > 0 && snap.elapsed) {
     hours = snap.elapsed / 3600;
@@ -256,12 +251,11 @@ function display_pkghour(stats, snap) {
 }
 
 function display_impulse(stats, snap) {
-  let attempted; let pkghour; let index; let tail; let d_pkgs; let d_secs; let
-    title;
+  let pkghour; let tail; let d_pkgs; let d_secs; let title;
 
-  attempted = parseInt(stats.built) + parseInt(stats.failed);
+  const attempted = parseInt(stats.built) + parseInt(stats.failed);
   pkghour = '--';
-  index = tracker % impulse_interval;
+  const index = tracker % impulse_interval;
   if (tracker < impulse_interval) {
     impulseData.push({ pkgs: attempted, time: snap.elapsed });
   } else {
@@ -388,9 +382,7 @@ function format_portset(ptname, setname) {
 }
 
 function format_log(pkgname, errors, text) {
-  let html;
-
-  html = `<a target="logs" title="Log for ${
+  const html = `<a target="logs" title="Log for ${
     pkgname
   }" href="${
     data_url
@@ -454,14 +446,11 @@ function format_duration(duration) {
 }
 
 function filter_skipped(pkgname) {
-  let table; let
-    search_filter;
-
   scrollToElement('#skipped');
-  table = $('#skipped_table').dataTable();
+  const table = $('#skipped_table').dataTable();
   table.fnFilter(pkgname, 3);
 
-  search_filter = $('#skipped_table_filter input');
+  const search_filter = $('#skipped_table_filter input');
   search_filter.val(pkgname);
   search_filter.prop('disabled', true);
   search_filter.css('background-color', '#DDD');
@@ -483,13 +472,11 @@ function filter_skipped(pkgname) {
 }
 
 function translate_status(status) {
-  let a;
-
   if (status === undefined) {
     return '';
   }
 
-  a = status.split(':');
+  const a = status.split(':');
   if (a[0] === 'stopped') {
     if (a.length >= 3) {
       status = `${a[0]}:${a[1]}:${a[2]}`;
@@ -613,8 +600,7 @@ DTRow.prototype = {
 };
 
 function process_data_build(data) {
-  let html; let a; let n; let table_rows; let status; let builder; let now; let row; let dtrow; let
-    is_stopped;
+  let html; let a; let n; let table_rows; let status; let builder; let now; let row; let dtrow;
 
   if (data.snap && data.snap.now) {
     // New data is relative to the 'job.started' time, not epoch.
@@ -673,7 +659,7 @@ function process_data_build(data) {
   }
 
   // Unknown status, assume not stopped.
-  is_stopped = status ? status.match('^stopped:') : false;
+  const is_stopped = status ? status.match('^stopped:') : false;
 
   /* Builder status */
   if (data.jobs) {
@@ -981,9 +967,7 @@ function do_resize(win) {
 
 /* Force minimum width on mobile, will zoom to fit. */
 function fix_viewport() {
-  let minimum_width;
-
-  minimum_width = parseInt($('body').css('min-width'));
+  const minimum_width = parseInt($('body').css('min-width'));
   if (minimum_width !== 0 && window.innerWidth < minimum_width) {
     $('meta[name=viewport]').attr('content', `width=${minimum_width}`);
   } else {
@@ -995,11 +979,8 @@ function fix_viewport() {
 }
 
 function applyHovering(table_id) {
-  let lastIdx; let
-    Table;
-
-  lastIdx = null;
-  Table = $(`#${table_id}`).DataTable();
+  const lastIdx = null;
+  const Table = $(`#${table_id}`).DataTable();
   $(`#${table_id} tbody`)
     .on('mouseover', 'td', () => {
       const colIdx = Table.cell(this).index().column;
@@ -1015,13 +996,8 @@ function applyHovering(table_id) {
 }
 
 function setup_build() {
-  let columns;
   let status;
-  let types;
   let i;
-  let build_order_column;
-  let pkgname_column;
-  let origin_column;
 
   $('#builders_table').dataTable({
     bFilter: false,
@@ -1062,20 +1038,20 @@ function setup_build() {
     order: [[0, 'asc']], // Sort by Job ID
   });
 
-  build_order_column = {
+  const build_order_column = {
     sWidth: '1em',
     sType: 'numeric',
     bSearchable: false,
   };
 
-  pkgname_column = {
+  const pkgname_column = {
     sWidth: '15em',
   };
-  origin_column = {
+  const origin_column = {
     sWidth: '17em',
   };
 
-  columns = {
+  const columns = {
     built: [
       build_order_column,
       pkgname_column,
@@ -1144,7 +1120,7 @@ function setup_build() {
     queued: [build_order_column, pkgname_column, origin_column, origin_column],
   };
 
-  types = [
+  const types = [
     'built',
     'failed',
     'skipped',
@@ -1239,16 +1215,15 @@ function setup_jail() {
 }
 
 function setup_index() {
-  let columns; let status; let types; let i; let stat_column; let
-    table;
+  let status; let types; let i;
 
-  stat_column = {
+  const stat_column = {
     sWidth: '1em',
     sType: 'numeric',
     bSearchable: false,
   };
 
-  columns = [
+  const columns = [
     {
       data: 'portset',
       visible: false,
@@ -1311,7 +1286,7 @@ function setup_index() {
     },
   ];
 
-  table = $('#latest_builds_table').dataTable({
+  const table = $('#latest_builds_table').dataTable({
     bAutoWidth: false,
     processing: true, // Show processing icon
     aoColumns: columns,
@@ -1355,9 +1330,7 @@ function setup_index() {
 }
 
 $(document).ready(() => {
-  let pathname;
-
-  pathname = window.location.pathname.substring(
+  const pathname = window.location.pathname.substring(
     window.location.pathname.lastIndexOf('/') + 1,
   );
   if (pathname === '') {
