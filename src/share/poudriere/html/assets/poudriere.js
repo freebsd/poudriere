@@ -29,7 +29,7 @@ const serverStyle = 'hosted';
 
 const updateInterval = 8;
 let firstRun = true;
-let load_attempts = 0;
+let loadAttempts = 0;
 const max_load_attempts = 8;
 const first_load_interval = 2;
 let canvas_width;
@@ -911,12 +911,12 @@ function update_data() {
       'Cache-Control': 'max-age=0',
     },
     success(data) {
-      load_attempts = 0;
+      loadAttempts = 0;
       process_data(data);
     },
     error() {
-      load_attempts += 1;
-      if (load_attempts < max_load_attempts) {
+      loadAttempts += 1;
+      if (loadAttempts < max_load_attempts) {
         /* May not be there yet, try again shortly */
         setTimeout(update_data, first_load_interval * 1000);
       } else {
