@@ -941,7 +941,7 @@ function fixViewport() {
   }
 }
 
-function setup_build() {
+function setupBuild() {
   let status;
   let i;
 
@@ -1300,7 +1300,7 @@ $(document).ready(() => {
       $('#master_link').attr('href', '../');
       $('#index_link').attr('href', '../../');
     }
-    setup_build();
+    setupBuild();
   } else if (pageType === 'jail') {
     if (serverStyle === 'hosted') {
       pageMasterName = getParameterByName('mastername');
