@@ -899,11 +899,11 @@ function processData(data) {
   }
 
   if (shouldReload) {
-    setTimeout(update_data, updateInterval * 1000);
+    setTimeout(updateData, updateInterval * 1000);
   }
 }
 
-function update_data() {
+function updateData() {
   $.ajax({
     url: `${dataURL}.data.json`,
     dataType: 'json',
@@ -918,7 +918,7 @@ function update_data() {
       loadAttempts += 1;
       if (loadAttempts < maxLoadAttempts) {
         /* May not be there yet, try again shortly */
-        setTimeout(update_data, firstLoadInterval * 1000);
+        setTimeout(updateData, firstLoadInterval * 1000);
       } else {
         $('#loading p')
           .text('Invalid request or no data available yet.')
@@ -1364,7 +1364,7 @@ $(document).ready(() => {
   });
   doResize($(window));
 
-  update_data();
+  updateData();
 });
 
 $(document).on('keydown', (e) => {
