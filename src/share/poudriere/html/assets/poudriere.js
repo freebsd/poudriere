@@ -783,7 +783,7 @@ function processDataJail(data) {
   return true;
 }
 
-function process_data_index(data) {
+function processDataIndex(data) {
   let master; let mastername; let stat; let types; let remaining;
   let row; let count; let dtrow;
 
@@ -881,7 +881,7 @@ function process_data(data) {
   } else if (pageType === 'jail') {
     should_reload = processDataJail(data);
   } else if (pageType === 'index') {
-    should_reload = process_data_index(data);
+    should_reload = processDataIndex(data);
   } else {
     should_reload = false;
   }
