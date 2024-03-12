@@ -593,7 +593,7 @@ DTRow.prototype = {
   },
   commit() {
     if (this.new_rows.length) {
-      nodes = this.Table.rows.add(this.new_rows).draw().nodes();
+      const nodes = this.Table.rows.add(this.new_rows).draw().nodes();
       if (this.first_load) {
         $(`#${this.div_id}`).show();
       } else {
