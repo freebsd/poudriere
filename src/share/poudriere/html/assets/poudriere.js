@@ -401,7 +401,7 @@ function filterSkipped(pkgname) {
   }
 }
 
-function translate_status(status) {
+function translateStatus(status) {
   if (status === undefined) {
     return '';
   }
@@ -583,7 +583,7 @@ function process_data_build(data) {
   }
 
   if (data.status) {
-    status = translate_status(data.status);
+    status = translateStatus(data.status);
     $('#status').text(status);
   }
 
@@ -753,7 +753,7 @@ function process_data_jail(data) {
           remaining = 0;
         }
         row.stat_remaining = remaining;
-        row.status = translate_status(build.status);
+        row.status = translateStatus(build.status);
         row.elapsed = build.elapsed ? build.elapsed : '';
 
         dtrow.queue(row);
@@ -762,7 +762,7 @@ function process_data_jail(data) {
 
     if (latest) {
       $('#mastername').html(formatMasterName(latest.mastername));
-      $('#status').text(translate_status(latest.status));
+      $('#status').text(translateStatus(latest.status));
       $('#jail').html(formatJailName(latest.jailname));
       $('#setname').html(formatSetName(latest.setname));
       $('#ptname').html(formatPtName(latest.ptname));
@@ -819,7 +819,7 @@ function process_data_index(data) {
             + parseInt(master.stats.fetched, 10))
           : 0;
         row.stat_remaining = Number.isNaN(remaining) ? 0 : remaining;
-        row.status = translate_status(master.status);
+        row.status = translateStatus(master.status);
         row.elapsed = master.elapsed ? master.elapsed : '';
 
         dtrow.queue(row);
