@@ -29,7 +29,7 @@
 // server_style = ['hosted', 'inline'];
 const serverStyle = 'hosted';
 
-const updateInterval = 8;
+const updateInterval = 3;
 let firstRun = true;
 let loadAttempts = 0;
 const maxLoadAttempts = 8;
