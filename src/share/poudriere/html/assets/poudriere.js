@@ -493,7 +493,7 @@ function DTRow(tableID, divID) {
 
 DTRow.prototype = {
   queue(row) {
-    let existing_row;
+    let existingRow;
 
     /* Is this entry already in the list? If so need to
      * replace its data. Don't bother with lookups on
@@ -501,14 +501,14 @@ DTRow.prototype = {
      */
     row.DT_RowId = `data_row_${row.id}`;
     if (!this.first_load) {
-      existing_row = this.Table.row(`#${row.DT_RowId}`);
+      existingRow = this.Table.row(`#${row.DT_RowId}`);
     } else {
-      existing_row = {};
+      existingRow = {};
     }
-    if (existing_row.length) {
+    if (existingRow.length) {
       /* Only update the row if it doesn't match the existing. */
-      if (JSON.stringify(row) !== JSON.stringify(existing_row.data())) {
-        existing_row.data(row).nodes().to$().hide()
+      if (JSON.stringify(row) !== JSON.stringify(existingRow.data())) {
+        existingRow.data(row).nodes().to$().hide()
           .fadeIn(800);
       }
     } else {
