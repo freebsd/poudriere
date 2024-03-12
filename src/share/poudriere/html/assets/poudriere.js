@@ -181,7 +181,7 @@ function displayPkgHour(stats, snap) {
 }
 
 function displayImpulse(stats, snap) {
-  let pkghour; let tail; let dPkgs; let d_secs; let title;
+  let pkghour; let tail; let dPkgs; let dSecs; let title;
 
   const attempted = parseInt(stats.built, 10) + parseInt(stats.failed, 10);
   pkghour = '--';
@@ -205,8 +205,8 @@ function displayImpulse(stats, snap) {
       } minutes`;
     }
     dPkgs = impulseData[index].pkgs - impulseData[tail].pkgs;
-    d_secs = impulseData[index].time - impulseData[tail].time;
-    pkghour = Math.ceil(dPkgs / (d_secs / 3600));
+    dSecs = impulseData[index].time - impulseData[tail].time;
+    pkghour = Math.ceil(dPkgs / (dSecs / 3600));
   } else {
     title = 'Package build rate. Still calculating...';
   }
