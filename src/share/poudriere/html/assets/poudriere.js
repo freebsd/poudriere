@@ -225,7 +225,7 @@ function update_canvas(stats) {
   x += minidraw(x, height, width, context, '#CC6633', queued, skipped);
 
   pctdone = ((queued - remaining) * 100) / queued;
-  if (isNaN(pctdone)) {
+  if (Number.isNaN(pctdone)) {
     pctdone = 0;
   }
   if (pctdone < 1.0 && pctdone !== 0) {
@@ -402,7 +402,7 @@ function format_start_to_end(start, end) {
     return '';
   }
   start = parseInt(start, 10);
-  if (isNaN(start)) {
+  if (Number.isNaN(start)) {
     return '';
   }
 
@@ -423,7 +423,7 @@ function format_duration(duration) {
   let hours; let minutes; let
     seconds;
 
-  if (duration === undefined || duration === '' || isNaN(duration)) {
+  if (duration === undefined || duration === '' || Number.isNaN(duration)) {
     return '';
   }
 
@@ -806,7 +806,7 @@ function process_data_jail(data) {
         count = build.stats && build.stats[types[stat]] !== undefined
           ? parseInt(build.stats[types[stat]], 10)
           : 0;
-        row[`stat_${types[stat]}`] = isNaN(count) ? 0 : count;
+        row[`stat_${types[stat]}`] = Number.isNaN(count) ? 0 : count;
       }
       remaining = build.stats
         ? parseInt(build.stats.queued, 10)
@@ -816,7 +816,7 @@ function process_data_jail(data) {
             + parseInt(build.stats.ignored, 10)
             + parseInt(build.stats.fetched, 10))
         : 0;
-      if (isNaN(remaining)) {
+      if (Number.isNaN(remaining)) {
         remaining = 0;
       }
       row.stat_remaining = remaining;
@@ -871,7 +871,7 @@ function process_data_index(data) {
         count = master.stats && master.stats[types[stat]] !== undefined
           ? parseInt(master.stats[types[stat]], 10)
           : 0;
-        row[`stat_${types[stat]}`] = isNaN(count) ? 0 : count;
+        row[`stat_${types[stat]}`] = Number.isNaN(count) ? 0 : count;
       }
       remaining = master.stats
         ? parseInt(master.stats.queued, 10)
@@ -881,7 +881,7 @@ function process_data_index(data) {
             + parseInt(master.stats.ignored, 10)
             + parseInt(master.stats.fetched, 10))
         : 0;
-      row.stat_remaining = isNaN(remaining) ? 0 : remaining;
+      row.stat_remaining = Number.isNaN(remaining) ? 0 : remaining;
       row.status = translate_status(master.status);
       row.elapsed = master.elapsed ? master.elapsed : '';
 
