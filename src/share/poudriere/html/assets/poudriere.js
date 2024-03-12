@@ -424,8 +424,8 @@ function translateStatus(status) {
   return status;
 }
 
-function formatSkipped(skipped_cnt, pkgname) {
-  if (skipped_cnt === undefined || skipped_cnt === 0) {
+function formatSkipped(skippedCnt, pkgname) {
+  if (skippedCnt === undefined || skippedCnt === 0) {
     return 0;
   }
   return (
@@ -433,7 +433,7 @@ function formatSkipped(skipped_cnt, pkgname) {
       pkgname
     }'); return false;"><span class="glyphicon `
     + `glyphicon-filter"></span>${
-      skipped_cnt
+      skippedCnt
     }</a>`
   );
 }
