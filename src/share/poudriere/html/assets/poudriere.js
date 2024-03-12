@@ -588,7 +588,7 @@ function processDataBuild(data) {
   }
 
   // Unknown status, assume not stopped.
-  const is_stopped = status ? status.match('^stopped:') : false;
+  const isStopped = status ? status.match('^stopped:') : false;
 
   /* Builder status */
   if (data.jobs) {
@@ -611,7 +611,7 @@ function processDataBuild(data) {
         : '';
 
       /* Hide idle builders when the build is stopped. */
-      if (!is_stopped || row.status !== 'idle') {
+      if (!isStopped || row.status !== 'idle') {
         dtrow.queue(row);
       }
     }
@@ -711,7 +711,7 @@ function processDataBuild(data) {
     });
   }
 
-  return !is_stopped;
+  return !isStopped;
 }
 
 function process_data_jail(data) {
