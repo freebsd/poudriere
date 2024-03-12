@@ -472,7 +472,7 @@ function filter_skipped(pkgname) {
         + 'pull-right" id="resetsearch"></span>',
     );
 
-    $('#resetsearch').click(function (e) {
+    $('#resetsearch').click((e) => {
       table.fnFilter('', 3);
       search_filter.val('');
       search_filter.prop('disabled', false);
@@ -1001,7 +1001,7 @@ function applyHovering(table_id) {
   lastIdx = null;
   Table = $(`#${table_id}`).DataTable();
   $(`#${table_id} tbody`)
-    .on('mouseover', 'td', function () {
+    .on('mouseover', 'td', () => {
       const colIdx = Table.cell(this).index().column;
 
       if (colIdx !== lastIdx) {
@@ -1377,7 +1377,7 @@ $(document).ready(() => {
         return;
       }
       data_url = `data/${page_mastername}/${page_buildname}/`;
-      $('a.data_url').each(function () {
+      $('a.data_url').each(() => {
         const href = $(this).attr('href');
         $(this).attr('href', data_url + href);
       });
@@ -1397,7 +1397,7 @@ $(document).ready(() => {
         return;
       }
       data_url = `data/${page_mastername}/`;
-      $('a.data_url').each(function () {
+      $('a.data_url').each(() => {
         const href = $(this).attr('href');
         $(this).attr('href', data_url + href);
       });
@@ -1409,7 +1409,7 @@ $(document).ready(() => {
   } else if (page_type == 'index') {
     if (server_style == 'hosted') {
       data_url = 'data/';
-      $('a.data_url').each(function () {
+      $('a.data_url').each(() => {
         const href = $(this).attr('href');
         $(this).attr('href', data_url + href);
       });
@@ -1427,7 +1427,7 @@ $(document).ready(() => {
 
   /* Fix nav links to not skip hashchange event when clicking multiple
    * times. */
-  $('#header .nav a[href^="#"]').each(function () {
+  $('#header .nav a[href^="#"]').each(() => {
     const href = $(this).attr('href');
     if (href != '#') {
       $(this).on('click', (e) => {
@@ -1445,7 +1445,7 @@ $(document).ready(() => {
   });
   fix_viewport();
   /* Handle resize needs */
-  $(window).on('resize', function () {
+  $(window).on('resize', () => {
     do_resize($(this));
   });
   do_resize($(window));
