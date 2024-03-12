@@ -38,7 +38,7 @@ let tracker = 0;
 const impulseFirstPeriod = 120;
 const impulseTargetPeriod = 600;
 const impulseFirstInterval = impulseFirstPeriod / updateInterval;
-const impulse_interval = impulseTargetPeriod / updateInterval;
+const impulseInterval = impulseTargetPeriod / updateInterval;
 let page_type;
 let page_buildname;
 let page_mastername;
@@ -185,21 +185,21 @@ function display_impulse(stats, snap) {
 
   const attempted = parseInt(stats.built, 10) + parseInt(stats.failed, 10);
   pkghour = '--';
-  const index = tracker % impulse_interval;
-  if (tracker < impulse_interval) {
+  const index = tracker % impulseInterval;
+  if (tracker < impulseInterval) {
     impulseData.push({ pkgs: attempted, time: snap.elapsed });
   } else {
     impulseData[index].pkgs = attempted;
     impulseData[index].time = snap.elapsed;
   }
   if (tracker >= impulseFirstInterval) {
-    if (tracker < impulse_interval) {
+    if (tracker < impulseInterval) {
       tail = 0;
       title = `Package build rate over last ${
         Math.floor((tracker * updateInterval) / 60)
       } minutes`;
     } else {
-      tail = (tracker - (impulse_interval - 1)) % impulse_interval;
+      tail = (tracker - (impulseInterval - 1)) % impulseInterval;
       title = `Package build rate over last ${
         impulseTargetPeriod / 60
       } minutes`;
