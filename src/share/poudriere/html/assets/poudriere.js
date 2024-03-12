@@ -275,7 +275,7 @@ function buildURL(mastername, buildname) {
   );
 }
 
-function format_buildname(mastername, buildname) {
+function formatBuildName(mastername, buildname) {
   let html;
 
   if (!mastername) {
@@ -553,7 +553,7 @@ function process_data_build(data) {
   document.title = `Poudriere bulk results for ${data.mastername} ${data.buildname}`;
 
   $('#mastername').html(formatMasterName(data.mastername));
-  $('#buildname').html(format_buildname(data.mastername, data.buildname));
+  $('#buildname').html(formatBuildName(data.mastername, data.buildname));
   $('#jail').html(formatJailName(data.jailname));
   $('#setname').html(formatSetName(data.setname));
   $('#ptname').html(formatPtName(data.ptname));
@@ -771,7 +771,7 @@ function process_data_jail(data) {
         buildURL(latest.mastername, latest.buildname),
       );
       $('#latest_build').html(
-        format_buildname(latest.mastername, latest.buildname),
+        formatBuildName(latest.mastername, latest.buildname),
       );
       $('#masterinfo_div').show();
     }
@@ -1107,7 +1107,7 @@ function setup_jail() {
       data: 'buildname',
       render(data, type) {
         return type === 'display'
-          ? format_buildname(pageMasterName, data)
+          ? formatBuildName(pageMasterName, data)
           : data;
       },
       sWidth: '12em',
@@ -1180,7 +1180,7 @@ function setup_index() {
       data: 'buildname',
       render(data, type, row) {
         return type === 'display'
-          ? format_buildname(row.mastername, data)
+          ? formatBuildName(row.mastername, data)
           : data;
       },
       sWidth: '12em',
