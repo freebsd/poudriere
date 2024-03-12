@@ -261,7 +261,7 @@ function formatPtName(ptname) {
   return ptname;
 }
 
-function build_url(mastername, buildname) {
+function buildURL(mastername, buildname) {
   if (!mastername || !buildname) {
     return '';
   }
@@ -298,7 +298,7 @@ function format_buildname(mastername, buildname) {
     html = `<a title="Show build results for ${
       buildname
     }" href="${
-      build_url(mastername, buildname)
+      buildURL(mastername, buildname)
     }">${
       buildname
     }</a>`;
@@ -541,7 +541,7 @@ function process_data_build(data) {
 
   // Redirect from /latest/ to the actual build.
   if (pageBuildName === 'latest') {
-    window.location.href = build_url(pageMasterName, data.buildname);
+    window.location.href = buildURL(pageMasterName, data.buildname);
     return undefined;
   }
 
@@ -768,7 +768,7 @@ function process_data_jail(data) {
       $('#ptname').html(formatPtName(latest.ptname));
       $('#latest_url').attr(
         'href',
-        build_url(latest.mastername, latest.buildname),
+        buildURL(latest.mastername, latest.buildname),
       );
       $('#latest_build').html(
         format_buildname(latest.mastername, latest.buildname),
@@ -1315,7 +1315,7 @@ $(document).ready(() => {
         const href = $(this).attr('href');
         $(this).attr('href', dataURL + href);
       });
-      $('#latest_url').attr('href', build_url(pageMasterName, 'latest'));
+      $('#latest_url').attr('href', buildURL(pageMasterName, 'latest'));
     } else if (serverStyle === 'inline') {
       $('#index_link').attr('href', '../');
     }
