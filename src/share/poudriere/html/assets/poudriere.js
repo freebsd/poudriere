@@ -311,7 +311,7 @@ function formatPortSet(ptname, setname) {
   return ptname + (setname ? '-' : '') + setname;
 }
 
-function format_log(pkgname, errors, text) {
+function formatLog(pkgname, errors, text) {
   const html = `<a target="logs" title="Log for ${
     pkgname
   }" href="${
@@ -445,14 +445,14 @@ function format_status_row(status, row, n) {
   if (status === 'built') {
     table_row.push(formatPkgName(row.pkgname));
     table_row.push(formatOrigin(row.origin, row.flavor));
-    table_row.push(format_log(row.pkgname, false, 'success'));
+    table_row.push(formatLog(row.pkgname, false, 'success'));
     table_row.push(format_duration(row.elapsed ? row.elapsed : ''));
   } else if (status === 'failed') {
     table_row.push(formatPkgName(row.pkgname));
     table_row.push(formatOrigin(row.origin, row.flavor));
     table_row.push(row.phase);
     table_row.push(row.skipped_cnt);
-    table_row.push(format_log(row.pkgname, true, row.errortype));
+    table_row.push(formatLog(row.pkgname, true, row.errortype));
     table_row.push(format_duration(row.elapsed ? row.elapsed : ''));
   } else if (status === 'skipped') {
     table_row.push(formatPkgName(row.pkgname));
@@ -604,7 +604,7 @@ function process_data_build(data) {
         ? formatOrigin(builder.origin, builder.flavor)
         : '';
       row.status = builder.pkgname
-        ? format_log(builder.pkgname, false, builder.status)
+        ? formatLog(builder.pkgname, false, builder.status)
         : builder.status.split(':')[0];
       row.elapsed = builder.started
         ? format_start_to_end(builder.started, now)
