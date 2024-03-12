@@ -1158,7 +1158,7 @@ function setupJail() {
 }
 
 function setupIndex() {
-  const stat_column = {
+  const statColumn = {
     sWidth: '1em',
     sType: 'numeric',
     bSearchable: false,
@@ -1209,13 +1209,13 @@ function setupIndex() {
       sWidth: '10em',
       visible: false,
     },
-    $.extend({}, stat_column, { data: 'stat_queued' }),
-    $.extend({}, stat_column, { data: 'stat_built' }),
-    $.extend({}, stat_column, { data: 'stat_failed' }),
-    $.extend({}, stat_column, { data: 'stat_skipped' }),
-    $.extend({}, stat_column, { data: 'stat_ignored' }),
-    $.extend({}, stat_column, { data: 'stat_fetched' }),
-    $.extend({}, stat_column, { data: 'stat_remaining' }),
+    $.extend({}, statColumn, { data: 'stat_queued' }),
+    $.extend({}, statColumn, { data: 'stat_built' }),
+    $.extend({}, statColumn, { data: 'stat_failed' }),
+    $.extend({}, statColumn, { data: 'stat_skipped' }),
+    $.extend({}, statColumn, { data: 'stat_ignored' }),
+    $.extend({}, statColumn, { data: 'stat_fetched' }),
+    $.extend({}, statColumn, { data: 'stat_remaining' }),
     {
       data: 'status',
       sWidth: '8em',
