@@ -993,7 +993,7 @@ function setupBuild() {
   const PkgNameColumn = {
     sWidth: '15em',
   };
-  const origin_column = {
+  const originColumn = {
     sWidth: '17em',
   };
 
@@ -1001,7 +1001,7 @@ function setupBuild() {
     built: [
       buildOrderColumn,
       PkgNameColumn,
-      origin_column,
+      originColumn,
       {
         sWidth: '4.25em',
         bSortable: false,
@@ -1015,7 +1015,7 @@ function setupBuild() {
     failed: [
       buildOrderColumn,
       PkgNameColumn,
-      origin_column,
+      originColumn,
       {
         sWidth: '6em',
       },
@@ -1037,13 +1037,13 @@ function setupBuild() {
     skipped: [
       buildOrderColumn,
       PkgNameColumn,
-      origin_column,
+      originColumn,
       PkgNameColumn,
     ],
     ignored: [
       buildOrderColumn,
       PkgNameColumn,
-      origin_column,
+      originColumn,
       {
         sWidth: '2em',
         sType: 'numeric',
@@ -1055,7 +1055,7 @@ function setupBuild() {
         sWidth: '25em',
       },
     ],
-    fetched: [buildOrderColumn, PkgNameColumn, origin_column],
+    fetched: [buildOrderColumn, PkgNameColumn, originColumn],
     remaining: [
       buildOrderColumn,
       PkgNameColumn,
@@ -1063,7 +1063,7 @@ function setupBuild() {
         sWidth: '7em',
       },
     ],
-    queued: [buildOrderColumn, PkgNameColumn, origin_column, origin_column],
+    queued: [buildOrderColumn, PkgNameColumn, originColumn, originColumn],
   };
 
   const types = [
