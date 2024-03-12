@@ -380,22 +380,22 @@ function filterSkipped(pkgname) {
   const table = $('#skipped_table').dataTable();
   table.fnFilter(pkgname, 3);
 
-  const search_filter = $('#skipped_table_filter input');
-  search_filter.val(pkgname);
-  search_filter.prop('disabled', true);
-  search_filter.css('background-color', '#DDD');
+  const searchFilter = $('#skipped_table_filter input');
+  searchFilter.val(pkgname);
+  searchFilter.prop('disabled', true);
+  searchFilter.css('background-color', '#DDD');
 
   if (!$('#resetsearch').length) {
-    search_filter.after(
+    searchFilter.after(
       '<span class="glyphicon glyphicon-remove '
         + 'pull-right" id="resetsearch"></span>',
     );
 
     $('#resetsearch').click(() => {
       table.fnFilter('', 3);
-      search_filter.val('');
-      search_filter.prop('disabled', false);
-      search_filter.css('background-color', '');
+      searchFilter.val('');
+      searchFilter.prop('disabled', false);
+      searchFilter.css('background-color', '');
       $(this).remove();
     });
   }
