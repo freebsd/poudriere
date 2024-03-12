@@ -1157,7 +1157,7 @@ function setupJail() {
   });
 }
 
-function setup_index() {
+function setupIndex() {
   const stat_column = {
     sWidth: '1em',
     sType: 'numeric',
@@ -1328,7 +1328,7 @@ $(document).ready(() => {
         $(this).attr('href', dataURL + href);
       });
     }
-    setup_index();
+    setupIndex();
   } else {
     $('#loading p')
       .text(`Invalid request. Unhandled page type '${pageType}'`)
