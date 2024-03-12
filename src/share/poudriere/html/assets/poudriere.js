@@ -325,7 +325,7 @@ function formatLog(pkgname, errors, text) {
   return html;
 }
 
-function format_duration(duration) {
+function formatDuration(duration) {
   let hours; let minutes; let
     seconds;
 
@@ -372,7 +372,7 @@ function format_start_to_end(start, end) {
     duration = 0;
   }
 
-  return format_duration(duration);
+  return formatDuration(duration);
 }
 
 function filter_skipped(pkgname) {
@@ -446,14 +446,14 @@ function format_status_row(status, row, n) {
     table_row.push(formatPkgName(row.pkgname));
     table_row.push(formatOrigin(row.origin, row.flavor));
     table_row.push(formatLog(row.pkgname, false, 'success'));
-    table_row.push(format_duration(row.elapsed ? row.elapsed : ''));
+    table_row.push(formatDuration(row.elapsed ? row.elapsed : ''));
   } else if (status === 'failed') {
     table_row.push(formatPkgName(row.pkgname));
     table_row.push(formatOrigin(row.origin, row.flavor));
     table_row.push(row.phase);
     table_row.push(row.skipped_cnt);
     table_row.push(formatLog(row.pkgname, true, row.errortype));
-    table_row.push(format_duration(row.elapsed ? row.elapsed : ''));
+    table_row.push(formatDuration(row.elapsed ? row.elapsed : ''));
   } else if (status === 'skipped') {
     table_row.push(formatPkgName(row.pkgname));
     table_row.push(formatOrigin(row.origin, row.flavor));
