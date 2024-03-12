@@ -380,7 +380,7 @@ function formatStartToEnd(start, end) {
 
 function filterSkipped(pkgname) {
   scrollToElement('#skipped');
-  const table = $('#skipped_table').dataTable();
+  const table = $('#skipped_table').DataTable();
   table.fnFilter(pkgname, 3);
 
   const searchFilter = $('#skipped_table_filter input');
@@ -950,7 +950,7 @@ function fixViewport() {
 function setupBuild() {
   let status;
 
-  $('#builders_table').dataTable({
+  $('#builders_table').DataTable({
     bFilter: false,
     bInfo: false,
     bPaginate: false,
@@ -1082,7 +1082,7 @@ function setupBuild() {
   ];
   Object.keys(types).forEach((i) => {
     status = types[i];
-    $(`#${status}_table`).dataTable({
+    $(`#${status}_table`).DataTable({
       bAutoWidth: false,
       processing: true, // Show processing icon
       deferRender: true, // Defer creating TR/TD until needed
@@ -1133,7 +1133,7 @@ function setupJail() {
     },
   ];
 
-  $('#builds_table').dataTable({
+  $('#builds_table').DataTable({
     bAutoWidth: false,
     processing: true, // Show processing icon
     aoColumns: columns,
@@ -1230,7 +1230,7 @@ function setupIndex() {
     },
   ];
 
-  const table = $('#latest_builds_table').dataTable({
+  const table = $('#latest_builds_table').DataTable({
     bAutoWidth: false,
     processing: true, // Show processing icon
     aoColumns: columns,
@@ -1250,25 +1250,25 @@ function setupIndex() {
     ],
   });
 
-  table.rowGrouping({
-    iGroupingColumnIndex2: 4,
-    iGroupingColumnIndex: 5,
-    sGroupLabelPrefix2: '&nbsp;&nbsp;Set - ',
-    sGroupLabelPrefix: 'Ports - ',
-    sEmptyGroupLabel: '',
-    fnGroupLabelFormat(label) {
-      return `<span class='title'>${label}</span>`;
-    },
-    fnGroupLabelFormat2(label) {
-      return `<span class='title'>${label}</span>`;
-    },
-    fnOnGrouped() {
-      // Hide default set group rows
-      $(
-        '#latest_builds_table tbody tr[id^=group-id-latest_builds_table_][id$=--]',
-      ).hide();
-    },
-  });
+  // table.rowGrouping({
+  //   iGroupingColumnIndex2: 4,
+  //   iGroupingColumnIndex: 5,
+  //   sGroupLabelPrefix2: '&nbsp;&nbsp;Set - ',
+  //   sGroupLabelPrefix: 'Ports - ',
+  //   sEmptyGroupLabel: '',
+  //   fnGroupLabelFormat(label) {
+  //     return `<span class='title'>${label}</span>`;
+  //   },
+  //   fnGroupLabelFormat2(label) {
+  //     return `<span class='title'>${label}</span>`;
+  //   },
+  //   fnOnGrouped() {
+  //     // Hide default set group rows
+  //     $(
+  //       '#latest_builds_table tbody tr[id^=group-id-latest_builds_table_][id$=--]',
+  //     ).hide();
+  //   },
+  // });
 
   // applyHovering('latest_builds_table');
 }
