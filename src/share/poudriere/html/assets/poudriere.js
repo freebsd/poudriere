@@ -36,9 +36,9 @@ let canvasWidth;
 const impulseData = [];
 let tracker = 0;
 const impulseFirstPeriod = 120;
-const impulse_target_period = 600;
+const impulseTargetPeriod = 600;
 const impulse_first_interval = impulseFirstPeriod / updateInterval;
-const impulse_interval = impulse_target_period / updateInterval;
+const impulse_interval = impulseTargetPeriod / updateInterval;
 let page_type;
 let page_buildname;
 let page_mastername;
@@ -201,7 +201,7 @@ function display_impulse(stats, snap) {
     } else {
       tail = (tracker - (impulse_interval - 1)) % impulse_interval;
       title = `Package build rate over last ${
-        impulse_target_period / 60
+        impulseTargetPeriod / 60
       } minutes`;
     }
     d_pkgs = impulseData[index].pkgs - impulseData[tail].pkgs;
