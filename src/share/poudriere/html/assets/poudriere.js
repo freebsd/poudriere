@@ -143,7 +143,7 @@ function minidraw(x, height, width, context, color, queued, variable) {
 
   /* Calculate how much percentage this value should display */
   pct = Math.floor((variable * 100) / queued);
-  if (pct == 0) {
+  if (pct === 0) {
     return 0;
   }
   newx = width * (pct / 100);
@@ -156,7 +156,7 @@ function minidraw(x, height, width, context, color, queued, variable) {
     newx = Math.ceil(width * (99 / 100));
   }
   /* Always start at 1 */
-  if (newx == 0) {
+  if (newx === 0) {
     newx = 1;
   }
   context.fillStyle = color;
@@ -232,7 +232,7 @@ function update_canvas(stats) {
   if (isNaN(pctdone)) {
     pctdone = 0;
   }
-  if (pctdone < 1.0 && pctdone != 0) {
+  if (pctdone < 1.0 && pctdone !== 0) {
     pctdonetxt = '< 1';
   } else {
     pctdonetxt = Math.floor(pctdone);
@@ -292,7 +292,7 @@ function display_impulse(stats, snap) {
 }
 
 function jail_url(mastername) {
-  if (server_style == 'hosted') {
+  if (server_style === 'hosted') {
     if (mastername) {
       return `jail.html?mastername=${encodeURIComponent(mastername)}`;
     }
@@ -308,7 +308,7 @@ function format_mastername(mastername) {
     return '';
   }
 
-  if (page_mastername && mastername == page_mastername && page_type == 'jail') {
+  if (page_mastername && mastername === page_mastername && page_type === 'jail') {
     html = `<a href="#top" onclick="scrollToElement('#top'); return false;">${
       mastername
     }</a>`;
@@ -362,10 +362,10 @@ function format_buildname(mastername, buildname) {
 
   if (
     page_mastername
-    && mastername == page_mastername
+    && mastername === page_mastername
     && page_buildname
-    && buildname == page_buildname
-    && page_type == 'build'
+    && buildname === page_buildname
+    && page_type === 'build'
   ) {
     html = `<a href="#top" onclick="scrollToElement('#top'); return false;">${
       buildname
@@ -431,7 +431,7 @@ function format_duration(duration) {
   let hours; let minutes; let
     seconds;
 
-  if (duration === undefined || duration == '' || isNaN(duration)) {
+  if (duration === undefined || duration === '' || isNaN(duration)) {
     return '';
   }
 
@@ -490,7 +490,7 @@ function translate_status(status) {
   }
 
   a = status.split(':');
-  if (a[0] == 'stopped') {
+  if (a[0] === 'stopped') {
     if (a.length >= 3) {
       status = `${a[0]}:${a[1]}:${a[2]}`;
     } else if (a.length >= 2) {
@@ -508,7 +508,7 @@ function translate_status(status) {
 }
 
 function format_skipped(skipped_cnt, pkgname) {
-  if (skipped_cnt === undefined || skipped_cnt == 0) {
+  if (skipped_cnt === undefined || skipped_cnt === 0) {
     return 0;
   }
   return (
@@ -525,37 +525,37 @@ function format_status_row(status, row, n) {
   const table_row = [];
 
   table_row.push(n + 1);
-  if (status == 'built') {
+  if (status === 'built') {
     table_row.push(format_pkgname(row.pkgname));
     table_row.push(format_origin(row.origin, row.flavor));
     table_row.push(format_log(row.pkgname, false, 'success'));
     table_row.push(format_duration(row.elapsed ? row.elapsed : ''));
-  } else if (status == 'failed') {
+  } else if (status === 'failed') {
     table_row.push(format_pkgname(row.pkgname));
     table_row.push(format_origin(row.origin, row.flavor));
     table_row.push(row.phase);
     table_row.push(row.skipped_cnt);
     table_row.push(format_log(row.pkgname, true, row.errortype));
     table_row.push(format_duration(row.elapsed ? row.elapsed : ''));
-  } else if (status == 'skipped') {
+  } else if (status === 'skipped') {
     table_row.push(format_pkgname(row.pkgname));
     table_row.push(format_origin(row.origin, row.flavor));
     table_row.push(format_pkgname(row.depends));
-  } else if (status == 'ignored') {
+  } else if (status === 'ignored') {
     table_row.push(format_pkgname(row.pkgname));
     table_row.push(format_origin(row.origin, row.flavor));
     table_row.push(row.skipped_cnt);
     table_row.push(row.reason);
-  } else if (status == 'fetched') {
+  } else if (status === 'fetched') {
     table_row.push(format_pkgname(row.pkgname));
     table_row.push(format_origin(row.origin, row.flavor));
-  } else if (status == 'remaining') {
+  } else if (status === 'remaining') {
     table_row.push(format_pkgname(row.pkgname));
     table_row.push(row.status);
-  } else if (status == 'queued') {
+  } else if (status === 'queued') {
     table_row.push(format_pkgname(row.pkgname));
     table_row.push(format_origin(row.origin, row.flavor));
-    if (row.reason == 'listed') {
+    if (row.reason === 'listed') {
       table_row.push(row.reason);
     } else {
       table_row.push(format_origin(row.reason));
@@ -571,7 +571,7 @@ function format_status_row(status, row, n) {
 function DTRow(table_id, div_id) {
   this.Table = $(`#${table_id}`).DataTable();
   this.new_rows = [];
-  this.first_load = this.Table.row(0).length == 0;
+  this.first_load = this.Table.row(0).length === 0;
   this.div_id = div_id;
 }
 
@@ -625,7 +625,7 @@ function process_data_build(data) {
   }
 
   // Redirect from /latest/ to the actual build.
-  if (page_buildname == 'latest') {
+  if (page_buildname === 'latest') {
     document.location.href = build_url(page_mastername, data.buildname);
     return;
   }
@@ -649,7 +649,7 @@ function process_data_build(data) {
     $('#overlays_title').hide();
   }
   if (data.git_hash) {
-    $('#git_hash').html(data.git_hash + (data.git_dirty == 'yes' ? ' (dirty)' : ''));
+    $('#git_hash').html(data.git_hash + (data.git_dirty === 'yes' ? ' (dirty)' : ''));
   } else {
     $('#git_hash').hide();
     $('#git_hash_title').hide();
@@ -659,7 +659,7 @@ function process_data_build(data) {
   /* Backwards compatibility */
   if (data.status && data.status instanceof Array && !data.jobs) {
     data.jobs = data.status;
-    if (data.jobs[0] && data.jobs[0].id == 'main') {
+    if (data.jobs[0] && data.jobs[0].id === 'main') {
       data.status = data.jobs[0].status;
       data.jobs.splice(0, 1);
     } else {
@@ -696,7 +696,7 @@ function process_data_build(data) {
         : '';
 
       /* Hide idle builders when the build is stopped. */
-      if (!is_stopped || row.status != 'idle') {
+      if (!is_stopped || row.status !== 'idle') {
         dtrow.queue(row);
       }
     }
@@ -706,7 +706,7 @@ function process_data_build(data) {
   /* Stats */
   if (data.stats) {
     $.each(data.stats, (status, count) => {
-      if (status == 'elapsed') {
+      if (status === 'elapsed') {
         count = format_start_to_end(count);
       }
       $(`#stats_${status}`).html(count);
@@ -716,7 +716,7 @@ function process_data_build(data) {
 
     if (data.snap) {
       $.each(data.snap, (status, count) => {
-        if (status == 'elapsed') {
+        if (status === 'elapsed') {
           count = format_start_to_end(count);
         }
         $(`#snap_${status}`).html(count);
@@ -737,21 +737,21 @@ function process_data_build(data) {
       data.ports.remaining = [];
     }
     $.each(data.ports, (status, ports) => {
-      if (status == 'tobuild') {
+      if (status === 'tobuild') {
         return;
       }
       if (
         data.ports[status]
-        && (data.ports[status].length > 0 || status == 'remaining')
+        && (data.ports[status].length > 0 || status === 'remaining')
       ) {
         table_rows = [];
-        if (status != 'remaining') {
+        if (status !== 'remaining') {
           if ((n = $(`#${status}_body`).data('index')) === undefined) {
             n = 0;
             $(`#${status}_div`).show();
             $(`#nav_${status}`).removeClass('disabled');
           }
-          if (n == data.ports[status].length) {
+          if (n === data.ports[status].length) {
             return;
           }
         } else {
@@ -760,7 +760,7 @@ function process_data_build(data) {
         for (; n < data.ports[status].length; n++) {
           const row = data.ports[status][n];
           // Add in skipped counts for failures and ignores
-          if (status == 'failed' || status == 'ignored') {
+          if (status === 'failed' || status === 'ignored') {
             row.skipped_cnt = data.skipped && data.skipped[row.pkgname]
               ? data.skipped[row.pkgname]
               : 0;
@@ -768,7 +768,7 @@ function process_data_build(data) {
 
           table_rows.push(format_status_row(status, row, n));
         }
-        if (status != 'remaining') {
+        if (status !== 'remaining') {
           $(`#${status}_body`).data('index', n);
           $(`#${status}_table`)
             .DataTable()
@@ -809,7 +809,7 @@ function process_data_jail(data) {
       row = {};
 
       build = data.builds[buildname];
-      if (buildname == 'latest') {
+      if (buildname === 'latest') {
         latest = data.builds[build];
         continue;
       }
@@ -916,7 +916,7 @@ function process_data(data) {
   if (data.buildname) {
     // If the current page is not build.html, then redirect for the
     // sake of file:// loading.
-    if (page_type != 'build') {
+    if (page_type !== 'build') {
       location.href = 'build.html';
       return;
     }
@@ -939,11 +939,11 @@ function process_data(data) {
     page_mastername = data.mastername;
   }
 
-  if (page_type == 'build') {
+  if (page_type === 'build') {
     should_reload = process_data_build(data);
-  } else if (page_type == 'jail') {
+  } else if (page_type === 'jail') {
     should_reload = process_data_jail(data);
-  } else if (page_type == 'index') {
+  } else if (page_type === 'index') {
     should_reload = process_data_index(data);
   } else {
     should_reload = false;
@@ -984,7 +984,7 @@ function fix_viewport() {
   let minimum_width;
 
   minimum_width = parseInt($('body').css('min-width'));
-  if (minimum_width != 0 && window.innerWidth < minimum_width) {
+  if (minimum_width !== 0 && window.innerWidth < minimum_width) {
     $('meta[name=viewport]').attr('content', `width=${minimum_width}`);
   } else {
     $('meta[name=viewport]').attr(
@@ -1101,7 +1101,7 @@ function setup_build() {
         sType: 'numeric',
         sWidth: '2em',
         render(data, type, row) {
-          return type == 'display' ? format_skipped(data, row[1]) : data;
+          return type === 'display' ? format_skipped(data, row[1]) : data;
         },
       },
       {
@@ -1126,7 +1126,7 @@ function setup_build() {
         sWidth: '2em',
         sType: 'numeric',
         render(data, type, row) {
-          return type == 'display' ? format_skipped(data, row[1]) : data;
+          return type === 'display' ? format_skipped(data, row[1]) : data;
         },
       },
       {
@@ -1185,7 +1185,7 @@ function setup_jail() {
     {
       data: 'buildname',
       render(data, type, row) {
-        return type == 'display'
+        return type === 'display'
           ? format_buildname(page_mastername, data)
           : data;
       },
@@ -1227,7 +1227,7 @@ function setup_jail() {
       },
     ],
     createdRow(row, data, index) {
-      if (data.buildname == $('#latest_build').text()) {
+      if (data.buildname === $('#latest_build').text()) {
         $('td.latest').removeClass('latest');
         $('td', row).addClass('latest');
       }
@@ -1256,14 +1256,14 @@ function setup_index() {
     {
       data: 'mastername',
       render(data, type, row) {
-        return type == 'display' ? format_mastername(data) : data;
+        return type === 'display' ? format_mastername(data) : data;
       },
       sWidth: '22em',
     },
     {
       data: 'buildname',
       render(data, type, row) {
-        return type == 'display'
+        return type === 'display'
           ? format_buildname(row.mastername, data)
           : data;
       },
@@ -1272,7 +1272,7 @@ function setup_index() {
     {
       data: 'jailname',
       render(data, type, row) {
-        return type == 'display' ? format_jailname(data) : data;
+        return type === 'display' ? format_jailname(data) : data;
       },
       sWidth: '10em',
       visible: false,
@@ -1280,7 +1280,7 @@ function setup_index() {
     {
       data: 'setname',
       render(data, type, row) {
-        return type == 'display' ? format_setname(data) : data;
+        return type === 'display' ? format_setname(data) : data;
       },
       sWidth: '10em',
       visible: false,
@@ -1288,7 +1288,7 @@ function setup_index() {
     {
       data: 'ptname',
       render(data, type, row) {
-        return type == 'display' ? format_ptname(data) : data;
+        return type === 'display' ? format_ptname(data) : data;
       },
       sWidth: '10em',
       visible: false,
@@ -1360,14 +1360,14 @@ $(document).ready(() => {
   pathname = location.pathname.substring(
     location.pathname.lastIndexOf('/') + 1,
   );
-  if (pathname == '') {
+  if (pathname === '') {
     page_type = 'index';
   } else {
     page_type = pathname.substr(0, pathname.length - 5);
   }
 
-  if (page_type == 'build') {
-    if (server_style == 'hosted') {
+  if (page_type === 'build') {
+    if (server_style === 'hosted') {
       page_mastername = getParameterByName('mastername');
       page_buildname = getParameterByName('build');
       if (!page_mastername || !page_buildname) {
@@ -1382,13 +1382,13 @@ $(document).ready(() => {
         $(this).attr('href', data_url + href);
       });
       $('#master_link').attr('href', jail_url(page_mastername));
-    } else if (server_style == 'inline') {
+    } else if (server_style === 'inline') {
       $('#master_link').attr('href', '../');
       $('#index_link').attr('href', '../../');
     }
     setup_build();
-  } else if (page_type == 'jail') {
-    if (server_style == 'hosted') {
+  } else if (page_type === 'jail') {
+    if (server_style === 'hosted') {
       page_mastername = getParameterByName('mastername');
       if (!page_mastername) {
         $('#loading p')
@@ -1402,12 +1402,12 @@ $(document).ready(() => {
         $(this).attr('href', data_url + href);
       });
       $('#latest_url').attr('href', build_url(page_mastername, 'latest'));
-    } else if (server_style == 'inline') {
+    } else if (server_style === 'inline') {
       $('#index_link').attr('href', '../');
     }
     setup_jail();
-  } else if (page_type == 'index') {
-    if (server_style == 'hosted') {
+  } else if (page_type === 'index') {
+    if (server_style === 'hosted') {
       data_url = 'data/';
       $('a.data_url').each(() => {
         const href = $(this).attr('href');
@@ -1429,10 +1429,10 @@ $(document).ready(() => {
    * times. */
   $('#header .nav a[href^="#"]').each(() => {
     const href = $(this).attr('href');
-    if (href != '#') {
+    if (href !== '#') {
       $(this).on('click', (e) => {
         e.preventDefault();
-        if (location.hash != href) {
+        if (location.hash !== href) {
           location.hash = href;
         }
         scrollToElement(href);
@@ -1455,7 +1455,7 @@ $(document).ready(() => {
 
 $(document).on('keydown', (e) => {
   /* Disable F5 refreshing since this is AJAX driven. */
-  if (e.which == 116) {
+  if (e.which === 116) {
     e.preventDefault();
   }
 });
