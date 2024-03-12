@@ -41,7 +41,7 @@ const impulseFirstInterval = impulseFirstPeriod / updateInterval;
 const impulseInterval = impulseTargetPeriod / updateInterval;
 let pageType;
 let pageBuildName;
-let page_mastername;
+let pageMasterName;
 let data_url = '';
 
 function getParameterByName(name) {
@@ -232,7 +232,7 @@ function format_mastername(mastername) {
     return '';
   }
 
-  if (page_mastername && mastername === page_mastername && pageType === 'jail') {
+  if (pageMasterName && mastername === pageMasterName && pageType === 'jail') {
     html = `<a href="#top" onclick="scrollToElement('#top'); return false;">${
       mastername
     }</a>`;
@@ -285,8 +285,8 @@ function format_buildname(mastername, buildname) {
   }
 
   if (
-    page_mastername
-    && mastername === page_mastername
+    pageMasterName
+    && mastername === pageMasterName
     && pageBuildName
     && buildname === pageBuildName
     && pageType === 'build'
@@ -541,7 +541,7 @@ function process_data_build(data) {
 
   // Redirect from /latest/ to the actual build.
   if (pageBuildName === 'latest') {
-    window.location.href = build_url(page_mastername, data.buildname);
+    window.location.href = build_url(pageMasterName, data.buildname);
     return undefined;
   }
 
@@ -873,7 +873,7 @@ function process_data(data) {
   }
 
   if (data.mastername) {
-    page_mastername = data.mastername;
+    pageMasterName = data.mastername;
   }
 
   if (pageType === 'build') {
@@ -1107,7 +1107,7 @@ function setup_jail() {
       data: 'buildname',
       render(data, type) {
         return type === 'display'
-          ? format_buildname(page_mastername, data)
+          ? format_buildname(pageMasterName, data)
           : data;
       },
       sWidth: '12em',
@@ -1282,20 +1282,20 @@ $(document).ready(() => {
 
   if (pageType === 'build') {
     if (serverStyle === 'hosted') {
-      page_mastername = getParameterByName('mastername');
+      pageMasterName = getParameterByName('mastername');
       pageBuildName = getParameterByName('build');
-      if (!page_mastername || !pageBuildName) {
+      if (!pageMasterName || !pageBuildName) {
         $('#loading p')
           .text('Invalid request. Mastername and Build required.')
           .addClass('error');
         return;
       }
-      data_url = `data/${page_mastername}/${pageBuildName}/`;
+      data_url = `data/${pageMasterName}/${pageBuildName}/`;
       $('a.data_url').each(() => {
         const href = $(this).attr('href');
         $(this).attr('href', data_url + href);
       });
-      $('#master_link').attr('href', jail_url(page_mastername));
+      $('#master_link').attr('href', jail_url(pageMasterName));
     } else if (serverStyle === 'inline') {
       $('#master_link').attr('href', '../');
       $('#index_link').attr('href', '../../');
@@ -1303,19 +1303,19 @@ $(document).ready(() => {
     setup_build();
   } else if (pageType === 'jail') {
     if (serverStyle === 'hosted') {
-      page_mastername = getParameterByName('mastername');
-      if (!page_mastername) {
+      pageMasterName = getParameterByName('mastername');
+      if (!pageMasterName) {
         $('#loading p')
           .text('Invalid request. Mastername required.')
           .addClass('error');
         return;
       }
-      data_url = `data/${page_mastername}/`;
+      data_url = `data/${pageMasterName}/`;
       $('a.data_url').each(() => {
         const href = $(this).attr('href');
         $(this).attr('href', data_url + href);
       });
-      $('#latest_url').attr('href', build_url(page_mastername, 'latest'));
+      $('#latest_url').attr('href', build_url(pageMasterName, 'latest'));
     } else if (serverStyle === 'inline') {
       $('#index_link').attr('href', '../');
     }
