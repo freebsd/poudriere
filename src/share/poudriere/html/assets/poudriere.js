@@ -489,14 +489,14 @@ function formatStatusRow(status, row, n) {
   return tableRow;
 }
 
-function DTRow(tableID, divID) {
-  this.Table = $(`#${tableID}`).DataTable();
-  this.new_rows = [];
-  this.first_load = this.Table.row(0).length === 0;
-  this.div_id = divID;
-}
+class DTRow {
+  constructor(tableID, divID) {
+    this.Table = $(`#${tableID}`).DataTable();
+    this.new_rows = [];
+    this.first_load = this.Table.row(0).length === 0;
+    this.div_id = divID;
+  }
 
-DTRow.prototype = {
   queue(rowInput) {
     const row = rowInput;
     let existingRow;
@@ -521,7 +521,8 @@ DTRow.prototype = {
       /* Otherwise add it. */
       this.new_rows.push(row);
     }
-  },
+  }
+
   commit() {
     if (this.new_rows.length) {
       const nodes = this.Table.rows.add(this.new_rows).draw().nodes();
@@ -531,8 +532,8 @@ DTRow.prototype = {
         nodes.to$().hide().fadeIn(1500);
       }
     }
-  },
-};
+  }
+}
 
 function processDataBuild(dataInput) {
   const data = dataInput;
