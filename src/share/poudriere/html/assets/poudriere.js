@@ -424,7 +424,7 @@ function translateStatus(status) {
   return status;
 }
 
-function format_skipped(skipped_cnt, pkgname) {
+function formatSkipped(skipped_cnt, pkgname) {
   if (skipped_cnt === undefined || skipped_cnt === 0) {
     return 0;
   }
@@ -1023,7 +1023,7 @@ function setup_build() {
         sType: 'numeric',
         sWidth: '2em',
         render(data, type, row) {
-          return type === 'display' ? format_skipped(data, row[1]) : data;
+          return type === 'display' ? formatSkipped(data, row[1]) : data;
         },
       },
       {
@@ -1048,7 +1048,7 @@ function setup_build() {
         sWidth: '2em',
         sType: 'numeric',
         render(data, type, row) {
-          return type === 'display' ? format_skipped(data, row[1]) : data;
+          return type === 'display' ? formatSkipped(data, row[1]) : data;
         },
       },
       {
