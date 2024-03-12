@@ -225,7 +225,7 @@ function jailURL(mastername) {
   return '../';
 }
 
-function format_mastername(mastername) {
+function formatMasterName(mastername) {
   let html;
 
   if (!mastername) {
@@ -552,7 +552,7 @@ function process_data_build(data) {
 
   document.title = `Poudriere bulk results for ${data.mastername} ${data.buildname}`;
 
-  $('#mastername').html(format_mastername(data.mastername));
+  $('#mastername').html(formatMasterName(data.mastername));
   $('#buildname').html(format_buildname(data.mastername, data.buildname));
   $('#jail').html(format_jailname(data.jailname));
   $('#setname').html(format_setname(data.setname));
@@ -761,7 +761,7 @@ function process_data_jail(data) {
     }
 
     if (latest) {
-      $('#mastername').html(format_mastername(latest.mastername));
+      $('#mastername').html(formatMasterName(latest.mastername));
       $('#status').text(translate_status(latest.status));
       $('#jail').html(format_jailname(latest.jailname));
       $('#setname').html(format_setname(latest.setname));
@@ -1172,7 +1172,7 @@ function setup_index() {
     {
       data: 'mastername',
       render(data, type) {
-        return type === 'display' ? format_mastername(data) : data;
+        return type === 'display' ? formatMasterName(data) : data;
       },
       sWidth: '22em',
     },
