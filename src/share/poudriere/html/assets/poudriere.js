@@ -1095,7 +1095,7 @@ function setupBuild() {
   }
 }
 
-function setup_jail() {
+function setupJail() {
   const stat_column = {
     sWidth: '1em',
     sType: 'numeric',
@@ -1319,7 +1319,7 @@ $(document).ready(() => {
     } else if (serverStyle === 'inline') {
       $('#index_link').attr('href', '../');
     }
-    setup_jail();
+    setupJail();
   } else if (pageType === 'index') {
     if (serverStyle === 'hosted') {
       dataURL = 'data/';
