@@ -46,7 +46,7 @@ let page_mastername;
 let data_url = '';
 
 function getParameterByName(name) {
-  name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+  name = name.replace(/[[]/, '\\[').replace(/[\]]/, '\\]');
   const regex = new RegExp(`[\\?&]${name}=([^&#]*)`);
   const results = regex.exec(window.location.search);
   return results == null
