@@ -28,7 +28,7 @@
 const serverStyle = 'hosted';
 
 const updateInterval = 8;
-let first_run = true;
+let firstRun = true;
 let load_attempts = 0;
 const max_load_attempts = 8;
 const first_load_interval = 2;
@@ -886,7 +886,7 @@ function process_data(data) {
     should_reload = false;
   }
 
-  if (first_run) {
+  if (firstRun) {
     /* Resize due to full content. */
     do_resize($(window));
     // Hide loading overlay
@@ -895,7 +895,7 @@ function process_data(data) {
     if (window.location.hash) {
       scrollToElement(window.location.hash);
     }
-    first_run = false;
+    firstRun = false;
   }
 
   if (should_reload) {
