@@ -375,7 +375,7 @@ function formatStartToEnd(start, end) {
   return formatDuration(duration);
 }
 
-function filter_skipped(pkgname) {
+function filterSkipped(pkgname) {
   scrollToElement('#skipped');
   const table = $('#skipped_table').dataTable();
   table.fnFilter(pkgname, 3);
