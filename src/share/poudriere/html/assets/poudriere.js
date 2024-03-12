@@ -180,7 +180,7 @@ function displayPkgHour(stats, snap) {
   $('#snap_pkghour').html(pkghour);
 }
 
-function display_impulse(stats, snap) {
+function displayImpulse(stats, snap) {
   let pkghour; let tail; let d_pkgs; let d_secs; let title;
 
   const attempted = parseInt(stats.built, 10) + parseInt(stats.failed, 10);
@@ -637,7 +637,7 @@ function process_data_build(data) {
         $(`#snap_${stat}`).html(count);
       });
       displayPkgHour(data.stats, data.snap);
-      display_impulse(data.stats, data.snap);
+      displayImpulse(data.stats, data.snap);
       $('#snap').fadeIn(1400);
     }
   }
