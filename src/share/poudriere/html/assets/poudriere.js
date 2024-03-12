@@ -616,7 +616,7 @@ function process_data_build(data) {
   // Redirect from /latest/ to the actual build.
   if (page_buildname === 'latest') {
     window.location.href = build_url(page_mastername, data.buildname);
-    return;
+    return undefined;
   }
 
   if (data.stats) {
