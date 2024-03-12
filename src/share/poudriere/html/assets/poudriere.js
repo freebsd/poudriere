@@ -724,50 +724,46 @@ function processDataBuild(dataInput) {
 }
 
 function processDataJail(data) {
-  let row; let build; let buildname; let stat; let types; let latest; let remaining; let count; let
+  let row; let build; let types; let latest; let remaining; let count; let
     dtrow;
 
   if (data.builds) {
     types = ['queued', 'built', 'failed', 'skipped', 'ignored', 'fetched'];
     dtrow = new DTRow('builds_table', 'builds_div');
-    for (buildname in data.builds) {
-      if (buildname !== undefined) {
-        row = {};
+    Object.keys(data.builds).forEach((bundleNameID) => {
+      row = {};
 
-        build = data.builds[buildname];
-        if (buildname === 'latest') {
-          latest = data.builds[build];
-          continue;
-        }
+      build = data.builds[bundleNameID];
+      if (bundleNameID === 'latest') {
+        latest = data.builds[build];
+        return;
+      }
 
-        row.id = buildname;
-        row.buildname = buildname;
-        for (stat in types) {
-          if (stat !== undefined) {
-            count = build.stats && build.stats[types[stat]] !== undefined
-              ? parseInt(build.stats[types[stat]], 10)
-              : 0;
-            row[`stat_${types[stat]}`] = Number.isNaN(count) ? 0 : count;
-          }
-        }
-        remaining = build.stats
-          ? parseInt(build.stats.queued, 10)
+      row.id = bundleNameID;
+      row.buildname = bundleNameID;
+      Object.keys(types).forEach((statID) => {
+        count = build.stats && build.stats[types[statID]] !== undefined
+          ? parseInt(build.stats[types[statID]], 10)
+          : 0;
+        row[`stat_${types[statID]}`] = Number.isNaN(count) ? 0 : count;
+      });
+      remaining = build.stats
+        ? parseInt(build.stats.queued, 10)
           - (parseInt(build.stats.built, 10)
             + parseInt(build.stats.failed, 10)
             + parseInt(build.stats.skipped, 10)
             + parseInt(build.stats.ignored, 10)
             + parseInt(build.stats.fetched, 10))
-          : 0;
-        if (Number.isNaN(remaining)) {
-          remaining = 0;
-        }
-        row.stat_remaining = remaining;
-        row.status = translateStatus(build.status);
-        row.elapsed = build.elapsed ? build.elapsed : '';
-
-        dtrow.queue(row);
+        : 0;
+      if (Number.isNaN(remaining)) {
+        remaining = 0;
       }
-    }
+      row.stat_remaining = remaining;
+      row.status = translateStatus(build.status);
+      row.elapsed = build.elapsed ? build.elapsed : '';
+
+      dtrow.queue(row);
+    });
 
     if (latest) {
       $('#mastername').html(formatMasterName(latest.mastername));
@@ -793,47 +789,43 @@ function processDataJail(data) {
 }
 
 function processDataIndex(data) {
-  let master; let mastername; let stat; let types; let remaining;
+  let master; let types; let remaining;
   let row; let count; let dtrow;
 
   if (data.masternames) {
     types = ['queued', 'built', 'failed', 'skipped', 'ignored', 'fetched'];
     dtrow = new DTRow('latest_builds_table', 'latest_builds_div');
-    for (mastername in data.masternames) {
-      if (mastername !== undefined) {
-        row = {};
-        master = data.masternames[mastername].latest;
+    Object.keys(data.masternames).forEach((masterNameID) => {
+      row = {};
+      master = data.masternames[masterNameID].latest;
 
-        row.id = master.mastername;
-        row.portset = formatPortSet(master.ptname, master.setname);
-        row.mastername = master.mastername;
-        row.buildname = master.buildname;
-        row.jailname = master.jailname;
-        row.setname = master.setname;
-        row.ptname = master.ptname;
-        for (stat in types) {
-          if (stat !== undefined) {
-            count = master.stats && master.stats[types[stat]] !== undefined
-              ? parseInt(master.stats[types[stat]], 10)
-              : 0;
-            row[`stat_${types[stat]}`] = Number.isNaN(count) ? 0 : count;
-          }
-        }
-        remaining = master.stats
-          ? parseInt(master.stats.queued, 10)
+      row.id = master.mastername;
+      row.portset = formatPortSet(master.ptname, master.setname);
+      row.mastername = master.mastername;
+      row.buildname = master.buildname;
+      row.jailname = master.jailname;
+      row.setname = master.setname;
+      row.ptname = master.ptname;
+      Object.keys(types).forEach((statID) => {
+        count = master.stats && master.stats[types[statID]] !== undefined
+          ? parseInt(master.stats[types[statID]], 10)
+          : 0;
+        row[`stat_${types[statID]}`] = Number.isNaN(count) ? 0 : count;
+      });
+      remaining = master.stats
+        ? parseInt(master.stats.queued, 10)
           - (parseInt(master.stats.built, 10)
             + parseInt(master.stats.failed, 10)
             + parseInt(master.stats.skipped, 10)
             + parseInt(master.stats.ignored, 10)
             + parseInt(master.stats.fetched, 10))
-          : 0;
-        row.stat_remaining = Number.isNaN(remaining) ? 0 : remaining;
-        row.status = translateStatus(master.status);
-        row.elapsed = master.elapsed ? master.elapsed : '';
+        : 0;
+      row.stat_remaining = Number.isNaN(remaining) ? 0 : remaining;
+      row.status = translateStatus(master.status);
+      row.elapsed = master.elapsed ? master.elapsed : '';
 
-        dtrow.queue(row);
-      }
-    }
+      dtrow.queue(row);
+    });
     dtrow.commit();
   }
 
@@ -956,7 +948,6 @@ function fixViewport() {
 
 function setupBuild() {
   let status;
-  let i;
 
   $('#builders_table').dataTable({
     bFilter: false,
@@ -1088,24 +1079,22 @@ function setupBuild() {
     'remaining',
     'queued',
   ];
-  for (i in types) {
-    if (i !== undefined) {
-      status = types[i];
-      $(`#${status}_table`).dataTable({
-        bAutoWidth: false,
-        processing: true, // Show processing icon
-        deferRender: true, // Defer creating TR/TD until needed
-        aoColumns: columns[status],
-        stateSave: true, // Enable cookie for keeping state
-        lengthMenu: [
-          [5, 10, 25, 50, 100, 200, -1],
-          [5, 10, 25, 50, 100, 200, 'All'],
-        ],
-        pageLength: 10,
-        order: [[0, 'asc']], // Sort by build order
-      });
-    }
-  }
+  Object.keys(types).forEach((i) => {
+    status = types[i];
+    $(`#${status}_table`).dataTable({
+      bAutoWidth: false,
+      processing: true, // Show processing icon
+      deferRender: true, // Defer creating TR/TD until needed
+      aoColumns: columns[status],
+      stateSave: true, // Enable cookie for keeping state
+      lengthMenu: [
+        [5, 10, 25, 50, 100, 200, -1],
+        [5, 10, 25, 50, 100, 200, 'All'],
+      ],
+      pageLength: 10,
+      order: [[0, 'asc']], // Sort by build order
+    });
+  });
 }
 
 function setupJail() {
