@@ -97,7 +97,7 @@ function formatPkgName(pkgname) {
   return pkgname;
 }
 
-function determine_canvas_width() {
+function determineCanvasWidth() {
   let width;
 
   /* Determine width by how much space the column has, minus the size of
@@ -546,7 +546,7 @@ function process_data_build(data) {
   }
 
   if (data.stats) {
-    determine_canvas_width();
+    determineCanvasWidth();
     update_canvas(data.stats);
   }
 
@@ -836,7 +836,7 @@ function process_data_index(data) {
 function do_resize() {
   /* Redraw canvas to new width */
   if ($('#stats').data()) {
-    determine_canvas_width();
+    determineCanvasWidth();
     update_canvas($('#stats').data());
   }
   /* Resize padding for navbar/footer heights */
