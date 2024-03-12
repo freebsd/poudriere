@@ -307,7 +307,7 @@ function formatBuildName(mastername, buildname) {
   return html;
 }
 
-function format_portset(ptname, setname) {
+function formatPortSet(ptname, setname) {
   return ptname + (setname ? '-' : '') + setname;
 }
 
@@ -796,7 +796,7 @@ function process_data_index(data) {
         master = data.masternames[mastername].latest;
 
         row.id = master.mastername;
-        row.portset = format_portset(master.ptname, master.setname);
+        row.portset = formatPortSet(master.ptname, master.setname);
         row.mastername = master.mastername;
         row.buildname = master.buildname;
         row.jailname = master.jailname;
