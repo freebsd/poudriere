@@ -110,7 +110,7 @@ function determineCanvasWidth() {
   canvasWidth = width;
 }
 
-function update_canvas(stats) {
+function updateCanvas(stats) {
   let pctdone;
   let height; let width;
   let pctdonetxt;
@@ -547,7 +547,7 @@ function process_data_build(data) {
 
   if (data.stats) {
     determineCanvasWidth();
-    update_canvas(data.stats);
+    updateCanvas(data.stats);
   }
 
   document.title = `Poudriere bulk results for ${data.mastername} ${data.buildname}`;
@@ -837,7 +837,7 @@ function do_resize() {
   /* Redraw canvas to new width */
   if ($('#stats').data()) {
     determineCanvasWidth();
-    update_canvas($('#stats').data());
+    updateCanvas($('#stats').data());
   }
   /* Resize padding for navbar/footer heights */
   $('body')
