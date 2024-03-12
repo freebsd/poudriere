@@ -528,7 +528,7 @@ DTRow.prototype = {
   },
 };
 
-function process_data_build(data) {
+function processDataBuild(data) {
   let n; let table_rows; let status; let builder; let now; let row; let dtrow;
 
   if (data.snap && data.snap.now) {
@@ -877,7 +877,7 @@ function process_data(data) {
   }
 
   if (pageType === 'build') {
-    should_reload = process_data_build(data);
+    should_reload = processDataBuild(data);
   } else if (pageType === 'jail') {
     should_reload = process_data_jail(data);
   } else if (pageType === 'index') {
