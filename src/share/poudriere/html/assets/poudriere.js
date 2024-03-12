@@ -45,8 +45,8 @@ let pageMasterName;
 let dataURL = '';
 
 function getParameterByName(name) {
-  name = name.replace(/[[]/, '\\[').replace(/[\]]/, '\\]');
-  const regex = new RegExp(`[\\?&]${name}=([^&#]*)`);
+  const tmpName = name.replace(/[[]/, '\\[').replace(/[\]]/, '\\]');
+  const regex = new RegExp(`[\\?&]${tmpName}=([^&#]*)`);
   const results = regex.exec(window.location.search);
   return results == null
     ? ''
@@ -71,11 +71,12 @@ function formatOrigin(origin, flavor) {
   }
 
   const data = origin.split('/');
+  let resultFlavor = '';
 
   if (flavor) {
-    flavor = `@${flavor}`;
+    resultFlavor = `@${flavor}`;
   } else {
-    flavor = '';
+    resultFlavor = '';
   }
 
   return (
@@ -88,7 +89,7 @@ function formatOrigin(origin, flavor) {
     }/"><span `
     + `class="glyphicon glyphicon-tasks"></span>${
       origin
-    }${flavor
+    }${resultFlavor
     }</a>`
   );
 }
@@ -334,9 +335,9 @@ function formatDuration(duration) {
   }
 
   hours = Math.floor(duration / 3600);
-  duration -= hours * 3600;
-  minutes = Math.floor(duration / 60);
-  seconds = duration - minutes * 60;
+  const tmpDuration = duration - hours * 3600;
+  minutes = Math.floor(tmpDuration / 60);
+  seconds = tmpDuration - minutes * 60;
 
   if (hours < 10) {
     hours = `0${hours}`;
@@ -357,15 +358,15 @@ function formatStartToEnd(start, end) {
   if (!start) {
     return '';
   }
-  start = parseInt(start, 10);
-  if (Number.isNaN(start)) {
+  const startStr = parseInt(start, 10);
+  if (Number.isNaN(startStr)) {
     return '';
   }
 
   if (end === undefined) {
-    duration = start;
+    duration = startStr;
   } else {
-    duration = end - start;
+    duration = end - startStr;
   }
 
   if (duration < 0) {
@@ -407,21 +408,23 @@ function translateStatus(status) {
   }
 
   const a = status.split(':');
+  let translatedStatus;
+
   if (a[0] === 'stopped') {
     if (a.length >= 3) {
-      status = `${a[0]}:${a[1]}:${a[2]}`;
+      translatedStatus = `${a[0]}:${a[1]}:${a[2]}`;
     } else if (a.length >= 2) {
-      status = `${a[0]}:${a[1]}`;
+      translatedStatus = `${a[0]}:${a[1]}`;
     } else {
-      status = `${a[0]}:`;
+      translatedStatus = `${a[0]}:`;
     }
   } else if (a.length >= 2) {
-    status = `${a[0]}:${a[1]}`;
+    translatedStatus = `${a[0]}:${a[1]}`;
   } else {
-    status = `${a[0]}:`;
+    translatedStatus = `${a[0]}:`;
   }
 
-  return status;
+  return translatedStatus;
 }
 
 function formatSkipped(skippedCnt, pkgname) {
@@ -492,7 +495,8 @@ function DTRow(tableID, divID) {
 }
 
 DTRow.prototype = {
-  queue(row) {
+  queue(rowInput) {
+    const row = rowInput;
     let existingRow;
 
     /* Is this entry already in the list? If so need to
@@ -528,7 +532,8 @@ DTRow.prototype = {
   },
 };
 
-function processDataBuild(data) {
+function processDataBuild(dataInput) {
+  const data = dataInput;
   let n; let tableRows; let status; let builder; let now; let row; let dtrow;
 
   if (data.snap && data.snap.now) {
@@ -621,20 +626,22 @@ function processDataBuild(data) {
   /* Stats */
   if (data.stats) {
     $.each(data.stats, (stat, count) => {
+      let newCount = count;
       if (stat === 'elapsed') {
-        count = formatStartToEnd(count);
+        newCount = formatStartToEnd(count);
       }
-      $(`#stats_${stat}`).html(count);
+      $(`#stats_${stat}`).html(newCount);
     });
     $('#stats').data(data.stats);
     $('#stats').fadeIn(1400);
 
     if (data.snap) {
       $.each(data.snap, (stat, count) => {
+        let newCount = count;
         if (stat === 'elapsed') {
-          count = formatStartToEnd(count);
+          newCount = formatStartToEnd(count);
         }
-        $(`#snap_${stat}`).html(count);
+        $(`#snap_${stat}`).html(newCount);
       });
       displayPkgHour(data.stats, data.snap);
       displayImpulse(data.stats, data.snap);
