@@ -132,7 +132,7 @@ firmware_generate()
 		fi
 	fi
 	espfilename=$(mktemp /tmp/efiboot.XXXXXX)
-	make_esp_file ${espfilename} ${ESP_SIZE} ${WRKDIR}/world/boot/loader.efi
+	make_esp_file ${espfilename} ${ESP_SIZE} ${WRKDIR}/world/boot/gptboot.efi
 	mkimg -s gpt -C ${IMAGESIZE} -b ${mnt}/boot/pmbr \
 		-p efi:=${espfilename} \
 		-p freebsd-boot:=${mnt}/boot/gptboot \
