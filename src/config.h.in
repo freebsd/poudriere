@@ -3,7 +3,7 @@
 /* Define to 1 if you have the <ctype.h> header file. */
 #undef HAVE_CTYPE_H
 
-/* Define to 1 if you have the declaration of `F_DUPFD_CLOEXEC', and to 0 if
+/* Define to 1 if you have the declaration of 'F_DUPFD_CLOEXEC', and to 0 if
    you don't. */
 #undef HAVE_DECL_F_DUPFD_CLOEXEC
 
@@ -19,7 +19,7 @@
 /* Define to 1 if you have the <float.h> header file. */
 #undef HAVE_FLOAT_H
 
-/* Define to 1 if you have the `funlinkat' function. */
+/* Define to 1 if you have the 'funlinkat' function. */
 #undef HAVE_FUNLINKAT
 
 /* Define to 1 if you have the <inttypes.h> header file. */
@@ -52,10 +52,10 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
-/* Define to 1 if you have the `strchrnul' function. */
+/* Define to 1 if you have the 'strchrnul' function. */
 #undef HAVE_STRCHRNUL
 
-/* Define to 1 if you have the `strftime_l' function. */
+/* Define to 1 if you have the 'strftime_l' function. */
 #undef HAVE_STRFTIME_L
 
 /* Define to 1 if you have the <strings.h> header file. */
@@ -82,7 +82,7 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define to 1 if you have the `utimensat' function. */
+/* Define to 1 if you have the 'utimensat' function. */
 #undef HAVE_UTIMENSAT
 
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
@@ -112,7 +112,7 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* Define to 1 if all of the C90 standard headers exist (not just the ones
+/* Define to 1 if all of the C89 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
