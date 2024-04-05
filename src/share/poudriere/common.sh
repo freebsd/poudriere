@@ -3628,7 +3628,7 @@ download_from_repo_check_pkg() {
 	local output="${10}"
 	local pkgbase bpkg selected_options remote_options found
 	local run_deps lib_deps raw_deps dep dep_pkgname local_deps remote_deps
-	local remote_abi remote_osversion remote_prefix prefix
+	local remote_abi remote_osversion remote_prefix prefix no_arch
 
 	# The options checks here are not optimized because we lack goto.
 	pkgbase="${pkgname%-*}"
@@ -3665,13 +3665,15 @@ download_from_repo_check_pkg() {
 	# ABI
 	remote_abi=$(awk -v pkgname="${pkgname}" -vpkgbase="${pkgbase}" \
 	    '$1 == pkgbase {print $2; exit}' "${remote_all_abi}")
+	if shash_get pkgname-no_arch "${pkgname}" no_arch; then
+		abi="${abi%:*}:*"
+	fi
 	case "${abi}" in
-	${remote_abi}) ;;
+	"${remote_abi}") ;;
 	*)
 		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: remote ABI mismatch: ${remote_abi} (want: ${abi})"
 		return
 		;;
-	*)
 	esac
 
 	if [ "${IGNORE_OSVERSION-}" != "yes" ]; then
