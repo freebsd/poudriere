@@ -1095,21 +1095,25 @@ buildlog_start() {
 	echo "port revision: ${mk_PORTREVISION}"
 	echo "Makefile datestamp: $(injail ls -l "${portdir}/Makefile")"
 
-	if shash_get ports_metadata top_git_hash git_hash; then
-		echo "Ports top last git commit: ${git_hash}"
-		pkg_note_add "${pkgname}" ports_top_git_hash "${git_hash}"
-		shash_get ports_metadata top_unclean git_modified
-		pkg_note_add "${pkgname}" ports_top_checkout_unclean \
-		    "${git_modified}"
-		echo "Ports top unclean checkout: ${git_modified}"
-	fi
-	if git_get_hash_and_dirty "${mnt:?}/${portdir:?}" \
-	    git_hash git_modified; then
-		echo "Port dir last git commit: ${git_hash}"
-		pkg_note_add "${pkgname}" port_git_hash "${git_hash}"
-		pkg_note_add "${pkgname}" port_checkout_unclean "${git_modified}"
-		echo "Port dir unclean checkout: ${git_modified}"
-	fi
+	case "${NO_GIT:+set}" in
+	"")
+		if shash_get ports_metadata top_git_hash git_hash; then
+			echo "Ports top last git commit: ${git_hash}"
+			pkg_note_add "${pkgname}" ports_top_git_hash "${git_hash}"
+			shash_get ports_metadata top_unclean git_modified
+			pkg_note_add "${pkgname}" ports_top_checkout_unclean \
+			    "${git_modified}"
+			echo "Ports top unclean checkout: ${git_modified}"
+		fi
+		if git_get_hash_and_dirty "${mnt:?}/${portdir:?}" \
+		    git_hash git_modified; then
+			echo "Port dir last git commit: ${git_hash}"
+			pkg_note_add "${pkgname}" port_git_hash "${git_hash}"
+			pkg_note_add "${pkgname}" port_checkout_unclean "${git_modified}"
+			echo "Port dir unclean checkout: ${git_modified}"
+		fi
+		;;
+	esac
 	echo "Poudriere version: ${POUDRIERE_PKGNAME}"
 	case "${PKG_REPRODUCIBLE}" in
 	"yes") ;;
@@ -4364,7 +4368,9 @@ download_from_repo_make_log() {
 		_log_path log
 		_logfile logfile "${pkgname}"
 		{
-			buildlog_start "${pkgname}" "${originspec}"
+			local NO_GIT
+
+			NO_GIT=1 buildlog_start "${pkgname}" "${originspec}"
 			print_phase_header "poudriere"
 			echo "Fetched from ${packagesite}"
 			print_phase_footer
@@ -8948,7 +8954,9 @@ trim_ignored_pkg() {
 		_log_path log
 		_logfile logfile "${pkgname}"
 		{
-			buildlog_start "${pkgname}" "${originspec}"
+			local NO_GIT
+
+			NO_GIT=1 buildlog_start "${pkgname}" "${originspec}"
 			print_phase_header "check-sanity"
 			echo "Ignoring: ${ignore}"
 			print_phase_footer
