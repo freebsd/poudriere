@@ -9831,7 +9831,7 @@ case "${WRKDIR_ARCHIVE_FORMAT}" in
 esac
 
 #Converting portstree if any
-if [ ! -d ${POUDRIERED}/ports ]; then
+if [ ! -d "${POUDRIERED:?}/ports" ] &&  [ ! -L "${POUDRIERED:?}/ports" ]; then
 	mkdir -p ${POUDRIERED}/ports
 	case "${NO_ZFS:+set}" in
 	set) ;;
