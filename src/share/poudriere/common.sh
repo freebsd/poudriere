@@ -1959,8 +1959,10 @@ jail_runs() {
 porttree_list() {
 	local name method p trees
 
-	[ -d ${POUDRIERED}/ports ] || return 0
-	trees="$(find "${POUDRIERED:?}/ports" -type d \
+	[ -d "${POUDRIERED:?}/ports" ] ||
+	    [ -L "${POUDRIERED:?}/ports" ] ||
+	    return 0
+	trees="$(find "${POUDRIERED:?}/ports/" -type d \
 	    -maxdepth 1 -mindepth 1 -print)" ||
 	    err "${EX_SOFTWARE}" "porttree_list: Failed to find port trees"
 	for p in ${trees}; do
