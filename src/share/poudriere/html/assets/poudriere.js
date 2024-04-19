@@ -481,43 +481,49 @@ function formatStatusRow(status, row, n) {
   const tableRow = [];
 
   tableRow.push(n + 1);
-  if (status === 'built') {
-    tableRow.push(formatPkgName(row.pkgname));
-    tableRow.push(formatOrigin(row.origin, row.flavor));
-    tableRow.push(formatLog(row.pkgname, false, 'success'));
-    tableRow.push(formatDuration(row.elapsed ? row.elapsed : ''));
-  } else if (status === 'failed') {
-    tableRow.push(formatPkgName(row.pkgname));
-    tableRow.push(formatOrigin(row.origin, row.flavor));
-    tableRow.push(row.phase);
-    tableRow.push(row.skipped_cnt);
-    tableRow.push(formatLog(row.pkgname, true, row.errortype));
-    tableRow.push(formatDuration(row.elapsed ? row.elapsed : ''));
-  } else if (status === 'skipped') {
-    tableRow.push(formatPkgName(row.pkgname));
-    tableRow.push(formatOrigin(row.origin, row.flavor));
-    tableRow.push(formatPkgName(row.depends));
-  } else if (status === 'ignored') {
-    tableRow.push(formatPkgName(row.pkgname));
-    tableRow.push(formatOrigin(row.origin, row.flavor));
-    tableRow.push(row.skipped_cnt);
-    tableRow.push(row.reason);
-  } else if (status === 'fetched') {
-    tableRow.push(formatPkgName(row.pkgname));
-    tableRow.push(formatOrigin(row.origin, row.flavor));
-  } else if (status === 'remaining') {
-    tableRow.push(formatPkgName(row.pkgname));
-    tableRow.push(row.status);
-  } else if (status === 'queued') {
-    tableRow.push(formatPkgName(row.pkgname));
-    tableRow.push(formatOrigin(row.origin, row.flavor));
-    if (row.reason === 'listed') {
+
+  try {
+    if (status === 'built') {
+      tableRow.push(formatPkgName(row.pkgname));
+      tableRow.push(formatOrigin(row.origin, row.flavor));
+      tableRow.push(formatLog(row.pkgname, false, 'success'));
+      tableRow.push(formatDuration(row.elapsed ? row.elapsed : ''));
+    } else if (status === 'failed') {
+      tableRow.push(formatPkgName(row.pkgname));
+      tableRow.push(formatOrigin(row.origin, row.flavor));
+      tableRow.push(row.phase);
+      tableRow.push(row.skipped_cnt);
+      tableRow.push(formatLog(row.pkgname, true, row.errortype));
+      tableRow.push(formatDuration(row.elapsed ? row.elapsed : ''));
+    } else if (status === 'skipped') {
+      tableRow.push(formatPkgName(row.pkgname));
+      tableRow.push(formatOrigin(row.origin, row.flavor));
+      tableRow.push(formatPkgName(row.depends));
+    } else if (status === 'ignored') {
+      tableRow.push(formatPkgName(row.pkgname));
+      tableRow.push(formatOrigin(row.origin, row.flavor));
+      tableRow.push(row.skipped_cnt);
       tableRow.push(row.reason);
+    } else if (status === 'fetched') {
+      tableRow.push(formatPkgName(row.pkgname));
+      tableRow.push(formatOrigin(row.origin, row.flavor));
+    } else if (status === 'remaining') {
+      tableRow.push(formatPkgName(row.pkgname));
+      tableRow.push(row.status);
+    } else if (status === 'queued') {
+      tableRow.push(formatPkgName(row.pkgname));
+      tableRow.push(formatOrigin(row.origin, row.flavor));
+
+      if (row.reason === 'listed') {
+        tableRow.push(row.reason);
+      } else {
+        tableRow.push(formatOrigin(row.reason));
+      }
     } else {
-      tableRow.push(formatOrigin(row.reason));
+      throw new Error(`Unknown data type "${status}". Try flushing cache.`);
     }
-  } else {
-    throw new Error(`Unknown data type "${status}". Try flushing cache.`);
+  } catch (err) {
+    console.error(err);
   }
 
   return tableRow;
