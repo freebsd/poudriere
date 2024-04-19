@@ -95,8 +95,7 @@ host_triplet = @host@
 noinst_PROGRAMS = external/sh/mknodes$(EXEEXT) \
 	external/sh/mksyntax$(EXEEXT)
 @MAINTAINER_MODE_TRUE@am__append_1 = -Wextra -Werror
-@ADDRESS_SANITIZER_TRUE@am__append_2 = -fsanitize=address -DADDRESS_SANITIZER -fno-omit-frame-pointer
-@ADDRESS_SANITIZER_TRUE@am__append_3 = -O1
+@ADDRESS_SANITIZER_TRUE@am__append_2 = -fsanitize=address -DADDRESS_SANITIZER -fno-omit-frame-pointer -O1
 pkglibexec_PROGRAMS = clock$(EXEEXT) cpdup$(EXEEXT) dirempty$(EXEEXT) \
 	dirwatch$(EXEEXT) locked_mkdir$(EXEEXT) nc$(EXEEXT) \
 	poudriered$(EXEEXT) ptsort$(EXEEXT) pwait$(EXEEXT) \
@@ -557,7 +556,7 @@ AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
-CFLAGS = @CFLAGS@ $(am__append_3)
+CFLAGS = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 CSCOPE = @CSCOPE@
 CTAGS = @CTAGS@
