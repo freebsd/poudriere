@@ -968,8 +968,10 @@ create_jail() {
 	pkgbase=*)
 		FCT=install_from_pkgbase
 		PKGBASEREPO="${METHOD##*=}"
-		[ -z "${PKGBASEREPO}" ] && \
+		[ -n "${PKGBASEREPO}" ] ||
 		    err 1 "Must specify repository to use -m pkgbase=repodir"
+		[ -n "${SOURCES_URL}" ] ||
+		    err 1 "Must specify URL to use -m pkgbase=repodir with -U"
 		METHOD="${METHOD%%=*}"
 		;;
 	null)
