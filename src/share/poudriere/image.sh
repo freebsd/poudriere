@@ -535,7 +535,14 @@ pwd_mkdb -d ${WRKDIR:?}/world/etc -p ${WRKDIR:?}/world/etc/master.passwd
 
 # Set hostname
 if [ -n "${HOSTNAME}" ]; then
-	sysrc -q -R "${WRKDIR:?}/world" hostname="${HOSTNAME}"
+	# `sysrc -R` tries to run a shell inside the chroot(8).
+	# It may fail if the target is on a different architecture than the host.
+	# In this case, set /etc/rc.conf as the destination for the hostname.
+	if [ "${arch}" == "${host_arch}" ]; then
+		sysrc -q -R "${WRKDIR:?}/world" hostname="${HOSTNAME}"
+	else
+		sysrc -q -f "${WRKDIR:?}/world/etc/rc.conf" hostname="${HOSTNAME}"
+	fi
 fi
 
 msg "Installing packages"
