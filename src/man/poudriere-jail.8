@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd June 17, 2022
+.Dd April 19, 2024
 .Dt POUDRIERE-JAIL 8
 .Os
 .Sh NAME
@@ -225,9 +225,11 @@ It is expected that this directory be installed to with the following:
 It will not be copied at the time of running
 .Dq Li poudriere jail .
 Deleting the jail will attempt to revert any files changed by poudriere.
-.It Cm pkgbase= Ns Ar path
+.It Cm pkgbase= Ns Ar repository_path
 Install from the given pkgbase repository at
-.Ar path .
+.Ar path
+from the given
+.Fl U Ar url .
 .Pp
 Note that building kernel module will not be possible as there is no
 package with the source code.
@@ -356,6 +358,8 @@ Specifies which url to checkout from when using the
 .Cm git
 or
 .Cm svn
+or
+.Cm pkgbase
 methods.
 .It Fl v Ar version
 Specify the
