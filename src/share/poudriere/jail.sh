@@ -92,12 +92,12 @@ EOF
 
 list_jail() {
 	local format
-	local j name version arch method mnt timestamp time jails
+	local j name version arch method mnt timestamp time jails osversion
 
 	if [ ${NAMEONLY} -eq 0 ]; then
-		format='%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%-%ds'
-		display_setup "${format}" "-d -k2,2V -k3,3 -k1,1"
-		display_add "JAILNAME" "VERSION" "ARCH" "METHOD" \
+		format='%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%-%ds'
+		display_setup "${format}" "-d -k2,2V -k4,4 -k1,1"
+		display_add "JAILNAME" "VERSION" "OSVERSION" "ARCH" "METHOD" \
 		    "TIMESTAMP" "PATH"
 	else
 		format='%s'
@@ -117,6 +117,11 @@ list_jail() {
 			_jget method ${name} method
 			_jget mnt ${name} mnt
 			_jget timestamp ${name} timestamp || :
+			if [ -r "${mnt}/sys/sys/param.h" ]; then
+				osversion=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' "${mnt}/sys/sys/param.h")
+			else
+				osversion=
+			fi
 			time=
 			if [ -n "${timestamp}" ]; then
 				time="$(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
@@ -124,7 +129,8 @@ list_jail() {
 			if [ -n "${version_vcs}" ]; then
 				version="${version} ${version_vcs}"
 			fi
-			display_add "${name}" "${version}" "${arch}" \
+			display_add "${name}" "${version}" "${osversion}" \
+			    "${arch}" \
 			    "${method}" "${time}" "${mnt}"
 		else
 			display_add ${name}
