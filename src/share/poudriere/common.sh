@@ -2529,7 +2529,7 @@ enter_interactive() {
 			cat >> "${MASTERMNT:?}/root/.login" <<-EOF
 			if ( -f /tmp/su-to-portbuild ) then
 				rm -f /tmp/su-to-portbuild
-				exec su -m "${PORTBUILD_USER}" -c csh
+				exec su -m "${PORTBUILD_USER}" -c ${INTERACTIVE_SHELL:-csh}
 			endif
 			EOF
 			touch "${MASTERMNT:?}/tmp/su-to-portbuild"
