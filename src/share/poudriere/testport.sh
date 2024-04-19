@@ -345,7 +345,7 @@ msg "Building with flags: ${PORT_FLAGS}"
 if [ -d "${MASTERMNT:?}${PREFIX:?}" -a "${PREFIX:?}" != "/usr" ]; then
 	msg "Removing existing ${PREFIX}"
 	if [ "${PREFIX:?}" != "${LOCALBASE:?}" ]; then
-		rm -rf "${MASTERMNT:?}${PREFIX}"
+		rm -Rfx "${MASTERMNT:?}${PREFIX}"
 	fi
 fi
 
