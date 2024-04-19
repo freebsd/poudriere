@@ -26,7 +26,6 @@ dtjsdir= $(datatablesdir)/js
 jquerydir= $(assetsdir)/jquery-3.7.1
 rcdir= $(sysconfdir)/rc.d
 hookdir= $(sysconfdir)/poudriere.d/hooks
-mandir= $(prefix)/share/man
 examplesdir= $(datadir)/examples/$(PACKAGE_NAME)
 
 EXTRA_DIST=	\
