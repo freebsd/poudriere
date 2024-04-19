@@ -302,7 +302,9 @@ msg "Building with flags: ${PORT_FLAGS}"
 
 if [ -d ${MASTERMNT}${PREFIX} -a "${PREFIX}" != "/usr" ]; then
 	msg "Removing existing ${PREFIX}"
-	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${MASTERMNT}${PREFIX}
+	if [ "${PREFIX:?}" != "${LOCALBASE:?}" ]; then
+		rm -Rfx "${MASTERMNT:?}${PREFIX}"
+	fi
 fi
 
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs PKGLATESTREPOSITORY=/tmp/pkgs/Latest"
