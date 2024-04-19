@@ -2410,7 +2410,8 @@ stash_packages() {
 		# a separate ZFS dataset or NFS mount for each package
 		# set; Must stay on the same device for linking.
 
-		mkdir -p ${PACKAGES}/.building
+		critical_start
+		mkdir -p "${PACKAGES:?}/.building"
 		PACKAGES_MADE_BUILDING=1
 		# hardlink copy all top-level directories
 		find ${PACKAGES}/.latest/ -mindepth 1 -maxdepth 1 -type d | \
@@ -2418,8 +2419,9 @@ stash_packages() {
 
 		# Copy all top-level files to avoid appending
 		# to real copy in pkg-repo, etc.
-		find ${PACKAGES}/.latest/ -mindepth 1 -maxdepth 1 -type f |
-		    xargs -J % cp -a % ${PACKAGES}/.building
+		find "${PACKAGES:?}/.latest/" -mindepth 1 -maxdepth 1 -type f |
+		    xargs -J % cp -a % "${PACKAGES:?}/.building"
+		critical_end
 	fi
 
 	# From this point forward, only work in the shadow
