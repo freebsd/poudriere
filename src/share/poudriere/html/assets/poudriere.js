@@ -1285,7 +1285,7 @@ function setupIndex() {
     ],
     responsive: true,
     rowGroup: {
-      dataSrc: ["ptname", "setname"],
+      dataSrc: ['ptname', 'setname'],
     },
   });
 
