@@ -2464,11 +2464,19 @@ enter_interactive() {
 	${NULLMOUNT} -o ro "${log_path:?}/logs" "${MASTERMNT:?}/logs"
 
 	if schg_immutable_base; then
-		chflags noschg "${MASTERMNT:?}/root/.cshrc"
+		chflags noschg \
+		    "${MASTERMNT:?}/root/.cshrc" \
+		    "${MASTERMNT:?}/root/.login" \
+		    "${MASTERMNT:?}/root/.shrc" \
+		    "${MASTERMNT:?}/root/.profile"
 	fi
 	cat >> "${MASTERMNT:?}/root/.cshrc" <<-EOF
 	cd "${portdir:?}"
 	setenv PORTSDIR "${PORTSDIR}"
+	EOF
+	cat >> "${MASTERMNT:?}/root/.shrc" <<-EOF
+	cd "${portdir:?}"
+	export PORTSDIR="${PORTSDIR}"
 	EOF
 	ln -fs /etc/motd "${MASTERMNT:?}/var/run/motd"
 	cat > "${MASTERMNT}/etc/motd" <<-EOF
@@ -2508,8 +2516,22 @@ enter_interactive() {
 	Installed packages:	$(echo "${packages}" | sort -V | tr '\n' ' ')
 
 	It is recommended to set these in the environment:
-		setenv DEVELOPER 1
-		setenv DEVELOPER_MODE yes
+	EOF
+	case "${INTERACTIVE_SHELL}" in
+	csh)
+		cat >> "${MASTERMNT:?}/etc/motd" <<-EOF
+			setenv DEVELOPER 1
+			setenv DEVELOPER_MODE yes
+		EOF
+		;;
+	*sh)
+		cat >> "${MASTERMNT:?}/etc/motd" <<-EOF
+			export DEVELOPER=1
+			export DEVELOPER_MODE=yes
+		EOF
+		;;
+	esac
+	cat >> "${MASTERMNT:?}/etc/motd" <<-EOF
 
 	Packages from /packages can be installed with 'pkg add' as needed.
 
@@ -2525,14 +2547,25 @@ enter_interactive() {
 		chown -R "${PORTBUILD_USER}" "${MASTERMNT:?}/wrkdirs"
 		;;
 	esac
+
 	if [ ${INTERACTIVE_MODE} -eq 1 ]; then
+		if [ -n "${INTERACTIVE_SHELL}" ]; then
+			injail pw usermod -n root -s "${INTERACTIVE_SHELL}" ||
+			    err "${EX_USAGE}" "Failed to set interactive shell to ${INTERACTIVE_SHELL}"
+		fi
 		msg "Entering interactive test mode. Type 'exit' when done."
 		if injail pw groupmod -n wheel -m "${PORTBUILD_USER}"; then
 			cat >> "${MASTERMNT:?}/root/.login" <<-EOF
 			if ( -f /tmp/su-to-portbuild ) then
 				rm -f /tmp/su-to-portbuild
-				exec su -m "${PORTBUILD_USER}" -c ${INTERACTIVE_SHELL:-csh}
+				exec su -m "${PORTBUILD_USER}" -c ${INTERACTIVE_SHELL}
 			endif
+			EOF
+			cat >> "${MASTERMNT:?}/root/.profile" <<-EOF
+			if [ -f /tmp/su-to-portbuild ]; then
+				rm -f /tmp/su-to-portbuild
+				exec su -m "${PORTBUILD_USER}" -c ${INTERACTIVE_SHELL}
+			fi
 			EOF
 			touch "${MASTERMNT:?}/tmp/su-to-portbuild"
 		fi
@@ -10024,6 +10057,7 @@ esac
 : ${DETERMINE_BUILD_FAILURE_REASON:=yes}
 DRY_RUN=0
 INTERACTIVE_MODE=0
+: ${INTERACTIVE_SHELL:=sh}
 
 # Be sure to update poudriere.conf to document the default when changing these
 : ${FREEBSD_SVN_HOST:="svn.FreeBSD.org"}
