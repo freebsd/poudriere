@@ -459,6 +459,21 @@ fi
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 2"
 }
 
+# Crashed in mapfile_read_loop_close_stdin
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -u)
+	echo > "${TMP}"
+	assert_true mapfile file_read "${TMP}" "re"
+	while mapfile_read_loop_redir foo; do
+		mapfile_read_loop_redir n < "${TMP}"
+	done <<-EOF
+	$(echo)
+	EOF
+	assert_true mapfile_close "${file_read}"
+	rm -f "${TMP}"
+}
+
 # Test mapfile_read_loop_redir with multi vars in IFS= mode
 {
 	rm -f "${TMP}"

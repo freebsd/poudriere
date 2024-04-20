@@ -531,6 +531,9 @@ mapfile_read_loop_close_stdin(void)
 		if (read_loop_handles[i] == -1) {
 			continue;
 		}
+		if (mapped_files[i] == NULL) {
+			continue;
+		}
 		if (mapped_files[i]->pid != shpid) {
 			continue;
 		}
