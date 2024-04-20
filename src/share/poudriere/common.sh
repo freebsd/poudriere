@@ -2436,6 +2436,7 @@ enter_interactive() {
 	done
 	if [ "${one_package}" -gt 1 ]; then
 		unset one_package
+		portdir="${PORTSDIR}"
 	fi
 
 	# Create a pkg repo configuration, and disable FreeBSD
@@ -2466,7 +2467,7 @@ enter_interactive() {
 		chflags noschg "${MASTERMNT:?}/root/.cshrc"
 	fi
 	cat >> "${MASTERMNT:?}/root/.cshrc" <<-EOF
-	cd "${PORTSDIR}/${one_package:+${port:?}}"
+	cd "${portdir:?}"
 	setenv PORTSDIR "${PORTSDIR}"
 	EOF
 	cat > "${MASTERMNT}/etc/motd" <<-EOF
@@ -2485,8 +2486,8 @@ enter_interactive() {
 		local NL=$'\n'
 		cat >> "${MASTERMNT:?}/etc/motd" <<-EOF
 		ORIGIN:			${port:?}
-		PORTDIR:		${PORTSDIR}/${port:?}
-		WRKDIR:			$(injail make -C "${PORTSDIR}/${port:?}" -V WRKDIR)
+		PORTDIR:		${portdir:?}
+		WRKDIR:			$(injail make -C "${portdir:?}" -V WRKDIR)
 		EOF
 		case "${flavor:+set}" in
 		set)
