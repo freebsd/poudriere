@@ -33,6 +33,7 @@ libtool
 /timestamp
 Makefile
 configure~
+build-aux/install-sh~
 build-aux/test-driver.orig
 config.cache
 config.status
