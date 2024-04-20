@@ -2116,6 +2116,7 @@ enter_interactive() {
 	cd "${portdir:?}"
 	setenv PORTSDIR "${PORTSDIR}"
 	EOF
+	ln -fs /etc/motd "${MASTERMNT:?}/var/run/motd"
 	cat > "${MASTERMNT}/etc/motd" <<-EOF
 	Welcome to Poudriere interactive mode!
 
