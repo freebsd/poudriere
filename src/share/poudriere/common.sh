@@ -4227,6 +4227,12 @@ download_from_repo() {
 				esac
 			fi
 		fi
+		if was_a_testport_run; then
+			# Skip testport package
+			case "${originspec}" in
+			"${ORIGINSPEC:?}") continue ;;
+			esac
+		fi
 		if ! pkgqueue_contains "build" "${pkgname}" ; then
 			msg_debug "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: not queued"
 			continue
