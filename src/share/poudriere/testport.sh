@@ -218,7 +218,9 @@ else
 	esac
 fi
 
+_lookup_portdir portdir "${ORIGIN}"
 if [ $CONFIGSTR -eq 1 ]; then
+	# XXX: This does not handle MOVED
 	command -v portconfig >/dev/null 2>&1 || \
 	    command -v dialog4ports >/dev/null 2>&1 || \
 	    err 1 "You must have ports-mgmt/dialog4ports or ports-mgmt/portconfig installed on the host to use -c."
