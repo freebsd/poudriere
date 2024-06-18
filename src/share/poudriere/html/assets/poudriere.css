@@ -48,43 +48,43 @@
 .layout td {
     border: 0;
 }
-.built {
+.built:not(table), table.built thead {
     background-color: #00cc00 !important;
 }
 .built .row1 {
     background-color: #00ff00;
 }
-.failed {
+.failed:not(table), table.failed thead {
     background-color: #e00000 !important;
 }
 .failed .row1 {
     background-color: #ff0000;
 }
-.skipped {
+.skipped:not(table), table.skipped thead {
     background-color: #cc6633 !important;
 }
 .skipped .row1 {
     background-color: #aa6734;
 }
-.ignored {
+.ignored:not(table), table.ignored thead {
     background-color: #ff9900 !important;
 }
 .ignored .row1 {
     background-color: #ff6f00;
 }
-.fetched {
+.fetched:not(table), table.fetched thead {
     background-color: #228b22 !important;
 }
 .fetched .row1 {
     background-color: #225b22;
 }
-.remaining {
+.remaining:not(table), table.remaining thead {
     background-color: #e3e3e3 !important;
 }
 .remaining .row1 {
     background-color: #bcbcbc;
 }
-.queued {
+.queued:not(table), table.queued thead {
     background-color: #aaa !important;
 }
 .queued .row1 {
