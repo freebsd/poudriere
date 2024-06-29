@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd July 5, 2022
+.Dd September 26, 2022
 .Dt POUDRIERE-BULK 8
 .Os
 .Sh NAME
@@ -38,7 +38,7 @@
 .Nm
 .Fl a
 .Fl j Ar name
-.Op Fl CcFIikNnRrSTtvw
+.Op Fl CcFHIikNnRrSTtvw
 .Op Fl B Ar name
 .Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
@@ -48,7 +48,7 @@
 .Nm
 .Fl f Ar file Op Fl f Ar file2 Ar ...
 .Fl j Ar name
-.Op Fl CcFIikNnRrSTtvw
+.Op Fl CcFHIikNnRrSTtvw
 .Op Fl B Ar name
 .Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
@@ -57,7 +57,7 @@
 .Op Fl z Ar set
 .Nm
 .Fl j Ar name
-.Op Fl CcFIikNnRrSTtvw
+.Op Fl CcFHIikNnRrSTtvw
 .Op Fl B Ar name
 .Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
@@ -232,6 +232,8 @@ Fetch only from the original
 Skip
 .Fx
 mirrors.
+.It Fl H
+Create a repository where the package filenames contain the short hash of the contents.
 .It Fl I
 Advanced interactive mode.
 .Pp
