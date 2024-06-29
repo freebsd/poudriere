@@ -5809,6 +5809,10 @@ delete_old_pkg() {
 		if [ -L "${pkg}" ]; then
 			is_sym=1
 		fi
+		if [ -d "${pkg}" ] && [ "${pkgfile}" = "Hashed" ]; then
+			msg_debug "Ignoring directory"
+			return 0;
+		fi
 		if [ "${is_sym}" -eq 1 ] && [ ! -e "${pkg}" ]; then
 			msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: dead symlink"
 			delete_pkg "${pkg}"
@@ -8329,11 +8333,15 @@ sign_pkg() {
 }
 
 build_repo() {
-	local origin pkg_repo_list_files
+	local origin pkg_repo_list_files hashcmd
 
 	msg "Creating pkg repository"
 	if [ ${DRY_RUN} -eq 1 ]; then
 		return 0
+	fi
+	if [ ${PKG_HASH} != "no" ]; then
+		hashcmd="--hash --symlink"
+		PKG_REPO_FLAGS="${PKG_REPO_FLAGS:+${PKG_REPO_FLAGS} }$hashcmd"
 	fi
 	bset status "pkgrepo:"
 	ensure_pkg_installed force_extract || \
@@ -8349,13 +8357,21 @@ build_repo() {
 		install -m 0400 "${PKG_REPO_META_FILE}" \
 		    ${MASTERMNT}/tmp/pkgmeta
 	fi
+
+	# Remount rw
+	# mount_nullfs does not support mount -u
+	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages || \
+	    umount -f ${MASTERMNT}/packages
+	mount_packages
+
 	mkdir -p ${MASTERMNT}/tmp/packages
 	if [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
 		msg "Signing repository with key: ${PKG_REPO_SIGNING_KEY}"
-		install -m 0400 ${PKG_REPO_SIGNING_KEY} \
-			${MASTERMNT}/tmp/repo.key
-		injail ${PKG_BIN} repo \
-			${pkg_repo_list_files} \
+		install -m 0400 "${PKG_REPO_SIGNING_KEY}" \
+			"${MASTERMNT:?}/tmp/repo.key"
+		injail ${PKG_BIN:?} repo \
+			${PKG_REPO_FLAGS} \
+			${pkg_repo_list_files:+"${pkg_repo_list_files}"} \
 			-o /tmp/packages \
 			${PKG_META} \
 			/packages /tmp/repo.key ||
@@ -8368,18 +8384,20 @@ build_repo() {
 		# Sometimes building repo from host is needed if
 		# using SSH with DNSSEC as older hosts don't support
 		# it.
-		${MASTERMNT}${PKG_BIN} repo \
-		    ${pkg_repo_list_files} \
-		    -o ${MASTERMNT}/tmp/packages ${PKG_META_MASTERMNT} \
-		    ${MASTERMNT}/packages \
+		${MASTERMNT:?}${PKG_BIN:?} repo \
+		    ${PKG_REPO_FLAGS} \
+		    ${pkg_repo_list_files:+"${pkg_repo_list_files}"} \
+		    -o "${MASTERMNT:?}/tmp/packages" ${PKG_META_MASTERMNT} \
+		    "${MASTERMNT:?}/packages" \
 		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}} ||
 		    err "$?" "Failed to sign pkg repository"
 	else
 		if [ -n "${SIGNING_COMMAND-}" ]; then
 			msg "Signing repository with command: ${SIGNING_COMMAND}"
 		fi
-		JNETNAME="n" injail ${PKG_BIN} repo \
-		    ${pkg_repo_list_files} \
+		JNETNAME="n" injail ${PKG_BIN:?} repo \
+		    ${PKG_REPO_FLAGS} \
+		    ${pkg_repo_list_files:+"${pkg_repo_list_files}"} \
 		    -o /tmp/packages ${PKG_META} /packages \
 		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}} ||
 		    err "$?" "Failed to sign pkg repository"
@@ -8394,6 +8412,11 @@ build_repo() {
 			sign_pkg pubkey "${PACKAGES}/Latest/pkg.${PKG_EXT}"
 		fi
 	fi
+
+	# Remount ro
+	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages || \
+	    umount -f ${MASTERMNT}/packages
+	mount_packages -o ro
 }
 
 calculate_size_in_mb() {
@@ -8912,6 +8935,7 @@ INTERACTIVE_MODE=0
 : ${FLAVOR_DEFAULT_ALL:=no}
 : ${NULLFS_PATHS:="/rescue /usr/share /usr/tests /usr/lib32"}
 : ${PACKAGE_FETCH_URL:="pkg+http://pkg.FreeBSD.org/\${ABI}"}
+: ${PKG_HASH:=no}
 
 : ${POUDRIERE_TMPDIR:=$(command mktemp -dt poudriere)}
 : ${SHASH_VAR_PATH_DEFAULT:=${POUDRIERE_TMPDIR}}

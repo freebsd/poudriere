@@ -279,7 +279,9 @@ for file in ${PACKAGES}/All/*; do
 	case ${file} in
 	*.${PKG_EXT})
 		if should_delete "${file}"; then
-			echo "${file}" >> "${BADFILES_LIST}"
+			echo "${file}" >> "${BADFILES_LIST:?}"
+			# If the pkg is a symlink to a hashed package, remove the hashed version as well
+			[ -L "${file}" ] && echo "$(realpath ${file})" >> ${BADFILES_LIST}
 		fi
 		;;
 	*.txz)
@@ -295,7 +297,9 @@ for file in ${PACKAGES}/All/*; do
 		;&
 	*)
 		msg_verbose "Found incorrect format file: ${file}"
-		echo "${file}" >> ${BADFILES_LIST}
+		echo "${file}" >> "${BADFILES_LIST:?}"
+		# If the pkg is a symlink to a hashed package, remove the hashed version as well
+		[ -L "${file}" ] && echo "$(realpath ${file})" >> ${BADFILES_LIST}
 		;;
 	esac
 done
