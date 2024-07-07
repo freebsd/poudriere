@@ -240,6 +240,8 @@ DISTFILES_CACHE=/usr/ports/distfiles
 
 # This defines the max time (in seconds) that a command may run for a build
 # before it is killed for taking too long. Default: 86400
+# This can also be set per PKGBASE, such as MAX_EXECUTION_TIME_RStudio=86400.
+# Package names with hyphens (-) should be replaced with underscores (_).
 #MAX_EXECUTION_TIME=86400
 
 # This defines the time (in seconds) before a command is considered to
