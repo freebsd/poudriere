@@ -5831,6 +5831,7 @@ build_pkg() {
 
 	pkgbase="${pkgname%-*}"
 	_gsub_var_name "${pkgbase}" pkgname_varname
+	eval "MAX_EXECUTION_TIME=\${MAX_EXECUTION_TIME_${pkgname_varname}:-${MAX_EXECUTION_TIME:-}}"
 	eval "MAX_FILES=\${MAX_FILES_${pkgname_varname}:-${DEFAULT_MAX_FILES}}"
 	eval "MAX_MEMORY=\${MAX_MEMORY_${pkgname_varname}:-${MAX_MEMORY:-}}"
 	if [ -n "${MAX_MEMORY}" -o -n "${MAX_FILES}" ]; then
