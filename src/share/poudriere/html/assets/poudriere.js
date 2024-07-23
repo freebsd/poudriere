@@ -24,599 +24,555 @@
  * SUCH DAMAGE.
  */
 
-var updateInterval = 8;
-var first_run = true;
-var load_attempts = 0;
-var max_load_attempts = 8;
-var first_load_interval = 2;
-var canvas_width;
-var impulseData = [];
-var tracker = 0;
-var impulse_first_period = 120;
-var impulse_target_period = 600;
-var impulse_period = impulse_first_period;
-var impulse_first_interval = impulse_first_period / updateInterval;
-var impulse_interval = impulse_target_period / updateInterval;
-var page_type;
-var page_buildname;
-var page_mastername;
-var data_url = "";
+'use strict';
+
+// server_style = ['hosted', 'inline'];
+const serverStyle = 'hosted';
+
+const updateInterval = 3;
+let firstRun = true;
+let loadAttempts = 0;
+const maxLoadAttempts = 8;
+const firstLoadInterval = 2;
+let canvasWidth;
+const impulseData = [];
+let tracker = 0;
+const impulseFirstPeriod = 120;
+const impulseTargetPeriod = 600;
+const impulseFirstInterval = impulseFirstPeriod / updateInterval;
+const impulseInterval = impulseTargetPeriod / updateInterval;
+let pageType;
+let pageBuildName;
+let pageMasterName;
+let dataURL = '';
+let x;
 
 function getParameterByName(name) {
-  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-  var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-    results = regex.exec(location.search);
+  const tmpName = name.replace(/[[]/, '\\[').replace(/[\]]/, '\\]');
+  const regex = new RegExp(`[\\?&]${tmpName}=([^&#]*)`);
+  const results = regex.exec(window.location.search);
   return results == null
-    ? ""
-    : decodeURIComponent(results[1].replace(/\+/g, " "));
+    ? ''
+    : decodeURIComponent(results[1].replace(/\+/g, ' '));
 }
 
 function scrollOffset() {
-  return -1 * parseFloat($("body").css("padding-top"));
+  return -1 * parseFloat($('body').css('padding-top'));
 }
 
 function scrollToElement(element) {
-  var ele = $(element);
+  const ele = $(element);
   if (!ele.length) {
     return;
   }
-  $("body,html,document").scrollTop(ele.offset().top + scrollOffset());
+  $('body,html,document').scrollTop(ele.offset().top + scrollOffset());
 }
 
-function update_data() {
-  $.ajax({
-    url: data_url + ".data.json",
-    dataType: "json",
-    headers: {
-      "Cache-Control": "max-age=0",
-    },
-    success: function (data) {
-      load_attempts = 0;
-      process_data(data);
-    },
-    error: function (data) {
-      if (++load_attempts < max_load_attempts) {
-        /* May not be there yet, try again shortly */
-        setTimeout(update_data, first_load_interval * 1000);
-      } else {
-        $("#loading p")
-          .text("Invalid request or no data available " + " yet.")
-          .addClass("error");
-      }
-    },
-  });
-}
-
-function format_origin(origin, flavor) {
-  var data;
-
+function formatOrigin(origin, flavor) {
   if (!origin) {
-    return "";
+    return '';
   }
 
-  data = origin.split("/");
+  const data = origin.split('/');
+  let resultFlavor = '';
 
   if (flavor) {
-    flavor = "@" + flavor;
+    resultFlavor = `@${flavor}`;
   } else {
-    flavor = "";
+    resultFlavor = '';
   }
 
   return (
-    '<a target="_new" title="freshports for ' +
-    origin +
-    '" href="https://www.freshports.org/' +
-    data[0] +
-    "/" +
-    data[1] +
-    '/"><span ' +
-    'class="glyphicon glyphicon-tasks"></span>' +
-    origin +
-    flavor +
-    "</a>"
+    `<a target="_new" title="freshports for ${
+      origin
+    }" href="https://www.freshports.org/${
+      data[0]
+    }/${
+      data[1]
+    }/"><span `
+    + `class="glyphicon glyphicon-tasks"></span>${
+      origin
+    }${resultFlavor
+    }</a>`
   );
 }
 
-function format_githash(githash) {
-  if (!githash) {
-    return "";
-  }
-  return (
-    '<a target="_new" title="cgit for ' +
-    githash +
-    '" href="https://cgit.freebsd.org/ports/commit/?id=' +
-    githash +
-    '"><span ' +
-    'class="glyphicon glyphicon-envelope"></span>' +
-    githash +
-    "</a>"
-  );
-}
-
-function format_pkgname(pkgname) {
+function formatPkgName(pkgname) {
   return pkgname;
 }
 
-function minidraw(x, height, width, context, color, queued, variable) {
-  var pct, total_pct, newx;
+function minidraw(dx, height, width, context, color, queued, variable) {
+  let newx;
 
   /* Calculate how much percentage this value should display */
-  pct = Math.floor((variable * 100) / queued);
-  if (pct == 0) {
+  const pct = Math.floor((variable * 100) / queued);
+  if (pct === 0) {
     return 0;
   }
   newx = width * (pct / 100);
-  if (x + newx >= width) {
-    newx = width - x;
+  if (dx + newx >= width) {
+    newx = width - dx;
   }
   /* Cap total bar to 99%, so it's clear something is remaining */
-  total_pct = ((x + newx) / width) * 100;
-  if (total_pct >= 99.0 && total_pct < 100.0) {
+  const totalPct = ((dx + newx) / width) * 100;
+  if (totalPct >= 99.0 && totalPct < 100.0) {
     newx = Math.ceil(width * (99 / 100));
   }
   /* Always start at 1 */
-  if (newx == 0) {
+  if (newx === 0) {
     newx = 1;
   }
   context.fillStyle = color;
-  context.fillRect(x, 1, newx, height);
+  context.fillRect(dx, 1, newx, height);
 
   return newx;
 }
 
-function determine_canvas_width() {
-  var width;
+function determineCanvasWidth() {
+  let width;
 
   /* Determine width by how much space the column has, minus the size of
    * displaying the percentage at 100%
    */
-  width = $("#progress_col").width();
-  $("#progresspct").text("100%");
-  width = width - $("#progresspct").width() - 20;
-  $("#progresspct").text("");
-  canvas_width = width;
+  width = $('#progress_col').width();
+  $('#progresspct').text('100%');
+  width = width - $('#progresspct').width() - 20;
+  $('#progresspct').text('');
+  canvasWidth = width;
 }
 
-function update_canvas(stats) {
-  var queued, built, failed, skipped, ignored, fetched, remaining, pctdone;
-  var height, width, x, context, canvas, pctdonetxt;
+function updateCanvas(stats) {
+  let pctdone;
+  let height; let width;
+  let pctdonetxt;
 
   if (stats.queued === undefined) {
     return;
   }
 
-  canvas = document.getElementById("progressbar");
+  const canvas = document.getElementById('progressbar');
   if (!canvas || canvas.getContext === undefined) {
     /* Not supported */
     return;
   }
 
   height = 10;
-  width = canvas_width;
+  width = canvasWidth;
 
   canvas.height = height;
   canvas.width = width;
 
-  queued = stats.queued;
-  built = stats.built;
-  failed = stats.failed;
-  skipped = stats.skipped;
-  ignored = stats.ignored;
-  fetched = stats.fetched;
-  remaining = queued - built - failed - skipped - ignored - fetched;
+  const { queued } = stats;
+  const { built } = stats;
+  const { failed } = stats;
+  const { skipped } = stats;
+  const { ignored } = stats;
+  const { fetched } = stats;
+  const remaining = queued - built - failed - skipped - ignored - fetched;
 
-  context = canvas.getContext("2d");
+  const context = canvas.getContext('2d');
 
   context.beginPath();
   context.rect(0, 0, width, height);
   /* Save 2 pixels for border */
-  height = height - 2;
+  height -= 2;
   /* Start at 1 and save 1 for border */
-  width = width - 1;
+  width -= 1;
   x = 1;
-  context.fillStyle = "#E3E3E3";
+  context.fillStyle = '#E3E3E3';
   context.fillRect(1, 1, width, height);
   context.lineWidth = 1;
-  context.strokeStyle = "black";
+  context.strokeStyle = 'black';
   context.stroke();
-  x += minidraw(x, height, width, context, "#00CC00", queued, built);
-  x += minidraw(x, height, width, context, "#E00000", queued, failed);
-  x += minidraw(x, height, width, context, "#FF9900", queued, ignored);
-  x += minidraw(x, height, width, context, "#228B22", queued, fetched);
-  x += minidraw(x, height, width, context, "#CC6633", queued, skipped);
+  x += minidraw(x, height, width, context, '#00CC00', queued, built);
+  x += minidraw(x, height, width, context, '#E00000', queued, failed);
+  x += minidraw(x, height, width, context, '#FF9900', queued, ignored);
+  x += minidraw(x, height, width, context, '#228B22', queued, fetched);
+  x += minidraw(x, height, width, context, '#CC6633', queued, skipped);
 
   pctdone = ((queued - remaining) * 100) / queued;
-  if (isNaN(pctdone)) {
+  if (Number.isNaN(pctdone)) {
     pctdone = 0;
   }
-  if (pctdone < 1.0 && pctdone != 0) {
-    pctdonetxt = "< 1";
+  if (pctdone < 1.0 && pctdone !== 0) {
+    pctdonetxt = '< 1';
   } else {
     pctdonetxt = Math.floor(pctdone);
   }
-  $("#progresspct").text(pctdonetxt + "%");
+  $('#progresspct').text(`${pctdonetxt}%`);
 
-  $("#stats_remaining").html(remaining);
+  $('#stats_remaining').html(remaining);
 }
 
-function display_pkghour(stats, snap) {
-  var attempted, pkghour, hours;
+function displayPkgHour(stats, snap) {
+  let pkghour;
+  let hours;
 
-  attempted = parseInt(stats.built) + parseInt(stats.failed);
-  pkghour = "--";
+  const attempted = parseInt(stats.built, 10) + parseInt(stats.failed, 10);
+  pkghour = '--';
   if (attempted > 0 && snap.elapsed) {
     hours = snap.elapsed / 3600;
     pkghour = Math.ceil(attempted / hours);
   }
-  $("#snap_pkghour").html(pkghour);
+  $('#snap_pkghour').html(pkghour);
 }
 
-function display_impulse(stats, snap) {
-  var attempted, pkghour, index, tail, d_pkgs, d_secs, title;
+function displayImpulse(stats, snap) {
+  let pkghour; let tail; let dPkgs; let dSecs; let title;
 
-  attempted = parseInt(stats.built) + parseInt(stats.failed);
-  pkghour = "--";
-  index = tracker % impulse_interval;
-  if (tracker < impulse_interval) {
+  const attempted = parseInt(stats.built, 10) + parseInt(stats.failed, 10);
+  pkghour = '--';
+  const index = tracker % impulseInterval;
+  if (tracker < impulseInterval) {
     impulseData.push({ pkgs: attempted, time: snap.elapsed });
   } else {
     impulseData[index].pkgs = attempted;
     impulseData[index].time = snap.elapsed;
   }
-  if (tracker >= impulse_first_interval) {
-    if (tracker < impulse_interval) {
+  if (tracker >= impulseFirstInterval) {
+    if (tracker < impulseInterval) {
       tail = 0;
-      title =
-        "Package build rate over last " +
-        Math.floor((tracker * updateInterval) / 60) +
-        " minutes";
+      title = `Package build rate over last ${
+        Math.floor((tracker * updateInterval) / 60)
+      } minutes`;
     } else {
-      tail = (tracker - (impulse_interval - 1)) % impulse_interval;
-      title =
-        "Package build rate over last " +
-        impulse_target_period / 60 +
-        " minutes";
+      tail = (tracker - (impulseInterval - 1)) % impulseInterval;
+      title = `Package build rate over last ${
+        impulseTargetPeriod / 60
+      } minutes`;
     }
-    d_pkgs = impulseData[index].pkgs - impulseData[tail].pkgs;
-    d_secs = impulseData[index].time - impulseData[tail].time;
-    pkghour = Math.ceil(d_pkgs / (d_secs / 3600));
+    dPkgs = impulseData[index].pkgs - impulseData[tail].pkgs;
+    dSecs = impulseData[index].time - impulseData[tail].time;
+    pkghour = Math.ceil(dPkgs / (dSecs / 3600));
   } else {
-    title = "Package build rate. Still calculating...";
+    title = 'Package build rate. Still calculating...';
   }
-  tracker++;
-  $("#snap .impulse").attr("title", title);
-  $("#snap_impulse").html(pkghour);
+  tracker += 1;
+  $('#snap .impulse').attr('title', title);
+  $('#snap_impulse').html(pkghour);
 }
 
-function jail_url(mastername) {
-  if (server_style == "hosted") {
+function jailURL(mastername) {
+  if (serverStyle === 'hosted') {
     if (mastername) {
-      return "jail.html?mastername=" + encodeURIComponent(mastername);
-    } else {
-      return "#";
+      return `jail.html?mastername=${encodeURIComponent(mastername)}`;
     }
-  } else {
-    return "../";
+    return '#';
   }
+  return '../';
 }
 
-function format_mastername(mastername) {
-  var html;
+function formatMasterName(mastername) {
+  let html;
 
   if (!mastername) {
-    return "";
+    return '';
   }
 
-  if (page_mastername && mastername == page_mastername && page_type == "jail") {
-    html =
-      '<a href="#top" onclick="scrollToElement(\'#top\'); return false;">' +
-      mastername +
-      "</a>";
+  if (pageMasterName && mastername === pageMasterName && pageType === 'jail') {
+    html = `<a href="#top" onclick="scrollToElement('#top'); return false;">${
+      mastername
+    }</a>`;
   } else {
-    html =
-      '<a title="List builds for ' +
-      mastername +
-      '" href="' +
-      jail_url(mastername) +
-      '">' +
-      mastername +
-      "</a>";
+    html = `<a title="List builds for ${
+      mastername
+    }" href="${
+      jailURL(mastername)
+    }">${
+      mastername
+    }</a>`;
   }
 
   return html;
 }
 
-function format_jailname(jailname) {
+function formatJailName(jailname) {
   return jailname;
 }
 
-function format_setname(setname) {
+function formatSetName(setname) {
   return setname;
 }
 
-function format_ptname(ptname) {
+function formatPtName(ptname) {
   return ptname;
 }
 
-function build_url(mastername, buildname) {
+function buildURL(mastername, buildname) {
   if (!mastername || !buildname) {
-    return "";
+    return '';
   }
   return (
-    "build.html?" +
-    "mastername=" +
-    encodeURIComponent(mastername) +
-    "&" +
-    "build=" +
-    encodeURIComponent(buildname)
+    'build.html?'
+    + `mastername=${
+      encodeURIComponent(mastername)
+    }&`
+    + `build=${
+      encodeURIComponent(buildname)}`
   );
 }
 
-function format_buildname(mastername, buildname) {
-  var html;
+function formatBuildName(mastername, buildname) {
+  let html;
 
   if (!mastername) {
     return buildname;
-  } else if (!buildname) {
-    return "";
+  } if (!buildname) {
+    return '';
   }
 
   if (
-    page_mastername &&
-    mastername == page_mastername &&
-    page_buildname &&
-    buildname == page_buildname &&
-    page_type == "build"
+    pageMasterName
+    && mastername === pageMasterName
+    && pageBuildName
+    && buildname === pageBuildName
+    && pageType === 'build'
   ) {
-    html =
-      '<a href="#top" onclick="scrollToElement(\'#top\'); return false;">' +
-      buildname +
-      "</a>";
+    html = `<a href="#top" onclick="scrollToElement('#top'); return false;">${
+      buildname
+    }</a>`;
   } else {
-    html =
-      '<a title="Show build results for ' +
-      buildname +
-      '" href="' +
-      build_url(mastername, buildname) +
-      '">' +
-      buildname +
-      "</a>";
+    html = `<a title="Show build results for ${
+      buildname
+    }" href="${
+      buildURL(mastername, buildname)
+    }">${
+      buildname
+    }</a>`;
   }
 
   return html;
 }
 
-function format_portset(ptname, setname) {
-  return ptname + (setname ? "-" : "") + setname;
+function formatPortSet(ptname, setname) {
+  return ptname + (setname ? '-' : '') + setname;
 }
 
-function format_log(pkgname, errors, text) {
-  var html;
-
-  html =
-    '<a target="logs" title="Log for ' +
-    pkgname +
-    '" href="' +
-    data_url +
-    "logs/" +
-    (errors ? "errors/" : "") +
-    pkgname +
-    '.log"><span class="glyphicon glyphicon-file"></span>' +
-    text +
-    "</a>";
+function formatLog(pkgname, errors, text) {
+  const html = `<a target="logs" title="Log for ${
+    pkgname
+  }" href="${
+    dataURL
+  }logs/${
+    errors ? 'errors/' : ''
+  }${pkgname
+  }.log"><span class="glyphicon glyphicon-file"></span>${
+    text
+  }</a>`;
   return html;
 }
 
-function format_start_to_end(start, end) {
-  var duration;
+function formatDuration(duration) {
+  let hours; let minutes; let
+    seconds;
+
+  if (duration === undefined || duration === '' || Number.isNaN(duration)) {
+    return '';
+  }
+
+  hours = Math.floor(duration / 3600);
+  const tmpDuration = duration - hours * 3600;
+  minutes = Math.floor(tmpDuration / 60);
+  seconds = tmpDuration - minutes * 60;
+
+  if (hours < 10) {
+    hours = `0${hours}`;
+  }
+  if (minutes < 10) {
+    minutes = `0${minutes}`;
+  }
+  if (seconds < 10) {
+    seconds = `0${seconds}`;
+  }
+
+  return `${hours}:${minutes}:${seconds}`;
+}
+
+function formatStartToEnd(start, end) {
+  let duration;
 
   if (!start) {
-    return "";
+    return '';
   }
-  start = parseInt(start);
-  if (isNaN(start)) {
-    return "";
+  const startStr = parseInt(start, 10);
+  if (Number.isNaN(startStr)) {
+    return '';
   }
 
   if (end === undefined) {
-    duration = start;
+    duration = startStr;
   } else {
-    duration = end - start;
+    duration = end - startStr;
   }
 
   if (duration < 0) {
     duration = 0;
   }
 
-  return format_duration(duration);
+  return formatDuration(duration);
 }
 
-function format_duration(duration) {
-  var hours, minutes, seconds;
-
-  if (duration === undefined || duration == "" || isNaN(duration)) {
-    return "";
-  }
-
-  hours = Math.floor(duration / 3600);
-  duration = duration - hours * 3600;
-  minutes = Math.floor(duration / 60);
-  seconds = duration - minutes * 60;
-
-  if (hours < 10) {
-    hours = "0" + hours;
-  }
-  if (minutes < 10) {
-    minutes = "0" + minutes;
-  }
-  if (seconds < 10) {
-    seconds = "0" + seconds;
-  }
-
-  return hours + ":" + minutes + ":" + seconds;
-}
-
-function filter_skipped(pkgname) {
-  var table, search_filter;
-
-  scrollToElement("#skipped");
-  table = $("#skipped_table").dataTable();
+function filterSkipped(pkgname) {
+  scrollToElement('#skipped');
+  const table = $('#skipped_table').DataTable();
   table.fnFilter(pkgname, 3);
 
-  search_filter = $("#skipped_table_filter input");
-  search_filter.val(pkgname);
-  search_filter.prop("disabled", true);
-  search_filter.css("background-color", "#DDD");
+  const searchFilter = $('#skipped_table_filter input');
+  searchFilter.val(pkgname);
+  searchFilter.prop('disabled', true);
+  searchFilter.css('background-color', '#DDD');
 
-  if (!$("#resetsearch").length) {
-    search_filter.after(
-      '<span class="glyphicon glyphicon-remove ' +
-        'pull-right" id="resetsearch"></span>'
+  if (!$('#resetsearch').length) {
+    searchFilter.after(
+      '<span class="glyphicon glyphicon-remove '
+        + 'pull-right" id="resetsearch"></span>',
     );
 
-    $("#resetsearch").click(function (e) {
-      table.fnFilter("", 3);
-      search_filter.val("");
-      search_filter.prop("disabled", false);
-      search_filter.css("background-color", "");
+    $('#resetsearch').click(() => {
+      table.fnFilter('', 3);
+      searchFilter.val('');
+      searchFilter.prop('disabled', false);
+      searchFilter.css('background-color', '');
       $(this).remove();
     });
   }
 }
 
-function translate_status(status) {
-  var a;
-
+function translateStatus(status) {
   if (status === undefined) {
-    return "";
+    return '';
   }
 
-  a = status.split(":");
-  if (a[0] == "stopped") {
+  const a = status.split(':');
+  let translatedStatus;
+
+  if (a[0] === 'stopped') {
     if (a.length >= 3) {
-      status = a[0] + ":" + a[1] + ":" + a[2];
+      translatedStatus = `${a[0]}:${a[1]}:${a[2]}`;
     } else if (a.length >= 2) {
-      status = a[0] + ":" + a[1];
+      translatedStatus = `${a[0]}:${a[1]}`;
     } else {
-      status = a[0] + ":";
+      translatedStatus = `${a[0]}:`;
     }
+  } else if (a.length >= 2) {
+    translatedStatus = `${a[0]}:${a[1]}`;
   } else {
-    if (a.length >= 2) {
-      status = a[0] + ":" + a[1];
-    } else {
-      status = a[0] + ":";
-    }
+    translatedStatus = `${a[0]}:`;
   }
 
-  return status;
+  return translatedStatus;
 }
 
-function format_skipped(skipped_cnt, pkgname) {
-  if (skipped_cnt === undefined || skipped_cnt == 0) {
+function formatSkipped(skippedCnt, pkgname) {
+  if (skippedCnt === undefined || skippedCnt === 0) {
     return 0;
   }
   return (
-    '<a href="#skipped" onclick="filter_skipped(\'' +
-    pkgname +
-    '\'); return false;"><span class="glyphicon ' +
-    'glyphicon-filter"></span>' +
-    skipped_cnt +
-    "</a>"
+    `<a href="#skipped" onclick="filterSkipped('${
+      pkgname
+    }'); return false;"><span class="glyphicon `
+    + `glyphicon-filter"></span>${
+      skippedCnt
+    }</a>`
   );
 }
 
-function format_status_row(status, row, n) {
-  var table_row = [];
+function formatStatusRow(status, row, n) {
+  const tableRow = [];
 
-  table_row.push(n + 1);
-  if (status == "built") {
-    table_row.push(format_pkgname(row.pkgname));
-    table_row.push(format_origin(row.origin, row.flavor));
-    table_row.push(format_log(row.pkgname, false, "success"));
-    table_row.push(format_duration(row.elapsed ? row.elapsed : ""));
-  } else if (status == "failed") {
-    table_row.push(format_pkgname(row.pkgname));
-    table_row.push(format_origin(row.origin, row.flavor));
-    table_row.push(row.phase);
-    table_row.push(row.skipped_cnt);
-    table_row.push(format_log(row.pkgname, true, row.errortype));
-    table_row.push(format_duration(row.elapsed ? row.elapsed : ""));
-  } else if (status == "skipped") {
-    table_row.push(format_pkgname(row.pkgname));
-    table_row.push(format_origin(row.origin, row.flavor));
-    table_row.push(format_pkgname(row.depends));
-  } else if (status == "ignored") {
-    table_row.push(format_pkgname(row.pkgname));
-    table_row.push(format_origin(row.origin, row.flavor));
-    table_row.push(row.skipped_cnt);
-    table_row.push(row.reason);
-  } else if (status == "fetched") {
-    table_row.push(format_pkgname(row.pkgname));
-    table_row.push(format_origin(row.origin, row.flavor));
-  } else if (status == "remaining") {
-    table_row.push(format_pkgname(row.pkgname));
-    table_row.push(row.status);
-  } else if (status == "queued") {
-    table_row.push(format_pkgname(row.pkgname));
-    table_row.push(format_origin(row.origin, row.flavor));
-    if (row.reason == "listed") {
-      table_row.push(row.reason);
+  tableRow.push(n + 1);
+
+  try {
+    if (status === 'built') {
+      tableRow.push(formatPkgName(row.pkgname));
+      tableRow.push(formatOrigin(row.origin, row.flavor));
+      tableRow.push(formatLog(row.pkgname, false, 'success'));
+      tableRow.push(formatDuration(row.elapsed ? row.elapsed : ''));
+    } else if (status === 'failed') {
+      tableRow.push(formatPkgName(row.pkgname));
+      tableRow.push(formatOrigin(row.origin, row.flavor));
+      tableRow.push(row.phase);
+      tableRow.push(row.skipped_cnt);
+      tableRow.push(formatLog(row.pkgname, true, row.errortype));
+      tableRow.push(formatDuration(row.elapsed ? row.elapsed : ''));
+    } else if (status === 'skipped') {
+      tableRow.push(formatPkgName(row.pkgname));
+      tableRow.push(formatOrigin(row.origin, row.flavor));
+      tableRow.push(formatPkgName(row.depends));
+    } else if (status === 'ignored') {
+      tableRow.push(formatPkgName(row.pkgname));
+      tableRow.push(formatOrigin(row.origin, row.flavor));
+      tableRow.push(row.skipped_cnt);
+      tableRow.push(row.reason);
+    } else if (status === 'fetched') {
+      tableRow.push(formatPkgName(row.pkgname));
+      tableRow.push(formatOrigin(row.origin, row.flavor));
+    } else if (status === 'remaining') {
+      tableRow.push(formatPkgName(row.pkgname));
+      tableRow.push(row.status);
+    } else if (status === 'queued') {
+      tableRow.push(formatPkgName(row.pkgname));
+      tableRow.push(formatOrigin(row.origin, row.flavor));
+
+      if (row.reason === 'listed') {
+        tableRow.push(row.reason);
+      } else {
+        tableRow.push(formatOrigin(row.reason));
+      }
     } else {
-      table_row.push(format_origin(row.reason));
+      throw new Error(`Unknown data type "${status}". Try flushing cache.`);
     }
-  } else {
-    alert('Unknown data type "' + status + '". Try flushing cache.');
-    throw 'Unknown data type "' + status + '". Try flushing cache.';
+  } catch (err) {
+    console.error(err);
   }
 
-  return table_row;
+  return tableRow;
 }
 
-function DTRow(table_id, div_id) {
-  this.Table = $("#" + table_id).DataTable();
-  this.new_rows = [];
-  this.first_load = this.Table.row(0).length == 0;
-  this.div_id = div_id;
-}
+class DTRow {
+  constructor(tableID, divID) {
+    this.Table = $(`#${tableID}`).DataTable();
+    this.new_rows = [];
+    this.div_id = divID;
+  }
 
-DTRow.prototype = {
-  queue: function (row) {
-    var existing_row;
+  queue(rowInput) {
+    const row = rowInput;
+    let existingRow;
 
     /* Is this entry already in the list? If so need to
      * replace its data. Don't bother with lookups on
      * first load.
      */
-    row.DT_RowId = "data_row_" + row.id;
-    if (!this.first_load) {
-      existing_row = this.Table.row("#" + row.DT_RowId);
+    row.DT_RowId = `data_row_${row.id}`;
+    if (this.Table.row(`#${row.DT_RowId}`).data() !== undefined) {
+      existingRow = this.Table.row(`#${row.DT_RowId}`).data();
     } else {
-      existing_row = {};
+      existingRow = undefined;
     }
-    if (existing_row.length) {
+    if (existingRow !== undefined) {
       /* Only update the row if it doesn't match the existing. */
-      if (JSON.stringify(row) !== JSON.stringify(existing_row.data())) {
-        existing_row.data(row).nodes().to$().hide().fadeIn(800);
+      if (JSON.stringify(row) !== JSON.stringify(existingRow)) {
+        this.Table.row(`#${row.DT_RowId}`).data(row).to$().hide()
+          .fadeIn(800);
       }
     } else {
       /* Otherwise add it. */
       this.new_rows.push(row);
     }
-  },
-  commit: function () {
-    if (this.new_rows.length) {
-      nodes = this.Table.rows.add(this.new_rows).draw().nodes();
-      if (this.first_load) {
-        $("#" + this.div_id).show();
-      } else {
-        nodes.to$().hide().fadeIn(1500);
-      }
-    }
-  },
-};
+  }
 
-function process_data_build(data) {
-  var html, a, n, table_rows, status, builder, now, row, dtrow, is_stopped;
+  commit() {
+    if (this.new_rows.length) {
+      this.Table.rows.add(this.new_rows).draw().nodes();
+      $(`#${this.div_id}`).show();
+    }
+  }
+}
+
+function processDataBuild(dataInput) {
+  const data = dataInput;
+  let n; let tableRows; let status; let builder; let now; let row; let dtrow;
 
   if (data.snap && data.snap.now) {
     // New data is relative to the 'job.started' time, not epoch.
@@ -627,24 +583,23 @@ function process_data_build(data) {
   }
 
   // Redirect from /latest/ to the actual build.
-  if (page_buildname == "latest") {
-    document.location.href = build_url(page_mastername, data.buildname);
-    return;
+  if (pageBuildName === 'latest') {
+    window.location.href = buildURL(pageMasterName, data.buildname);
+    return undefined;
   }
 
   if (data.stats) {
-    determine_canvas_width();
-    update_canvas(data.stats);
+    determineCanvasWidth();
+    updateCanvas(data.stats);
   }
 
-  document.title =
-    "Poudriere bulk results for " + data.mastername + " " + data.buildname;
+  document.title = `Poudriere bulk results for ${data.mastername} ${data.buildname}`;
 
-  $("#mastername").html(format_mastername(data.mastername));
-  $("#buildname").html(format_buildname(data.mastername, data.buildname));
-  $("#jail").html(format_jailname(data.jailname));
-  $("#setname").html(format_setname(data.setname));
-  $("#ptname").html(format_ptname(data.ptname));
+  $('#mastername').html(formatMasterName(data.mastername));
+  $('#buildname').html(formatBuildName(data.mastername, data.buildname));
+  $('#jail').html(formatJailName(data.jailname));
+  $('#setname').html(formatSetName(data.setname));
+  $('#ptname').html(formatPtName(data.ptname));
   if (data.overlays) {
     $('#overlays').html(data.overlays);
   } else {
@@ -652,17 +607,17 @@ function process_data_build(data) {
     $('#overlays_title').hide();
   }
   if (data.git_hash) {
-    $('#git_hash').html(data.git_hash + (data.git_dirty == "yes" ? " (dirty)" : ""));
+    $('#git_hash').html(data.git_hash + (data.git_dirty === 'yes' ? ' (dirty)' : ''));
   } else {
     $('#git_hash').hide();
     $('#git_hash_title').hide();
   }
-  $("#build_info_div").show();
+  $('#build_info_div').show();
 
   /* Backwards compatibility */
   if (data.status && data.status instanceof Array && !data.jobs) {
     data.jobs = data.status;
-    if (data.jobs[0] && data.jobs[0].id == "main") {
+    if (data.jobs[0] && data.jobs[0].id === 'main') {
       data.status = data.jobs[0].status;
       data.jobs.splice(0, 1);
     } else {
@@ -671,35 +626,35 @@ function process_data_build(data) {
   }
 
   if (data.status) {
-    status = translate_status(data.status);
-    $("#status").text(status);
+    status = translateStatus(data.status);
+    $('#status').text(status);
   }
 
   // Unknown status, assume not stopped.
-  is_stopped = status ? status.match("^stopped:") : false;
+  const isStopped = status ? status.match('^stopped:') : false;
 
   /* Builder status */
   if (data.jobs) {
-    dtrow = new DTRow("builders_table", "jobs_div");
-    for (n = 0; n < data.jobs.length; n++) {
+    dtrow = new DTRow('builders_table', 'jobs_div');
+    for (n = 0; n < data.jobs.length; n += 1) {
       row = {};
       builder = data.jobs[n];
 
       row.id = builder.id;
       row.job_id = builder.id;
-      row.pkgname = builder.pkgname ? format_pkgname(builder.pkgname) : "";
+      row.pkgname = builder.pkgname ? formatPkgName(builder.pkgname) : '';
       row.origin = builder.origin
-        ? format_origin(builder.origin, builder.flavor)
-        : "";
+        ? formatOrigin(builder.origin, builder.flavor)
+        : '';
       row.status = builder.pkgname
-        ? format_log(builder.pkgname, false, builder.status)
-        : builder.status.split(":")[0];
+        ? formatLog(builder.pkgname, false, builder.status)
+        : builder.status.split(':')[0];
       row.elapsed = builder.started
-        ? format_start_to_end(builder.started, now)
-        : "";
+        ? formatStartToEnd(builder.started, now)
+        : '';
 
       /* Hide idle builders when the build is stopped. */
-      if (!is_stopped || row.status != "idle") {
+      if (!isStopped || row.status !== 'idle') {
         dtrow.queue(row);
       }
     }
@@ -708,25 +663,27 @@ function process_data_build(data) {
 
   /* Stats */
   if (data.stats) {
-    $.each(data.stats, function (status, count) {
-      if (status == "elapsed") {
-        count = format_start_to_end(count);
+    $.each(data.stats, (stat, count) => {
+      let newCount = count;
+      if (stat === 'elapsed') {
+        newCount = formatStartToEnd(count);
       }
-      $("#stats_" + status).html(count);
+      $(`#stats_${stat}`).html(newCount);
     });
-    $("#stats").data(data.stats);
-    $("#stats").fadeIn(1400);
+    $('#stats').data(data.stats);
+    $('#stats').fadeIn(1400);
 
     if (data.snap) {
-      $.each(data.snap, function (status, count) {
-        if (status == "elapsed") {
-          count = format_start_to_end(count);
+      $.each(data.snap, (stat, count) => {
+        let newCount = count;
+        if (stat === 'elapsed') {
+          newCount = formatStartToEnd(count);
         }
-        $("#snap_" + status).html(count);
+        $(`#snap_${stat}`).html(newCount);
       });
-      display_pkghour(data.stats, data.snap);
-      display_impulse(data.stats, data.snap);
-      $("#snap").fadeIn(1400);
+      displayPkgHour(data.stats, data.snap);
+      displayImpulse(data.stats, data.snap);
+      $('#snap').fadeIn(1400);
     }
   }
 
@@ -736,127 +693,128 @@ function process_data_build(data) {
    * may involve looping 24000 times. */
 
   if (data.ports) {
-    if (data.ports["remaining"] === undefined) {
-      data.ports["remaining"] = [];
+    if (data.ports.remaining === undefined) {
+      data.ports.remaining = [];
     }
-    $.each(data.ports, function (status, ports) {
-      if (status == "tobuild") {
+    $.each(data.ports, (stat) => {
+      if (stat === 'tobuild') {
         return;
       }
       if (
-        data.ports[status] &&
-        (data.ports[status].length > 0 || status == "remaining")
+        data.ports[stat]
+        && (data.ports[stat].length > 0 || stat === 'remaining')
       ) {
-        table_rows = [];
-        if (status != "remaining") {
-          if ((n = $("#" + status + "_body").data("index")) === undefined) {
+        tableRows = [];
+        if (stat !== 'remaining') {
+          n = $(`#${stat}_body`).data('index');
+          if (n === undefined) {
             n = 0;
-            $("#" + status + "_div").show();
-            $("#nav_" + status).removeClass("disabled");
+            $(`#${stat}_div`).show();
+            $(`#nav_${stat}`).removeClass('disabled');
           }
-          if (n == data.ports[status].length) {
+          if (n === data.ports[stat].length) {
             return;
           }
         } else {
           n = 0;
         }
-        for (; n < data.ports[status].length; n++) {
-          var row = data.ports[status][n];
+        for (; n < data.ports[stat].length; n += 1) {
+          const fetchedRow = data.ports[stat][n];
           // Add in skipped counts for failures and ignores
-          if (status == "failed" || status == "ignored")
-            row.skipped_cnt =
-              data.skipped && data.skipped[row.pkgname]
-                ? data.skipped[row.pkgname]
-                : 0;
+          if (stat === 'failed' || stat === 'ignored') {
+            fetchedRow.skipped_cnt = data.skipped && data.skipped[fetchedRow.pkgname]
+              ? data.skipped[fetchedRow.pkgname]
+              : 0;
+          }
 
-          table_rows.push(format_status_row(status, row, n));
+          tableRows.push(formatStatusRow(stat, fetchedRow, n));
         }
-        if (status != "remaining") {
-          $("#" + status + "_body").data("index", n);
-          $("#" + status + "_table")
+        if (stat !== 'remaining') {
+          $(`#${stat}_body`).data('index', n);
+          $(`#${stat}_table`)
             .DataTable()
-            .rows.add(table_rows)
+            .rows.add(tableRows)
             .draw(false);
         } else {
-          $("#" + status + "_table")
+          $(`#${stat}_table`)
             .DataTable()
             .clear()
             .draw();
-          $("#" + status + "_table")
+          $(`#${stat}_table`)
             .DataTable()
-            .rows.add(table_rows)
+            .rows.add(tableRows)
             .draw(false);
-          if (table_rows.length > 0) {
-            $("#" + status + "_div").show();
-            $("#nav_" + status).removeClass("disabled");
+          if (tableRows.length > 0) {
+            $(`#${stat}_div`).show();
+            $(`#nav_${stat}`).removeClass('disabled');
           } else {
-            $("#" + status + "_div").hide();
-            $("#nav_" + status).addClass("disabled");
+            $(`#${stat}_div`).hide();
+            $(`#nav_${stat}`).addClass('disabled');
           }
         }
       }
     });
   }
 
-  return !is_stopped;
+  return !isStopped;
 }
 
-function process_data_jail(data) {
-  var row, build, buildname, stat, types, latest, remaining, count, dtrow;
+function processDataJail(data) {
+  let row; let build; let types; let latest; let remaining; let count; let
+    dtrow;
 
   if (data.builds) {
-    types = ["queued", "built", "failed", "skipped", "ignored", "fetched"];
-    dtrow = new DTRow("builds_table", "builds_div");
-    for (buildname in data.builds) {
+    types = ['queued', 'built', 'failed', 'skipped', 'ignored', 'fetched'];
+    dtrow = new DTRow('builds_table', 'builds_div');
+    Object.keys(data.builds).forEach((bundleNameID) => {
       row = {};
 
-      build = data.builds[buildname];
-      if (buildname == "latest") {
+      build = data.builds[bundleNameID];
+      if (bundleNameID === 'latest') {
         latest = data.builds[build];
-        continue;
+        return;
       }
 
-      row.id = buildname;
-      row.buildname = buildname;
-      for (stat in types) {
-        count =
-          build.stats && build.stats[types[stat]] !== undefined
-            ? parseInt(build.stats[types[stat]])
-            : 0;
-        row["stat_" + types[stat]] = isNaN(count) ? 0 : count;
-      }
+      row.id = bundleNameID;
+      row.buildname = bundleNameID;
+      Object.keys(types).forEach((statID) => {
+        count = build.stats && build.stats[types[statID]] !== undefined
+          ? parseInt(build.stats[types[statID]], 10)
+          : 0;
+        row[`stat_${types[statID]}`] = Number.isNaN(count) ? 0 : count;
+      });
       remaining = build.stats
-        ? parseInt(build.stats["queued"]) -
-          (parseInt(build.stats["built"]) +
-            parseInt(build.stats["failed"]) +
-            parseInt(build.stats["skipped"]) +
-            parseInt(build.stats["ignored"]) +
-            parseInt(build.stats["fetched"]))
+        ? parseInt(build.stats.queued, 10)
+          - (parseInt(build.stats.built, 10)
+            + parseInt(build.stats.failed, 10)
+            + parseInt(build.stats.skipped, 10)
+            + parseInt(build.stats.ignored, 10)
+            + parseInt(build.stats.fetched, 10))
         : 0;
-      if (isNaN(remaining)) {
+      if (Number.isNaN(remaining)) {
         remaining = 0;
       }
       row.stat_remaining = remaining;
-      row.status = translate_status(build.status);
-      row.elapsed = build.elapsed ? build.elapsed : "";
+      row.status = translateStatus(build.status);
+      row.elapsed = build.elapsed ? build.elapsed : '';
 
       dtrow.queue(row);
-    }
+    });
 
     if (latest) {
-      $("#mastername").html(format_mastername(latest.mastername));
-      $("#status").text(translate_status(latest.status));
-      $("#jail").html(format_jailname(latest.jailname));
-      $("#setname").html(format_setname(latest.setname));
-      $("#ptname").html(format_ptname(latest.ptname));
-      $("#latest_url").attr(
-        "href",
-        build_url(latest.mastername, latest.buildname)
+      $('#mastername').html(formatMasterName(latest.mastername));
+      $('#status').text(translateStatus(latest.status));
+      $('#jail').html(formatJailName(latest.jailname));
+      $('#setname').html(formatSetName(latest.setname));
+      $('#ptname').html(formatPtName(latest.ptname));
+      $('#latest_url').attr(
+        'href',
+        buildURL(latest.mastername, latest.buildname),
       );
-      $("#latest_build").html(
-        format_buildname(latest.mastername, latest.buildname)
+      $('#latest_build').html(
+        formatBuildName(latest.mastername, latest.buildname),
       );
-      $("#masterinfo_div").show();
+      $('#masterinfo_div').show();
     }
 
     dtrow.commit();
@@ -866,44 +824,44 @@ function process_data_jail(data) {
   return true;
 }
 
-function process_data_index(data) {
-  var master, mastername, stat, types, latest, remaining, row, count, dtrow;
+function processDataIndex(data) {
+  let master; let types; let remaining;
+  let row; let count; let dtrow;
 
   if (data.masternames) {
-    types = ["queued", "built", "failed", "skipped", "ignored", "fetched"];
-    dtrow = new DTRow("latest_builds_table", "latest_builds_div");
-    for (mastername in data.masternames) {
+    types = ['queued', 'built', 'failed', 'skipped', 'ignored', 'fetched'];
+    dtrow = new DTRow('latest_builds_table', 'latest_builds_div');
+    Object.keys(data.masternames).forEach((masterNameID) => {
       row = {};
-      master = data.masternames[mastername].latest;
+      master = data.masternames[masterNameID].latest;
 
       row.id = master.mastername;
-      row.portset = format_portset(master.ptname, master.setname);
+      row.portset = formatPortSet(master.ptname, master.setname);
       row.mastername = master.mastername;
       row.buildname = master.buildname;
       row.jailname = master.jailname;
       row.setname = master.setname;
       row.ptname = master.ptname;
-      for (stat in types) {
-        count =
-          master.stats && master.stats[types[stat]] !== undefined
-            ? parseInt(master.stats[types[stat]])
-            : 0;
-        row["stat_" + types[stat]] = isNaN(count) ? 0 : count;
-      }
+      Object.keys(types).forEach((statID) => {
+        count = master.stats && master.stats[types[statID]] !== undefined
+          ? parseInt(master.stats[types[statID]], 10)
+          : 0;
+        row[`stat_${types[statID]}`] = Number.isNaN(count) ? 0 : count;
+      });
       remaining = master.stats
-        ? parseInt(master.stats["queued"]) -
-          (parseInt(master.stats["built"]) +
-            parseInt(master.stats["failed"]) +
-            parseInt(master.stats["skipped"]) +
-            parseInt(master.stats["ignored"]) +
-            parseInt(master.stats["fetched"]))
+        ? parseInt(master.stats.queued, 10)
+          - (parseInt(master.stats.built, 10)
+            + parseInt(master.stats.failed, 10)
+            + parseInt(master.stats.skipped, 10)
+            + parseInt(master.stats.ignored, 10)
+            + parseInt(master.stats.fetched, 10))
         : 0;
-      row.stat_remaining = isNaN(remaining) ? 0 : remaining;
-      row.status = translate_status(master.status);
-      row.elapsed = master.elapsed ? master.elapsed : "";
+      row.stat_remaining = Number.isNaN(remaining) ? 0 : remaining;
+      row.status = translateStatus(master.status);
+      row.elapsed = master.elapsed ? master.elapsed : '';
 
       dtrow.queue(row);
-    }
+    });
     dtrow.commit();
   }
 
@@ -911,121 +869,123 @@ function process_data_index(data) {
   return true;
 }
 
-function process_data(data) {
-  var should_reload;
+/* Disable static navbar at the breakpoint */
+function doResize() {
+  /* Redraw canvas to new width */
+  if ($('#stats').data()) {
+    determineCanvasWidth();
+    updateCanvas($('#stats').data());
+  }
+  /* Resize padding for navbar/footer heights */
+  $('body')
+    .css('padding-top', $('#header').outerHeight(true))
+    .css('padding-bottom', $('footer').outerHeight(true));
+}
+
+function delay(ms) {
+  return new Promise((resolve) => { setTimeout(resolve, ms); });
+}
+
+function processData(data) {
+  let shouldReload;
 
   // Determine what kind of data this file actually is. Due to handling
   // file:// and inline-style setups, it may be unknown what was fetched.
   if (data.buildname) {
     // If the current page is not build.html, then redirect for the
     // sake of file:// loading.
-    if (page_type != "build") {
-      location.href = "build.html";
+    if (pageType !== 'build') {
+      window.location.href = 'build.html';
       return;
     }
-    page_type = "build";
+    pageType = 'build';
     if (data.buildname) {
-      page_buildname = data.buildname;
+      pageBuildName = data.buildname;
     }
   } else if (data.builds) {
-    page_type = "jail";
+    pageType = 'jail';
   } else if (data.masternames) {
-    page_type = "index";
+    pageType = 'index';
   } else {
-    $("#loading p")
-      .text("Invalid request. Unknown data type.")
-      .addClass("error");
+    $('#loading p')
+      .text('Invalid request. Unknown data type.')
+      .addClass('error');
     return;
   }
 
   if (data.mastername) {
-    page_mastername = data.mastername;
+    pageMasterName = data.mastername;
   }
 
-  if (page_type == "build") {
-    should_reload = process_data_build(data);
-  } else if (page_type == "jail") {
-    should_reload = process_data_jail(data);
-  } else if (page_type == "index") {
-    should_reload = process_data_index(data);
+  if (pageType === 'build') {
+    shouldReload = processDataBuild(data);
+  } else if (pageType === 'jail') {
+    shouldReload = processDataJail(data);
+  } else if (pageType === 'index') {
+    shouldReload = processDataIndex(data);
   } else {
-    should_reload = false;
+    shouldReload = false;
   }
 
-  if (first_run) {
+  if (firstRun) {
     /* Resize due to full content. */
-    do_resize($(window));
+    doResize($(window));
     // Hide loading overlay
-    $("#loading_overlay").fadeOut(900);
+    $('#loading_overlay').fadeOut(900);
     /* Now that page is loaded, scroll to anchor. */
-    if (location.hash) {
-      scrollToElement(location.hash);
+    if (window.location.hash) {
+      scrollToElement(window.location.hash);
     }
-    first_run = false;
+    firstRun = false;
   }
 
-  if (should_reload) {
-    setTimeout(update_data, updateInterval * 1000);
+  if (shouldReload) {
+    delay(updateInterval * 1000).then(updateData);
   }
 }
 
-/* Disable static navbar at the breakpoint */
-function do_resize(win) {
-  /* Redraw canvas to new width */
-  if ($("#stats").data()) {
-    determine_canvas_width();
-    update_canvas($("#stats").data());
-  }
-  /* Resize padding for navbar/footer heights */
-  $("body")
-    .css("padding-top", $("#header").outerHeight(true))
-    .css("padding-bottom", $("footer").outerHeight(true));
+function updateData() {
+  $.ajax({
+    url: `${dataURL}.data.json`,
+    dataType: 'json',
+    headers: {
+      'Cache-Control': 'max-age=0',
+    },
+    success(data) {
+      loadAttempts = 0;
+      processData(data);
+    },
+    error() {
+      loadAttempts += 1;
+      if (loadAttempts < maxLoadAttempts) {
+        /* May not be there yet, try again shortly */
+        delay(firstLoadInterval * 1000).then(updateData);
+      } else {
+        $('#loading p')
+          .text('Invalid request or no data available yet.')
+          .addClass('error');
+      }
+    },
+  });
 }
 
 /* Force minimum width on mobile, will zoom to fit. */
-function fix_viewport() {
-  var minimum_width;
-
-  minimum_width = parseInt($("body").css("min-width"));
-  if (minimum_width != 0 && window.innerWidth < minimum_width) {
-    $("meta[name=viewport]").attr("content", "width=" + minimum_width);
+function fixViewport() {
+  const minimumWidth = parseInt($('body').css('min-width'), 10);
+  if (minimumWidth !== 0 && window.innerWidth < minimumWidth) {
+    $('meta[name=viewport]').attr('content', `width=${minimumWidth}`);
   } else {
-    $("meta[name=viewport]").attr(
-      "content",
-      "width=device-width, initial-scale=1.0"
+    $('meta[name=viewport]').attr(
+      'content',
+      'width=device-width, initial-scale=1.0',
     );
   }
 }
 
-function applyHovering(table_id) {
-  var lastIdx, Table;
+function setupBuild() {
+  let status;
 
-  lastIdx = null;
-  Table = $("#" + table_id).DataTable();
-  $("#" + table_id + " tbody")
-    .on("mouseover", "td", function () {
-      var colIdx = Table.cell(this).index().column;
-
-      if (colIdx !== lastIdx) {
-        $(Table.cells().nodes()).removeClass("highlight");
-        $(Table.column(colIdx).nodes()).addClass("highlight");
-      }
-    })
-    .on("mouseleave", function () {
-      $(Table.cells().nodes()).removeClass("highlight");
-    });
-}
-
-function setup_build() {
-  var columns,
-    status,
-    types,
-    i,
-    build_order_column,
-    pkgname_column,
-    origin_column;
-
-  $("#builders_table").dataTable({
+  $('#builders_table').DataTable({
     bFilter: false,
     bInfo: false,
     bPaginate: false,
@@ -1033,131 +993,131 @@ function setup_build() {
     aoColumns: [
       // Smaller ID/Status
       {
-        data: "job_id",
-        sWidth: "1em",
+        data: 'job_id',
+        sWidth: '1em',
       },
       {
-        data: "pkgname",
-        sWidth: "15em",
+        data: 'pkgname',
+        sWidth: '15em',
       },
       {
-        data: "origin",
-        sWidth: "17em",
+        data: 'origin',
+        sWidth: '17em',
       },
       {
-        data: "status",
-        sWidth: "10em",
+        data: 'status',
+        sWidth: '10em',
       },
       {
-        data: "elapsed",
-        sWidth: "4em",
+        data: 'elapsed',
+        sWidth: '4em',
       },
     ],
     columnDefs: [
       {
         data: null,
-        defaultContent: "",
-        targets: "_all",
+        defaultContent: '',
+        targets: '_all',
       },
     ],
     stateSave: true, // Enable cookie for keeping state
-    order: [[0, "asc"]], // Sort by Job ID
+    order: [[0, 'asc']], // Sort by Job ID
   });
 
-  build_order_column = {
-    sWidth: "1em",
-    sType: "numeric",
+  const buildOrderColumn = {
+    sWidth: '1em',
+    sType: 'numeric',
     bSearchable: false,
   };
 
-  pkgname_column = {
-    sWidth: "15em",
+  const PkgNameColumn = {
+    sWidth: '15em',
   };
-  origin_column = {
-    sWidth: "17em",
+  const originColumn = {
+    sWidth: '17em',
   };
 
-  columns = {
+  const columns = {
     built: [
-      build_order_column,
-      pkgname_column,
-      origin_column,
+      buildOrderColumn,
+      PkgNameColumn,
+      originColumn,
       {
-        sWidth: "4.25em",
+        sWidth: '4.25em',
         bSortable: false,
         bSearchable: false,
       },
       {
         bSearchable: false,
-        sWidth: "3em",
+        sWidth: '3em',
       },
     ],
     failed: [
-      build_order_column,
-      pkgname_column,
-      origin_column,
+      buildOrderColumn,
+      PkgNameColumn,
+      originColumn,
       {
-        sWidth: "6em",
+        sWidth: '6em',
       },
       {
-        sType: "numeric",
-        sWidth: "2em",
-        render: function (data, type, row) {
-          return type == "display" ? format_skipped(data, row[1]) : data;
+        sType: 'numeric',
+        sWidth: '2em',
+        render(data, type, row) {
+          return type === 'display' ? formatSkipped(data, row[1]) : data;
         },
       },
       {
-        sWidth: "7em",
+        sWidth: '7em',
       },
       {
         bSearchable: false,
-        sWidth: "3em",
+        sWidth: '3em',
       },
     ],
     skipped: [
-      build_order_column,
-      pkgname_column,
-      origin_column,
-      pkgname_column,
+      buildOrderColumn,
+      PkgNameColumn,
+      originColumn,
+      PkgNameColumn,
     ],
     ignored: [
-      build_order_column,
-      pkgname_column,
-      origin_column,
+      buildOrderColumn,
+      PkgNameColumn,
+      originColumn,
       {
-        sWidth: "2em",
-        sType: "numeric",
-        render: function (data, type, row) {
-          return type == "display" ? format_skipped(data, row[1]) : data;
+        sWidth: '2em',
+        sType: 'numeric',
+        render(data, type, row) {
+          return type === 'display' ? formatSkipped(data, row[1]) : data;
         },
       },
       {
-        sWidth: "25em",
+        sWidth: '25em',
       },
     ],
-    fetched: [build_order_column, pkgname_column, origin_column],
+    fetched: [buildOrderColumn, PkgNameColumn, originColumn],
     remaining: [
-      build_order_column,
-      pkgname_column,
+      buildOrderColumn,
+      PkgNameColumn,
       {
-        sWidth: "7em",
+        sWidth: '7em',
       },
     ],
-    queued: [build_order_column, pkgname_column, origin_column, origin_column],
+    queued: [buildOrderColumn, PkgNameColumn, originColumn, originColumn],
   };
 
-  types = [
-    "built",
-    "failed",
-    "skipped",
-    "ignored",
-    "fetched",
-    "remaining",
-    "queued",
+  const types = [
+    'built',
+    'failed',
+    'skipped',
+    'ignored',
+    'fetched',
+    'remaining',
+    'queued',
   ];
-  for (i in types) {
+  Object.keys(types).forEach((i) => {
     status = types[i];
-    $("#" + status + "_table").dataTable({
+    $(`#${status}_table`).DataTable({
       bAutoWidth: false,
       processing: true, // Show processing icon
       deferRender: true, // Defer creating TR/TD until needed
@@ -1165,260 +1125,256 @@ function setup_build() {
       stateSave: true, // Enable cookie for keeping state
       lengthMenu: [
         [5, 10, 25, 50, 100, 200, -1],
-        [5, 10, 25, 50, 100, 200, "All"],
+        [5, 10, 25, 50, 100, 200, 'All'],
       ],
       pageLength: 10,
-      order: [[0, "asc"]], // Sort by build order
+      order: [[0, 'asc']], // Sort by build order
     });
-  }
+  });
 }
 
-function setup_jail() {
-  var columns, status, types, i, stat_column;
-
-  stat_column = {
-    sWidth: "1em",
-    sType: "numeric",
+function setupJail() {
+  const statColumn = {
+    sWidth: '1em',
+    sType: 'numeric',
     bSearchable: false,
   };
 
-  columns = [
+  const columns = [
     {
-      data: "buildname",
-      render: function (data, type, row) {
-        return type == "display"
-          ? format_buildname(page_mastername, data)
+      data: 'buildname',
+      render(data, type) {
+        return type === 'display'
+          ? formatBuildName(pageMasterName, data)
           : data;
       },
-      sWidth: "12em",
+      sWidth: '12em',
     },
-    $.extend({}, stat_column, { data: "stat_queued" }),
-    $.extend({}, stat_column, { data: "stat_built" }),
-    $.extend({}, stat_column, { data: "stat_failed" }),
-    $.extend({}, stat_column, { data: "stat_skipped" }),
-    $.extend({}, stat_column, { data: "stat_ignored" }),
-    $.extend({}, stat_column, { data: "stat_fetched" }),
-    $.extend({}, stat_column, { data: "stat_remaining" }),
+    $.extend({}, statColumn, { data: 'stat_queued' }),
+    $.extend({}, statColumn, { data: 'stat_built' }),
+    $.extend({}, statColumn, { data: 'stat_failed' }),
+    $.extend({}, statColumn, { data: 'stat_skipped' }),
+    $.extend({}, statColumn, { data: 'stat_ignored' }),
+    $.extend({}, statColumn, { data: 'stat_fetched' }),
+    $.extend({}, statColumn, { data: 'stat_remaining' }),
     {
-      data: "status",
-      sWidth: "8em",
+      data: 'status',
+      sWidth: '8em',
     },
     {
-      data: "elapsed",
+      data: 'elapsed',
       bSearchable: false,
-      sWidth: "4em",
+      sWidth: '4em',
     },
   ];
 
-  $("#builds_table").dataTable({
+  $('#builds_table').DataTable({
     bAutoWidth: false,
     processing: true, // Show processing icon
     aoColumns: columns,
     stateSave: true, // Enable cookie for keeping state
     lengthMenu: [
       [5, 10, 25, 50, 100, 200, -1],
-      [5, 10, 25, 50, 100, 200, "All"],
+      [5, 10, 25, 50, 100, 200, 'All'],
     ],
     pageLength: 50,
     columnDefs: [
       {
         data: null,
-        defaultContent: "",
-        targets: "_all",
+        defaultContent: '',
+        targets: '_all',
       },
     ],
-    createdRow: function (row, data, index) {
-      if (data.buildname == $("#latest_build").text()) {
-        $("td.latest").removeClass("latest");
-        $("td", row).addClass("latest");
+    createdRow(row, data) {
+      if (data.buildname === $('#latest_build').text()) {
+        $('td.latest').removeClass('latest');
+        $('td', row).addClass('latest');
       }
     },
-    order: [[0, "asc"]], // Sort by buildname
+    order: [[0, 'asc']], // Sort by buildname
   });
-
-  //applyHovering('builds_table');
 }
 
-function setup_index() {
-  var columns, status, types, i, stat_column, table;
-
-  stat_column = {
-    sWidth: "1em",
-    sType: "numeric",
+function setupIndex() {
+  const statColumn = {
+    sWidth: '1em',
+    sType: 'numeric',
     bSearchable: false,
   };
 
-  columns = [
+  const columns = [
     {
-      data: "portset",
+      data: 'portset',
       visible: false,
     },
     {
-      data: "mastername",
-      render: function (data, type, row) {
-        return type == "display" ? format_mastername(data) : data;
+      data: 'mastername',
+      render(data, type) {
+        return type === 'display' ? formatMasterName(data) : data;
       },
-      sWidth: "22em",
+      sWidth: '22em',
     },
     {
-      data: "buildname",
-      render: function (data, type, row) {
-        return type == "display"
-          ? format_buildname(row.mastername, data)
+      data: 'buildname',
+      render(data, type, row) {
+        return type === 'display'
+          ? formatBuildName(row.mastername, data)
           : data;
       },
-      sWidth: "12em",
+      sWidth: '12em',
     },
     {
-      data: "jailname",
-      render: function (data, type, row) {
-        return type == "display" ? format_jailname(data) : data;
+      data: 'jailname',
+      render(data, type) {
+        return type === 'display' ? formatJailName(data) : data;
       },
-      sWidth: "10em",
+      sWidth: '10em',
       visible: false,
     },
     {
-      data: "setname",
-      render: function (data, type, row) {
-        return type == "display" ? format_setname(data) : data;
+      data: 'setname',
+      render(data, type) {
+        return type === 'display' ? formatSetName(data) : data;
       },
-      sWidth: "10em",
+      sWidth: '10em',
       visible: false,
     },
     {
-      data: "ptname",
-      render: function (data, type, row) {
-        return type == "display" ? format_ptname(data) : data;
+      data: 'ptname',
+      render(data, type) {
+        return type === 'display' ? formatPtName(data) : data;
       },
-      sWidth: "10em",
+      sWidth: '10em',
       visible: false,
     },
-    $.extend({}, stat_column, { data: "stat_queued" }),
-    $.extend({}, stat_column, { data: "stat_built" }),
-    $.extend({}, stat_column, { data: "stat_failed" }),
-    $.extend({}, stat_column, { data: "stat_skipped" }),
-    $.extend({}, stat_column, { data: "stat_ignored" }),
-    $.extend({}, stat_column, { data: "stat_fetched" }),
-    $.extend({}, stat_column, { data: "stat_remaining" }),
+    $.extend({}, statColumn, { data: 'stat_queued' }),
+    $.extend({}, statColumn, { data: 'stat_built' }),
+    $.extend({}, statColumn, { data: 'stat_failed' }),
+    $.extend({}, statColumn, { data: 'stat_skipped' }),
+    $.extend({}, statColumn, { data: 'stat_ignored' }),
+    $.extend({}, statColumn, { data: 'stat_fetched' }),
+    $.extend({}, statColumn, { data: 'stat_remaining' }),
     {
-      data: "status",
-      sWidth: "8em",
+      data: 'status',
+      sWidth: '8em',
     },
     {
-      data: "elapsed",
+      data: 'elapsed',
       bSearchable: false,
-      sWidth: "4em",
+      sWidth: '4em',
     },
   ];
 
-  table = $("#latest_builds_table").dataTable({
+  const table = $('#latest_builds_table').DataTable({
     bAutoWidth: false,
     processing: true, // Show processing icon
     aoColumns: columns,
     stateSave: true, // Enable cookie for keeping state
     lengthMenu: [
       [5, 10, 25, 50, 100, 200, -1],
-      [5, 10, 25, 50, 100, 200, "All"],
+      [5, 10, 25, 50, 100, 200, 'All'],
     ],
     pageLength: 50,
-    order: [[2, "asc"]], // Sort by buildname
+    order: [[2, 'asc']], // Sort by buildname
     columnDefs: [
       {
         data: null,
-        defaultContent: "",
-        targets: "_all",
+        defaultContent: '',
+        targets: '_all',
       },
     ],
-  });
-
-  table.rowGrouping({
-    iGroupingColumnIndex2: 4,
-    iGroupingColumnIndex: 5,
-    sGroupLabelPrefix2: "&nbsp;&nbsp;Set - ",
-    sGroupLabelPrefix: "Ports - ",
-    sEmptyGroupLabel: "",
-    fnGroupLabelFormat: function (label) {
-      return "<span class='title'>" + label + "</span>";
-    },
-    fnGroupLabelFormat2: function (label) {
-      return "<span class='title'>" + label + "</span>";
-    },
-    fnOnGrouped: function () {
-      // Hide default set group rows
-      $(
-        "#latest_builds_table tbody tr[id^=group-id-latest_builds_table_][id$=--]"
-      ).hide();
+    responsive: true,
+    rowGroup: {
+      dataSrc: ['ptname', 'setname'],
     },
   });
 
-  //applyHovering('latest_builds_table');
+  // table.rowGrouping({
+  //   iGroupingColumnIndex2: 4,
+  //   iGroupingColumnIndex: 5,
+  //   sGroupLabelPrefix2: '&nbsp;&nbsp;Set - ',
+  //   sGroupLabelPrefix: 'Ports - ',
+  //   sEmptyGroupLabel: '',
+  //   fnGroupLabelFormat(label) {
+  //     return `<span class='title'>${label}</span>`;
+  //   },
+  //   fnGroupLabelFormat2(label) {
+  //     return `<span class='title'>${label}</span>`;
+  //   },
+  //   fnOnGrouped() {
+  //     // Hide default set group rows
+  //     $(
+  //       '#latest_builds_table tbody tr[id^=group-id-latest_builds_table_][id$=--]',
+  //     ).hide();
+  //   },
+  // });
+
+  // applyHovering('latest_builds_table');
 }
 
-$(document).ready(function () {
-  var pathname;
-
-  pathname = location.pathname.substring(
-    location.pathname.lastIndexOf("/") + 1
+$(document).ready(() => {
+  const pathname = window.location.pathname.substring(
+    window.location.pathname.lastIndexOf('/') + 1,
   );
-  if (pathname == "") {
-    page_type = "index";
+  if (pathname === '') {
+    pageType = 'index';
   } else {
-    page_type = pathname.substr(0, pathname.length - 5);
+    pageType = pathname.substr(0, pathname.length - 5);
   }
 
-  if (page_type == "build") {
-    if (server_style == "hosted") {
-      page_mastername = getParameterByName("mastername");
-      page_buildname = getParameterByName("build");
-      if (!page_mastername || !page_buildname) {
-        $("#loading p")
-          .text("Invalid request. Mastername and Build required.")
-          .addClass("error");
+  if (pageType === 'build') {
+    if (serverStyle === 'hosted') {
+      pageMasterName = getParameterByName('mastername');
+      pageBuildName = getParameterByName('build');
+      if (!pageMasterName || !pageBuildName) {
+        $('#loading p')
+          .text('Invalid request. Mastername and Build required.')
+          .addClass('error');
         return;
       }
-      data_url = "data/" + page_mastername + "/" + page_buildname + "/";
-      $("a.data_url").each(function () {
-        var href = $(this).attr("href");
-        $(this).attr("href", data_url + href);
+      dataURL = `data/${pageMasterName}/${pageBuildName}/`;
+      $('a.data_url').each(() => {
+        const href = $(this).attr('href');
+        $(this).attr('href', dataURL + href);
       });
-      $("#master_link").attr("href", jail_url(page_mastername));
-    } else if (server_style == "inline") {
-      $("#master_link").attr("href", "../");
-      $("#index_link").attr("href", "../../");
+      $('#master_link').attr('href', jailURL(pageMasterName));
+    } else if (serverStyle === 'inline') {
+      $('#master_link').attr('href', '../');
+      $('#index_link').attr('href', '../../');
     }
-    setup_build();
-  } else if (page_type == "jail") {
-    if (server_style == "hosted") {
-      page_mastername = getParameterByName("mastername");
-      if (!page_mastername) {
-        $("#loading p")
-          .text("Invalid request. Mastername required.")
-          .addClass("error");
+    setupBuild();
+  } else if (pageType === 'jail') {
+    if (serverStyle === 'hosted') {
+      pageMasterName = getParameterByName('mastername');
+      if (!pageMasterName) {
+        $('#loading p')
+          .text('Invalid request. Mastername required.')
+          .addClass('error');
         return;
       }
-      data_url = "data/" + page_mastername + "/";
-      $("a.data_url").each(function () {
-        var href = $(this).attr("href");
-        $(this).attr("href", data_url + href);
+      dataURL = `data/${pageMasterName}/`;
+      $('a.data_url').each(() => {
+        const href = $(this).attr('href');
+        $(this).attr('href', dataURL + href);
       });
-      $("#latest_url").attr("href", build_url(page_mastername, "latest"));
-    } else if (server_style == "inline") {
-      $("#index_link").attr("href", "../");
+      $('#latest_url').attr('href', buildURL(pageMasterName, 'latest'));
+    } else if (serverStyle === 'inline') {
+      $('#index_link').attr('href', '../');
     }
-    setup_jail();
-  } else if (page_type == "index") {
-    if (server_style == "hosted") {
-      data_url = "data/";
-      $("a.data_url").each(function () {
-        var href = $(this).attr("href");
-        $(this).attr("href", data_url + href);
+    setupJail();
+  } else if (pageType === 'index') {
+    if (serverStyle === 'hosted') {
+      dataURL = 'data/';
+      $('a.data_url').each(() => {
+        const href = $(this).attr('href');
+        $(this).attr('href', dataURL + href);
       });
     }
-    setup_index();
+    setupIndex();
   } else {
-    $("#loading p")
-      .text("Invalid request. Unhandled page type '" + page_type + "'")
-      .addClass("error");
+    $('#loading p')
+      .text(`Invalid request. Unhandled page type '${pageType}'`)
+      .addClass('error');
     return;
   }
 
@@ -1427,35 +1383,35 @@ $(document).ready(function () {
 
   /* Fix nav links to not skip hashchange event when clicking multiple
    * times. */
-  $('#header .nav a[href^="#"]').each(function () {
-    var href = $(this).attr("href");
-    if (href != "#") {
-      $(this).on("click", function (e) {
+  $('#header .nav a[href^="#"]').each(() => {
+    const href = $(this).attr('href');
+    if (href !== '#') {
+      $(this).on('click', (e) => {
         e.preventDefault();
-        if (location.hash != href) {
-          location.hash = href;
+        if (window.location.hash !== href) {
+          window.location.hash = href;
         }
         scrollToElement(href);
       });
     }
   });
   /* Force minimum width on mobile, will zoom to fit. */
-  $(window).on("orientationchange", function (e) {
-    fix_viewport();
+  $(window).on('orientationchange', () => {
+    fixViewport();
   });
-  fix_viewport();
+  fixViewport();
   /* Handle resize needs */
-  $(window).on("resize", function () {
-    do_resize($(this));
+  $(window).on('resize', () => {
+    doResize($(this));
   });
-  do_resize($(window));
+  doResize($(window));
 
-  update_data();
+  updateData();
 });
 
-$(document).on("keydown", function (e) {
+$(document).on('keydown', (e) => {
   /* Disable F5 refreshing since this is AJAX driven. */
-  if (e.which == 116) {
+  if (e.which === 116) {
     e.preventDefault();
   }
 });
