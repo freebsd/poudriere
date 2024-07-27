@@ -385,3 +385,5 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # be fetched.
 # Default: everything
 #PACKAGE_FETCH_WHITELIST="gcc* rust llvm*"
+# The build will fail, if any package on this list cannot be fetched
+#PACKAGE_FETCH_ONLY=""

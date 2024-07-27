@@ -4496,6 +4496,35 @@ download_from_repo_post_delete() {
 	bset "stats_fetched" "${_read_file_lines_read:?}"
 }
 
+# Check if queued packages are in the fetch only list
+check_fetch_only_list() {
+	[ $# -eq 0 ] || eargs check_fetch_only_list
+	local pkgname pkgbase fopkg_glob
+
+	if [ -z ${PACKAGE_FETCH_ONLY} ]; then
+		msg_debug "Fetch only check: Empty list"
+		return
+	fi
+
+	# Disabling globs for this loop or wildcards will
+	# expand to files in the current directory instead of
+	# being passed to the case statement as a pattern
+	set -o noglob
+	for pkgname in $(pkgqueue_list build); do
+		msg_debug "Fetch only check: Package in queue is ${pkgname}"
+		pkgbase="${pkgname%-*}"
+		for fopkg_glob in ${PACKAGE_FETCH_ONLY-"*"}; do
+			msg_debug "Fetch only check: Fetch only package pattern is ${fopkg_glob}"
+			case "${pkgbase}" in
+				${fopkg_glob})
+					err 1 "Package fetch: Build aborted because package ${COLOR_PORT}${pkgname}${COLOR_RESET} matches ${COLOR_PORT}${fopkg_glob}${COLOR_RESET} in fetch only list"
+					;;
+			esac
+		done
+	done
+	set +o noglob
+}
+
 validate_package_branch() {
 	[ $# -eq 1 ] || eargs validate_package_branch PACKAGE_FETCH_BRANCH
 	local PACKAGE_FETCH_BRANCH="$1"
@@ -9642,6 +9671,8 @@ prepare_ports() {
 		msg "Sanity checking build queue"
 		bset status "pkgqueue_sanity_check:"
 		pkgqueue_sanity_check 0
+
+		check_fetch_only_list
 
 		if [ "${resuming_build}" -eq 0 ]; then
 			# Generate ports.queued list and stats_queued after
