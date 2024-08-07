@@ -4501,7 +4501,7 @@ check_fetch_only_list() {
 	[ $# -eq 0 ] || eargs check_fetch_only_list
 	local pkgname pkgbase fopkg_glob
 
-	if [ -z ${PACKAGE_FETCH_ONLY} ]; then
+	if [ -z "${PACKAGE_FETCH_ONLY}" ]; then
 		msg_debug "Fetch only check: Empty list"
 		return
 	fi
