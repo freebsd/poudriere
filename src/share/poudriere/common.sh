@@ -7264,6 +7264,7 @@ package_libdeps_satisfied() {
 		EOL)
 			ret=1
 			job_msg_warn "${COLOR_PORT}${pkgname}${COLOR_RESET} will be rebuilt as it misses ${shlib}"
+			break
 			;;
 		# Nothing similar. Bogus dependency. Avoid rebuilding
 		# because some library leaked in without a proper LIB_DEPENDS
