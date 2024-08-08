@@ -4478,10 +4478,28 @@ download_from_repo_post_delete() {
 	parallel_start
 	while mapfile_read_loop "${MASTER_DATADIR:?}/pkg_fetch" fpkgname; do
 		if [ ! -e "${PACKAGES}/All/${fpkgname}.${PKG_EXT}" ]; then
-			# We should not be fetching packages and then
-			# deleting them.  Let's get the user to report
-			# to us to not waste bandwidth.
-			err ${EX_SOFTWARE} "download_from_repo_post_delete: We lost fetched unversioned ${COLOR_PORT}${fpkgname}.${PKG_EXT}${COLOR_RESET}"
+			case "${PKG_NO_VERSION_FOR_DEPS}" in
+			"no")
+				# Due to not recursively validating a package
+				# will be used, we still may fetch a package
+				# and then later delete it.
+				# The PKG_NO_VERSION_FOR_DEPS=yes feature is
+				# not prone to this error since we do not
+				# recursively delete.
+				# Package fetch: Using cached copy of python311-3.11.9_1
+				# Package fetch: Using cached copy of py311-setuptools-63.1.0_1
+				# Deleting python311-3.11.9_1.pkg: missing dependency: readline-8.2.10
+				# Deleting py311-setuptools-63.1.0_1.pkg: missing dependency: python311-3.11.9_1
+				msg_debug "download_from_repo_post_delete: We lost fetched ${COLOR_PORT}${fpkgname}.${PKG_EXT}${COLOR_RESET}"
+				continue
+				;;
+			*)
+				# We should not be fetching packages and then
+				# deleting them.  Let's get the user to report
+				# to us to not waste bandwidth.
+				err ${EX_SOFTWARE} "download_from_repo_post_delete: We lost fetched unversioned ${COLOR_PORT}${fpkgname}.${PKG_EXT}${COLOR_RESET}"
+				;;
+			esac
 		fi
 		echo "${fpkgname}"
 	done | while mapfile_read_loop_redir fpkgname; do
