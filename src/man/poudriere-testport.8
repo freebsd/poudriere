@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 29, 2022
+.Dd August 9, 2024
 .Dt POUDRIERE-TESTPORT 8
 .Os
 .Sh NAME
@@ -157,6 +157,13 @@ Specifies which ports
 .Ar tree
 to use.
 .Pq Default: Dq Li default
+.It Fl S
+Do not recursively rebuild packages affected by other packages requiring
+incremental rebuild.
+This may result in broken packages if the ones they depend on are updated,
+are not ABI-compatible, and were not properly
+.Sy PORTREVISION
+bumped.
 .It Fl v
 This will show more information during the build.
 Specify twice to enable debug output.

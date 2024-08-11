@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd July 8, 2024
+.Dd August 9, 2024
 .Dt POUDRIERE-BULK 8
 .Os
 .Sh NAME
@@ -38,7 +38,7 @@
 .Nm
 .Fl a
 .Fl j Ar name
-.Op Fl CcFIikNnRrTtvw
+.Op Fl CcFIikNnRrSTtvw
 .Op Fl B Ar name
 .Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
@@ -48,7 +48,7 @@
 .Nm
 .Fl f Ar file Op Fl f Ar file2 Ar ...
 .Fl j Ar name
-.Op Fl CcFIikNnRrTtvw
+.Op Fl CcFIikNnRrSTtvw
 .Op Fl B Ar name
 .Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
@@ -57,7 +57,7 @@
 .Op Fl z Ar set
 .Nm
 .Fl j Ar name
-.Op Fl CcFIikNnRrTtvw
+.Op Fl CcFIikNnRrSTtvw
 .Op Fl B Ar name
 .Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
@@ -321,6 +321,13 @@ packages after building.
 Recursively test all dependencies as well.
 This flag is automatically set when using
 .Fl at .
+.It Fl S
+Do not recursively rebuild packages affected by other packages requiring
+incremental rebuild.
+This may result in broken packages if the ones they depend on are updated,
+are not ABI-compatible, and were not properly
+.Va PORTREVISION
+bumped.
 .It Fl T
 Try building
 .Va BROKEN
