@@ -301,6 +301,18 @@ kill_all_jobs() {
 		set) ;;
 		*) continue ;;
 		esac
+		case "${jobid}" in
+		"["*"]")
+			# [1] + 52255 Running
+			;;
+		*)
+			# If a job has a pipe it may list out multiple pids.
+			# The jobid gets read on the first line.
+			# [1] + 52255 Running
+			#       52256
+			continue
+			;;
+		esac
 		jobid="${jobid#"["}"
 		jobid="${jobid%%"]"*}"
 		alljobs="${alljobs:+${alljobs} }%${jobid}"
@@ -659,6 +671,9 @@ get_job_status() {
 		;;
 	*)
 		case "${gjs_output}" in
+		# First cases cover piped jobs.
+		"["*"] "?" "[0-9]*$'\n'*" "[0-9]*$'\n'*" ${gjs_pid} "*|\
+		"["*"] "?" "[0-9]*$'\n'*" ${gjs_pid} "*|\
 		"["*"] "?" ${gjs_pid} "*)
 			;;
 		"")
@@ -703,6 +718,9 @@ get_job_id() {
 
 	gji_output="$(jobs -l "${gji_pid}")" || ret="$?"
 	case "${gji_output}" in
+	# First cases cover piped jobs.
+	"["*"] "?" "[0-9]*$'\n'*" "[0-9]*$'\n'*" ${gji_pid} "*|\
+	"["*"] "?" "[0-9]*$'\n'*" ${gji_pid} "*|\
 	"["*"] "?" ${gji_pid} "*)
 		;;
 	"")
