@@ -9632,7 +9632,7 @@ prepare_ports() {
 				fi
 			done
 		else
-			msg "(-S) Skipping recursive rebuild"
+			msg "Skipping recursive rebuild"
 		fi
 
 		delete_stale_symlinks_and_empty_dirs
