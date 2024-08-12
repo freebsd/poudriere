@@ -34,6 +34,7 @@ TESTS=\
 	err_pipe_delayed.sh \
 	getpid.sh \
 	getvar.sh \
+	git_get_hash_and_dirty.sh \
 	git_tree_dirty.sh \
 	gsub.sh \
 	globmatch.sh \
