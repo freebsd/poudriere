@@ -1117,7 +1117,7 @@ buildlog_start() {
 			    "${git_modified}"
 			echo "Ports top unclean checkout: ${git_modified}"
 		fi
-		if git_get_hash_and_dirty "${mnt:?}/${portdir:?}" \
+		if git_get_hash_and_dirty "${mnt:?}/${portdir:?}" 1 \
 		    git_hash git_modified; then
 			echo "Port dir last git commit: ${git_hash}"
 			pkg_note_add "${pkgname}" port_git_hash "${git_hash}"
@@ -9222,7 +9222,7 @@ fetch_global_port_vars() {
 	if was_a_bulk_run; then
 		local git_hash git_modified git_dirty
 
-		if git_get_hash_and_dirty "${MASTERMNT?}/${PORTSDIR:?}" \
+		if git_get_hash_and_dirty "${MASTERMNT?}/${PORTSDIR:?}" 0 \
 		    git_hash git_modified; then
 			shash_set ports_metadata top_git_hash "${git_hash}"
 			case "${git_modified}" in
@@ -9245,11 +9245,12 @@ fetch_global_port_vars() {
 }
 
 git_get_hash_and_dirty() {
-	[ "$#" -eq 3 ] || eargs git_get_hash_and_dirty dir git_hash_var \
-	    git_modified_var
+	[ "$#" -eq 4 ] || eargs git_get_hash_and_dirty git_dir inport \
+	    git_hash_var git_modified_var
 	local git_dir="$1"
-	local gghd_git_hash_var="$2"
-	local gghd_git_modified_var="$3"
+	local inport="$2"
+	local gghd_git_hash_var="$3"
+	local gghd_git_modified_var="$4"
 	local gghd_git_hash gghd_git_modified
 
 	if [ ! -x "${GIT_CMD}" ]; then
@@ -9266,7 +9267,7 @@ git_get_hash_and_dirty() {
 		gghd_git_modified=unknown
 		;;
 	*)
-		if git_tree_dirty "${git_dir:?}" 1; then
+		if git_tree_dirty "${git_dir:?}" "${inport}"; then
 			gghd_git_modified=yes
 		fi
 		;;
