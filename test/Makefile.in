@@ -475,24 +475,25 @@ TESTS = array.sh builtins.sh cache.sh cache_pipe.sh \
 	distclean-smoke.sh do_clone.sh encode_args.sh err.sh \
 	err_catch.sh err_catch_framework.sh err_pipe_delayed.sh \
 	getpid.sh getvar.sh git_get_hash_and_dirty.sh \
-	git_tree_dirty.sh gsub.sh globmatch.sh hash_basic.sh jobs.sh \
-	hash_stack.sh list.sh locks.sh locks_critical_section.sh \
-	locks_critical_section_nested.sh locked_mkdir.sh \
-	locked_mkdir_waiters.sh locked_mkdir_waiters_kill.sh \
-	locked_mkdir_waiters_all_lose.sh logging.sh mapfile.sh \
-	mktemp.sh options-badorigin.sh options-overlays.sh \
-	options-smoke.sh originspec.sh parallel_run.sh pkg_version.sh \
+	git_tree_dirty.sh globmatch.sh gsub.sh hash_basic.sh \
+	hash_stack.sh jobs.sh list.sh locked_mkdir.sh \
+	locked_mkdir_waiters.sh locked_mkdir_waiters_all_lose.sh \
+	locked_mkdir_waiters_kill.sh locks.sh \
+	locks_critical_section.sh locks_critical_section_nested.sh \
+	logging.sh mapfile.sh mktemp.sh options-badorigin.sh \
+	options-overlays.sh options-smoke.sh originspec.sh \
+	parallel_run.sh pipe_func.sh pipe_hold.sh pkg_version.sh \
 	pkgqueue_basic.sh pkgqueue_build_and_test.sh \
 	pkgqueue_failure_cleanup.sh \
 	pkgqueue_find_all_pool_references.sh \
 	pkgqueue_mutually_exclusive.sh pkgqueue_prioritize.sh \
 	pkgqueue_remove_many_pipe.sh pkgqueue_trimmed_misordered.sh \
-	pipe_func.sh pipe_hold.sh port_var_fetch.sh prefix_output.sh \
-	read_blocking.sh read_file.sh readarray.sh readlines.sh \
-	relpath.sh relpath_common.sh required_env.sh shash_basic.sh \
-	stack.sh stripansi.sh test_contexts.sh test_contexts_expand.sh \
-	timespec.sh timestamp.sh trap_ignore_block.sh \
-	trap_save_block.sh trap_save.sh $(JAIL_TESTS) prep.sh
+	port_var_fetch.sh prefix_output.sh read_blocking.sh \
+	read_file.sh readarray.sh readlines.sh relpath.sh \
+	relpath_common.sh required_env.sh shash_basic.sh stack.sh \
+	stripansi.sh test_contexts.sh test_contexts_expand.sh \
+	timespec.sh timestamp.sh trap_ignore_block.sh trap_save.sh \
+	trap_save_block.sh $(JAIL_TESTS) prep.sh
 JAIL_TESTS = \
 	bulk-MOVED-default.sh \
 	bulk-MOVED-flavor-all.sh \
@@ -513,9 +514,9 @@ JAIL_TESTS = \
 	bulk-build-inc-pkgclean-flavor-default.sh \
 	bulk-build-inc-pkgclean-flavor.sh \
 	bulk-build-inc-pkgclean-origin.sh \
-	bulk-build-inc-shlibs.sh \
 	bulk-build-inc-shlibs-buildrun-deps.sh \
 	bulk-build-inc-shlibs-lib-deps.sh \
+	bulk-build-inc-shlibs.sh \
 	bulk-build-inc-trim_orphaned_build_deps-RUN-and-BUILD.sh \
 	bulk-build-inc-trim_orphaned_build_deps-RUN.sh \
 	bulk-build-inc-trim_orphaned_build_deps-double-dep.sh \
@@ -928,16 +929,16 @@ git_tree_dirty.sh.log: git_tree_dirty.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-gsub.sh.log: gsub.sh
-	@p='gsub.sh'; \
-	b='gsub.sh'; \
+globmatch.sh.log: globmatch.sh
+	@p='globmatch.sh'; \
+	b='globmatch.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-globmatch.sh.log: globmatch.sh
-	@p='globmatch.sh'; \
-	b='globmatch.sh'; \
+gsub.sh.log: gsub.sh
+	@p='gsub.sh'; \
+	b='gsub.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -949,13 +950,6 @@ hash_basic.sh.log: hash_basic.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-jobs.sh.log: jobs.sh
-	@p='jobs.sh'; \
-	b='jobs.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 hash_stack.sh.log: hash_stack.sh
 	@p='hash_stack.sh'; \
 	b='hash_stack.sh'; \
@@ -963,9 +957,44 @@ hash_stack.sh.log: hash_stack.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+jobs.sh.log: jobs.sh
+	@p='jobs.sh'; \
+	b='jobs.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 list.sh.log: list.sh
 	@p='list.sh'; \
 	b='list.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+locked_mkdir.sh.log: locked_mkdir.sh
+	@p='locked_mkdir.sh'; \
+	b='locked_mkdir.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+locked_mkdir_waiters.sh.log: locked_mkdir_waiters.sh
+	@p='locked_mkdir_waiters.sh'; \
+	b='locked_mkdir_waiters.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+locked_mkdir_waiters_all_lose.sh.log: locked_mkdir_waiters_all_lose.sh
+	@p='locked_mkdir_waiters_all_lose.sh'; \
+	b='locked_mkdir_waiters_all_lose.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+locked_mkdir_waiters_kill.sh.log: locked_mkdir_waiters_kill.sh
+	@p='locked_mkdir_waiters_kill.sh'; \
+	b='locked_mkdir_waiters_kill.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -987,34 +1016,6 @@ locks_critical_section.sh.log: locks_critical_section.sh
 locks_critical_section_nested.sh.log: locks_critical_section_nested.sh
 	@p='locks_critical_section_nested.sh'; \
 	b='locks_critical_section_nested.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-locked_mkdir.sh.log: locked_mkdir.sh
-	@p='locked_mkdir.sh'; \
-	b='locked_mkdir.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-locked_mkdir_waiters.sh.log: locked_mkdir_waiters.sh
-	@p='locked_mkdir_waiters.sh'; \
-	b='locked_mkdir_waiters.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-locked_mkdir_waiters_kill.sh.log: locked_mkdir_waiters_kill.sh
-	@p='locked_mkdir_waiters_kill.sh'; \
-	b='locked_mkdir_waiters_kill.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-locked_mkdir_waiters_all_lose.sh.log: locked_mkdir_waiters_all_lose.sh
-	@p='locked_mkdir_waiters_all_lose.sh'; \
-	b='locked_mkdir_waiters_all_lose.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1071,6 +1072,20 @@ originspec.sh.log: originspec.sh
 parallel_run.sh.log: parallel_run.sh
 	@p='parallel_run.sh'; \
 	b='parallel_run.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pipe_func.sh.log: pipe_func.sh
+	@p='pipe_func.sh'; \
+	b='pipe_func.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pipe_hold.sh.log: pipe_hold.sh
+	@p='pipe_hold.sh'; \
+	b='pipe_hold.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1134,20 +1149,6 @@ pkgqueue_remove_many_pipe.sh.log: pkgqueue_remove_many_pipe.sh
 pkgqueue_trimmed_misordered.sh.log: pkgqueue_trimmed_misordered.sh
 	@p='pkgqueue_trimmed_misordered.sh'; \
 	b='pkgqueue_trimmed_misordered.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pipe_func.sh.log: pipe_func.sh
-	@p='pipe_func.sh'; \
-	b='pipe_func.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-pipe_hold.sh.log: pipe_hold.sh
-	@p='pipe_hold.sh'; \
-	b='pipe_hold.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1271,16 +1272,16 @@ trap_ignore_block.sh.log: trap_ignore_block.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-trap_save_block.sh.log: trap_save_block.sh
-	@p='trap_save_block.sh'; \
-	b='trap_save_block.sh'; \
+trap_save.sh.log: trap_save.sh
+	@p='trap_save.sh'; \
+	b='trap_save.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-trap_save.sh.log: trap_save.sh
-	@p='trap_save.sh'; \
-	b='trap_save.sh'; \
+trap_save_block.sh.log: trap_save_block.sh
+	@p='trap_save_block.sh'; \
+	b='trap_save_block.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1418,13 +1419,6 @@ bulk-build-inc-pkgclean-origin.sh.log: bulk-build-inc-pkgclean-origin.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-build-inc-shlibs.sh.log: bulk-build-inc-shlibs.sh
-	@p='bulk-build-inc-shlibs.sh'; \
-	b='bulk-build-inc-shlibs.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 bulk-build-inc-shlibs-buildrun-deps.sh.log: bulk-build-inc-shlibs-buildrun-deps.sh
 	@p='bulk-build-inc-shlibs-buildrun-deps.sh'; \
 	b='bulk-build-inc-shlibs-buildrun-deps.sh'; \
@@ -1435,6 +1429,13 @@ bulk-build-inc-shlibs-buildrun-deps.sh.log: bulk-build-inc-shlibs-buildrun-deps.
 bulk-build-inc-shlibs-lib-deps.sh.log: bulk-build-inc-shlibs-lib-deps.sh
 	@p='bulk-build-inc-shlibs-lib-deps.sh'; \
 	b='bulk-build-inc-shlibs-lib-deps.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-inc-shlibs.sh.log: bulk-build-inc-shlibs.sh
+	@p='bulk-build-inc-shlibs.sh'; \
+	b='bulk-build-inc-shlibs.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

@@ -36,19 +36,19 @@ TESTS=\
 	getvar.sh \
 	git_get_hash_and_dirty.sh \
 	git_tree_dirty.sh \
-	gsub.sh \
 	globmatch.sh \
+	gsub.sh \
 	hash_basic.sh \
-	jobs.sh \
 	hash_stack.sh \
+	jobs.sh \
 	list.sh \
+	locked_mkdir.sh \
+	locked_mkdir_waiters.sh \
+	locked_mkdir_waiters_all_lose.sh \
+	locked_mkdir_waiters_kill.sh \
 	locks.sh \
 	locks_critical_section.sh \
 	locks_critical_section_nested.sh \
-	locked_mkdir.sh \
-	locked_mkdir_waiters.sh \
-	locked_mkdir_waiters_kill.sh \
-	locked_mkdir_waiters_all_lose.sh \
 	logging.sh \
 	mapfile.sh \
 	mktemp.sh \
@@ -57,6 +57,8 @@ TESTS=\
 	options-smoke.sh \
 	originspec.sh \
 	parallel_run.sh \
+	pipe_func.sh \
+	pipe_hold.sh \
 	pkg_version.sh \
 	pkgqueue_basic.sh \
 	pkgqueue_build_and_test.sh \
@@ -66,8 +68,6 @@ TESTS=\
 	pkgqueue_prioritize.sh \
 	pkgqueue_remove_many_pipe.sh \
 	pkgqueue_trimmed_misordered.sh \
-	pipe_func.sh \
-	pipe_hold.sh \
 	port_var_fetch.sh \
 	prefix_output.sh \
 	read_blocking.sh \
@@ -85,8 +85,8 @@ TESTS=\
 	timespec.sh \
 	timestamp.sh \
 	trap_ignore_block.sh \
-	trap_save_block.sh \
 	trap_save.sh \
+	trap_save_block.sh \
 	$(JAIL_TESTS)
 
 JAIL_TESTS= \
@@ -109,9 +109,9 @@ JAIL_TESTS= \
 	bulk-build-inc-pkgclean-flavor-default.sh \
 	bulk-build-inc-pkgclean-flavor.sh \
 	bulk-build-inc-pkgclean-origin.sh \
-	bulk-build-inc-shlibs.sh \
 	bulk-build-inc-shlibs-buildrun-deps.sh \
 	bulk-build-inc-shlibs-lib-deps.sh \
+	bulk-build-inc-shlibs.sh \
 	bulk-build-inc-trim_orphaned_build_deps-RUN-and-BUILD.sh \
 	bulk-build-inc-trim_orphaned_build_deps-RUN.sh \
 	bulk-build-inc-trim_orphaned_build_deps-double-dep.sh \
