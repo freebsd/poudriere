@@ -9261,9 +9261,16 @@ git_get_hash_and_dirty() {
 	    --format=%h .)
 	gghd_git_modified=no
 	msg_n "Inspecting ${git_dir} for modifications to git checkout..."
-	if git_tree_dirty "${git_dir:?}" 1; then
-		gghd_git_modified=yes
-	fi
+	case "${GIT_TREE_DIRTY_CHECK-}" in
+	no)
+		gghd_git_modified=unknown
+		;;
+	*)
+		if git_tree_dirty "${git_dir:?}" 1; then
+			gghd_git_modified=yes
+		fi
+		;;
+	esac
 	echo " ${gghd_git_modified}"
 	setvar "${gghd_git_hash_var}" "${gghd_git_hash}"
 	setvar "${gghd_git_modified_var}" "${gghd_git_modified}"
@@ -10425,6 +10432,7 @@ esac
 : ${PKG_REPRODUCIBLE:=no}
 : ${HTML_JSON_UPDATE_INTERVAL:=2}
 : ${HTML_TRACK_REMAINING:=no}
+: ${GIT_TREE_DIRTY_CHECK:=yes}
 : ${FORCE_MOUNT_HASH:=no}
 : ${DELETE_UNQUEUED_PACKAGES:=no}
 : ${DELETE_UNKNOWN_FILES:=yes}

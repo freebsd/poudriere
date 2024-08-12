@@ -385,3 +385,10 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # be fetched.
 # Default: everything
 #PACKAGE_FETCH_WHITELIST="gcc* rust llvm*"
+
+# If the ports tree is a git checkout then it is inspected for whether it
+# is "dirty". This information is stored in a package annotation to help
+# with debugging. It can be slow over NFS.
+# Set to "no" to disable.
+# Default: yes
+#GIT_TREE_DIRTY_CHECK=yes
