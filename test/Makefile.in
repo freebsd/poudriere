@@ -474,15 +474,15 @@ TESTS = array.sh builtins.sh cache.sh cache_pipe.sh \
 	distclean-badorigin.sh distclean-overlays.sh \
 	distclean-smoke.sh do_clone.sh encode_args.sh err.sh \
 	err_catch.sh err_catch_framework.sh err_pipe_delayed.sh \
-	getpid.sh getvar.sh gsub.sh globmatch.sh hash_basic.sh jobs.sh \
-	hash_stack.sh list.sh locks.sh locks_critical_section.sh \
-	locks_critical_section_nested.sh locked_mkdir.sh \
-	locked_mkdir_waiters.sh locked_mkdir_waiters_kill.sh \
-	locked_mkdir_waiters_all_lose.sh logging.sh mapfile.sh \
-	mktemp.sh options-badorigin.sh options-overlays.sh \
-	options-smoke.sh originspec.sh parallel_run.sh pkg_version.sh \
-	pkgqueue_basic.sh pkgqueue_build_and_test.sh \
-	pkgqueue_failure_cleanup.sh \
+	getpid.sh getvar.sh git_tree_dirty.sh gsub.sh globmatch.sh \
+	hash_basic.sh jobs.sh hash_stack.sh list.sh locks.sh \
+	locks_critical_section.sh locks_critical_section_nested.sh \
+	locked_mkdir.sh locked_mkdir_waiters.sh \
+	locked_mkdir_waiters_kill.sh locked_mkdir_waiters_all_lose.sh \
+	logging.sh mapfile.sh mktemp.sh options-badorigin.sh \
+	options-overlays.sh options-smoke.sh originspec.sh \
+	parallel_run.sh pkg_version.sh pkgqueue_basic.sh \
+	pkgqueue_build_and_test.sh pkgqueue_failure_cleanup.sh \
 	pkgqueue_find_all_pool_references.sh \
 	pkgqueue_mutually_exclusive.sh pkgqueue_prioritize.sh \
 	pkgqueue_remove_many_pipe.sh pkgqueue_trimmed_misordered.sh \
@@ -909,6 +909,13 @@ getpid.sh.log: getpid.sh
 getvar.sh.log: getvar.sh
 	@p='getvar.sh'; \
 	b='getvar.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+git_tree_dirty.sh.log: git_tree_dirty.sh
+	@p='git_tree_dirty.sh'; \
+	b='git_tree_dirty.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
