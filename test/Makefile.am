@@ -13,7 +13,6 @@ EXTRA_DIST= $(TESTS) \
 XFAIL_TESTS= \
 	bulk-build-inc-pkgclean-subpackage.sh \
 	bulk-build-inc-subpackage-deleted-subpackage.sh \
-	bulk-build-inc-subpackage-new-dep.sh \
 	distclean-overlays.sh \
 	err.sh \
 	options-overlays.sh

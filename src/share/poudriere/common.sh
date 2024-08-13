@@ -6631,6 +6631,7 @@ _delete_old_pkg() {
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor
 	local ignore new_originspec stale_pkg
 	local pkg_arch no_arch arch is_sym
+	local pkg_mainsubpkg pkgverext
 	local fpkg_glob -
 
 	pkgfile="${pkg##*/}"
@@ -6702,6 +6703,18 @@ _delete_old_pkg() {
 		return 0
 	fi
 	originspec_decode "${originspec}" origin pkg_flavor pkg_subpkg
+	case "${pkg_subpkg:+set}" in
+	set)
+		# Now massage the subpkg filename back to the main filename
+		pkgverext="-${pkg##*-}"
+		pkg_mainsubpkg="${pkg%${pkgverext}}"
+		pkg_mainsubpkg="${pkg_mainsubpkg%-${pkg_subpkg}}"
+		pkg_mainsubpkg="${pkg_mainsubpkg}${pkgverext}"
+		;;
+	*)
+		pkg_mainsubpkg=
+		;;
+	esac
 
 	if ! pkgbase_is_needed_and_not_ignored "${pkgname}"; then
 		# We don't expect this PKGBASE but it may still be an
@@ -6710,6 +6723,7 @@ _delete_old_pkg() {
 			if [ "${delete_unqueued}" -eq 1 ]; then
 				msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: no longer needed"
 				delete_pkg "${pkg}"
+				${pkg_mainsubpkg:+delete_pkg "${pkg_mainsubpkg}"}
 			else
 				msg_debug "delete_old_pkg: Skip unqueued ${COLOR_PORT}${pkg} | ${originspec}${COLOR_RESET}"
 			fi
@@ -6728,6 +6742,7 @@ _delete_old_pkg() {
 			;;
 		esac
 		delete_pkg "${pkg}"
+		${pkg_mainsubpkg:+delete_pkg "${pkg_mainsubpkg}"}
 		return 0
 		originspec_decode "${new_originspec}" origin flavor subpkg
 	fi
@@ -6737,6 +6752,7 @@ _delete_old_pkg() {
 	if ! test_port_origin_exist "${origin}"; then
 		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: stale package: nonexistent origin ${COLOR_PORT}${originspec}${COLOR_RESET}"
 		delete_pkg "${pkg}"
+		${pkg_mainsubpkg:+delete_pkg "${pkg_mainsubpkg}"}
 		return 0
 	fi
 
@@ -6756,6 +6772,7 @@ _delete_old_pkg() {
 		# would handle removing this.
 		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: stale package: unwanted origin ${COLOR_PORT}${originspec}${COLOR_RESET}"
 		delete_pkg "${pkg}"
+		${pkg_mainsubpkg:+delete_pkg "${pkg_mainsubpkg}"}
 		return 0
 	fi
 	new_pkgbase="${new_pkgname%-*}"
@@ -6768,6 +6785,7 @@ _delete_old_pkg() {
 	*)
 		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: package name changed to ${COLOR_PORT}${new_pkgbase}${COLOR_RESET}"
 		delete_pkg "${pkg}"
+		${pkg_mainsubpkg:+delete_pkg "${pkg_mainsubpkg}"}
 		return 0
 		;;
 	esac
@@ -6778,6 +6796,7 @@ _delete_old_pkg() {
 	*)
 		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: new version: ${v2}"
 		delete_pkg "${pkg}"
+		${pkg_mainsubpkg:+delete_pkg "${pkg_mainsubpkg}"}
 		return 0
 		;;
 	esac
@@ -6787,6 +6806,7 @@ _delete_old_pkg() {
 	if ! pkg_get_arch pkg_arch "${pkg}"; then
 		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: corrupted package (pkg_arch)"
 		delete_pkg "${pkg}"
+		${pkg_mainsubpkg:+delete_pkg "${pkg_mainsubpkg}"}
 		return 0
 	fi
 	case "${pkg_arch:+set}" in
@@ -6800,6 +6820,7 @@ _delete_old_pkg() {
 		*)
 			msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: ABI changed: '${pkg_arch}' -> '${arch}'"
 			delete_pkg "${pkg}"
+			${pkg_mainsubpkg:+delete_pkg "${pkg_mainsubpkg}"}
 			return 0
 			;;
 		esac
@@ -6813,6 +6834,7 @@ _delete_old_pkg() {
 		*)
 			msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: FLAVOR changed to '${flavor}' from '${pkg_flavor}'"
 			delete_pkg "${pkg}"
+			${pkg_mainsubpkg:+delete_pkg "${pkg_mainsubpkg}"}
 			return 0
 			;;
 		esac
@@ -6823,6 +6845,7 @@ _delete_old_pkg() {
 		*)
 			msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: FLAVOR '${pkg_flavor}' no longer provided. Now: '${flavors}'"
 			delete_pkg "${pkg}"
+			${pkg_mainsubpkg:+delete_pkg "${pkg_mainsubpkg}"}
 			return 0
 			;;
 		esac
@@ -6835,6 +6858,7 @@ _delete_old_pkg() {
 	    compiled_deps compiled_deps_pkgnames "${pkg}"; then
 		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: corrupted package (deps)"
 		delete_pkg "${pkg}"
+		${pkg_mainsubpkg:+delete_pkg "${pkg_mainsubpkg}"}
 		return 0
 	fi
 
@@ -6991,6 +7015,7 @@ _delete_old_pkg() {
 				msg_verbose "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: current deps: ${current_deps}"
 				msg_verbose "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: package deps: ${compiled_deps:+$(sorted ${compiled_deps})}"
 				delete_pkg "${pkg}"
+				${pkg_mainsubpkg:+delete_pkg "${pkg_mainsubpkg}"}
 				return 0
 				;;
 			esac
@@ -7019,6 +7044,7 @@ _delete_old_pkg() {
 		if ! pkg_get_options compiled_options "${pkg}"; then
 			msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: corrupted package (options)"
 			delete_pkg "${pkg}"
+			${pkg_mainsubpkg:+delete_pkg "${pkg_mainsubpkg}"}
 			return 0
 		fi
 		case "${compiled_options}" in
@@ -7032,6 +7058,7 @@ _delete_old_pkg() {
 				;;
 			esac
 			delete_pkg "${pkg}"
+			${pkg_mainsubpkg:+delete_pkg "${pkg_mainsubpkg}"}
 			return 0
 			;;
 		esac
@@ -7053,6 +7080,7 @@ _delete_old_pkg() {
 		if ! origin_has_pkgbase "${dep_origin}" "${dep_pkgbase}"; then
 			msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: dependency's package name is unknown or changed. Needed: ${COLOR_PORT}${dep_pkgbase}${COLOR_RESET} | ${COLOR_PORT}${dep_origin}${COLOR_RESET}"
 			delete_pkg "${pkg}"
+			${pkg_mainsubpkg:+delete_pkg "${pkg_mainsubpkg}"}
 			return 0
 		fi
 	done
@@ -9028,17 +9056,19 @@ ignored_packages() {
 originspec_is_needed_and_not_ignored() {
        [ $# -eq 1 ] || eargs originspec_is_needed_and_not_ignored originspec
        local originspec="$1"
+	local _origin _flavor _subpkg _originspec_main
 
 	if originspec_misses_flavor "${originspec}"; then
-		local origin=
-
-		originspec_decode "${originspec}" origin '' ''
-		msg_warn "originspec_is_needed_and_not_ignored: origin ${COLOR_PORT}${origin}${COLOR_RESET} requires a FLAVOR set for originspec"
+		originspec_decode "${originspec}" _origin '' ''
+		msg_warn "originspec_is_needed_and_not_ignored: origin ${COLOR_PORT}${_origin}${COLOR_RESET} requires a FLAVOR set for originspec"
 		return 1
 	fi
 	[ -e "${MASTER_DATADIR:?}/all_pkgs_not_ignored" ] ||
 	    err "${EX_SOFTWARE}" "originspec_is_needed_and_not_ignored: all_pkgs_not_ignored not yet computed"
-       awk -voriginspec="${originspec}" '
+	# Strip out subpkg for this check
+	originspec_decode "${originspec}" _origin _flavor _subpkg
+	originspec_encode _originspec_main "${_origin}" "${_flavor}" ''
+       awk -voriginspec="${_originspec_main}" '
            $2 == originspec {
                if (NF < 4)
                    found=1
@@ -9054,13 +9084,17 @@ originspec_is_needed_and_not_ignored() {
 originspec_is_listed() {
 	[ $# -eq 1 ] || eargs originspec_is_listed originspec
 	local originspec="$1"
+	local _origin _flavor _subpkg _originspec_main
 
 	if [ "${ALL}" -eq 1 ]; then
 		return 0
 	fi
 	[ -e "${MASTER_DATADIR:?}/all_pkgs" ] ||
 	    err "${EX_SOFTWARE}" "originspec_is_listed: all_pkgs not yet computed"
-	awk -voriginspec="${originspec}" '
+	# Strip out subpkg for this check
+	originspec_decode "${originspec}" _origin _flavor _subpkg
+	originspec_encode _originspec_main "${_origin}" "${_flavor}" ''
+	awk -voriginspec="${_originspec_main}" '
 	    $3 == "listed" && $2 == originspec {
 		found=1
 		exit 0
