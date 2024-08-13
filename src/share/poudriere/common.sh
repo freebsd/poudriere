@@ -6818,6 +6818,7 @@ _delete_old_pkg() {
 		# 'make actual-run-depends-list' after enough testing,
 		# which will avoida all of the injail hacks
 
+		# pkgname-lib_deps pkgname-run_deps
 		for td in lib run; do
 			shash_remove "pkgname-${td}_deps" "${new_pkgname}" \
 			raw_deps || raw_deps=
