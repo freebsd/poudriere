@@ -6518,6 +6518,8 @@ deps_fetch_vars() {
 		local _subpkg _originspec_subpkg
 		local __deps __pkgname __flavor __flavors __ignore
 
+		shash_set origin-subpackages "${origin}" "${_subpkgs}"
+
 		for _subpkg in ${_subpkgs}; do
 			originspec_encode _originspec_subpkg "${origin}" \
 			    "${_flavor}" "${_subpkg}"
@@ -7713,8 +7715,9 @@ origin_has_pkgbase() {
 	[ $# -eq 2 ] || eargs origin_has_pkgbase origin pkgbase
 	local origin="$1"
 	local pkgbase="$2"
-	local flavor flavors originspec flav_pkgname flav_pkgbase
+	local flavor flavors originspec check_pkgname check_pkgbase
 	local all_pkgbases default_flavor
+	local subpkg subpkgs
 
 	shash_get origin-flavors "${origin}" flavors || flavors=
 	default_flavor="${flavors%% *}"
@@ -7722,14 +7725,27 @@ origin_has_pkgbase() {
 		originspec_encode originspec "${origin}" "${flavor}" ''
 		# Not all FLAVOR-PKGNAMES are known. We only know the ones we
 		# think we might build.
-		shash_get originspec-pkgname "${originspec}" flav_pkgname ||
+		shash_get originspec-pkgname "${originspec}" check_pkgname ||
 		    continue
-		flav_pkgbase="${flav_pkgname%-*}"
-		case "${flav_pkgbase}" in
+		check_pkgbase="${check_pkgname%-*}"
+		case "${check_pkgbase}" in
 		"${pkgbase}") return 0 ;;
 		esac
-		all_pkgbases="${all_pkgbases:+${all_pkgbases} }${flav_pkgbase}"
+		all_pkgbases="${all_pkgbases:+${all_pkgbases} }${check_pkgbase}"
 	done
+	if shash_get origin-subpackages "${origin}" subpkgs; then
+		for subpkg in ${subpkgs}; do
+			# XXX: Combination of FLAVOR+subpkg?
+			originspec_encode originspec "${origin}" '' "${subpkg}"
+			shash_get originspec-pkgname "${originspec}" check_pkgname ||
+			    continue
+			check_pkgbase="${check_pkgname%-*}"
+			case "${check_pkgbase}" in
+			"${pkgbase}") return 0 ;;
+			esac
+			all_pkgbases="${all_pkgbases:+${all_pkgbases} }${check_pkgbase}"
+		done
+	fi
 	msg_debug "origin_has_pkgbase: Unable to map PKGBASE ${COLOR_PORT}${pkgbase}${COLOR_RESET} to ${COLOR_PORT}${origin}${COLOR_RESET} from: ${all_pkgbases}"
 	return 1
 }
@@ -9691,6 +9707,7 @@ prepare_ports() {
 			    pkgname-prefix \
 			    pkgname-trim_ignored \
 			    pkgname-skipped \
+			    origin-subpackages \
 			    ; do
 				shash_remove_var "${shash_bucket}" || :
 			done
