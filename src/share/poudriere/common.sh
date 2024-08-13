@@ -6513,7 +6513,8 @@ deps_fetch_vars() {
 	set) shash_set pkgname-options "${_pkgname}" "${_selected_options}" ;;
 	esac
 
-	if [ -z "${_origin_subpkg}" ] && [ -n "${_subpkgs}" ]; then
+	case "${_origin_subpkg:+set}.${_subpkgs:+set}" in
+	".set")
 		local _subpkg _originspec_subpkg
 		local __deps __pkgname __flavor __flavors __ignore
 
@@ -6523,7 +6524,8 @@ deps_fetch_vars() {
 			deps_fetch_vars "${_originspec_subpkg}" \
 			    __deps __pkgname __flavor __flavors __ignore || :
 		done
-	fi
+		;;
+	esac
 }
 
 ensure_pkg_installed() {
