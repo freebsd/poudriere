@@ -6896,7 +6896,7 @@ _delete_old_pkg() {
 						err 1 "Invalid dependency for ${COLOR_PORT}${pkgname}${COLOR_RESET}: ${d}"
 						;;
 					esac
-					current_deps="${current_deps} ${dpath}"
+					current_deps="${current_deps:+${current_deps} }${dpath}"
 					;;
 				esac
 			done
