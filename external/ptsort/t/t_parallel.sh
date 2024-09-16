@@ -1,6 +1,6 @@
 #!/bin/sh
 #-
-# Copyright (c) 2017 Dag-Erling Smørgrav
+# Copyright (c) 2017-2024 Dag-Erling Smørgrav
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,26 +30,30 @@
 
 . ./t_subr.sh
 
-ifile="${abs_srcdir}/t_dp_red.ti"
-ofile="${abs_srcdir}/t_dp_red.to"
-tfile="${abs_builddir}/t_dp_red.t$$"
-
 ptsort() {
-	grep '^[^#]' "$1" |
-	    "${abs_top_builddir}/bin/ptsort" -dp ${_verbose:+"-v"} >"$2"
+	local options="$1"
+	local ifile="${abs_srcdir}/t_parallel.ti"
+	local ofile="${abs_srcdir}/t_parallel$options.to"
+	local tfile="${abs_builddir}/t_parallel$options.t$$"
+
+	grep '^[^#]' "${ifile}" |
+	    "${abs_top_builddir}/bin/ptsort" $options ${_verbose:+"-v"} >"${tfile}"
+
+	if cmp -s "${ofile}" "${tfile}" ; then
+		ok parallel: ptsort $options
+	else
+		if [ -n "${_verbose}" ] ; then
+			diff --side-by-side --width 80 "${ofile}" "${tfile}" >&2
+		fi
+		not_ok parallel: ptsort $options
+	fi
+
+	rm -f "${tfile}"
 }
 
-ptsort "${ifile}" "${tfile}"
-
-if cmp -s "${ofile}" "${tfile}" ; then
-	ok depth / priority reduction
-else
-	if [ -n "${_verbose}" ] ; then
-		diff --side-by-side --width 80 "${ofile}" "${tfile}" >&2
-	fi
-	not_ok depth / priority reduction
-fi
-
-rm -f "${tfile}"
+ptsort -P
+ptsort -PDd
+ptsort -Pp
+ptsort -dp
 
 tap

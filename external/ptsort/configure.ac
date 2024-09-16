@@ -1,23 +1,25 @@
-AC_PREREQ([2.63])
-AC_INIT([ptsort], [1.20170904], [des@des.no],
+AC_PREREQ([2.71])
+AC_INIT([ptsort], [1.20240913], [des@des.no],
     [ptsort], [https://www.github.com/dag-erling/ptsort])
 AC_CONFIG_SRCDIR([bin/ptsort.c])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
-AM_CONFIG_HEADER(lib/config.h)
+AC_CONFIG_HEADERS([lib/config.h])
 
 # C compiler and features
 AC_LANG(C)
 AC_PROG_CC
-AC_PROG_CC_STDC
 AC_PROG_CPP
-AC_GNU_SOURCE
+AC_USE_SYSTEM_EXTENSIONS
 AC_C_CONST
 AC_C_VOLATILE
 
 # other programs
 AC_PROG_INSTALL
 AC_PROG_RANLIB
+
+# C library functions
+AC_CHECK_FUNC([mergesort])
 
 # libraries
 save_LIBS="${LIBS}"
@@ -26,7 +28,7 @@ AC_CHECK_LIB([cryb-test], [t_add_tests])
 LIBCRYB_TEST="${LIBS}"
 LIBS="${save_LIBS}"
 AC_SUBST(LIBCRYB_TEST)
-AM_CONDITIONAL([WITH_TESTS], [test x"${LIBCRYB_TEST}" != x""])
+AM_CONDITIONAL([WITH_CRYB_TEST], [test x"${LIBCRYB_TEST}" != x""])
 
 # options
 AC_ARG_ENABLE([developer-warnings],

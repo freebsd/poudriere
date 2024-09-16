@@ -1,5 +1,6 @@
 /*-
  * Copyright (c) 2016 Universitetet i Oslo
+ * Copyright (c) 2018 Dag-Erling Smørgrav
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -292,12 +293,26 @@ aa_delete(aa_tree *tree, void *key)
 	return (aa_delete_r(tree, &tree->root, key));
 }
 
+static void
+aa_destroy_r(aa_tree *tree, aa_node **nodep)
+{
+	aa_node *node = *nodep;
+
+	if (node->left != &aa_nil)
+		aa_destroy_r(tree, &node->left);
+	if (node->right != &aa_nil)
+		aa_destroy_r(tree, &node->right);
+	aa_free(node);
+	*nodep = &aa_nil;
+	tree->size--;
+}
+
 void
 aa_destroy(aa_tree *tree)
 {
 
-	while (tree->root != &aa_nil)
-		aa_delete_r(tree, &tree->root, tree->root->data);
+	if (tree->root != &aa_nil)
+		aa_destroy_r(tree, &tree->root);
 }
 
 static void *

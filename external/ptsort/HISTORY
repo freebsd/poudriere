@@ -1,2 +1,8 @@
+2024-09-13	1.20240913
+	Switch to a stable sorting algorithm to ensure that nodes of
+	equal rank are sorted by name as documented.
+
+	Add an option to group nodes of equal rank on the same line.
+
 2017-09-04	1.20170904
 	First stable release.

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2016-2017 Dag-Erling Smørgrav
+ * Copyright (c) 2016-2024 Dag-Erling Smørgrav
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,7 @@
 
 #include <err.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,11 +42,12 @@
 #include "aa_tree.h"
 #include "fline.h"
 
-static int bydepth;
-static int printdepth;
-static int printprio;
-static int quiet;
-static int strict;
+static bool bydepth;
+static bool parallel;
+static bool printdepth;
+static bool printprio;
+static bool quiet;
+static bool strict;
 static int vlevel;
 
 #define verbose(...)							\
@@ -82,6 +84,11 @@ typedef struct pnode {
 	unsigned long	 prio;
 } pnode;
 
+/*
+ * Comparison function.
+ */
+typedef int (*pnode_cmp)(const pnode *, const pnode *);
+
 static aa_tree nodes;
 static unsigned long tnedges, tnnodes;
 
@@ -94,45 +101,43 @@ static aa_comparator pnode_namecmp = (aa_comparator)strcmp;
  * Compare two nodes by their depths first and priorities second.
  */
 static int
-pnode_depthcmp(const void *av, const void *bv)
+pnode_depthcmp(const pnode *a, const pnode *b)
 {
-	const pnode *a = av;
-	const pnode *b = bv;
-
 	return (a->depth > b->depth ? 1 : a->depth < b->depth ? -1 :
 	    a->prio > b->prio ? 1 : a->prio < b->prio ? -1 : 0);
 }
 
+#if HAVE_MERGESORT
 static int
 pnodep_depthcmp(const void *av, const void *bv)
 {
-	const pnode *const *a = av;
-	const pnode *const *b = bv;
+       const pnode *const *a = av;
+       const pnode *const *b = bv;
 
-	return (pnode_depthcmp(*a, *b));
+       return (pnode_depthcmp(*a, *b));
 }
+#endif
 
 /*
  * Compare two nodes by their priorities first and depths second.
  */
 static int
-pnode_priocmp(const void *av, const void *bv)
+pnode_priocmp(const pnode *a, const pnode *b)
 {
-	const pnode *a = av;
-	const pnode *b = bv;
-
 	return (a->prio > b->prio ? 1 : a->prio < b->prio ? -1 :
 	    a->depth > b->depth ? 1 : a->depth < b->depth ? -1 : 0);
 }
 
+#if HAVE_MERGESORT
 static int
 pnodep_priocmp(const void *av, const void *bv)
 {
-	const pnode *const *a = av;
-	const pnode *const *b = bv;
+       const pnode *const *a = av;
+       const pnode *const *b = bv;
 
-	return (pnode_priocmp(*a, *b));
+       return (pnode_priocmp(*a, *b));
 }
+#endif
 
 /*
  * Allocate and initialize a new node.
@@ -359,6 +364,28 @@ input(const char *fn)
 	tnnodes += nnodes;
 }
 
+#if !HAVE_MERGESORT
+/*
+ * Sort an array of nodes.
+ *
+ * Insertion sort is not the fastest, but it is stable and requires no
+ * additional memory.
+ */
+static void
+sort(pnode **array, unsigned long n, pnode_cmp cmp)
+{
+	pnode *t;
+	unsigned long i, j;
+
+	for (i = 1; i < n; i++) {
+		t = array[i];
+		for (j = i; j > 0 && cmp(array[j-1], t) == 1; j--)
+			array[j] = array[j-1];
+		array[j] = t;
+	}
+}
+#endif
+
 /*
  * Output a partial ordering of the nodes in the graph.  We form an array
  * of pointers to all of our notes, sort them by priority and print the
@@ -371,20 +398,26 @@ output(const char *fn)
 	pnode **all, **p;
 	pnode *n;
 	FILE *f;
+	bool same = false;
 
 	/* allocate array of pointers */
-	if ((p = all = malloc(tnnodes * sizeof *all)) == NULL)
+	if ((p = all = malloc((tnnodes + 1) * sizeof *all)) == NULL)
 		err(1, "malloc()");
 
 	/* copy nodes into array in lexical order */
 	for (n = aa_first(&nodes, &nit); n != NULL; n = aa_next(&nit))
 		*p++ = n;
 	aa_finish(&nit);
-	/* p now points one past the end of the array */
+	/* p now points to the sentinel at the end of the array */
+	*p = NULL;
 
 	/* sort by either priority or depth */
-	qsort(all, tnnodes, sizeof *all,
+#if HAVE_MERGESORT
+	mergesort(all, tnnodes, sizeof *all,
 	    bydepth ? pnodep_depthcmp : pnodep_priocmp);
+#else
+	sort(all, tnnodes, bydepth ? pnode_depthcmp : pnode_priocmp);
+#endif
 
 	/* output to file or stdout */
 	if (fn == NULL)
@@ -394,12 +427,21 @@ output(const char *fn)
 
 	/* reverse through the array and print each node's name */
 	while (p-- > all) {
-		if (printdepth)
+		if (parallel && p[1] != NULL) {
+			same = bydepth ? p[0]->depth == p[1]->depth :
+			    p[0]->prio == p[1]->prio;
+			fputc(same ? ' ' : '\n', f);
+		}
+		if (printdepth && !same)
 			fprintf(f, "%7lu ", (*p)->depth);
-		if (printprio)
+		if (printprio && !same)
 			fprintf(f, "%7lu ", (*p)->prio);
-		fprintf(f, "%s\n", (*p)->name);
+		fprintf(f, "%s", (*p)->name);
+		if (!parallel)
+			fputc('\n', f);
 	}
+	if (parallel)
+		fputc('\n', f);
 
 	/* done */
 	if (f != stdout)
@@ -411,7 +453,7 @@ static void
 usage(void)
 {
 
-	fprintf(stderr, "usage: ptsort [-Ddpqsv] [-o output] [input ...]\n");
+	fprintf(stderr, "usage: ptsort [-DdPpqsv] [-o output] [input ...]\n");
 	exit(1);
 }
 
@@ -423,25 +465,28 @@ main(int argc, char *argv[])
 
 	aa_init(&nodes, (aa_comparator)strcmp);
 
-	while ((opt = getopt(argc, argv, "Ddo:pqsv")) != -1)
+	while ((opt = getopt(argc, argv, "Ddo:Ppqsv")) != -1)
 		switch (opt) {
 		case 'o':
 			ofn = optarg;
 			break;
 		case 'D':
-			bydepth = 1;
+			bydepth = true;
 			break;
 		case 'd':
-			printdepth = 1;
+			printdepth = true;
+			break;
+		case 'P':
+			parallel = true;
 			break;
 		case 'p':
-			printprio = 1;
+			printprio = true;
 			break;
 		case 'q':
-			quiet = 1;
+			quiet = true;
 			break;
 		case 's':
-			strict = 1;
+			strict = true;
 			break;
 		case 'v':
 			vlevel++;
@@ -453,12 +498,18 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
+	if (parallel && bydepth && printprio)
+		errx(1, "with -P, -p cannot be combined with -D");
+	if (parallel && !bydepth && printdepth)
+		errx(1, "with -P, -d must be combined with -D");
+
 	if (argc == 0)
 		input(NULL);
 	else
 		while (argc--)
 			input(*argv++);
 	verbose("graph has %lu nodes and %lu edges", tnnodes, tnedges);
-	output(ofn);
+	if (tnnodes > 0)
+		output(ofn);
 	exit(0);
 }
