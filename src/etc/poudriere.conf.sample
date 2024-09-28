@@ -1,7 +1,7 @@
 
 # Poudriere can optionally use ZFS for its ports/jail storage. For
 # ZFS define ZPOOL, otherwise set NO_ZFS=yes
-# 
+#
 #### ZFS
 # The pool where poudriere will create all the filesystems it needs
 # poudriere will use ${ZPOOL}/${ZROOTFS} as its root
@@ -392,3 +392,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Set to "no" to disable.
 # Default: yes
 #GIT_TREE_DIRTY_CHECK=yes
+
+# The devfs ruleset to apply inside the jail to /dev
+# See /etc/defaults/devfs.rules for the default one
+#DEVFS_RULESET=4
