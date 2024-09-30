@@ -252,8 +252,8 @@ mnt_tmpfs() {
 
 	case ${type} in
 		data)
-			# Limit data to 1GiB
-			limit=1
+			# Limit data to 2GiB
+			limit=2
 			;;
 
 		*)
