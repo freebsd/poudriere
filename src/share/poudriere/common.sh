@@ -1091,7 +1091,7 @@ buildlog_start() {
 	    ${PORT_FLAGS} \
 	    ${make_vars}
 
-	echo "build started at $(date)"
+	echo "build started at $(date -Iseconds)"
 	case "${PKG_REPRODUCIBLE}" in
 	"yes") ;;
 	*)
@@ -1194,7 +1194,7 @@ buildlog_stop() {
 
 	_log_path log
 
-	echo "build of ${originspec} | ${pkgname} ended at $(date)"
+	echo "build of ${originspec} | ${pkgname} ended at $(date -Iseconds)"
 	case "${TIME_START_JOB:+set}" in
 	set)
 		now=$(clock -monotonic)
