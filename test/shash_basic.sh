@@ -6,6 +6,15 @@ MASTERMNT=$(mktemp -d)
 
 echo "Working on ${MASTERMNT}"
 SHASH_VAR_PATH="${MASTERMNT}"
+value=
+assert_ret 0 shash_set blank key ""
+assert_ret 0 shash_get blank key value
+assert "" "${value}"
+assert_ret 0 shash_unset blank key
+value=
+assert_ret 0 shash_set blank key $'\n'
+assert_ret 0 shash_get blank key value
+assert "" "${value}"
 assert_ret 1 shash_remove pkgname-origin "pkg-1.7" value
 assert_ret 0 shash_unset pkgname-origin "pkg-1.7"
 assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
@@ -169,6 +178,10 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	shash_set pkgmetadata "annotations-blank2" "bogus"
 	echo -n | shash_write pkgmetadata "annotations-blank2"
 	assert "0" "$?" "shash_write pkgmetadata annotations-blank2"
+	assert_ret 0 shash_exists pkgmetadata "annotations-blank2"
+	value=
+	assert_ret 0 shash_get pkgmetadata "annotations-blank2" value
+	assert "" "${value}"
 
 	lines=0
 	shash_read pkgmetadata "annotations-blank2" |
@@ -202,6 +215,10 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	shash_set pkgmetadata "annotations-blank3" "bogus"
 	: | shash_write pkgmetadata "annotations-blank3"
 	assert "0" "$?" "shash_write pkgmetadata annotations-blank3"
+	assert_ret 0 shash_exists pkgmetadata "annotations-blank3"
+	value=
+	assert_ret 0 shash_get pkgmetadata "annotations-blank3" value
+	assert "" "${value}"
 
 	lines=0
 	shash_read pkgmetadata "annotations-blank3" |
@@ -236,6 +253,10 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	shash_set pkgmetadata "annotations-blank4" "bogus"
 	echo | shash_write pkgmetadata "annotations-blank4"
 	assert "0" "$?" "shash_write pkgmetadata annotations-blank4"
+	assert_ret 0 shash_exists pkgmetadata "annotations-blank4"
+	value=
+	assert_ret 0 shash_get pkgmetadata "annotations-blank4" value
+	assert "" "${value}"
 
 	lines=0
 	shash_read pkgmetadata "annotations-blank4" |
