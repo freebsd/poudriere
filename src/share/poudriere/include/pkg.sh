@@ -578,6 +578,7 @@ sign_pkg() {
 	[ $# -eq 2 ] || eargs sign_pkg sigtype pkgfile
 	local sigtype="$1"
 	local pkgfile="$2"
+	local repokeytype=$(key_type)
 
 	msg "Signing pkg bootstrap with method: ${sigtype}"
 	case "${sigtype}" in
@@ -587,9 +588,19 @@ sign_pkg() {
 		;;
 	"pubkey")
 		unlink "${pkgfile}.pubkeysig"
-		echo -n $(sha256 -q "${pkgfile}") | \
-		    openssl dgst -sha256 -sign "${PKG_REPO_SIGNING_KEY}" \
-		    -binary -out "${pkgfile}.pubkeysig"
+		case "${repokeytype}" in
+		""|rsa)
+			echo -n $(sha256 -q "${pkgfile}") | \
+				openssl dgst -sha256 -sign "${PKG_REPO_SIGNING_KEY}" \
+				-binary -out "${pkgfile}.pubkeysig"
+			;;
+		*)
+			local repokeypath=$(key_path)
+
+			pkg key --sign -t "${repokeytype}" "${repokeypath}" < "${pkgfile}" \
+			    > "${pkgfile}.pubkeysig"
+			;;
+		esac
 		;;
 	esac
 }
