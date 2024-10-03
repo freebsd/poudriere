@@ -87,6 +87,14 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	assert "unset" "${handle}"
 }
 
+# shash_read on nonexistent var-key should fail
+{
+	TMP="$(mktemp -ut shash_read)"
+	assert_ret_not 0 shash_read nonexistent key > "${TMP}"
+	assert_ret_not 0 test -s "${TMP}"
+	rm -f "${TMP}"
+}
+
 # shash_read_mapfile on existing var-key should pass
 {
 
