@@ -721,9 +721,13 @@ readlines_file() {
 				;;
 			*)
 				rl_var_count="$((rl_var_count - 1))"
-				rl_var="${1:?}"
+				rl_var="${1?}"
 				shift
-				setvar "${rl_var}" "${rl_line}"
+				case "${rl_var:+set}" in
+				set)
+					setvar "${rl_var}" "${rl_line}"
+					;;
+				esac
 				;;
 			esac
 		done
@@ -736,9 +740,13 @@ readlines_file() {
 	*)
 		case "${rl_rest+set}" in
 		set)
-			rl_var="${1:?}"
+			rl_var="${1?}"
 			shift
-			setvar "${rl_var}" "${rl_rest}"
+			case "${rl_var:+set}" in
+			set)
+				setvar "${rl_var}" "${rl_rest}"
+				;;
+			esac
 			;;
 		esac
 		for rl_var in "$@"; do

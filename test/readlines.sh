@@ -37,9 +37,10 @@ set +e
 	7 seven
 	EOF
 
-	assert_true readlines one two three four five six < "${TMP}"
+	two=unset
+	assert_true readlines one '' three four five six < "${TMP}"
 	assert "1 one" "${one}"
-	assert "2 two" "${two}"
+	assert "unset" "${two}"
 	assert "3 thre\e" "${three}"
 	assert "4 " "${four}"
 	assert "5 five" "${five}"
@@ -47,6 +48,13 @@ set +e
 	assert 7 "${_readlines_lines_read:?}"
 
 	rm -f "${TMP}"
+}
+
+{
+	unset one three
+	assert_false readlines_file /nonexistent one '' three
+	assert "null" "${one-null}"
+	assert "null" "${three-null}"
 }
 
 {
