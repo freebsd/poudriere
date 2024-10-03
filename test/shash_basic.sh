@@ -164,7 +164,7 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 		done
 		exit "${lines}"
 	)
-	assert 0 "$?" "shash_read pkgmetadata annotations-blank1 should not read any lines. lines=$?"
+	assert 1 "$?" "shash_read pkgmetadata annotations-blank1 should read 1 line. lines=$?"
 
 	assert_ret 0 shash_exists pkgmetadata "annotations-blank1"
 

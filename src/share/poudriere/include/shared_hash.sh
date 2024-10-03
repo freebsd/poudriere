@@ -108,7 +108,7 @@ shash_set() {
 	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
-	case "${value:+set}" in
+	case "${value+set}" in
 	set) echo "${value}" ;;
 	esac > "${_shash_varkey_file}"
 }
