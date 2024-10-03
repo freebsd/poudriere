@@ -692,6 +692,7 @@ mapfile_cat_filecmd(int argc, char **argv)
 		/* Create handle */
 		md = _mapfile_open(file, "r", 1, qflag);
 		if ((md == NULL) && qflag) {
+			ret = 1;
 			INTON;
 			continue;
 		}

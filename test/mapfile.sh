@@ -673,6 +673,11 @@ fi
 }
 
 {
+	assert_ret_not 0 mapfile_cat_file /nonexistent
+	assert_ret_not 0 mapfile_cat_file -q /nonexistent
+}
+
+{
 	TMP=$(mktemp -t mapfile)
 	TMP2=$(mktemp -t mapfile)
 
