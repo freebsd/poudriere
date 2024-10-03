@@ -8,6 +8,8 @@ fi
 for cmd in $(cat ${THISDIR}/../src/poudriere-sh/builtins-poudriere.def |
 	awk '/^[^#]/ {print $NF}'); do
 	case ${cmd} in
+	# Overridden to allow a hook
+	mapfile_close) continue ;;
 	# Overridden to make cleanup simpler
 	mktemp|_mktemp) continue ;;
 	# Overridden to capture some errors

@@ -982,4 +982,19 @@ fi
 	-n blah
 	EOF
 }
+
+# mapfile_read_proc hackery
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -ut mapfile)
+	ps uaxwd > "${TMP}"
+	assert_ret 0 mapfile_read_proc ps_handle cat "${TMP}"
+	assert_not "" "${ps_handle}"
+	#assert_ret 0 kill -0 "$!"
+	assert_ret 0 mapfile_cat "${ps_handle}" > "${TMP}.2"
+	assert_file "${TMP}" "${TMP}.2"
+	assert_ret 0 mapfile_close "${ps_handle}"
+	#assert_ret_not 0 kill -0 "$!"
+}
+
 exit 0

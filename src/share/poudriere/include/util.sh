@@ -983,6 +983,18 @@ mapfile_keeps_file_open_on_eof() {
 mapfile_supports_multiple_handles() {
 	return 0
 }
+
+# Wrap builtin mapfile_close() to handle mapfile_read_proc() cleanup needs.
+mapfile_close() {
+	[ "$#" -eq 1 ] || eargs mapfile_close handle
+	local handle="$1"
+	local ret
+
+	ret=0
+	command mapfile_close "${handle}" || ret="$?"
+	_mapfile_read_proc_close "${handle}" || ret="$?"
+	return "${ret}"
+}
 ;;
 *)
 mapfile() {
@@ -1181,6 +1193,7 @@ mapfile_close() {
 	fi
 	hash_unset mapfile_file "${handle}"
 	hash_unset mapfile_modes "${handle}"
+	_mapfile_read_proc_close "${handle}"
 }
 
 # This is for reading from a file in a loop while avoiding a pipe.
@@ -1288,13 +1301,44 @@ mapfile_read_loop_redir() {
 	fi
 }
 
+# Helper to workaround lack of process substitution.
+mapfile_read_proc() {
+	[ "$#" -ge 1 ] || eargs mapfile_read_proc handle_name cmd...
+	local _mapfile_read_proc_handle="$1"
+	shift 1
+	local spawn_jobid ret tmp _real_handle
+
+	tmp="$(mktemp -ut mapfile_read_proc_fifo)"
+	mkfifo "${tmp}" || return
+	spawn_job _pipe_func_job "${tmp}" "$@"
+	if mapfile "${_mapfile_read_proc_handle}" "${tmp}" "re"; then
+		getvar "${_mapfile_read_proc_handle}" _real_handle
+		hash_set mapfile_read_proc_job "${_real_handle}" "${spawn_jobid}"
+	else
+		kill_job 1 "%${spawn_jobid}" || ret="$?"
+	fi
+	return "${ret}"
+}
+
+_mapfile_read_proc_close() {
+	[ "$#" -eq 1 ] || eargs _mapfile_read_proc_close handle
+	local handle="$1"
+	local job ret
+
+	ret=0
+	if hash_remove mapfile_read_proc_job "${handle}" job; then
+		kill_job 1 "%${job}" || ret="$?"
+	fi
+	return "${ret}"
+}
+
 _pipe_func_job() {
 	[ "$#" -gt 2 ] || eargs _pipe_func_job _mf_fifo function [args...]
 	local _mf_fifo="$1"
 	shift 1
 
 	setproctitle "pipe_func($1)"
-	exec < /dev/null
+	#exec < /dev/null
 	exec > "${_mf_fifo}"
 	unlink "${_mf_fifo}"
 	"$@"
@@ -1310,7 +1354,7 @@ pipe_func() {
 	[ $# -ge 4 ] || eargs pipe_func [-H handle_var] 'read' read-params [...] -- func [params]
 	local _mf_handle_var _mf_cookie_val
 	local _mf_key _mf_read_params _mf_handle _mf_ret _mf_shift _mf_var
-	local _mf_fifo _mf_job
+	local _mf_fifo _mf_job spawn_jobid
 	local OPTIND=1 flag Hflag
 
 	Hflag=0
