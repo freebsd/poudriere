@@ -673,7 +673,7 @@ readlines_file() {
 		;;
 	esac
 
-	rl_nl=$'\n'
+	rl_nl=${RL_NL-$'\n'}
 	rl_var_count="$#"
 	unset rl_rest
 	ret=0
