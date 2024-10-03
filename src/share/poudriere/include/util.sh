@@ -646,19 +646,47 @@ read_line() {
 }
 
 readlines() {
-	[ "$#" -ge 0 ] || eargs readlines '[vars...]'
+	[ "$#" -ge 0 ] || eargs readlines [-T] '[vars...]'
+	local flag Tflag
+	local OPTIND=1
 
-	readlines_file "/dev/stdin" "$@"
+	Tflag=
+	while getopts "T" flag; do
+		case "${flag}" in
+		T)
+			Tflag=1
+			;;
+		*) err "${EX_USAGE}" "readlines: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ "$#" -ge 0 ] || eargs readlines [-T] '[vars...]'
+
+	readlines_file ${Tflag:+-T} "/dev/stdin" "$@"
 }
 
 readlines_file() {
 	# Blank vars will still read and output $_readlines_lines_read
-	[ "$#" -ge 1 ] || eargs readlines_file file '[vars...]'
-	local rl_file="$1"
-	shift
+	[ "$#" -ge 1 ] || eargs readlines_file [-T] file '[vars...]'
+	local rl_file
 	local rl_var rl_line rl_var_count rl_line_count
 	local rl_rest rl_nl rl_handle ret
-	local IFS
+	local flag Tflag
+	local OPTIND=1 IFS
+
+	Tflag=0
+	while getopts "T" flag; do
+		case "${flag}" in
+		T)
+			Tflag=1
+			;;
+		*) err "${EX_USAGE}" "readlines_file: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ "$#" -ge 1 ] || eargs readlines_file [-T] file '[vars...]'
+	rl_file="$1"
+	shift
 
 	_readlines_lines_read=0
 	case "${rl_file:?}" in
@@ -680,6 +708,11 @@ readlines_file() {
 	if mapfile -F rl_handle "${rl_file:?}" "r"; then
 		while IFS= mapfile_read "${rl_handle}" rl_line; do
 			_readlines_lines_read="$((_readlines_lines_read + 1))"
+			case "${Tflag}" in
+			1)
+				echo "${rl_line}"
+				;;
+			esac
 			case "${rl_var_count}" in
 			0)
 				;;

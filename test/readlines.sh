@@ -73,3 +73,48 @@ set +e
 	assert "NULL" "${two-NULL}"
 	assert 0 "${_readlines_lines_read:?}"
 }
+
+# Teeing
+{
+	TMP="$(mktemp -ut readlines)"
+	cat > "${TMP}" <<-EOF
+	1
+	2
+	EOF
+	one=blah
+	two=blah
+	assert_true readlines_file "${TMP}" one two > "${TMP}.2"
+	# No teeing without -T
+	assert_ret 1 test -s "${TMP}.2"
+	assert_true readlines_file -T "${TMP}" one two > "${TMP}.2"
+	assert "1" "${one}"
+	assert "2" "${two}"
+	assert 2 "${_readlines_lines_read:?}"
+	assert_file "${TMP}" "${TMP}.2" "readlines_file -T should tee"
+	rm -f "${TMP}" "${TMP}.2"
+}
+
+# Teeing
+{
+	TMP="$(mktemp -ut readlines)"
+	cat > "${TMP}" <<-EOF
+	1
+	2
+	EOF
+	one=blah
+	two=blah
+	assert_true readlines one two > "${TMP}.2" <<-EOF
+	$(cat "${TMP}")
+	EOF
+	# No teeing without -T
+	assert_ret 1 test -s "${TMP}.2"
+	assert_true readlines -T one two > "${TMP}.2" <<-EOF
+	$(cat "${TMP}")
+	EOF
+	assert 0 "$?"
+	assert "1" "${one}"
+	assert "2" "${two}"
+	assert 2 "${_readlines_lines_read:?}"
+	assert_file "${TMP}" "${TMP}.2" "readlines -T should tee"
+	rm -f "${TMP}" "${TMP}.2"
+}
