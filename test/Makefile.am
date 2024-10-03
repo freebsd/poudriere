@@ -72,6 +72,7 @@ TESTS=\
 	prefix_output.sh \
 	read_blocking.sh \
 	read_file.sh \
+	read_line.sh \
 	readarray.sh \
 	readlines.sh \
 	relpath.sh \

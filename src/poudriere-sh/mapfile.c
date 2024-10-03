@@ -434,11 +434,13 @@ _mapfile_readcmd(struct mapped_data *md, int argc, char **argv)
 			break;
 		}
 	}
-	INTON;
 
 	/* Set any remaining args to "" */
-	while (*var_return_ptr != NULL)
-		setvar(*var_return_ptr++, "", 0);
+	while (*var_return_ptr != NULL) {
+		//setvar(*var_return_ptr++, "", 0);
+		(void)unsetvar(*var_return_ptr++);
+	}
+	INTON;
 
 	return (ret);
 }

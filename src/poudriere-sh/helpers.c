@@ -199,7 +199,7 @@ randintcmd(int argc, char **argv)
 int
 getvarcmd(int argc, char **argv)
 {
-	const char *value;
+	const char *value, *var, *var_return;
 	int ret;
 
 	if (argc != 2 && argc != 3)
@@ -207,18 +207,26 @@ getvarcmd(int argc, char **argv)
 
 	value = NULL;
 	ret = 0;
-	if ((value = lookupvar(argv[1])) == NULL) {
-		value = "";
+	var = argv[1];
+	var_return = argv[2];
+	if ((value = lookupvar(var)) == NULL) {
+		value = NULL;
 		ret = 1;
 		goto out;
 	}
 out:
 	if (argc == 3 &&
-	    argv[2][0] != '\0' &&
-	    strcmp(argv[2], "-") != 0) {
-		setvar(argv[2], value, 0);
-	} else if (strcmp(value, "") != 0)
+	    var_return[0] != '\0' &&
+	    strcmp(var_return, "-") != 0) {
+		if (value == NULL) {
+			INTOFF;
+			(void)unsetvar(var_return);
+			INTON;
+		} else
+			setvar(var_return, value, 0);
+	} else if (value != NULL && strcmp(value, "") != 0) {
 		printf("%s\n", value);
+	}
 	return (ret);
 }
 

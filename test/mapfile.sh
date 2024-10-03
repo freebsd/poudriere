@@ -268,7 +268,9 @@ if mapfile_builtin; then
 	assert "3c" "${three}" "mapfile_read should match three 4+"
 	assert "4" "${nothing}" "mapfile_read should clear nothing 4+"
 	assert "" "${in}" "mapfile_read should clear in 4+"
+	assert "NULL" "${in-NULL}" "mapfile_read should unset in 4+"
 	assert "" "${here}" "mapfile_read should clear here 4+"
+	assert "NULL" "${here-NULL}" "mapfile_read should unset here 4+"
 
 	assert_ret 0 mapfile_close "${file_in}"
 	assert_ret 0 mapfile_close "${file_out}"

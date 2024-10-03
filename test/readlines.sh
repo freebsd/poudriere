@@ -50,10 +50,26 @@ set +e
 }
 
 {
+	TMP="$(mktemp -ut readlines)"
+	: > "${TMP}"
+	one=blah
+	two=blah
+	assert_true readlines_file "${TMP}" one two
+	assert "" "${one}"
+	assert "NULL" "${one-NULL}"
+	assert "" "${two}"
+	assert "NULL" "${two-NULL}"
+	assert 0 "${_readlines_lines_read:?}"
+	rm -f "${TMP}"
+}
+
+{
 	one=blah
 	two=blah
 	assert_false readlines_file /nonexistent one two
 	assert "" "${one}"
+	assert "NULL" "${one-NULL}"
 	assert "" "${two}"
+	assert "NULL" "${two-NULL}"
 	assert 0 "${_readlines_lines_read:?}"
 }

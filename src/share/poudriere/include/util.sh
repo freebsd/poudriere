@@ -171,7 +171,7 @@ getvar() {
 		ret=1
 		case "${_getvar_var_return}" in
 		""|-) ;;
-		*) setvar "${_getvar_var_return}" "" ;;
+		*) unset "${_getvar_var_return}" ;;
 		esac
 		;;
 	*)
@@ -573,7 +573,7 @@ read_file() {
 			if [ ! -r "${file:?}" ]; then
 				case "${var_return}" in
 				""|-) ;;
-				*) setvar "${var_return}" "" ;;
+				*) unset "${var_return}" ;;
 				esac
 				return 1
 			fi
@@ -611,7 +611,7 @@ read_line() {
 	local max_reads reads _ret _line maph IFS
 
 	if [ ! -f "${file}" ]; then
-		setvar "${var_return}" ""
+		unset "${var_return}"
 		return 1
 	fi
 
@@ -666,7 +666,7 @@ readlines_file() {
 	*)
 		if [ ! -r "${rl_file:?}" ]; then
 			for rl_var in "$@"; do
-				setvar "${rl_var}" ""
+				unset "${rl_var}"
 			done
 			return 1
 		fi
@@ -675,7 +675,7 @@ readlines_file() {
 
 	rl_nl=$'\n'
 	rl_var_count="$#"
-	rl_rest=
+	unset rl_rest
 	ret=0
 	if mapfile -F rl_handle "${rl_file:?}" "r"; then
 		while IFS= mapfile_read "${rl_handle}" rl_line; do
@@ -701,7 +701,7 @@ readlines_file() {
 	case "${rl_var_count}" in
 	0) ;;
 	*)
-		case "${rl_rest:+set}" in
+		case "${rl_rest+set}" in
 		set)
 			rl_var="${1:?}"
 			shift
@@ -709,7 +709,7 @@ readlines_file() {
 			;;
 		esac
 		for rl_var in "$@"; do
-			setvar "${rl_var}" ""
+			unset "${rl_var}"
 		done
 		;;
 	esac
