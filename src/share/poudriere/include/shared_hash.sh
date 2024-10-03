@@ -197,5 +197,6 @@ shash_unset() {
 	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
+	# Unquoted for globbing
 	rm -f ${_shash_varkey_file}
 }
