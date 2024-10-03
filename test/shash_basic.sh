@@ -285,7 +285,7 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	assert "empty" "${value:-empty}"
 }
 
-# shash_tee
+# shash_write with tee
 {
 
 	assert_ret 1 shash_exists description "pkg-foo"
@@ -297,7 +297,7 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	WWW: www.test.com
 	EOF
 	cp -f "${TMP}" "${TMP}.save" # XXX: assert_file deletes currently
-	cat "${TMP}" | assert_ret 0 shash_tee description "pkg-foo" > "${TMP}.3"
+	cat "${TMP}" | assert_ret 0 shash_write -T description "pkg-foo" > "${TMP}.3"
 	assert 0 "$?" "shash_tee"
 	assert_file "${TMP}" "${TMP}.3"
 	mv -f "${TMP}.save" "${TMP}" # XXX: assert_file deletes currently
@@ -315,7 +315,7 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	echo > "${TMP}"
 	assert_ret 0 test -s  "${TMP}"
 	cp -f "${TMP}" "${TMP}.save" # XXX: assert_file deletes currently
-	cat "${TMP}" | assert_ret 0 shash_tee description "pkg-foo" > "${TMP}.3"
+	cat "${TMP}" | assert_ret 0 shash_write -T description "pkg-foo" > "${TMP}.3"
 	assert 0 "$?" "shash_tee"
 	assert_file "${TMP}" "${TMP}.3"
 	mv -f "${TMP}.save" "${TMP}" # XXX: assert_file deletes currently
@@ -333,7 +333,7 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	: > "${TMP}"
 	assert_ret 1 test -s  "${TMP}"
 	cp -f "${TMP}" "${TMP}.save" # XXX: assert_file deletes currently
-	cat "${TMP}" | assert_ret 0 shash_tee description "pkg-foo" > "${TMP}.3"
+	cat "${TMP}" | assert_ret 0 shash_write -T description "pkg-foo" > "${TMP}.3"
 	assert 0 "$?" "shash_tee"
 	assert_file "${TMP}" "${TMP}.3"
 	mv -f "${TMP}.save" "${TMP}" # XXX: assert_file deletes currently

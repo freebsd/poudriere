@@ -113,7 +113,7 @@ _cache_tee() {
 	local cw_var="$1"
 	local cw_key="$2"
 
-	shash_tee "${cw_var}" "${cw_key}"
+	shash_write -T "${cw_var}" "${cw_key}"
 }
 
 _cache_exists() {
