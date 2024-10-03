@@ -155,7 +155,7 @@ shash_tee() {
 	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
-	write_atomic_tee "${_shash_varkey_file}"
+	write_atomic -T "${_shash_varkey_file}"
 }
 
 shash_remove_var() {

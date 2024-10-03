@@ -1780,20 +1780,27 @@ write_atomic_cmp() {
 	_write_atomic 1 0 "${dest}" || return
 }
 
+# -T is for teeing
 write_atomic() {
 	local -; set +x
-	[ $# -eq 1 ] || eargs write_atomic destfile "< content"
+	[ $# -ge 1 ] || eargs write_atomic [-T] destfile "< content"
+	local flag Tflag
+	local OPTIND=1
+
+	Tflag=0
+	while getopts "T" flag; do
+		case "${flag}" in
+		T)
+			Tflag=1
+			;;
+		*) err "${EX_USAGE}" "write_atomic: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ $# -eq 1 ] || eargs write_atomic [-T] destfile "< content"
 	local dest="$1"
 
-	_write_atomic 0 0 "${dest}" || return
-}
-
-write_atomic_tee() {
-	local -; set +x
-	[ $# -eq 1 ] || eargs write_atomic_tee destfile "< content"
-	local dest="$1"
-
-	_write_atomic 0 1 "${dest}" || return
+	_write_atomic 0 "${Tflag}" "${dest}" || return
 }
 
 # Place environment requirements on entering a function
