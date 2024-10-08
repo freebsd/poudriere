@@ -34,6 +34,7 @@ while get_test_context; do
 
 	EXPECTED_IGNORED=
 	EXPECTED_SKIPPED=
+	EXPECTED_INSPECTED=
 	EXPECTED_TOBUILD="${LISTPORTS}"
 	EXPECTED_QUEUED="${EXPECTED_TOBUILD}"
 	EXPECTED_LISTED="${LISTPORTS}"
@@ -58,6 +59,7 @@ while get_test_context; do
 	EOF
 
 	EXPECTED_IGNORED=
+	EXPECTED_INSPECTED=
 	EXPECTED_TOBUILD="devel/libtrue devel/true-buildrun-deps"
 	EXPECTED_QUEUED="${EXPECTED_TOBUILD}"
 	EXPECTED_BUILT=
@@ -88,8 +90,8 @@ while get_test_context; do
 	assert_bulk_dry_run
 	echo "------" | tee /dev/stderr
 
-	# XXX: shlib checks cause ignores right now
-	EXPECTED_IGNORED="devel/true-buildrun-deps"
+	EXPECTED_IGNORED=
+	EXPECTED_INSPECTED="devel/true-buildrun-deps"
 	#EXPECTED_TOBUILD=
 	EXPECTED_BUILT=" "
 	do_bulk ${LISTPORTS}

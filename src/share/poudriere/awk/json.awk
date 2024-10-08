@@ -113,6 +113,15 @@ function end_type() {
 	    print "\"phase\":\"" build_reasons[3] "\","
 	    print "\"errortype\":\"" build_reasons[4] "\","
 	    print "\"elapsed\":\"" build_reasons[5] "\","
+	  } else if (port_status_type == "nop") {
+	    reason_length = length(build_reasons)
+	    for (n = 3; n <= reason_length; n++) {
+	      if (n == 3)
+	        reason = build_reasons[n]
+	      else
+		reason = reason " " build_reasons[n]
+	    }
+	    print "\"reason\":\"" escape(reason) "\","
 	  } else if (port_status_type == "ignored") {
 	    reason_length = length(build_reasons)
 	    for (n = 3; n <= reason_length; n++) {

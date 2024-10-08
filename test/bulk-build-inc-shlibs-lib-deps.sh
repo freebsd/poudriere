@@ -31,6 +31,7 @@ while get_test_context; do
 	assert 0 "$?" "bulk for pkg should pass"
 
 	EXPECTED_IGNORED=
+	EXPECTED_INSPECTED=
 	EXPECTED_SKIPPED=
 	EXPECTED_TOBUILD="${LISTPORTS}"
 	EXPECTED_QUEUED="${EXPECTED_TOBUILD}"
@@ -86,8 +87,8 @@ while get_test_context; do
 	assert_bulk_dry_run
 	echo "------" | tee /dev/stderr
 
-	# XXX: shlib checks cause ignores right now
-	EXPECTED_IGNORED="devel/true"
+	EXPECTED_IGNORED=
+	EXPECTED_INSPECTED="devel/true"
 	#EXPECTED_TOBUILD=
 	EXPECTED_BUILT=" "
 	do_bulk ${LISTPORTS}

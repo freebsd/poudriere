@@ -35,6 +35,7 @@ while get_test_context; do
 	assert 0 "$?" "bulk for pkg should pass"
 
 	EXPECTED_IGNORED=
+	EXPECTED_INSPECTED=
 	EXPECTED_SKIPPED=
 	EXPECTED_TOBUILD="${LISTPORTS} print/indexinfo"
 	EXPECTED_QUEUED="${EXPECTED_TOBUILD}"
@@ -78,8 +79,8 @@ while get_test_context; do
 	assert_bulk_dry_run
 	echo "------" | tee /dev/stderr
 
-	# XXX: shlib checks cause ignores right now
-	EXPECTED_IGNORED="devel/gettext-runtime devel/libtextstyle"
+	EXPECTED_IGNORED=
+	EXPECTED_INSPECTED="devel/gettext-runtime devel/libtextstyle"
 	#EXPECTED_BUILT="${EXPECTED_TOBUILD}"
 	EXPECTED_BUILT="converters/libiconv"
 	do_bulk ${LISTPORTS}
@@ -94,6 +95,7 @@ while get_test_context; do
 	EOF
 
 	EXPECTED_IGNORED=
+	EXPECTED_INSPECTED=
 	EXPECTED_TOBUILD="converters/libiconv devel/gettext-runtime devel/libtextstyle"
 	EXPECTED_QUEUED="${EXPECTED_TOBUILD}"
 	EXPECTED_BUILT=
@@ -124,8 +126,8 @@ while get_test_context; do
 	assert_bulk_dry_run
 	echo "------" | tee /dev/stderr
 
-	# XXX: shlib checks cause ignores right now
-	EXPECTED_IGNORED="devel/gettext-runtime devel/libtextstyle"
+	EXPECTED_IGNORED=
+	EXPECTED_INSPECTED="devel/gettext-runtime devel/libtextstyle"
 	#EXPECTED_TOBUILD=
 	EXPECTED_BUILT=" "
 	do_bulk ${LISTPORTS}

@@ -1396,7 +1396,7 @@ update_stats() {
 	lock_acquire update_stats || return 1
 	critical_start
 
-	for type in built failed ignored; do
+	for type in built failed inspected ignored; do
 		_bget '' "ports.${type}"
 		bset "stats_${type}" "${_read_file_lines_read:?}"
 	done
@@ -1417,6 +1417,7 @@ update_stats_queued() {
 	_log_path log
 	sort "${log:?}/.poudriere.ports.tobuild" \
 	    "${log:?}/.poudriere.ports.ignored" \
+	    "${log:?}/.poudriere.ports.inspected" \
 	    "${log:?}/.poudriere.ports.skipped" \
 	    "${log:?}/.poudriere.ports.fetched" \
 	    | write_atomic "${log:?}/.poudriere.ports.queued"
@@ -1707,7 +1708,7 @@ show_dry_run_summary() {
 }
 
 show_build_summary() {
-	local status nbb nbf nbs nbi nbq nbp ndone nbtobuild buildname
+	local status nbb nbf nbs nbi nbin nbq nbp ndone nbtobuild buildname
 	local log now elapsed buildtime queue_width nbtb
 
 	_bget status status || status=unknown
@@ -1731,11 +1732,12 @@ show_build_summary() {
 	update_remaining || :
 	_bget nbf stats_failed || nbf=0
 	_bget nbi stats_ignored || nbi=0
+	_bget nbin stats_inspected || nbin=0
 	_bget nbs stats_skipped || nbs=0
 	_bget nbp stats_fetched || nbp=0
 	_bget nbb stats_built || nbb=0
 	_bget nbtb stats_tobuild || nbtb=0
-	ndone=$((nbb + nbf + nbi + nbs + nbp))
+	ndone=$((nbb + nbf + nbi + nbin + nbs + nbp))
 	nbtobuild=$((nbq - ndone))
 
 	if [ ${nbq} -gt 9999 ]; then
@@ -1750,6 +1752,7 @@ show_build_summary() {
 
 	printf "[%s] [%s] [%s] \
 Queued: %-${queue_width}d \
+${COLOR_IGNORE}Inspected: %-${queue_width}d \
 ${COLOR_SUCCESS}Built: %-${queue_width}d \
 ${COLOR_FAIL}Failed: %-${queue_width}d \
 ${COLOR_SKIP}Skipped: %-${queue_width}d \
@@ -1757,7 +1760,7 @@ ${COLOR_IGNORE}Ignored: %-${queue_width}d \
 ${COLOR_FETCHED}Fetched: %-${queue_width}d \
 ${COLOR_RESET}Tobuild: %-${queue_width}d  Time: %s\n" \
 	    "${MASTERNAME}" "${buildname}" "${status%%:*}" \
-	    "${nbq}" "${nbb}" "${nbf}" "${nbs}" "${nbi}" "${nbp}" \
+	    "${nbq}" "${nbin}" "${nbb}" "${nbf}" "${nbs}" "${nbi}" "${nbp}" \
 	    "${nbtobuild}" "${buildtime}"
 	case "${nbtobuild}" in
 	-*) dev_err "${EX_SOFTWARE}" "show_build_summary: negative tobuild count" ;;
@@ -2991,6 +2994,7 @@ symlink to .latest/${name}"
 
 show_build_results() {
 	local failed built ignored skipped nbbuilt nbfailed nbignored nbskipped
+	local inspected nbinspected
 	local nbfetched fetched
 
 	failed=$(bget ports.failed | awk '{print $1 ":" $3 }' | xargs echo)
@@ -3000,11 +3004,13 @@ show_build_results() {
 	    '{print $1 ":" color_phase $3 color_port }' | xargs echo)
 	built=$(bget ports.built | awk '{print $1}' | xargs echo)
 	ignored=$(bget ports.ignored | awk '{print $1}' | xargs echo)
+	inspected=$(bget ports.inspected | awk '{print $1}' | xargs echo)
 	fetched=$(bget ports.fetched | awk '{print $1}' | xargs echo)
 	skipped=$(bget ports.skipped | awk '{print $1}' | sort -u | xargs echo)
 	_bget nbbuilt stats_built
 	_bget nbfailed stats_failed
 	_bget nbignored stats_ignored
+	_bget nbinspected stats_inspected
 	_bget nbskipped stats_skipped
 	_bget nbfetched stats_fetched || stats_fetched=0
 
@@ -3023,6 +3029,10 @@ show_build_results() {
 	if [ $nbignored -gt 0 ]; then
 		COLOR_ARROW="${COLOR_IGNORE}" \
 		    msg "${COLOR_IGNORE}Ignored ports: ${COLOR_PORT}${ignored}"
+	fi
+	if [ $nbinspected -gt 0 ]; then
+		COLOR_ARROW="${COLOR_IGNORE}" \
+		    msg "${COLOR_IGNORE}Inspected ports: ${COLOR_PORT}${inspected}"
 	fi
 	if [ $nbfetched -gt 0 ]; then
 		COLOR_ARROW="${COLOR_FETCHED}" \
@@ -5936,21 +5946,7 @@ build_pkg() {
 			local ignore
 
 			ignore="no rebuild needed for shlib chase"
-			# XXX: ports.inspected
-			badd ports.ignored "${originspec} ${pkgname} ${ignore}"
-			local logfile
-			_logfile logfile "${pkgname}"
-			{
-				local NO_GIT
-
-				NO_GIT=1 buildlog_start "${pkgname}" "${originspec}"
-				print_phase_header "check-sanity"
-				echo "Ignoring: ${ignore}"
-				print_phase_footer
-				buildlog_stop "${pkgname}" "${originspec}" 0
-			} | write_atomic "${logfile}"
-			ln -fs "../${pkgname:?}.log" \
-			    "${log:?}/logs/ignored/${pkgname:?}.log"
+			badd ports.inspected "${originspec} ${pkgname} ${ignore}"
 			COLOR_ARROW="${COLOR_SUCCESS}" \
 			    job_msg_status_debug "Finished" \
 			    "${port}${FLAVOR:+@${FLAVOR}}" "${pkgname}" \
@@ -9452,6 +9448,7 @@ prepare_ports() {
 			bset stats_built 0
 			bset stats_failed 0
 			bset stats_ignored 0
+			bset stats_inspected 0
 			bset stats_skipped 0
 			bset stats_fetched 0
 			:> "${log:?}/.data.json"
@@ -9461,6 +9458,7 @@ prepare_ports() {
 			:> "${log:?}/.poudriere.ports.built"
 			:> "${log:?}/.poudriere.ports.failed"
 			:> "${log:?}/.poudriere.ports.ignored"
+			:> "${log:?}/.poudriere.ports.inspected"
 			:> "${log:?}/.poudriere.ports.skipped"
 			:> "${log:?}/.poudriere.ports.fetched"
 			# Link this build as the /latest
@@ -9604,6 +9602,7 @@ prepare_ports() {
 			    "${log:?}/.poudriere.ports.built" \
 			    "${log:?}/.poudriere.ports.failed" \
 			    "${log:?}/.poudriere.ports.ignored" \
+			    "${log:?}/.poudriere.ports.inspected" \
 			    "${log:?}/.poudriere.ports.fetched" \
 			    "${log:?}/.poudriere.ports.skipped" | \
 			    pkgqueue_remove_many_pipe "build"
@@ -10307,6 +10306,7 @@ if [ ! -d ${POUDRIERED}/jails ]; then
 			zfs inherit -r ${NS}:stats_failed ${fs}
 			zfs inherit -r ${NS}:stats_skipped ${fs}
 			zfs inherit -r ${NS}:stats_ignored ${fs}
+			zfs inherit -r ${NS}:stats_inspected ${fs}
 			zfs inherit -r ${NS}:stats_queued ${fs}
 			zfs inherit -r ${NS}:status ${fs}
 		done
