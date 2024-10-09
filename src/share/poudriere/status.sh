@@ -164,9 +164,9 @@ add_summary_build() {
 
 	display_add "${setname:--}" "${ptname}" "${jailname}" \
 	    "${BUILDNAME}" "${status:-?}" "${nbqueued:-?}" \
-	    "${nbinspected:-?}" \
+	    "${nbinspected:-?}" "${nbignored:-?}" \
 	    "${nbbuilt:-?}" "${nbfailed:-?}" "${nbskipped:-?}" \
-	    "${nbignored:-?}" "${nbfetched:-?}" \
+	    "${nbfetched:-?}" \
 	    "${nbremaining:-?}" "${time:-?}" ${url}
 }
 
@@ -203,12 +203,12 @@ show_summary() {
 			url_logs="LOGS"
 		fi
 		display_add "SET" "PORTS" "JAIL" "BUILD" "STATUS" \
-		    "QUEUE" "INSPECT" "BUILT" "FAIL" "SKIP" "IGNORE" \
+		    "QUEUE" "INSPECT" "IGNORE" "BUILT" "FAIL" "SKIP" \
 		    "FETCH" "REMAIN" \
 		    "TIME" "${url_logs}"
 	else
 		display_add "SET" "PORTS" "JAIL" "BUILD" "STATUS" \
-		    "Q" "IN" "B" "F" "S" "I" "P" "R" "TIME"
+		    "Q" "IN" "IG" "B" "F" "S" "P" "R" "TIME"
 	fi
 
 	status_for_each_build add_summary_build

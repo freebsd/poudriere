@@ -1743,14 +1743,14 @@ show_build_summary() {
 	printf "[%s] [%s] [%s] \
 Queued: %d \
 ${COLOR_IGNORE}Inspected: %d \
+${COLOR_IGNORE}Ignored: %d \
 ${COLOR_SUCCESS}Built: %d \
 ${COLOR_FAIL}Failed: %d \
 ${COLOR_SKIP}Skipped: %d \
-${COLOR_IGNORE}Ignored: %d \
 ${COLOR_FETCHED}Fetched: %d \
 ${COLOR_RESET}Remaining: %d  Time: %s\n" \
 	    "${MASTERNAME}" "${buildname}" "${status%%:*}" \
-	    "${nbq}" "${nbin}" "${nbb}" "${nbf}" "${nbs}" "${nbi}" "${nbp}" \
+	    "${nbq}" "${nbin}" "${nbi}" "${nbb}" "${nbf}" "${nbs}" "${nbp}" \
 	    "${nbremaining}" "${buildtime}"
 	case "${nbremaining}" in
 	-*) dev_err "${EX_SOFTWARE}" "show_build_summary: negative remaining count" ;;
