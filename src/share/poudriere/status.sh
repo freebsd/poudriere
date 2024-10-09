@@ -129,7 +129,7 @@ output_builder_info() {
 }
 
 add_summary_build() {
-	local status nbqueued nbfailed nbignored nbskipped nbbuilt nbtobuild
+	local status nbqueued nbfailed nbignored nbskipped nbbuilt nbremaining
 	local nbfetched nbinspected
 	local elapsed time url save_status
 
@@ -141,7 +141,7 @@ add_summary_build() {
 	_bget nbignored stats_ignored || :
 	_bget nbskipped stats_skipped || :
 	_bget nbfetched stats_fetched || stats_fetched=0
-	nbtobuild=$((nbqueued - (nbbuilt + nbfailed + nbskipped + nbignored + \
+	nbremaining=$((nbqueued - (nbbuilt + nbfailed + nbskipped + nbignored + \
 	    nbinspected + nbfetched)))
 
 	calculate_elapsed_from_log ${now} ${log}
@@ -166,7 +166,8 @@ add_summary_build() {
 	    "${BUILDNAME}" "${status:-?}" "${nbqueued:-?}" \
 	    "${nbinspected:-?}" \
 	    "${nbbuilt:-?}" "${nbfailed:-?}" "${nbskipped:-?}" \
-	    "${nbignored:-?}" "${nbfetched:-?}" "${nbtobuild:-?}" "${time:-?}" ${url}
+	    "${nbignored:-?}" "${nbfetched:-?}" \
+	    "${nbremaining:-?}" "${time:-?}" ${url}
 }
 
 status_for_each_build() {

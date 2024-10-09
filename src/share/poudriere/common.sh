@@ -1708,7 +1708,7 @@ show_dry_run_summary() {
 }
 
 show_build_summary() {
-	local status nbb nbf nbs nbi nbin nbq nbp ndone nbtobuild buildname
+	local status nbb nbf nbs nbi nbin nbq nbp ndone nbremaining buildname
 	local log now elapsed buildtime nbtb
 
 	_bget status status || status=unknown
@@ -1738,7 +1738,7 @@ show_build_summary() {
 	_bget nbb stats_built || nbb=0
 	_bget nbtb stats_tobuild || nbtb=0
 	ndone=$((nbb + nbf + nbi + nbin + nbs + nbp))
-	nbtobuild=$((nbq - ndone))
+	nbremaining=$((nbq - ndone))
 
 	printf "[%s] [%s] [%s] \
 Queued: %d \
@@ -1748,19 +1748,19 @@ ${COLOR_FAIL}Failed: %d \
 ${COLOR_SKIP}Skipped: %d \
 ${COLOR_IGNORE}Ignored: %d \
 ${COLOR_FETCHED}Fetched: %d \
-${COLOR_RESET}Tobuild: %d  Time: %s\n" \
+${COLOR_RESET}Remaining: %d  Time: %s\n" \
 	    "${MASTERNAME}" "${buildname}" "${status%%:*}" \
 	    "${nbq}" "${nbin}" "${nbb}" "${nbf}" "${nbs}" "${nbi}" "${nbp}" \
-	    "${nbtobuild}" "${buildtime}"
-	case "${nbtobuild}" in
-	-*) dev_err "${EX_SOFTWARE}" "show_build_summary: negative tobuild count" ;;
+	    "${nbremaining}" "${buildtime}"
+	case "${nbremaining}" in
+	-*) dev_err "${EX_SOFTWARE}" "show_build_summary: negative remaining count" ;;
 	esac
 	case "${status}" in
 	idle:)
-		case "${nbtobuild}" in
+		case "${nbremaining}" in
 		0) ;;
 		*)
-			dev_err "${EX_SOFTWARE}" "show_build_summary: tobuild count >0 after build"
+			dev_err "${EX_SOFTWARE}" "show_build_summary: remaining count >0 after build"
 		esac
 	esac
 }

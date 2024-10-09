@@ -801,7 +801,7 @@ assert_counts() {
 	local queued expected_queued ignored expected_ignored
 	local inspected expected_inspected
 	local skipped expected_skipped
-	local tobuild expected_tobuild computed_tobuild
+	local tobuild expected_tobuild computed_remaining
 	local failed expected_failed
 	local fetched expected_fetched
 	local built expected_built
@@ -882,24 +882,23 @@ assert_counts() {
 	assert "${expected_failed}" "${failed}" "failed should match"
 
 	# Ensure the computed stat is correct
-	# tobuild is static from the beginning. It is not modified
-	# by failed, fetched, built.
 	# If we did a real build, without crashing, then all of the stats
 	# should add to 0.
 	case "${EXPECTED_BUILT:+set}" in
 	set)
-		computed_tobuild=$((expected_queued - \
+		computed_remaining=$((expected_queued - \
 		    (expected_ignored + expected_inspected + \
 		     expected_skipped + expected_built + \
 		     expected_fetched + expected_failed)))
-		assert "0" "${computed_tobuild}" \
-		    "Computed tobuild should be 0 on a non-crash build - this being wrong could indicate show_build_summary() is wrong too"
+		assert "0" "${computed_remaining}" \
+		    "Computed remaining should be 0 on a non-crash build - this being wrong could indicate show_build_summary() is wrong too"
 		;;
 	*)
-		computed_tobuild=$((expected_queued - \
+		# For a dry-run, remainining should match tobuild.
+		computed_remaining=$((expected_queued - \
 		    (expected_ignored + expected_inspected + expected_skipped)))
-		assert "${expected_tobuild}" "${computed_tobuild}" \
-		    "Computed tobuild should match tobuild for a dry-run"
+		assert "${expected_tobuild}" "${computed_remaining}" \
+		    "Computed remaining should match remaining for a dry-run"
 		;;
 	esac
 }
