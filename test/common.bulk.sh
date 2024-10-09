@@ -1423,24 +1423,28 @@ _assert_bulk_build_results() {
 		assert_ret 0 [ -L "${file2}" ]
 		assert "$(realpath "${file}")" "$(realpath "${file}")"
 	done
-	for pkgname in ${ignored_pkgnames}; do
-		file="${log:?}/logs/${pkgname}.log"
-		assert_ret 0 [ -f "${file}" ]
-		assert 0 $? "Logfile should exist: ${file}"
-		assert_ret 0 [ -s "${file}" ]
-		assert 0 $? "Logfile should not be empty: ${file}"
-		assert_ret 0 grep "Ignoring:" "${file}"
-		hash_get pkgname-originspec "${pkgname}" originspec ||
-			err 99 "Unable to find originspec for pkgname: ${pkgname}"
-		grep '^build of.*ended at' "${file}" || :
-		assert_ret 0 grep "build of ${originspec} | ${pkgname} ended at" \
-		    "${file}"
+	case "${LOGS_FOR_IGNORED-}" in
+	"yes")
+		for pkgname in ${ignored_pkgnames}; do
+			file="${log:?}/logs/${pkgname}.log"
+			assert_ret 0 [ -f "${file}" ]
+			assert 0 $? "Logfile should exist: ${file}"
+			assert_ret 0 [ -s "${file}" ]
+			assert 0 $? "Logfile should not be empty: ${file}"
+			assert_ret 0 grep "Ignoring:" "${file}"
+			hash_get pkgname-originspec "${pkgname}" originspec ||
+				err 99 "Unable to find originspec for pkgname: ${pkgname}"
+			grep '^build of.*ended at' "${file}" || :
+			assert_ret 0 grep "build of ${originspec} | ${pkgname} ended at" \
+			    "${file}"
 
-		file2="${log:?}/logs/ignored/${pkgname}.log"
-		assert_ret 0 [ -r "${file2}" ]
-		assert_ret 0 [ -L "${file2}" ]
-		assert "$(realpath "${file}")" "$(realpath "${file}")"
-	done
+			file2="${log:?}/logs/ignored/${pkgname}.log"
+			assert_ret 0 [ -r "${file2}" ]
+			assert_ret 0 [ -L "${file2}" ]
+			assert "$(realpath "${file}")" "$(realpath "${file}")"
+		done
+		;;
+	esac
 	for pkgname in ${skipped_pkgnames}; do
 		file="${log:?}/logs/${pkgname}.log"
 		assert_ret_not 0 [ -f "${file}" ]
@@ -1595,6 +1599,7 @@ set_poudriere_conf() {
 	${FLAVOR_ALL:+FLAVOR_ALL=${FLAVOR_ALL}}
 	${IMMUTABLE_BASE:+IMMUTABLE_BASE=${IMMUTABLE_BASE}}
 	${BUILD_AS_NON_ROOT:+BUILD_AS_NON_ROOT=${BUILD_AS_NON_ROOT}}
+	${LOGS_FOR_IGNORED:+LOGS_FOR_IGNORED=${LOGS_FOR_IGNORED}}
 	$(cat)
 	EOF
 	showfile "${poudriere_conf}"

@@ -9350,21 +9350,25 @@ trim_ignored_pkg() {
 	    "${origin}${flavor:+@${flavor}}${subpkg:+~${subpkg}}" "${pkgname}" \
 	    "${ignore}"
 	if [ "${DRY_RUN:-0}" -eq 0 ]; then
-		local log
+		case "${LOGS_FOR_IGNORED-}" in
+		"yes")
+			local log
 
-		_log_path log
-		_logfile logfile "${pkgname}"
-		{
-			local NO_GIT
+			_log_path log
+			_logfile logfile "${pkgname}"
+			{
+				local NO_GIT
 
-			NO_GIT=1 buildlog_start "${pkgname}" "${originspec}"
-			print_phase_header "check-sanity"
-			echo "Ignoring: ${ignore}"
-			print_phase_footer
-			buildlog_stop "${pkgname}" "${originspec}" 0
-		} | write_atomic "${logfile}"
-		ln -fs "../${pkgname:?}.log" \
-		    "${log:?}/logs/ignored/${pkgname:?}.log"
+				NO_GIT=1 buildlog_start "${pkgname}" "${originspec}"
+				print_phase_header "check-sanity"
+				echo "Ignoring: ${ignore}"
+				print_phase_footer
+				buildlog_stop "${pkgname}" "${originspec}" 0
+			} | write_atomic "${logfile}"
+			ln -fs "../${pkgname:?}.log" \
+			    "${log:?}/logs/ignored/${pkgname:?}.log"
+			;;
+		esac
 		run_hook pkgbuild ignored "${origin}" "${pkgname}" "${ignore}"
 	fi
 	badd ports.ignored "${originspec} ${pkgname} ${ignore}"
