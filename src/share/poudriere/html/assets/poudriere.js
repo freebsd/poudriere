@@ -1233,7 +1233,7 @@ function setup_jail() {
         $("td", row).addClass("latest");
       }
     },
-    order: [[0, "asc"]], // Sort by buildname
+    order: [[0, "desc"]], // Sort by buildname
   });
 
   //applyHovering('builds_table');
