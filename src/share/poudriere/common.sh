@@ -1805,7 +1805,7 @@ show_build_summary() {
 	ndone=$((nbb + nbf + nbi + nbin + nbs + nbp))
 	nbremaining=$((nbq - ndone))
 
-	printf "[%s] [%s] [%s] \
+	msg_fmt "[%s] [%s] [%s] Time: %s\n\
 Queued: %d \
 ${COLOR_IGNORE}Inspected: %d \
 ${COLOR_IGNORE}Ignored: %d \
@@ -1813,10 +1813,10 @@ ${COLOR_SUCCESS}Built: %d \
 ${COLOR_FAIL}Failed: %d \
 ${COLOR_SKIP}Skipped: %d \
 ${COLOR_FETCHED}Fetched: %d \
-${COLOR_RESET}Remaining: %d  Time: %s\n" \
-	    "${MASTERNAME}" "${buildname}" "${status%%:*}" \
+${COLOR_RESET}Remaining: %d\n" \
+	    "${MASTERNAME}" "${buildname}" "${status%%:*}" "${buildtime}" \
 	    "${nbq}" "${nbin}" "${nbi}" "${nbb}" "${nbf}" "${nbs}" "${nbp}" \
-	    "${nbremaining}" "${buildtime}"
+	    "${nbremaining}"
 	case "${nbremaining}" in
 	-*) dev_err "${EX_SOFTWARE}" "show_build_summary: negative remaining count" ;;
 	esac
