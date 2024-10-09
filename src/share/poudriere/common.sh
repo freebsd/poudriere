@@ -1709,7 +1709,7 @@ show_dry_run_summary() {
 
 show_build_summary() {
 	local status nbb nbf nbs nbi nbin nbq nbp ndone nbtobuild buildname
-	local log now elapsed buildtime queue_width nbtb
+	local log now elapsed buildtime nbtb
 
 	_bget status status || status=unknown
 	_log_path log
@@ -1740,25 +1740,15 @@ show_build_summary() {
 	ndone=$((nbb + nbf + nbi + nbin + nbs + nbp))
 	nbtobuild=$((nbq - ndone))
 
-	if [ ${nbq} -gt 9999 ]; then
-		queue_width=5
-	elif [ ${nbq} -gt 999 ]; then
-		queue_width=4
-	elif [ ${nbq} -gt 99 ]; then
-		queue_width=3
-	else
-		queue_width=2
-	fi
-
 	printf "[%s] [%s] [%s] \
-Queued: %-${queue_width}d \
-${COLOR_IGNORE}Inspected: %-${queue_width}d \
-${COLOR_SUCCESS}Built: %-${queue_width}d \
-${COLOR_FAIL}Failed: %-${queue_width}d \
-${COLOR_SKIP}Skipped: %-${queue_width}d \
-${COLOR_IGNORE}Ignored: %-${queue_width}d \
-${COLOR_FETCHED}Fetched: %-${queue_width}d \
-${COLOR_RESET}Tobuild: %-${queue_width}d  Time: %s\n" \
+Queued: %d \
+${COLOR_IGNORE}Inspected: %d \
+${COLOR_SUCCESS}Built: %d \
+${COLOR_FAIL}Failed: %d \
+${COLOR_SKIP}Skipped: %d \
+${COLOR_IGNORE}Ignored: %d \
+${COLOR_FETCHED}Fetched: %d \
+${COLOR_RESET}Tobuild: %d  Time: %s\n" \
 	    "${MASTERNAME}" "${buildname}" "${status%%:*}" \
 	    "${nbq}" "${nbin}" "${nbb}" "${nbf}" "${nbs}" "${nbi}" "${nbp}" \
 	    "${nbtobuild}" "${buildtime}"
