@@ -257,7 +257,9 @@ if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then
 fi
 
 prepare_ports
-show_build_summary
+if [ "${DRY_RUN}" -eq 0 ]; then
+	show_build_summary
+fi
 show_dry_run_summary
 markfs prepkg ${MASTERMNT}
 
