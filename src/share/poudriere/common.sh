@@ -212,31 +212,73 @@ _msg_fmt_n() {
 	local now elapsed
 	local fmt="${1}"
 	local nl="${2}"
-	local arrow DRY_MODE
+	local arrow arrow2 DRY_MODE
+	local fmt_prefix fmt_prefix2 fmt_prefix_nocol fmt_sufx
 	shift 2
 
 	if [ "${MSG_NESTED:-0}" -eq 1 ]; then
-		unset elapsed arrow DRY_MODE
+		unset elapsed arrow arrow2 DRY_MODE
 	elif should_show_elapsed; then
 		now=$(clock -monotonic)
 		calculate_duration elapsed "$((now - ${TIME_START:-0}))"
 		elapsed="[${elapsed}] "
 		unset arrow
+		arrow2="=>>>"
 	else
 		unset elapsed
 		arrow="=>>"
+		arrow2="=>>>"
 	fi
 	case "${COLOR_ARROW-}${1}" in
 	*$'\033'"["*)
 		# Need to insert a COLOR_RESET before the newline
 		# for timestamp(1) or otherwise the timestamp gets
 		# colored before the reset starts the next line.
-		printf "${elapsed:+${COLOR_ARROW-}${elapsed}${COLOR_RESET}}${DRY_MODE:+${COLOR_ARROW-}${DRY_MODE-}${COLOR_RESET}}${arrow:+${COLOR_ARROW-}${arrow} ${COLOR_RESET}}${fmt}${COLOR_RESET}${nl}" "$@"
+		fmt_prefix="${elapsed:+${COLOR_ARROW-}${elapsed}${COLOR_RESET}}${DRY_MODE:+${COLOR_ARROW-}${DRY_MODE-}${COLOR_RESET}}${arrow:+${COLOR_ARROW-}${arrow} ${COLOR_RESET}}"
+		fmt_prefix_nocol="${elapsed-}${DRY_MODE-}${arrow:+${arrow} }"
+		#fmt_prefix2="${arrow2:+${COLOR_ARROW-}${arrow2} ${COLOR_RESET}}"
+		fmt_prefix2=align
+		fmt_sufx="${COLOR_RESET}"
 		;;
 	*)
-		printf "${elapsed-}${DRY_MODE-}${arrow:+${arrow} }${fmt}${nl}" "$@"
+		fmt_prefix="${elapsed-}${DRY_MODE-}${arrow:+${arrow} }"
+		fmt_prefix_nocol=
+		#fmt_prefix2="${arrow2:+${arrow2} }"
+		fmt_prefix2=align
+		fmt_sufx=
 		;;
 	esac
+	# Add in prefix/sufx for subsequent lines if needed.
+	case "${fmt_prefix2:+set}.${fmt_sufx:+set}" in
+	".") ;;
+	*)
+		case "${fmt}" in
+		*"\n"*)
+			case "${fmt_prefix2}" in
+			"align")
+				# Fill in the 2nd line with blanks to align
+				# with the first line.
+				local fmt_prefix_blank
+
+				_gsub "${fmt_prefix_nocol:-${fmt_prefix}}" \
+				    "*" " " fmt_prefix_blank
+				_gsub "${fmt}" "\n" \
+				    "${fmt_sufx}\n${fmt_prefix_blank}" \
+				    fmt
+				;;
+			*)
+				# Use fmt_prefix2 as the prefix for
+				# subsequent lines.
+				_gsub "${fmt}" "\n" \
+				    "${fmt_sufx}\n${fmt_prefix2}" \
+				    fmt
+				;;
+			esac
+			;;
+		esac
+		;;
+	esac
+	printf "${fmt_prefix}${fmt}${fmt_sufx}${nl}" "$@"
 }
 
 msg_fmt() {
