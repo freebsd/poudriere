@@ -207,12 +207,13 @@ esac
 
 # Message functions that depend on VERBOSE are stubbed out in post_getopts.
 
-_msg_n() {
+_msg_fmt_n() {
 	local -; set +x
 	local now elapsed
-	local NL="${1}"
+	local fmt="${1}"
+	local nl="${2}"
 	local arrow DRY_MODE
-	shift 1
+	shift 2
 
 	if [ "${MSG_NESTED:-0}" -eq 1 ]; then
 		unset elapsed arrow DRY_MODE
@@ -227,24 +228,47 @@ _msg_n() {
 	fi
 	case "${COLOR_ARROW-}${1}" in
 	*$'\033'"["*)
-		printf "${elapsed:+${COLOR_ARROW-}${elapsed}${COLOR_RESET}}${DRY_MODE:+${COLOR_ARROW-}${DRY_MODE-}${COLOR_RESET}}${arrow:+${COLOR_ARROW-}${arrow} ${COLOR_RESET}}%s${COLOR_RESET}${NL}" "$*"
+		# Need to insert a COLOR_RESET before the newline
+		# for timestamp(1) or otherwise the timestamp gets
+		# colored before the reset starts the next line.
+		printf "${elapsed:+${COLOR_ARROW-}${elapsed}${COLOR_RESET}}${DRY_MODE:+${COLOR_ARROW-}${DRY_MODE-}${COLOR_RESET}}${arrow:+${COLOR_ARROW-}${arrow} ${COLOR_RESET}}${fmt}${COLOR_RESET}${nl}" "$@"
 		;;
 	*)
-		printf "${elapsed-}${DRY_MODE-}${arrow:+${arrow} }%s${NL}" "$*"
+		printf "${elapsed-}${DRY_MODE-}${arrow:+${arrow} }${fmt}${nl}" "$@"
 		;;
 	esac
 }
 
+msg_fmt() {
+	local -; set +x
+	local fmt="$1"
+	shift
+	local nl
+
+	# Need to split out the end newline for color handling in
+	# _msg_fmt_n.
+	case "${fmt}" in
+	*"\n")
+		fmt="${fmt%"\n"}"
+		nl="\n"
+		;;
+	*)
+		nl=
+		;;
+	esac
+	_msg_fmt_n "${fmt}" "${nl}" "$@"
+}
+
 msg_n() {
-	_msg_n '' "$@"
+	_msg_fmt_n "%s" '' "$*"
 }
 
 msg() {
-	_msg_n "\n" "$@"
+	_msg_fmt_n "%s" "\n" "$*"
 }
 
 msg_verbose() {
-	_msg_n "\n" "$@"
+	_msg_fmt_n "%s" "\n" "$*"
 }
 
 msg_error() {
@@ -283,7 +307,7 @@ msg_dev() {
 
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
 	COLOR_ARROW="${COLOR_DEV}" \
-	    _msg_n "\n" "${COLOR_DEV}Dev:${COLOR_RESET}" "$@" >&2
+	    _msg_fmt_n "\n" "${COLOR_DEV}Dev:${COLOR_RESET} $*" >&2
 }
 
 msg_debug() {
@@ -292,7 +316,7 @@ msg_debug() {
 
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
 	COLOR_ARROW="${COLOR_DEBUG}" \
-	    _msg_n "\n" "${COLOR_DEBUG}Debug:${COLOR_RESET}" "$@" >&2
+	    _msg_fmt_n "\n" "${COLOR_DEBUG}Debug:${COLOR_RESET} $*" >&2
 }
 
 msg_warn() {
@@ -307,8 +331,7 @@ msg_warn() {
 		unset prefix
 	fi
 	COLOR_ARROW="${COLOR_WARN}" \
-	    _msg_n "\n" ${prefix:+"${COLOR_WARN}${prefix}${COLOR_RESET}"} \
-	    "$@" >&2
+	    _msg_fmt_n "%s" "\n" "${prefix:+${COLOR_WARN}${prefix}${COLOR_RESET} }$*" >&2
 }
 
 job_msg() {
@@ -329,7 +352,7 @@ job_msg() {
 		unset output
 		;;
 	esac
-	redirect_to_bulk _msg_n "\n" ${output:+"${output}"} "$@"
+	redirect_to_bulk _msg_fmt_n "%s" "\n" "${output:+${output} }$*"
 }
 
 # Stubbed until post_getopts
