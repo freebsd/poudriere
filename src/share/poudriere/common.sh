@@ -1095,7 +1095,7 @@ buildlog_start() {
 	case "${PKG_REPRODUCIBLE}" in
 	"yes") ;;
 	*)
-		date=$(env TZ=UTC date "+%Y-%m-%dT%H:%M:%S%z")
+		date=$(date -u -Iseconds)
 		pkg_note_add "${pkgname}" build_timestamp "${date}"
 		;;
 	esac
