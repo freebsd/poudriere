@@ -1,10 +1,10 @@
 #!/bin/sh
-# 
+#
 # Copyright (c) 2010-2013 Baptiste Daroussin <bapt@FreeBSD.org>
 # Copyright (c) 2010-2011 Julien Laffaye <jlaffaye@FreeBSD.org>
 # Copyright (c) 2012-2017 Bryan Drewery <bdrewery@FreeBSD.org>
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
@@ -13,7 +13,7 @@
 # 2. Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -538,7 +538,7 @@ logfile() {
 	_logfile logfile "${pkgname}"
 	echo "${logfile}"
 }
- 
+
 _log_path_top() {
 	local -; set -u +x
 
@@ -2310,7 +2310,6 @@ do_jail_mounts() {
 	local from="$1"
 	local mnt="$2"
 	local name="$3"
-	local devfspath="null zero random urandom stdin stdout stderr fd fd/* pts pts/*"
 	local srcpath nullpaths nullpath p arch
 
 	# from==mnt is via jail -u
@@ -2354,10 +2353,8 @@ do_jail_mounts() {
 
 	mount -t devfs devfs ${mnt:?}/dev
 	if [ ${JAILED} -eq 0 ]; then
-		devfs -m ${mnt:?}/dev rule apply hide
-		for p in ${devfspath} ; do
-			devfs -m ${mnt:?}/dev/ rule apply path "${p}" unhide
-		done
+		devfs -m ${mnt:?}/dev ruleset ${DEVFS_RULESET}
+		devfs -m ${mnt:?}/dev rule applyset
 	fi
 
 	if [ "${USE_FDESCFS}" = "yes" ] && \
@@ -2514,7 +2511,7 @@ enter_interactive() {
 		set)
 			cat >> "${MASTERMNT:?}/etc/motd" <<-EOF
 			FLAVOR:			${flavor}
-			
+
 			A FLAVOR was used to build but is not in the environment.
 			Remember to pass FLAVOR to make:
 				make FLAVOR=${flavor}
@@ -6814,7 +6811,7 @@ _delete_old_pkg() {
 	"no") ;;
 	*)
 		current_deps=""
-		# FIXME: Move into Infrastructure/scripts and 
+		# FIXME: Move into Infrastructure/scripts and
 		# 'make actual-run-depends-list' after enough testing,
 		# which will avoida all of the injail hacks
 
@@ -9970,7 +9967,7 @@ calculate_ospart_size() {
 	set) calculate_size_in_mb SWAP_SIZE ;;
 	"") SWAP_SIZE=0 ;;
 	esac
-	
+
 	OS_SIZE=$(( ( FULL_SIZE - CFG_SIZE - DATA_SIZE - SWAP_SIZE ) / NUM_PART ))
 	msg "OS Partiton size: ${OS_SIZE}m"
 }
@@ -10487,6 +10484,7 @@ esac
 : ${FLAVOR_DEFAULT_ALL:=no}
 : ${NULLFS_PATHS:="/rescue /usr/share /usr/tests /usr/lib32"}
 : ${PACKAGE_FETCH_URL:="pkg+http://pkg.FreeBSD.org/\${ABI}"}
+: ${DEVFS_RULESET:=4}
 
 : ${POUDRIERE_TMPDIR:=$(command mktemp -dt poudriere)}
 : ${SHASH_VAR_PATH_DEFAULT:=${POUDRIERE_TMPDIR}}
