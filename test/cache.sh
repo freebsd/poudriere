@@ -271,6 +271,17 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	assert 1 ${lookup} "real_func_sv_2 1 lookup count 2"
 }
 
+# Test cache_call_sv -K
+{
+	assert_true cache_call_sv -K "keysv" value real_func_sv_2 "1" sv_value
+	assert "1 1" "${value}"
+	assert_true cache_set -K "keysv" "test" real_func_sv_2 "1" sv_value
+	assert_true cache_call_sv -K "keysv" value real_func_sv_2 "1" sv_value
+	assert "test" "${value}"
+	assert_true cache_call_sv value real_func_sv_2 "1" sv_value
+	assert "1 1" "${value}"
+}
+
 # Invalidation test
 {
 	# First lookup, will call into the real function
@@ -298,6 +309,46 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	get_lookup_cnt lookup real_func "1"
 	assert 0 $? "lookupcnt real_func-1 - invalidated"
 	assert 2 ${lookup} "real_func 1 lookup count - invalidated"
+}
+
+# Invalidation test when using -K
+{
+	# First lookup, will call into the real function
+	lookup=0
+	value=
+	cache_call -K "key2" value real_func "2"
+	assert 0 $? "real_func 1 return status"
+	argcnt=${value%% *}
+	value="${value#[0-9] }"
+	assert 1 "${argcnt}" "real_func 2 argcnt"
+	assert "2" "${value}" "real_func 2 value"
+	get_lookup_cnt lookup real_func "2"
+	assert 0 $? "lookupcnt real_func-2"
+	assert 1 ${lookup} "real_func 2 lookup count"
+
+	# now invalidate the cache and ensure it is looked up again.
+	cache_invalidate -K "key2" real_func "2"
+
+	cache_call -K "key2" value real_func "2"
+	assert 0 $? "real_func 2 return status - invalidated"
+	argcnt=${value%% *}
+	value="${value#[0-9] }"
+	assert 1 "${argcnt}" "real_func 2 argcnt - invalidated"
+	assert "2" "${value}" "real_func 2 value - invalidated"
+	get_lookup_cnt lookup real_func "2"
+	assert 0 $? "lookupcnt real_func-2 - invalidated"
+	assert 2 ${lookup} "real_func 2 lookup count - invalidated"
+}
+
+# Check that cache_set -K works as expected
+{
+	assert_true cache_call -K "keyX" value real_func "2"
+	assert "1 2" "${value}" "real_func 2 value"
+	assert_true cache_set -K "keyX" "test" real_func "2"
+	assert_true cache_call -K "keyX" value real_func "2"
+	assert "test" "${value}" "real_func 2 value"
+	assert_true cache_call value real_func "2"
+	assert "1 2" "${value}" "real_func 2 value"
 }
 
 # Forced cached set test
