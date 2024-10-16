@@ -117,8 +117,8 @@ list_jail() {
 			_jget method ${name} method
 			_jget mnt ${name} mnt
 			_jget timestamp ${name} timestamp || :
-			if [ -r "${mnt}/sys/sys/param.h" ]; then
-				osversion=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' "${mnt}/sys/sys/param.h")
+			if [ -r "${mnt}/usr/src/sys/sys/param.h" ]; then
+				osversion=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' "${mnt}/usr/src/sys/sys/param.h")
 			else
 				osversion=
 			fi
