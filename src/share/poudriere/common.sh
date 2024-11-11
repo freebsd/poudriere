@@ -4474,7 +4474,7 @@ download_from_repo() {
 			continue
 		fi
 		echo "${pkgname}"
-	done | tee "${MASTER_DATADIR:?}/pkg_fetch" | (
+	done | sort | tee "${MASTER_DATADIR:?}/pkg_fetch" | (
 		cd "${PACKAGES_PKG_CACHE:?}"
 		sed -e "s,\$,.${PKG_EXT}," |
 		    xargs -J % ln -fL % "${packages_rel:?}/All/"
