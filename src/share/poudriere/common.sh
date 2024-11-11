@@ -2614,6 +2614,12 @@ enter_interactive() {
 		chown -R "${PORTBUILD_USER}" "${MASTERMNT:?}/wrkdirs"
 		;;
 	esac
+	case "${EMULATOR:+set}" in
+	set)
+		# Needed for su(1) to work.
+		chmod u+s "${MASTERMNT:?}${EMULATOR}"
+		;;
+	esac
 
 	if [ ${INTERACTIVE_MODE} -eq 1 ]; then
 		if [ -n "${INTERACTIVE_SHELL}" ]; then
@@ -2638,6 +2644,11 @@ enter_interactive() {
 		fi
 		JNETNAME="n" injail_tty env -i TERM=${SAVED_TERM} \
 		    /usr/bin/login -fp root || :
+		case "${EMULATOR:+set}" in
+		set)
+			chmod u-s "${MASTERMNT:?}${EMULATOR}"
+			;;
+		esac
 	elif [ ${INTERACTIVE_MODE} -eq 2 ]; then
 		# XXX: Not tested/supported with bulk yet.
 		msg "Leaving jail ${MASTERNAME}-n running, mounted at ${MASTERMNT} for interactive run testing"
