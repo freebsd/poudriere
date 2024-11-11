@@ -3833,7 +3833,7 @@ jail_start() {
 		    \( -depth 1 -name wrkdirs -prune \) -o \
 		    \( -type d -o -type f -o -type l \) \
 		    -exec chflags -fh schg {} +
-		chflags noschg \
+		chflags -R noschg \
 		    "${tomnt:?}${LOCALBASE:-/usr/local}" \
 		    "${tomnt:?}${PREFIX:-/usr/local}" \
 		    "${tomnt:?}/usr/home" \
