@@ -3748,6 +3748,12 @@ jail_start() {
 	# Generate /var/run/os-release
 	injail service os-release start || :
 
+	case "${BUILD_AS_NON_ROOT-}" in
+	no)
+		PORTBUILD_USER="root"
+		PORTBUILD_GROUP="wheel"
+		;;
+	esac
 	portbuild_gid=$(injail pw groupshow "${PORTBUILD_GROUP}" 2>/dev/null | cut -d : -f3 || :)
 	case "${portbuild_gid}" in
 	"")
