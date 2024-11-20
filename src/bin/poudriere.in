@@ -58,6 +58,7 @@ Options:
     -v          -- Be verbose; show more information. Use twice to enable
                    debug output
 Commands:
+    audit       -- Audit the packages in the repository
     bulk        -- Generate packages for given ports
     distclean   -- Remove old distfiles
     daemon      -- Launch the poudriere daemon
@@ -124,7 +125,7 @@ shift
 
 # Valid command list.
 case "${CMD}" in
-api|bulk|distclean|daemon|image|jail|foreachport|logclean|ports|options|pkgclean|queue|status|testport)
+api|audit|bulk|distclean|daemon|image|jail|foreachport|logclean|ports|options|pkgclean|queue|status|testport)
 	;;
 jails)
 	CMD="jail"
