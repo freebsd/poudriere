@@ -566,7 +566,7 @@ pkgqueue_move_ready_to_pool() {
 	set)
 		POOL_BUCKET_DIRS="$(echo "${PKGQUEUE_PRIORITIES}" |
 		    tr ' ' '\n' | LC_ALL=C sort -run |
-		    paste -d ' ' -s -)"
+		    pr -m -t -s' ' -)"
 		;;
 	*)
 		# If there are no buckets then everything to build will fall
