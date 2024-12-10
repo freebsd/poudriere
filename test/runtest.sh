@@ -217,7 +217,7 @@ locked_mkdir.sh) : ${TIMEOUT:=120} ;;
 jobs.sh) : ${TIMEOUT:=300} ;;
 esac
 case "${1##*/}" in
-*build*)
+*-build*)
 	if [ -n "${TESTS_SKIP_BUILD-}" ]; then
 		exit 77
 	fi
