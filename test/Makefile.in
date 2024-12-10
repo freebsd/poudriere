@@ -587,6 +587,12 @@ JAIL_TESTS = \
 	bulk-overlay-all.sh \
 	bulk-overlay-specific.sh \
 	bulk-skipped-and-needed-dep.sh \
+	distclean-badorigin.sh \
+	distclean-overlays.sh \
+	distclean-smoke.sh \
+	options-badorigin.sh \
+	options-overlays.sh \
+	options-smoke.sh \
 	testport-all-flavors-failure.sh \
 	testport-build-MOVED-default.sh \
 	testport-build-MOVED-flavor.sh \
