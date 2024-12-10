@@ -236,16 +236,18 @@ setvar(const char *name, const char *val, int flags)
 	p = name;
 	if (! is_name(*p))
 		isbad = 1;
-	p++;
-	for (;;) {
-		if (! is_in_name(*p)) {
-			if (*p == '\0' || *p == '=')
-				break;
-			isbad = 1;
-		}
+	else {
 		p++;
+		for (;;) {
+			if (! is_in_name(*p)) {
+				if (*p == '\0' || *p == '=')
+					break;
+				isbad = 1;
+			}
+			p++;
+		}
+		namelen = p - name;
 	}
-	namelen = p - name;
 	if (isbad)
 		error("%.*s: bad variable name", (int)namelen, name);
 	len = namelen + 2;		/* 2 is space for '=' and '\0' */
