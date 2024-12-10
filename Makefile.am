@@ -380,6 +380,12 @@ poudriere: src/bin/poudriere.in
 
 SUBDIRS= . test
 
+checkquick:
+	$(MAKE) $(AM_MAKEFLAGS) check TESTS_SKIP_BUILD=1 TESTS_SKIP_LONG=1
+
+distcheckquick:
+	$(MAKE) $(AM_MAKEFLAGS) distcheck TESTS_SKIP_BUILD=1 TESTS_SKIP_LONG=1
+
 installcheck-local:
 	$(MAKE) $(AM_MAKEFLAGS) check am_installcheck=1
 

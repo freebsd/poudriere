@@ -152,6 +152,7 @@ while read var; do
 	SH_DISABLE_VFORK|TIMESTAMP|TRUSS|\
 	HTML_JSON_UPDATE_INTERVAL|\
 	TESTS_SKIP_BUILD|\
+	TESTS_SKIP_LONG|\
 	TMPDIR|\
 	SH) ;;
 	*)
@@ -216,13 +217,20 @@ bulk*.sh|testport*.sh|distclean*.sh|options*.sh) : ${TIMEOUT:=500} ;;
 locked_mkdir.sh) : ${TIMEOUT:=120} ;;
 jobs.sh) : ${TIMEOUT:=300} ;;
 esac
-case "${1##*/}" in
-*-build*)
-	if [ -n "${TESTS_SKIP_BUILD-}" ]; then
+if [ -n "${TESTS_SKIP_BUILD-}" ]; then
+	case "${1##*/}" in
+	*-build*)
 		exit 77
-	fi
-	;;
-esac
+		;;
+	esac
+fi
+if [ -n "${TESTS_SKIP_LONG-}" ]; then
+	case "${1##*/}" in
+	jobs.sh)
+		exit 77
+		;;
+	esac
+fi
 : ${TIMEOUT:=90}
 : ${TIMESTAMP="${LIBEXECPREFIX}/timestamp" -t -1stdout: -2stderr:}
 
