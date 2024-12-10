@@ -218,14 +218,12 @@ sh_SOURCES+=		\
 			src/libexec/poudriere/rename/rename.c \
 			external/rm/rm.c \
 			src/poudriere-sh/builtins-poudriere.def \
-			src/poudriere-sh/cut.c \
 			src/poudriere-sh/helpers.c \
 			src/poudriere-sh/helpers.h \
 			src/poudriere-sh/mapfile.c \
 			src/poudriere-sh/mkdir.c \
 			src/poudriere-sh/mkfifo.c \
 			src/poudriere-sh/mktemp.c \
-			src/poudriere-sh/paste.c \
 			src/poudriere-sh/realpath.c \
 			src/poudriere-sh/rmdir.c \
 			src/poudriere-sh/setproctitle.c \

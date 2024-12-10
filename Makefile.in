@@ -249,13 +249,12 @@ am_sh_OBJECTS = external/sh/sh-alias.$(OBJEXT) \
 	src/libexec/poudriere/locked_mkdir/sh-locked_mkdir.$(OBJEXT) \
 	external/pwait/sh-pwait.$(OBJEXT) \
 	src/libexec/poudriere/rename/sh-rename.$(OBJEXT) \
-	external/rm/sh-rm.$(OBJEXT) src/poudriere-sh/sh-cut.$(OBJEXT) \
+	external/rm/sh-rm.$(OBJEXT) \
 	src/poudriere-sh/sh-helpers.$(OBJEXT) \
 	src/poudriere-sh/sh-mapfile.$(OBJEXT) \
 	src/poudriere-sh/sh-mkdir.$(OBJEXT) \
 	src/poudriere-sh/sh-mkfifo.$(OBJEXT) \
 	src/poudriere-sh/sh-mktemp.$(OBJEXT) \
-	src/poudriere-sh/sh-paste.$(OBJEXT) \
 	src/poudriere-sh/sh-realpath.$(OBJEXT) \
 	src/poudriere-sh/sh-rmdir.$(OBJEXT) \
 	src/poudriere-sh/sh-setproctitle.$(OBJEXT) \
@@ -388,13 +387,11 @@ am__depfiles_remade = external/cpdup/src/$(DEPDIR)/cpdup-cpdup.Po \
 	src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Po \
 	src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-builtins.Po \
-	src/poudriere-sh/$(DEPDIR)/sh-cut.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-helpers.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-mapfile.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-mkdir.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-mkfifo.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-mktemp.Po \
-	src/poudriere-sh/$(DEPDIR)/sh-paste.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-realpath.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-rmdir.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Po \
@@ -875,10 +872,9 @@ sh_SOURCES = external/sh/alias.c external/sh/alias.h \
 	src/libexec/poudriere/locked_mkdir/locked_mkdir.c \
 	external/pwait/pwait.c src/libexec/poudriere/rename/rename.c \
 	external/rm/rm.c src/poudriere-sh/builtins-poudriere.def \
-	src/poudriere-sh/cut.c src/poudriere-sh/helpers.c \
-	src/poudriere-sh/helpers.h src/poudriere-sh/mapfile.c \
-	src/poudriere-sh/mkdir.c src/poudriere-sh/mkfifo.c \
-	src/poudriere-sh/mktemp.c src/poudriere-sh/paste.c \
+	src/poudriere-sh/helpers.c src/poudriere-sh/helpers.h \
+	src/poudriere-sh/mapfile.c src/poudriere-sh/mkdir.c \
+	src/poudriere-sh/mkfifo.c src/poudriere-sh/mktemp.c \
 	src/poudriere-sh/realpath.c src/poudriere-sh/rmdir.c \
 	src/poudriere-sh/setproctitle.c src/poudriere-sh/sleep.c \
 	src/poudriere-sh/stat.c src/poudriere-sh/touch.c \
@@ -1387,8 +1383,6 @@ src/poudriere-sh/$(am__dirstamp):
 src/poudriere-sh/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) src/poudriere-sh/$(DEPDIR)
 	@: >>src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
-src/poudriere-sh/sh-cut.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
-	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/sh-helpers.$(OBJEXT):  \
 	src/poudriere-sh/$(am__dirstamp) \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
@@ -1402,8 +1396,6 @@ src/poudriere-sh/sh-mkfifo.$(OBJEXT):  \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/sh-mktemp.$(OBJEXT):  \
 	src/poudriere-sh/$(am__dirstamp) \
-	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
-src/poudriere-sh/sh-paste.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/sh-realpath.$(OBJEXT):  \
 	src/poudriere-sh/$(am__dirstamp) \
@@ -1625,13 +1617,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-builtins.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-cut.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-helpers.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-mapfile.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-mkdir.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-mkfifo.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-mktemp.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-paste.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-realpath.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-rmdir.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Po@am__quote@ # am--include-marker
@@ -2380,20 +2370,6 @@ external/rm/sh-rm.obj: external/rm/rm.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/rm/sh-rm.obj `if test -f 'external/rm/rm.c'; then $(CYGPATH_W) 'external/rm/rm.c'; else $(CYGPATH_W) '$(srcdir)/external/rm/rm.c'; fi`
 
-src/poudriere-sh/sh-cut.o: src/poudriere-sh/cut.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-cut.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-cut.Tpo -c -o src/poudriere-sh/sh-cut.o `test -f 'src/poudriere-sh/cut.c' || echo '$(srcdir)/'`src/poudriere-sh/cut.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-cut.Tpo src/poudriere-sh/$(DEPDIR)/sh-cut.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/cut.c' object='src/poudriere-sh/sh-cut.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-cut.o `test -f 'src/poudriere-sh/cut.c' || echo '$(srcdir)/'`src/poudriere-sh/cut.c
-
-src/poudriere-sh/sh-cut.obj: src/poudriere-sh/cut.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-cut.obj -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-cut.Tpo -c -o src/poudriere-sh/sh-cut.obj `if test -f 'src/poudriere-sh/cut.c'; then $(CYGPATH_W) 'src/poudriere-sh/cut.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/cut.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-cut.Tpo src/poudriere-sh/$(DEPDIR)/sh-cut.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/cut.c' object='src/poudriere-sh/sh-cut.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-cut.obj `if test -f 'src/poudriere-sh/cut.c'; then $(CYGPATH_W) 'src/poudriere-sh/cut.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/cut.c'; fi`
-
 src/poudriere-sh/sh-helpers.o: src/poudriere-sh/helpers.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-helpers.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-helpers.Tpo -c -o src/poudriere-sh/sh-helpers.o `test -f 'src/poudriere-sh/helpers.c' || echo '$(srcdir)/'`src/poudriere-sh/helpers.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-helpers.Tpo src/poudriere-sh/$(DEPDIR)/sh-helpers.Po
@@ -2463,20 +2439,6 @@ src/poudriere-sh/sh-mktemp.obj: src/poudriere-sh/mktemp.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/mktemp.c' object='src/poudriere-sh/sh-mktemp.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-mktemp.obj `if test -f 'src/poudriere-sh/mktemp.c'; then $(CYGPATH_W) 'src/poudriere-sh/mktemp.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/mktemp.c'; fi`
-
-src/poudriere-sh/sh-paste.o: src/poudriere-sh/paste.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-paste.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-paste.Tpo -c -o src/poudriere-sh/sh-paste.o `test -f 'src/poudriere-sh/paste.c' || echo '$(srcdir)/'`src/poudriere-sh/paste.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-paste.Tpo src/poudriere-sh/$(DEPDIR)/sh-paste.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/paste.c' object='src/poudriere-sh/sh-paste.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-paste.o `test -f 'src/poudriere-sh/paste.c' || echo '$(srcdir)/'`src/poudriere-sh/paste.c
-
-src/poudriere-sh/sh-paste.obj: src/poudriere-sh/paste.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-paste.obj -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-paste.Tpo -c -o src/poudriere-sh/sh-paste.obj `if test -f 'src/poudriere-sh/paste.c'; then $(CYGPATH_W) 'src/poudriere-sh/paste.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/paste.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-paste.Tpo src/poudriere-sh/$(DEPDIR)/sh-paste.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/paste.c' object='src/poudriere-sh/sh-paste.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-paste.obj `if test -f 'src/poudriere-sh/paste.c'; then $(CYGPATH_W) 'src/poudriere-sh/paste.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/paste.c'; fi`
 
 src/poudriere-sh/sh-realpath.o: src/poudriere-sh/realpath.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-realpath.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-realpath.Tpo -c -o src/poudriere-sh/sh-realpath.o `test -f 'src/poudriere-sh/realpath.c' || echo '$(srcdir)/'`src/poudriere-sh/realpath.c
@@ -3424,13 +3386,11 @@ distclean: distclean-recursive
 	-rm -f src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Po
 	-rm -f src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-builtins.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-cut.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-helpers.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-mapfile.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-mkdir.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-mkfifo.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-mktemp.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-paste.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-realpath.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-rmdir.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Po
@@ -3563,13 +3523,11 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Po
 	-rm -f src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-builtins.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-cut.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-helpers.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-mapfile.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-mkdir.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-mkfifo.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-mktemp.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-paste.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-realpath.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-rmdir.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Po

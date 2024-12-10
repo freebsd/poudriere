@@ -54,12 +54,9 @@
 
 #include "bltin/bltin.h"
 #include "helpers.h"
-#undef FILE
-#undef fclose
-#undef fdopen
-#undef fdclose
-#undef fopen
-#undef fwrite
+#undef FILE	/* Avoid sh version */
+#undef fwrite	/* Avoid sh version */
+#undef fputc	/* Avoid sh version */
 #include "eval.h"
 #include "redir.h"
 #include "trap.h"

@@ -18,6 +18,9 @@ XFAIL_TESTS= \
 TESTS=\
 	array.sh \
 	builtins.sh \
+	builtins-cut.sh \
+	builtins-paste.sh \
+	builtins-wc.sh \
 	cache.sh \
 	cache_pipe.sh \
 	calculate_duration.sh \
