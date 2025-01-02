@@ -845,7 +845,15 @@ function process_data_jail(data) {
       }
       row.stat_remaining = remaining;
       row.status = translate_status(build.status);
-      row.elapsed = build.elapsed ? build.elapsed : "";
+      if (build.elapsed) {
+        row.elapsed = build.elapsed;
+      } else if (build.snap && build.snap.elapsed) {
+        row.elapsed = format_duration(parseInt(build.snap.elapsed));
+      } else if (build.started && build.ended) {
+        row.elapsed = format_duration(parseInt(build.ended) - parseInt(build.started));
+      } else {
+        row.elapsed = "";
+      }
 
       dtrow.queue(row);
     }
@@ -908,7 +916,15 @@ function process_data_index(data) {
         : 0;
       row.stat_remaining = isNaN(remaining) ? 0 : remaining;
       row.status = translate_status(master.status);
-      row.elapsed = master.elapsed ? master.elapsed : "";
+      if (master.elapsed) {
+        row.elapsed = master.elapsed;
+      } else if (master.snap && master.snap.elapsed) {
+        row.elapsed = format_duration(parseInt(master.snap.elapsed));
+      } else if (master.started && master.ended) {
+        row.elapsed = format_duration(parseInt(master.ended) - parseInt(master.started));
+      } else {
+        row.elapsed = "";
+      }
 
       dtrow.queue(row);
     }
