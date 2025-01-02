@@ -113,7 +113,7 @@ function end_type() {
 	    print "\"phase\":\"" build_reasons[3] "\","
 	    print "\"errortype\":\"" build_reasons[4] "\","
 	    print "\"elapsed\":\"" build_reasons[5] "\","
-	  } else if (port_status_type == "nop") {
+	  } else if (port_status_type == "inspected") {
 	    reason_length = length(build_reasons)
 	    for (n = 3; n <= reason_length; n++) {
 	      if (n == 3)
