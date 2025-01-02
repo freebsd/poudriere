@@ -967,12 +967,19 @@ injail_tty() {
 jstart() {
 	local mpath name network
 	network="${LOCALIPARGS:?}"
+	local allow_mount_args
 
 	case "${RESTRICT_NETWORKING-}" in
 	"yes") ;;
 	*)
 		network="${IPARGS:?} ${JAIL_NET_PARAMS-}"
 		;;
+	esac
+
+	case "${JAILED_DATASET}" in
+	"") ;;
+	*)
+		allow_mount_args="allow.mount=1 allow.mount.zfs=1 enforce_statfs=1"
 	esac
 
 	_my_name name
@@ -985,12 +992,20 @@ jstart() {
 	jail -c persist "name=${name:?}" \
 		"path=${mpath:?}" \
 		"host.hostname=${BUILDER_HOSTNAME-${name}}" \
-		${network} ${JAIL_PARAMS-}
+		${network} ${allow_mount_args} ${JAIL_PARAMS-}
 	# Allow networking in -n jail
-	jail -c persist "name=${name}-n" \
+	jail -c persist "name=${name:?}-n" \
 		"path=${mpath:?}" \
 		"host.hostname=${BUILDER_HOSTNAME-${name}}" \
-		${IPARGS:?} ${JAIL_PARAMS-} ${JAIL_NET_PARAMS-}
+		${IPARGS:?} ${allow_mount_args} ${JAIL_PARAMS-} ${JAIL_NET_PARAMS-}
+
+	if [ "${JAILED_DATASET}" ]; then
+		local jailed_dataset_name=${ZPOOL}${ZROOTFS}${JAILED_DATASET}_${name:?}
+		zfs destroy -Rf ${jailed_dataset_name} 2>/dev/null || :
+		zfs create -o jailed=on ${jailed_dataset_name}
+		zfs jail ${name:?} ${jailed_dataset_name}
+		zfs jail ${name:?}-n ${jailed_dataset_name}
+	fi
 	return 0
 }
 
@@ -1035,6 +1050,10 @@ jstop() {
 	_my_name name
 	jail -r "${name:?}" 2>/dev/null || :
 	jail -r "${name:?}-n" 2>/dev/null || :
+
+	if [ "${JAILED_DATASET}" ]; then
+		zfs destroy -Rf ${ZPOOL}${ZROOTFS}${JAILED_DATASET}_${name:?} 2>/dev/null || :
+	fi
 }
 
 eargs() {
@@ -10372,6 +10391,11 @@ set) ;;
 	: ${ZROOTFS="/poudriere"}
 	case ${ZROOTFS} in
 	[!/]*) err 1 "ZROOTFS should start with a /" ;;
+	esac
+	: ${JAILED_DATASET=""}
+	case ${JAILED_DATASET} in
+	"") ;;
+	[!/]*) err 1 "JAILED_DATASET should start with a /" ;;
 	esac
 	;;
 esac
