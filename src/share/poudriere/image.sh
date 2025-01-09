@@ -239,21 +239,18 @@ convert_package_list() {
 
 install_world_from_pkgbase()
 {
-	OSVERSION=$(awk -F '"' '/REVISION=/ { print $2 }' ${mnt}/usr/src/sys/conf/newvers.sh | cut -d '.' -f 1)
-	mkdir -p ${WRKDIR:?}/world/etc/pkg/
-	pkg_abi=$(get_pkg_abi)
-	cat << -EOF > ${WRKDIR:?}/world/etc/pkg/FreeBSD-base.conf
-	local: {
-               url: file://${POUDRIERE_DATA}/images/${JAILNAME}-repo/FreeBSD:${OSVERSION}:${pkg_abi}/latest,
-               enabled: true
-	       }
--EOF
-	pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR:?}/world update ${PKG_QUIET}
+	_repos_dir="${WRKDIR:?}/world/etc/pkg"
+	_pkg_cmd="pkg -o ABI_FILE=${mnt:?}/usr/lib/crt1.o -o ASSUME_ALWAYS_YES=yes -R ${_repos_dir} -r ${WRKDIR}/world"
+	mkdir -p "${_repos_dir}"
+	cp "${mnt}/etc/pkg/pkgbase.conf" "${_repos_dir}/FreeBSD-base.conf"
+	${_pkg_cmd} update ${PKG_QUIET}
 	msg "Installing base packages"
-	while read line; do
-		pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR:?}/world install -r local ${PKG_QUIET} -y ${line}
-	done < ${PKGBASELIST}
-	rm ${WRKDIR:?}/world/etc/pkg/FreeBSD-base.conf
+	if [ -n "${PKGBASELIST}" ]; then
+		xargs ${_pkg_cmd} install -r pkgbase ${PKG_QUIET} -y < ${PKGBASELIST}
+	else
+		${_pkg_cmd} install -r pkgbase ${PKG_QUIET} -y -g 'FreeBSD-*'
+	fi
+	rm "${_repos_dir}/FreeBSD-base.conf"
 	msg "Base packages installed"
 }
 
@@ -272,7 +269,6 @@ install_world()
 }
 
 HOSTNAME=poudriere-image
-INSTALLWORLD=install_world
 PKG_QUIET="-q"
 
 : ${PRE_BUILD_SCRIPT:=""}
@@ -344,7 +340,6 @@ while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:R:s:S:t:vw:X:z:" FLAG; do
 			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			[ -r "${OPTARG}" ] || err 1 "No such package list: ${OPTARG}"
 			PKGBASELIST=${OPTARG}
-			INSTALLWORLD=install_world_from_pkgbase
 			;;
 		R)
 			ZFS_SEND_FLAGS="-${OPTARG}"
@@ -437,7 +432,6 @@ WRKDIR=$(mktemp -d ${POUDRIERE_DATA}/images/${IMAGENAME}-XXXX)
 if [ "${TMPFS_IMAGE:-0}" -eq 1 -o "${TMPFS_ALL}" -eq 1 ]; then
 	mnt_tmpfs image "${WRKDIR:?}"
 fi
-_jget mnt ${JAILNAME} mnt || err 1 "Missing mnt metadata for jail"
 excludelist=$(mktemp -t excludelist)
 mkdir -p ${WRKDIR:?}/world
 mkdir -p ${WRKDIR:?}/out
@@ -451,6 +445,14 @@ var/db/etcupdate
 boot/kernel.old
 nxb-bin
 EOF
+
+_jget method ${JAILNAME} method || err 1 "Missing method metadata for jail"
+if [ "${method}" = "pkgbase" ]; then
+	INSTALLWORLD=install_world_from_pkgbase
+else
+	[ -n "${PKGBASELIST}" ] && err 1 "-P used for a non-pkgbase jail!"
+	INSTALLWORLD=install_world
+fi
 
 # Need to convert IMAGESIZE from bytes to bibytes
 # This conversion is needed to be compliant with marketing 'unit'
