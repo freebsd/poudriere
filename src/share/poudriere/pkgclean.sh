@@ -290,7 +290,9 @@ check_should_delete_pkg() {
 		if should_delete "${file}"; then
 			echo "${file}" >> "${BADFILES_LIST:?}"
 			# If the pkg is a symlink to a hashed package, remove the hashed version as well
-			[ -L "${file}" ] && echo "$(realpath ${file})" >> ${BADFILES_LIST}
+			if [ -L "${file}" ]; then
+				echo "$(realpath "${file}")" >> "${BADFILES_LIST:?}"
+			fi
 		fi
 		;;
 	*.txz)
@@ -308,7 +310,9 @@ check_should_delete_pkg() {
 		msg_verbose "Found incorrect format file: ${file}"
 		echo "${file}" >> "${BADFILES_LIST:?}"
 		# If the pkg is a symlink to a hashed package, remove the hashed version as well
-		[ -L "${file}" ] && echo "$(realpath ${file})" >> ${BADFILES_LIST}
+		if [ -L "${file}" ]; then
+			echo "$(realpath "${file}")" >> "${BADFILES_LIST:?}"
+		fi
 		;;
 	esac
 }
