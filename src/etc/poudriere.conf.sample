@@ -396,3 +396,16 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # The devfs ruleset to apply inside the jail to /dev
 # See /etc/defaults/devfs.rules for the default one
 #DEVFS_RULESET=4
+
+# Have pkg create the repo such that each package is named with the short hash
+# of its file contents in the package filename, with symlinks to the traditional
+# package filenames. The packagesite.yaml file will point to the hashed version
+# of these files. By using hashed pkg filenames, this allows users to lazily
+# cache packages without conflicting with the existing packages, or serving stale
+# packages from a cache. Once the packages are synced the much
+# smaller meta files can then be synced. Allowing a near atomic update of the repo.
+# On caching CDNs this means a need to purge 2-5 files instead of all pkgs that
+# have been updated.
+# The symlinks are only required for the local poudriere for resovling dependencies,
+# they do not need to be uploaded to the CDN.
+#PKG_HASH="no"

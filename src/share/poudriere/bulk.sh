@@ -47,6 +47,8 @@ Options:
                    -f file.  Implies -c for -a.
     -c          -- Clean all the previously built binary packages and logs.
     -F          -- Only fetch from original master_site (skip FreeBSD mirrors)
+    -H          -- Create a repository where the package filenames contain the
+                   short hash of the contents.
     -I          -- Advanced Interactive mode. Leaves jail running with ports
                    installed after test.
     -i          -- Interactive mode. Enter jail for interactive testing and
@@ -101,7 +103,7 @@ if [ $# -eq 0 ]; then
 	usage
 fi
 
-while getopts "ab:B:CcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
+while getopts "ab:B:CcFf:HiIj:J:knNO:p:RrSTtvwz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			ALL=1
@@ -129,6 +131,9 @@ while getopts "ab:B:CcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
 				OPTARG="${SAVED_PWD}/${OPTARG}"
 			fi
 			LISTPKGS="${LISTPKGS:+${LISTPKGS} }${OPTARG}"
+			;;
+		H)
+			PKG_REPO_FLAGS="${PKG_REPO_FLAGS:+${PKG_REPO_FLAGS} }--hash --symlink"
 			;;
 		I)
 			INTERACTIVE_MODE=2

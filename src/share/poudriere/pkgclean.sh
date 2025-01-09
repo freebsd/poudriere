@@ -286,9 +286,18 @@ check_should_delete_pkg() {
 	local file="$1"
 
 	case "${file}" in
+	*"/Hashed")
+		if [ -d "${file}" ]; then
+			return 0
+		fi
+		;;
 	*".${PKG_EXT}")
 		if should_delete "${file}"; then
 			echo "${file}" >> "${BADFILES_LIST:?}"
+			# If the pkg is a symlink to a hashed package, remove the hashed version as well
+			if [ -L "${file}" ]; then
+				echo "$(realpath "${file}")" >> "${BADFILES_LIST:?}"
+			fi
 		fi
 		;;
 	*.txz)
@@ -305,6 +314,10 @@ check_should_delete_pkg() {
 	*)
 		msg_verbose "Found incorrect format file: ${file}"
 		echo "${file}" >> "${BADFILES_LIST:?}"
+		# If the pkg is a symlink to a hashed package, remove the hashed version as well
+		if [ -L "${file}" ]; then
+			echo "$(realpath "${file}")" >> "${BADFILES_LIST:?}"
+		fi
 		;;
 	esac
 }
