@@ -7108,14 +7108,19 @@ delete_old_pkg() {
 	fi
 	# The package is kept.
 
-	# If the package has shlib dependencies then we need to recheck it
-	# later to ensure those dependencies are still provided by another
-	# package.
-	pkg_get_shlib_required_count shlib_required_count "${pkg}" || return
-	case "${shlib_required_count-}" in
-	""|0) return 0 ;;
+	case "${PKG_NO_VERSION_FOR_DEPS-}" in
+	"no") ;;
+	*)
+		# If the package has shlib dependencies then we need to recheck it
+		# later to ensure those dependencies are still provided by another
+		# package.
+		pkg_get_shlib_required_count shlib_required_count "${pkg}" || return
+		case "${shlib_required_count-}" in
+		""|0) return 0 ;;
+		esac
+		shash_set pkgname-check_shlibs "${pkgname}" "1"
+		;;
 	esac
-	shash_set pkgname-check_shlibs "${pkgname}" "1"
 }
 
 delete_old_pkgs() {
