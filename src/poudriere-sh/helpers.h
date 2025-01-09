@@ -49,16 +49,23 @@ void trap_pop(int signo, struct sigdata *sd);
  * Any other functions can use stdio as long as they undef what they
  * use from here. No mixing between stdio functions and the shell
  * builtins can be done.
+ * -- Using these are fine as long as stdio/stdin/stderr is not used.
  */
 #undef FILE
-#define FILE MUST_UNDEF_STDIO_FUNCTIONS_AND_NOT_MIX_WITH_FPRINTF
-#define fclose MUST_UNDEF_STDIO_FUNCTIONS_AND_NOT_MIX_WITH_FPRINTF
-#define fdclose MUST_UNDEF_STDIO_FUNCTIONS_AND_NOT_MIX_WITH_FPRINTF
-#define fdcloseall MUST_UNDEF_STDIO_FUNCTIONS_AND_NOT_MIX_WITH_FPRINTF
-#define fdopen MUST_UNDEF_STDIO_FUNCTIONS_AND_NOT_MIX_WITH_FPRINTF
-#define fmemopen MUST_UNDEF_STDIO_FUNCTIONS_AND_NOT_MIX_WITH_FPRINTF
-#define fopen MUST_UNDEF_STDIO_FUNCTIONS_AND_NOT_MIX_WITH_FPRINTF
-#define freopen MUST_UNDEF_STDIO_FUNCTIONS_AND_NOT_MIX_WITH_FPRINTF
+#define FILE MUST_NOT_MIX_STDIO_WITH_SH_HANDLING
+
+#undef getchar
+static inline char mygetchar(void) {
+    char c;
+
+    return (read(STDIN_FILENO, &c, 1) ? c : EOF);
+}
+#define getchar mygetchar
+/* Use the sh version */
+#undef fputc
+#define fputc(c, stream) putc((c), (stream))
+
+#undef stdin
 
 #define err_set_exit notimplemented
 #define err_set_file notimplemented

@@ -225,6 +225,34 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	assert 2 ${lookup} "real_func 1 lookup count - invalidated"
 }
 
+# Invalidation test when using -K
+{
+	# First lookup, will call into the real function
+	lookup=0
+	value=$(cache_call -K "key2" - real_func "2")
+	assert 0 $? "real_func 2 return status"
+	argcnt=${value%% *}
+	value="${value#[0-9] }"
+	assert 1 "${argcnt}" "real_func 2 argcnt"
+	assert "2" "${value}" "real_func 2 value"
+	get_lookup_cnt lookup real_func "2"
+	assert 0 $? "lookupcnt real_func-2"
+	assert 1 ${lookup} "real_func 2 lookup count"
+
+	# now invalidate the cache and ensure it is looked up again.
+	cache_invalidate -K "key2" real_func "2"
+
+	value=$(cache_call -K "key2" - real_func "2")
+	assert 0 $? "real_func 2 return status - invalidated"
+	argcnt=${value%% *}
+	value="${value#[0-9] }"
+	assert 1 "${argcnt}" "real_func 2 argcnt - invalidated"
+	assert "2" "${value}" "real_func 2 value - invalidated"
+	get_lookup_cnt lookup real_func "2"
+	assert 0 $? "lookupcnt real_func-2 - invalidated"
+	assert 2 ${lookup} "real_func 2 lookup count - invalidated"
+}
+
 # Forced cached set test
 {
 	# First lookup, will call into the real function

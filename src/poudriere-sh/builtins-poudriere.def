@@ -1,7 +1,6 @@
 clockcmd -n		clock
 critical_startcmd -n	critical_start
 critical_endcmd -n	critical_end
-cutcmd -n	        cut
 diremptycmd -n		dirempty
 getpidcmd -n		getpid
 getvarcmd -n		getvar
@@ -22,7 +21,6 @@ mkdircmd -n		mkdir
 mkfifocmd -n		mkfifo
 mktempcmd -n		mktemp
 _mktempcmd -n		_mktemp
-pastecmd -n		paste
 pwaitcmd		pwait
 randintcmd -n		randint
 realpathcmd -n		realpath

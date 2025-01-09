@@ -18,6 +18,9 @@ XFAIL_TESTS= \
 TESTS=\
 	array.sh \
 	builtins.sh \
+	builtins-cut.sh \
+	builtins-paste.sh \
+	builtins-wc.sh \
 	cache.sh \
 	cache_pipe.sh \
 	calculate_duration.sh \
@@ -34,19 +37,21 @@ TESTS=\
 	err_pipe_delayed.sh \
 	getpid.sh \
 	getvar.sh \
-	gsub.sh \
+	git_get_hash_and_dirty.sh \
+	git_tree_dirty.sh \
 	globmatch.sh \
+	gsub.sh \
 	hash_basic.sh \
-	jobs.sh \
 	hash_stack.sh \
+	jobs.sh \
 	list.sh \
+	locked_mkdir.sh \
+	locked_mkdir_waiters.sh \
+	locked_mkdir_waiters_all_lose.sh \
+	locked_mkdir_waiters_kill.sh \
 	locks.sh \
 	locks_critical_section.sh \
 	locks_critical_section_nested.sh \
-	locked_mkdir.sh \
-	locked_mkdir_waiters.sh \
-	locked_mkdir_waiters_kill.sh \
-	locked_mkdir_waiters_all_lose.sh \
 	logging.sh \
 	mapfile.sh \
 	mktemp.sh \
@@ -55,6 +60,8 @@ TESTS=\
 	options-smoke.sh \
 	originspec.sh \
 	parallel_run.sh \
+	pipe_func.sh \
+	pipe_hold.sh \
 	pkg_version.sh \
 	pkgqueue_basic.sh \
 	pkgqueue_build_and_test.sh \
@@ -64,12 +71,11 @@ TESTS=\
 	pkgqueue_prioritize.sh \
 	pkgqueue_remove_many_pipe.sh \
 	pkgqueue_trimmed_misordered.sh \
-	pipe_func.sh \
-	pipe_hold.sh \
 	port_var_fetch.sh \
 	prefix_output.sh \
 	read_blocking.sh \
 	read_file.sh \
+	read_line.sh \
 	readarray.sh \
 	readlines.sh \
 	relpath.sh \
@@ -83,8 +89,8 @@ TESTS=\
 	timespec.sh \
 	timestamp.sh \
 	trap_ignore_block.sh \
-	trap_save_block.sh \
 	trap_save.sh \
+	trap_save_block.sh \
 	$(JAIL_TESTS)
 
 JAIL_TESTS= \
@@ -103,9 +109,13 @@ JAIL_TESTS= \
 	bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
+	bulk-build-inc-pkg_no_version_for_deps_switch.sh \
 	bulk-build-inc-pkgclean-flavor-default.sh \
 	bulk-build-inc-pkgclean-flavor.sh \
 	bulk-build-inc-pkgclean-origin.sh \
+	bulk-build-inc-shlibs-buildrun-deps.sh \
+	bulk-build-inc-shlibs-lib-deps.sh \
+	bulk-build-inc-shlibs.sh \
 	bulk-build-inc-trim_orphaned_build_deps-RUN-and-BUILD.sh \
 	bulk-build-inc-trim_orphaned_build_deps-RUN.sh \
 	bulk-build-inc-trim_orphaned_build_deps-double-dep.sh \
@@ -167,6 +177,12 @@ JAIL_TESTS= \
 	bulk-overlay-all.sh \
 	bulk-overlay-specific.sh \
 	bulk-skipped-and-needed-dep.sh \
+	distclean-badorigin.sh \
+	distclean-overlays.sh \
+	distclean-smoke.sh \
+	options-badorigin.sh \
+	options-overlays.sh \
+	options-smoke.sh \
 	testport-all-flavors-failure.sh \
 	testport-build-MOVED-default.sh \
 	testport-build-MOVED-flavor.sh \

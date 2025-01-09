@@ -12,6 +12,7 @@ while get_test_context; do
 	read_file data "${TMP}"
 	assert_not 0 $? "read_file on missing file should not return 0"
 	assert '' "${data}" "read_file on missing file should be blank"
+	assert 'NULL' "${data-NULL}" "read_file on missing file should unset vars"
 	assert 0 "${_read_file_lines_read}" "_read_file_lines_read should be 0 on missing file"
 
 	echo "first" >> "${TMP}"

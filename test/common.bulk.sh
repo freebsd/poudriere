@@ -477,6 +477,75 @@ assert_ignored() {
 	rm -f "${tmp}"
 }
 
+assert_inspected() {
+	local origins="$1"
+	local tmp originspec origins_expanded inspectspec inspectreason
+
+	if [ ! -f "${log:?}/.poudriere.ports.inspected" ]; then
+		[ -z "${origins-}" ] && return 0
+		err 1 ".poudriere.ports.inspected file is missing while EXPECTED_IGNORED is: ${origins}"
+	fi
+
+	tmp="$(mktemp -t queued)"
+	cp -f "${log}/.poudriere.ports.inspected" "${tmp}"
+	# First fix the list to expand main port FLAVORS
+	expand_origin_flavors "${origins}" origins_expanded
+	# The queue does remove duplicates - do the same here
+	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
+	echo "Asserting that only '${origins_expanded}' are in the inspected list" >&2
+	for inspectspec in ${origins_expanded}; do
+		case "${inspectspec}" in
+		*:*)
+			originspec="${inspectspec%:*}"
+			inspectreason="${inspectspec#*:}"
+			;;
+		*)
+			originspec="${inspectspec}"
+			inspectreason=
+		esac
+		#fix_default_flavor "${originspec}" originspec
+		hash_get originspec-pkgname "${originspec}" pkgname
+		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		echo "=> Asserting that ${originspec} | ${pkgname} is inspected${inspectreason:+ with reason='${inspectreason}'}" >&2
+		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		    -vinspectreason="${inspectreason}" '
+		    {reason=""; for (i=3;i<=NF;i++) { reason = (reason ? reason FS : "") $i } }
+		    $1 == originspec && $2 == pkgname &&
+		    (!inspectreason || reason == inspectreason) {
+			print "==> " $0
+			if (found == 1) {
+				# A duplicate, no good.
+				found = 0
+				exit 1
+			}
+			found = 1
+			next
+		    }
+		    END { if (found != 1) exit 1 }
+		' ${log}/.poudriere.ports.inspected >&2
+		assert 0 $? "${originspec} | ${pkgname}${inspectreason:+ with reason='${inspectreason}'} should be inspected in ${log}/.poudriere.ports.inspected"
+		# Remove the entry so we can assert later that nothing extra
+		# is in the queue.
+		cat "${tmp}" | \
+		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		        -vinspectreason="${inspectreason}" '
+		    {reason=""; for (i=3;i<=NF;i++) { reason = (reason ? reason FS : "") $i } }
+		    $1 == originspec && $2 == pkgname &&
+		    (!inspectreason || reason == inspectreason) { next }
+		    { print }
+		' > "${tmp}.new"
+		mv -f "${tmp}.new" "${tmp}"
+	done
+	echo "=> Asserting that nothing else is inspected" >&2
+	if [ -s "${tmp}" ]; then
+		echo "=> Items remaining:" >&2
+		cat "${tmp}" | sed -e 's,^,==> ,' >&2
+	fi
+	! [ -s "${tmp}" ]
+	assert 0 $? "Inspect list should be empty"
+	rm -f "${tmp}"
+}
+
 assert_skipped() {
 	local origins="$1"
 	local tmp originspec origins_expanded skipspec skipreason
@@ -730,20 +799,22 @@ assert_failed() {
 
 assert_counts() {
 	local queued expected_queued ignored expected_ignored
+	local inspected expected_inspected
 	local skipped expected_skipped
-	local tobuild expected_tobuild computed_tobuild
+	local tobuild expected_tobuild computed_remaining
 	local failed expected_failed
 	local fetched expected_fetched
 	local built expected_built
 
 	expected_tobuild=$(expand_and_count "${EXPECTED_TOBUILD-}")
 	expected_ignored=$(expand_and_count "${EXPECTED_IGNORED-}")
+	expected_inspected=$(expand_and_count "${EXPECTED_INSPECTED-}")
 	expected_skipped=$(expand_and_count "${EXPECTED_SKIPPED-}")
 	expected_failed=$(expand_and_count "${EXPECTED_FAILED-}")
 	expected_fetched=$(expand_and_count "${EXPECTED_FETCHED-}")
 	expected_built=$(expand_and_count "${EXPECTED_BUILT-}")
 	expected_queued=$(expand_and_count "${EXPECTED_QUEUED-}")
-	echo "=> Asserting queued=${expected_queued} built=${expected_built} failed=${expected_failed} ignored=${expected_ignored} skipped=${expected_skipped} fetched=${expected_fetched} tobuild=${expected_tobuild}"
+	echo "=> Asserting queued=${expected_queued} built=${expected_built} failed=${expected_failed} ignored=${expected_ignored} inspected=${expected_inspected} skipped=${expected_skipped} fetched=${expected_fetched} tobuild=${expected_tobuild}"
 
 	if [ -e "${log:?}/.poudriere.stats_queued" ]; then
 		read queued < "${log:?}/.poudriere.stats_queued"
@@ -760,6 +831,15 @@ assert_counts() {
 		ignored=0
 	fi
 	assert "${expected_ignored}" "${ignored}" "ignored should match"
+
+	if [ -n "${EXPECTED_INSPECTED-}" ]; then
+		read inspected < "${log:?}/.poudriere.stats_inspected"
+		assert 0 $? "${log:?}/.poudriere.stats_inspected read should pass"
+	else
+		inspected=0
+	fi
+	assert "${expected_inspected}" "${inspected}" "inspected should match"
+
 
 	if [ -n "${EXPECTED_SKIPPED-}" ]; then
 		read skipped < "${log:?}/.poudriere.stats_skipped"
@@ -802,23 +882,23 @@ assert_counts() {
 	assert "${expected_failed}" "${failed}" "failed should match"
 
 	# Ensure the computed stat is correct
-	# tobuild is static from the beginning. It is not modified
-	# by failed, fetched, built.
 	# If we did a real build, without crashing, then all of the stats
 	# should add to 0.
 	case "${EXPECTED_BUILT:+set}" in
 	set)
-		computed_tobuild=$((expected_queued - \
-		    (expected_ignored + expected_skipped + expected_built + \
+		computed_remaining=$((expected_queued - \
+		    (expected_ignored + expected_inspected + \
+		     expected_skipped + expected_built + \
 		     expected_fetched + expected_failed)))
-		assert "0" "${computed_tobuild}" \
-		    "Computed tobuild should be 0 on a non-crash build - this being wrong could indicate show_build_summary() is wrong too"
+		assert "0" "${computed_remaining}" \
+		    "Computed remaining should be 0 on a non-crash build - this being wrong could indicate show_build_summary() is wrong too"
 		;;
 	*)
-		computed_tobuild=$((expected_queued - \
-		    (expected_ignored + expected_skipped)))
-		assert "${expected_tobuild}" "${computed_tobuild}" \
-		    "Computed tobuild should match tobuild for a dry-run"
+		# For a dry-run, remainining should match tobuild.
+		computed_remaining=$((expected_queued - \
+		    (expected_ignored + expected_inspected + expected_skipped)))
+		assert "${expected_tobuild}" "${computed_remaining}" \
+		    "Computed remaining should match remaining for a dry-run"
 		;;
 	esac
 }
@@ -1057,6 +1137,10 @@ _assert_bulk_queue_and_stats() {
 	echo >&2
 	stack_lineinfo assert_ignored "${EXPECTED_IGNORED-}"
 
+	# Assert the inspected ports are tracked in .poudriere.ports.inspected
+	echo >&2
+	stack_lineinfo assert_inspected "${EXPECTED_INSPECTED-}"
+
 	# Assert that SKIPPED ports are right
 	echo >&2
 	stack_lineinfo assert_skipped "${EXPECTED_SKIPPED-}"
@@ -1134,6 +1218,7 @@ _assert_bulk_build_results() {
 	local failed_origins_expanded failed_pkgnames failedspec
 	local skipped_origins_expanded skipped_pkgnames skippedspec
 	local ignore_origins_expanded ignore_pkgnames ignorespec
+	local inspect_origins_expanded inspect_pkgnames inspectspec
 
 	which -s "${PKG_BIN:?}" || err 99 "Unable to find in host: ${PKG_BIN}"
 	_log_path log || err 99 "Unable to determine logdir"
@@ -1205,6 +1290,32 @@ _assert_bulk_build_results() {
 		hash_get originspec-pkgname "${originspec}" pkgname
 		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		ignored_pkgnames="${ignored_pkgnames:+${ignored_pkgnames} }${pkgname}"
+		case "${TESTPORT:+set}" in
+		set)
+			fix_default_flavor "${originspec}" originspec
+			fix_default_flavor "${TESTPORT}" TESTPORT
+			case "${originspec}" in
+			"${TESTPORT}")
+				TESTPKGNAME="${pkgname}"
+				;;
+			esac
+			;;
+		esac
+	done
+
+	expand_origin_flavors "${EXPECTED_INSPECTED-}" inspected_origins_expanded
+	inspected_pkgnames=
+	for inspectedspec in ${inspected_origins_expanded}; do
+		case "${inspectedspec}" in
+		*:*)
+			originspec="${inspectedspec%:*}"
+			;;
+		*)
+			originspec="${inspectedspec}"
+		esac
+		hash_get originspec-pkgname "${originspec}" pkgname
+		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		inspected_pkgnames="${inspected_pkgnames:+${inspected_pkgnames} }${pkgname}"
 		case "${TESTPORT:+set}" in
 		set)
 			fix_default_flavor "${originspec}" originspec
@@ -1312,24 +1423,28 @@ _assert_bulk_build_results() {
 		assert_ret 0 [ -L "${file2}" ]
 		assert "$(realpath "${file}")" "$(realpath "${file}")"
 	done
-	for pkgname in ${ignored_pkgnames}; do
-		file="${log:?}/logs/${pkgname}.log"
-		assert_ret 0 [ -f "${file}" ]
-		assert 0 $? "Logfile should exist: ${file}"
-		assert_ret 0 [ -s "${file}" ]
-		assert 0 $? "Logfile should not be empty: ${file}"
-		assert_ret 0 grep "Ignoring:" "${file}"
-		hash_get pkgname-originspec "${pkgname}" originspec ||
-			err 99 "Unable to find originspec for pkgname: ${pkgname}"
-		grep '^build of.*ended at' "${file}" || :
-		assert_ret 0 grep "build of ${originspec} | ${pkgname} ended at" \
-		    "${file}"
+	case "${LOGS_FOR_IGNORED-}" in
+	"yes")
+		for pkgname in ${ignored_pkgnames}; do
+			file="${log:?}/logs/${pkgname}.log"
+			assert_ret 0 [ -f "${file}" ]
+			assert 0 $? "Logfile should exist: ${file}"
+			assert_ret 0 [ -s "${file}" ]
+			assert 0 $? "Logfile should not be empty: ${file}"
+			assert_ret 0 grep "Ignoring:" "${file}"
+			hash_get pkgname-originspec "${pkgname}" originspec ||
+				err 99 "Unable to find originspec for pkgname: ${pkgname}"
+			grep '^build of.*ended at' "${file}" || :
+			assert_ret 0 grep "build of ${originspec} | ${pkgname} ended at" \
+			    "${file}"
 
-		file2="${log:?}/logs/ignored/${pkgname}.log"
-		assert_ret 0 [ -r "${file2}" ]
-		assert_ret 0 [ -L "${file2}" ]
-		assert "$(realpath "${file}")" "$(realpath "${file}")"
-	done
+			file2="${log:?}/logs/ignored/${pkgname}.log"
+			assert_ret 0 [ -r "${file2}" ]
+			assert_ret 0 [ -L "${file2}" ]
+			assert "$(realpath "${file}")" "$(realpath "${file}")"
+		done
+		;;
+	esac
 	for pkgname in ${skipped_pkgnames}; do
 		file="${log:?}/logs/${pkgname}.log"
 		assert_ret_not 0 [ -f "${file}" ]
@@ -1393,7 +1508,7 @@ SCRIPTNAME="${SCRIPTNAME##*/}"
 POUDRIERE="${POUDRIEREPATH} -e ${POUDRIERE_ETC}"
 ARCH=$(uname -p)
 JAILNAME="poudriere-test-${ARCH}"
-JAIL_VERSION="12.4-RELEASE"
+JAIL_VERSION="13.4-RELEASE"
 JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" || echo)
 export UNAME_r=$(freebsd-version)
 export UNAME_v="FreeBSD ${UNAME_r}"
@@ -1484,6 +1599,7 @@ set_poudriere_conf() {
 	${FLAVOR_ALL:+FLAVOR_ALL=${FLAVOR_ALL}}
 	${IMMUTABLE_BASE:+IMMUTABLE_BASE=${IMMUTABLE_BASE}}
 	${BUILD_AS_NON_ROOT:+BUILD_AS_NON_ROOT=${BUILD_AS_NON_ROOT}}
+	${LOGS_FOR_IGNORED:+LOGS_FOR_IGNORED=${LOGS_FOR_IGNORED}}
 	$(cat)
 	EOF
 	showfile "${poudriere_conf}"

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2016 Dag-Erling Smørgrav
+ * Copyright (c) 2016-2024 Dag-Erling Smørgrav
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -102,7 +102,6 @@ static struct t_aa_case {
 	},
 };
 
-#if 0
 static int num_s[] = {
 	 1,  2,  3,  4,
 	 5,  6,  7,  8,
@@ -116,12 +115,14 @@ static int num_u[] = {
 	 3, 14, 10,  9,
 	 4, 13, 12, 11,
 };
-#endif
+
+static int t_aa_comparisons;
 
 static int
 t_aa_compare_i(const void *a, const void *b)
 {
 
+	t_aa_comparisons++;
 	return (*(const int *)a - *(const int *)b);
 }
 
@@ -135,10 +136,10 @@ t_aa_test(char **desc CRYB_UNUSED, void *arg)
 	int i, ret;
 
 	aa_init(&t, t_aa_compare_i);
-	ret = t_compare_i(0, t.size);
+	ret = t_compare_u(0, t.size);
 	for (i = 0; i < tc->n; ++i)
 		ret &= t_compare_ptr(&tc->i[i], aa_insert(&t, &tc->i[i]));
-	ret &= t_compare_i(tc->n, t.size);
+	ret &= t_compare_u(tc->n, t.size);
 	e = aa_first(&t, &it);
 	if (tc->n == 0)
 		ret &= t_is_null(e);
@@ -153,12 +154,77 @@ t_aa_test(char **desc CRYB_UNUSED, void *arg)
 }
 
 static int
+t_aa_find(char **desc CRYB_UNUSED, void *arg CRYB_UNUSED)
+{
+	aa_tree t;
+	unsigned int i;
+	int ret;
+
+	ret = 1;
+	aa_init(&t, t_aa_compare_i);
+	for (i = 0; i < sizeof num_u / sizeof num_u[0]; ++i)
+		ret &= t_compare_ptr(&num_u[i], aa_insert(&t, &num_u[i]));
+	for (i = 0; i < sizeof num_u / sizeof num_u[0]; ++i)
+		ret &= t_compare_ptr(&num_u[i], aa_find(&t, &num_u[i]));
+	for (i = 0; i < sizeof num_s / sizeof num_s[0]; ++i)
+		ret &= t_compare_mem(&num_s[i], aa_find(&t, &num_s[i]), sizeof(int));
+	aa_destroy(&t);
+	return (ret);
+}
+
+static int
+t_aa_next(char **desc CRYB_UNUSED, void *arg CRYB_UNUSED)
+{
+	aa_tree t;
+	aa_iterator *iter;
+	unsigned int i, n;
+	int ret;
+
+	ret = 1;
+	n = sizeof num_u / sizeof num_u[0];
+	aa_init(&t, t_aa_compare_i);
+	for (i = 0; i < n; ++i)
+		ret &= t_compare_ptr(&num_u[i], aa_insert(&t, &num_u[i]));
+	ret &= t_compare_u(n, t.size);
+	ret &= t_compare_mem(&num_s[0], aa_first(&t, &iter), sizeof(int));
+	for (i = 1; i < n; ++i)
+		ret &= t_compare_mem(&num_s[i], aa_next(&iter), sizeof(int));
+	ret &= t_is_null(aa_next(&iter));
+	aa_finish(&iter);
+	aa_destroy(&t);
+	ret &= t_compare_u(0, t.size);
+	return (ret);
+}
+
+static int
+t_aa_destroy(char **desc CRYB_UNUSED, void *arg CRYB_UNUSED)
+{
+	aa_tree t;
+	unsigned int i, n;
+	int ret;
+
+	ret = 1;
+	n = sizeof num_u / sizeof num_u[0];
+	aa_init(&t, t_aa_compare_i);
+	for (i = 0; i < n; ++i)
+		ret &= t_compare_ptr(&num_u[i], aa_insert(&t, &num_u[i]));
+	ret &= t_compare_u(n, t.size);
+	t_aa_comparisons = 0;
+	aa_destroy(&t);
+	ret &= t_compare_u(0, t_aa_comparisons);
+	return (ret);
+}
+
+static int
 t_prepare(int argc CRYB_UNUSED, char *argv[] CRYB_UNUSED)
 {
 	unsigned int i;
 
 	for (i = 0; i < sizeof t_aa_cases / sizeof t_aa_cases[0]; ++i)
-		t_add_test(t_aa_test, &t_aa_cases[i], t_aa_cases[i].desc);
+		t_add_test(t_aa_test, &t_aa_cases[i], "%s", t_aa_cases[i].desc);
+	t_add_test(t_aa_find, NULL, "aa_find()");
+	t_add_test(t_aa_next, NULL, "aa_next()");
+	t_add_test(t_aa_destroy, NULL, "aa_destroy()");
 	return (0);
 }
 

@@ -102,25 +102,28 @@
               </button>
               <ul class="dropdown-menu">
                 <li class="disabled" id="nav_built">
-                  <a href="#built" class="dropdown-item data_url">Built</a>
+                  <a href="#built_div" class="dropdown-item nav-link">Built</a>
                 </li>
                 <li class="disabled" id="nav_failed">
-                  <a href="#failed" class="dropdown-item data_url">Failed</a>
+                  <a href="#failed_div" class="dropdown-item nav-link">Failed</a>
                 </li>
                 <li class="disabled" id="nav_skipped">
-                  <a href="#skipped" class="dropdown-item data_url">Skipped</a>
+                  <a href="#skipped_div" class="dropdown-item nav-link">Skipped</a>
+                </li>
+                <li class="disabled" id="nav_inspected">
+                  <a href="#inspected_div" class="dropdown-item nav-link">Inspected</a>
                 </li>
                 <li class="disabled" id="nav_ignored">
-                  <a href="#ignored" class="dropdown-item data_url">Ignored</a>
+                  <a href="#ignored_div" class="dropdown-item nav-link">Ignored</a>
                 </li>
                 <li class="disabled" id="nav_fetched">
-                  <a href="#fetched" class="dropdown-item data_url">Fetched</a>
+                  <a href="#fetched_div" class="dropdown-item nav-link">Fetched</a>
                 </li>
                 <li class="disabled" id="nav_queued">
-                  <a href="#queued" class="dropdown-item data_url">Queued</a>
+                  <a href="#queued_div" class="dropdown-item nav-link">Queued</a>
                 </li>
                 <li class="disabled" id="nav_remaining">
-                  <a href="#remaining" class="dropdown-item data_url"
+                  <a href="#remaining_div" class="dropdown-item nav-link"
                     >Remaining</a
                   >
                 </li>
@@ -228,6 +231,7 @@
                     <th class="text-center table-success">Built</th>
                     <th class="text-center table-danger">Failed</th>
                     <th class="text-center table-info">Skipped</th>
+                    <th class="text-center table-warning">Inspected</th>
                     <th class="text-center table-warning">Ignored</th>
                     <th class="text-center table-primary">Fetched</th>
                     <th class="text-center">Remaining</th>
@@ -238,6 +242,7 @@
                   <td id="stats_built" class="built text-center"></td>
                   <td id="stats_failed" class="failed text-center"></td>
                   <td id="stats_skipped" class="text-center"></td>
+                  <td id="stats_inspected" class="text-center"></td>
                   <td id="stats_ignored" class="text-center"></td>
                   <td id="stats_fetched" class="text-center"></td>
                   <td id="stats_remaining" class="text-center"></td>
@@ -350,6 +355,23 @@
               </table>
             </div>
             <!-- #skipped -->
+            <div id="inspected_div" style="display: none">
+              <div class="card my-3 bg-dark text-white fs-5">
+                <div class="card-body fs-5">Inspected Ports</div>
+              </div>
+              <table class="table table-striped" id="inspected_table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Package</th>
+                    <th>Origin</th>
+                    <th>Reason</th>
+                  </tr>
+                </thead>
+                <tbody id="inspected_body"></tbody>
+              </table>
+            </div>
+            <!-- #inspected -->
             <div id="ignored_div" style="display: none">
               <div class="card my-3 bg-dark text-white fs-5">
                 <div class="card-body fs-5">Ignored Ports</div>

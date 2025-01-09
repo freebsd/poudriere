@@ -21,7 +21,7 @@ make_getjob() {
 	local job_outvar="$1"
 	local job_pipe job_fd
 	local ret mg_job
-	local dd_stderr dd_err
+	local dd_stderr dd_err timeout
 
 	case "${MAKEFLAGS:+set}" in
 	set) ;;
@@ -78,6 +78,7 @@ make_getjob() {
 
 	dd_stderr="$(mktemp -ut runtest)"
 	while :; do
+		timeout=
 		if [ "${THIS_JOB}" -eq 0 ] ||
 		    ! kill -0 "${THIS_JOB}" 2>/dev/null ||
 		    pwait -o -t "0.1" "${THIS_JOB}" >/dev/null 2>&1; then
@@ -89,13 +90,23 @@ make_getjob() {
 			#echo "GOT JOB ${mg_job}" >&2
 			setvar "${job_outvar}" "${mg_job}"
 			return 0
+		elif [ "${THIS_JOB}" -ne 0 ]; then
+			timeout="timeout --preserve-status -s SIGALRM 2"
 		fi
-		mg_job="$(dd if="${JOB_PIPE_R}" bs=1 count=1 2>"${dd_stderr}")"
+		# There is a race with checking for "this" job above and waiting
+		# on the job server for a job. 142 below will recheck for "this"
+		# job on timeout.
+		mg_job="$(${timeout} \
+			  dd if="${JOB_PIPE_R}" bs=1 count=1 2>"${dd_stderr}")"
 		ret="$?"
 		read dd_err < "${dd_stderr}" || dd_err=
 		rm -f "${dd_stderr}"
 		case "${ret}" in
 		0) ;;
+		142)
+			# Recheck for "this" job being done.
+			continue
+			;;
 		*)
 			case "${JOB_PIPE_BLOCKING}" in
 			1)
@@ -152,6 +163,7 @@ while read var; do
 	SH_DISABLE_VFORK|TIMESTAMP|TRUSS|\
 	HTML_JSON_UPDATE_INTERVAL|\
 	TESTS_SKIP_BUILD|\
+	TESTS_SKIP_LONG|\
 	TMPDIR|\
 	SH) ;;
 	*)
@@ -216,13 +228,20 @@ bulk*.sh|testport*.sh|distclean*.sh|options*.sh) : ${TIMEOUT:=500} ;;
 locked_mkdir.sh) : ${TIMEOUT:=120} ;;
 jobs.sh) : ${TIMEOUT:=300} ;;
 esac
-case "${1##*/}" in
-*build*)
-	if [ -n "${TESTS_SKIP_BUILD-}" ]; then
+if [ -n "${TESTS_SKIP_BUILD-}" ]; then
+	case "${1##*/}" in
+	*-build*)
 		exit 77
-	fi
-	;;
-esac
+		;;
+	esac
+fi
+if [ -n "${TESTS_SKIP_LONG-}" ]; then
+	case "${1##*/}" in
+	jobs.sh)
+		exit 77
+		;;
+	esac
+fi
 : ${TIMEOUT:=90}
 : ${TIMESTAMP="${LIBEXECPREFIX}/timestamp" -t -1stdout: -2stderr:}
 

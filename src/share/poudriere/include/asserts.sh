@@ -202,6 +202,48 @@ _assert_list() {
 assert_list() { _assert_list "" "$@"; }
 alias assert_list="_assert_list \"${_LINEINFO_DATA:?}\" "
 
+_assert_file_reg() {
+	[ "$#" -ge 3 ] || eargs assert_file_reg 'expected-file|-' 'have-file'
+	local -; set +x +e +u
+	local lineinfo="$1"
+	local expected="$2"
+	local have="$3"
+	local reason="${4-}"
+	local ret=0
+
+	if [ ! -r "${have}" ]; then
+		aecho FAIL "${lineinfo}" "Have file is missing? ${have}"
+		assert_failure
+	fi
+
+	case "${expected}" in
+	-)
+		expected=$(mktemp -ut assert_file.expected)
+		cat > "${expected}"
+		;;
+	esac
+
+	aecho TEST "${lineinfo}" "awk -f ${AWKPREFIX:?}/file_cmp_reg.awk '${expected}' '${have}'"
+	awk -f "${AWKPREFIX:?}/file_cmp_reg.awk" "${expected}" "${have}" ||
+	    ret="$?"
+	reason="${reason:+${reason} -}
+HAVE:
+$(cat -nvet "${have}")
+EXPECTED:
+$(cat -nvet "${expected}")"
+	if [ "${ret}" -ne 0 ]; then
+		aecho FAIL "${lineinfo}" "${reason}"
+		#diff -u "${expected}" "${have}" | cat -vet >&${REDIRECTED_STDERR_FD:-2}
+		assert_failure
+	else
+		aecho OK "${lineinfo}"
+		rm -f "${have}" "${expected}"
+	fi
+}
+# This function may be called in "$@" contexts that do not use eval.
+assert_file_reg() { _assert_file_reg "" "$@"; }
+alias assert_file_reg="_assert_file_reg \"${_LINEINFO_DATA:?}\" "
+
 _assert_file() {
 	[ "$#" -ge 4 ] || eargs assert_file 'expected-file|-' 'have-file'
 	local -; set +x +e +u

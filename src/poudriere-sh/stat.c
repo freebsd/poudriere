@@ -72,7 +72,6 @@ __FBSDID("$FreeBSD$");
 #define main statcmd
 #include "bltin/bltin.h"
 #include "helpers.h"
-#define fputc(c, stream) putc((c), (stream))
 #endif
 
 #if HAVE_STRUCT_STAT_ST_FLAGS

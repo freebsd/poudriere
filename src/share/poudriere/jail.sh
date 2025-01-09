@@ -344,12 +344,14 @@ update_jail() {
 		rm -f "${fu_bin:?}"
 		update_version
 		build_native_xtools
+		cleanup_confs
 		markfs clean ${JAILMNT}
 		;;
 	svn*|git*)
 		install_from_vcs version_extra
 		RELEASE=$(update_version "${version_extra}")
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT:?} BATCH_DELETE_OLD_FILES=yes
+		cleanup_confs
 		markfs clean ${JAILMNT}
 		;;
 	src=*)
@@ -357,6 +359,7 @@ update_jail() {
 		install_from_src version_extra
 		RELEASE=$(update_version "${version_extra}")
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT:?} BATCH_DELETE_OLD_FILES=yes
+		cleanup_confs
 		markfs clean ${JAILMNT}
 		;;
 	gjb|url=*|freebsdci)
@@ -475,6 +478,7 @@ setup_build_env() {
  	setup_src_conf "make"
 	setup_src_conf "src"
 	setup_src_conf "src-env"
+	SETUP_CONFS=1
 	if [ "${TARGET}" = "mips" ]; then
 		echo "WITH_ELFTOOLCHAIN_TOOLS=y" >> ${JAILMNT}/etc/src.conf
 	fi
@@ -482,6 +486,21 @@ setup_build_env() {
 	export __MAKE_CONF=${JAILMNT}/etc/make.conf
 	export SRCCONF=${JAILMNT}/etc/src.conf
 	export SRC_ENV_CONF=${JAILMNT}/etc/src-env.conf
+}
+
+# Must ensure conf files don't leak into `markfs clean`
+cleanup_confs() {
+	local file
+
+	case "${SETUP_CONFS-}" in
+	1) ;;
+	*) return 0 ;;
+	esac
+
+	for file in /etc/make.conf /etc/src.conf /etc/src-env.conf; do
+		rm -f "${JAILMNT?}/${file}"
+	done
+	unset SETUP_CONFS
 }
 
 setup_src_conf() {
@@ -900,7 +919,7 @@ FreeBSD: {
 EOF
 
 	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH}" -r ${JAILMNT}/ update
-	# Omit the man/debug/kernel/src and tests packages, uneeded for us.
+	# Omit the man/debug/kernel/src and tests packages, unneeded for us.
 	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH}" -r ${JAILMNT}/ search -qCx '^FreeBSD-.*' | grep -vE -- '-man|-dbg|-kernel-|-tests|-src-' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ install -y
 	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH}" -r ${JAILMNT}/ search -q '^FreeBSD-src-sys' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ install -y
 	if [ -n "${KERNEL}" ]; then
@@ -1097,6 +1116,7 @@ create_jail() {
 		    err 1 "Directory ${JAILMNT} must be populated from installworld already."
 	fi
 
+	cleanup_confs
 	markfs clean ${JAILMNT}
 
 	# Check VERSION before running 'update_jail' on jails created using FreeBSD dists.

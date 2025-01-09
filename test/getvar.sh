@@ -49,6 +49,7 @@ x=bad
 getvar nonexistent x || ret="$?"
 assert 1 "${ret}" "getvar nonexistent should fail"
 assert "" "${x}" "getvar nonexistent should return empty string"
+assert "NULL" "${x-NULL}" "getvar nonexistent should return unset var"
 
 assert_true incrvar nonexistent 2
 assert "2" "${nonexistent}"

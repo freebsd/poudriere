@@ -207,18 +207,18 @@ int
 _mktempcmd(int argc, char **argv)
 {
 	char output_str[MAXPATHLEN], *var_return;
-	int error;
+	int ret;
 
 	if (argc < 3)
 		errx(EX_USAGE, "%s", "Usage: _mktemp <var_return> "
 		    "mktemp(1) params...");
 	var_return = argv[1];
 	optind = 2;
-	error = _mktemp_internal(argc, argv, output_str);
-	if (error != 0)
-		return (error);
-	setvar(var_return, output_str, 0);
-	return (0);
+	ret = _mktemp_internal(argc, argv, output_str);
+	if (ret == 0 && setvarsafe(var_return, output_str, 0)) {
+		ret = 1;
+	}
+	return (ret);
 }
 #endif
 

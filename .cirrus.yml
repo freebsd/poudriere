@@ -35,8 +35,8 @@ check_task:
                 - name: "Check (/bin/sh)"
                   env:
                           SH: "/bin/sh"
-        check_script: make -s ${MAKEJOBS} check SH=${SH} VERBOSE=1 TESTS_SKIP_BUILD=1 || { cat test/test-suite.log; exit 1; }
-        distcheck_script: make -s ${MAKEJOBS} distcheck SH=${SH} VERBOSE=1 TESTS_SKIP_BUILD=1 || { find . -name test-suite.log -exec cat {} +; exit 1; }
+        check_script: make -s ${MAKEJOBS} checkquick SH=${SH} VERBOSE=1 || { cat test/test-suite.log; exit 1; }
+        distcheck_script: make -s ${MAKEJOBS} distcheckquick SH=${SH} VERBOSE=1 || { find . -name test-suite.log -exec cat {} +; exit 1; }
         always:
                 bulk_logs_cleanup_script:
                         - ( find -x test_bulk/data/logs/bulk ! -name '*.log' ! -name '.poudriere.*' ! -name '*.json' -delete; ) || true
@@ -49,7 +49,7 @@ check_task:
                 cpu: 8
                 memory: 8G
                 matrix:
-                        - image: freebsd-12-4-release-amd64
-                        - image: freebsd-13-2-release-amd64
+                        - image: freebsd-14-1-release-amd64
+                        - image: freebsd-13-4-release-amd64
                         - image_family: freebsd-14-0-snap
 # vim: sw=8 et:

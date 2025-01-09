@@ -70,28 +70,82 @@ pkg_get_origin() {
 	esac
 }
 
-pkg_get_annotations() {
-	[ $# -eq 2 ] || eargs pkg_get_annotations mapfile_handle_var pkg
-	local pga_mapfile_var="$1"
+pkg_get_generic_list() {
+	[ $# -eq 4 ] || eargs pkg_get_generic_list name flags mapfile_handle_var pkg
+	local name="$1"
+	local flags="$2"
+	local _pggl_mapfile_var="$3"
+	local _pkg="$4"
+	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
+
+	get_pkg_cache_dir SHASH_VAR_PATH "${_pkg}"
+	if ! shash_exists 'pkg' "${name}"; then
+		local -; set_pipefail
+		local ret
+
+		ret=0
+		injail "${PKG_BIN:?}" query -F "/packages/All/${_pkg##*/}" \
+		    "${flags}" | sort |
+		    shash_write 'pkg' "${name}" || ret="$?"
+		if [ "${ret}" -ne 0 ]; then
+			shash_unset 'pkg' "${name}"
+			return "${ret}"
+		fi
+	fi
+	case "${_pggl_mapfile_var}" in
+	"") ;;
+	-)
+		shash_read 'pkg' "${name}"
+		;;
+	*)
+		shash_read_mapfile 'pkg' "${name}" "${_pggl_mapfile_var}"
+		;;
+	esac ||
+	    err "${EX_SOFTWARE}" "pkg_get_generic_list: Failed to read cache just written"
+}
+
+pkg_get_shlib_required_count() {
+	[ $# -ge 2 ] || eargs pkg_get_shlib_required_count var_return pkg [count]
+	local var_return="$1"
 	local pkg="$2"
+	local _count=$3
 	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
-	if ! shash_exists 'pkg' 'annotations'; then
-		injail ${PKG_BIN:?} query -F "/packages/All/${pkg##*/}" \
-		    '%At %Av' | sort |
-		    shash_write 'pkg' 'annotations'
-	fi
-	case "${pga_mapfile_var}" in
-	"") ;;
-	-)
-		shash_read 'pkg' 'annotations'
-		;;
+	case "${_count}" in
+	"")
+		if ! shash_get 'pkg' 'shlib_required_count' _count; then
+			_count=$(injail "${PKG_BIN:?}" query -F \
+			    "/packages/All/${pkg##*/}" "%#B") || return
+		fi
+		;& # FALLTHROUGH
 	*)
-		shash_read_mapfile 'pkg' 'annotations' "${pga_mapfile_var}"
+		shash_set 'pkg' 'shlib_required_count' "${_count}"
 		;;
-	esac ||
-	    err "${EX_SOFTWARE}" "pkg_get_annotations: Failed to read cache just written"
+	esac
+	case "${var_return}" in
+	"") ;;
+	-) echo "${_count}" ;;
+	*) setvar "${var_return}" "${_count}" ;;
+	esac
+}
+
+pkg_get_shlib_requires() {
+	[ $# -eq 2 ] || eargs pkg_get_shlib_requires mapfile_handle_var pkg
+
+	pkg_get_generic_list 'shlib_requires' '%B' "$@"
+}
+
+pkg_get_shlib_provides() {
+	[ $# -eq 2 ] || eargs pkg_get_shlib_provides mapfile_handle_var pkg
+
+	pkg_get_generic_list 'shlib_provides' '%b' "$@"
+}
+
+pkg_get_annotations() {
+	[ $# -eq 2 ] || eargs pkg_get_annotations mapfile_handle_var pkg
+
+	pkg_get_generic_list 'annotations' '%At %Av' "$@"
 }
 
 pkg_get_annotation() {
@@ -101,8 +155,9 @@ pkg_get_annotation() {
 	local key="$3"
 	local mapfile_handle fkey fvalue value
 
+	pkg_get_annotations mapfile_handle "${pkg}" ||
+	    err "${EX_SOFTWARE}" "pkg_get_annotation: Failed to lookup annotations for ${pkg}"
 	value=
-	pkg_get_annotations mapfile_handle "${pkg}"
 	while mapfile_read "${mapfile_handle}" fkey fvalue; do
 		case "${fkey}" in
 		"${key}")
@@ -189,8 +244,16 @@ pkg_get_dep_origin_pkgnames() {
 	while [ $# -ne 0 ]; do
 		origin="$1"
 		pkgname="$2"
-		compiled_dep_origins="${compiled_dep_origins:+${compiled_dep_origins} }${origin}"
-		compiled_dep_pkgnames="${compiled_dep_pkgnames:+${compiled_dep_pkgnames} }${pkgname}"
+		case "${var_return_origins:+set}" in
+		set)
+			compiled_dep_origins="${compiled_dep_origins:+${compiled_dep_origins} }${origin}"
+			;;
+		esac
+		case "${var_return_pkgnames:+set}" in
+		set)
+			compiled_dep_pkgnames="${compiled_dep_pkgnames:+${compiled_dep_pkgnames} }${pkgname}"
+			;;
+		esac
 		shift 2
 	done
 	case "${var_return_origins}" in
@@ -254,6 +317,9 @@ pkg_cache_data() {
 		pkg_get_arch '' "${pkg}"
 		pkg_get_annotations '' "${pkg}"
 		pkg_get_dep_origin_pkgnames '' '' "${pkg}"
+		pkg_get_shlib_required_count '' "${pkg}"
+		pkg_get_shlib_requires '' "${pkg}"
+		pkg_get_shlib_provides '' "${pkg}"
 	} >/dev/null
 }
 

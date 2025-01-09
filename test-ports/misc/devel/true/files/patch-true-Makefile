@@ -1,0 +1,13 @@
+--- true/Makefile.orig	2023-11-17 11:13:46.641540000 -0800
++++ true/Makefile	2023-11-17 11:14:31.665985000 -0800
+@@ -2,8 +2,8 @@ PROG=	true
+ 
+ PROG=	true
+ 
+-CFLAGS=	-I${.CURDIR:H}/libtrue
+-LDADD=	-L../libtrue -ltrue
++CFLAGS=	-I${LOCALBASE}/include
++LDADD=	-L${LOCALBASE}/lib -ltrue
+ 
+ MAN=
+ 

@@ -1,10 +1,10 @@
 #!/bin/sh
-# 
+#
 # Copyright (c) 2010-2013 Baptiste Daroussin <bapt@FreeBSD.org>
 # Copyright (c) 2010-2011 Julien Laffaye <jlaffaye@FreeBSD.org>
 # Copyright (c) 2012-2017 Bryan Drewery <bdrewery@FreeBSD.org>
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
@@ -13,7 +13,7 @@
 # 2. Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -207,44 +207,110 @@ esac
 
 # Message functions that depend on VERBOSE are stubbed out in post_getopts.
 
-_msg_n() {
+_msg_fmt_n() {
 	local -; set +x
 	local now elapsed
-	local NL="${1}"
-	local arrow DRY_MODE
-	shift 1
+	local fmt="${1}"
+	local nl="${2}"
+	local arrow arrow2 DRY_MODE
+	local fmt_prefix fmt_prefix2 fmt_prefix_nocol fmt_sufx
+	shift 2
 
 	if [ "${MSG_NESTED:-0}" -eq 1 ]; then
-		unset elapsed arrow DRY_MODE
+		unset elapsed arrow arrow2 DRY_MODE
 	elif should_show_elapsed; then
 		now=$(clock -monotonic)
 		calculate_duration elapsed "$((now - ${TIME_START:-0}))"
 		elapsed="[${elapsed}] "
 		unset arrow
+		arrow2="=>>>"
 	else
 		unset elapsed
 		arrow="=>>"
+		arrow2="=>>>"
 	fi
 	case "${COLOR_ARROW-}${1}" in
 	*$'\033'"["*)
-		printf "${elapsed:+${COLOR_ARROW-}${elapsed}${COLOR_RESET}}${DRY_MODE:+${COLOR_ARROW-}${DRY_MODE-}${COLOR_RESET}}${arrow:+${COLOR_ARROW-}${arrow} ${COLOR_RESET}}%s${COLOR_RESET}${NL}" "$*"
+		# Need to insert a COLOR_RESET before the newline
+		# for timestamp(1) or otherwise the timestamp gets
+		# colored before the reset starts the next line.
+		fmt_prefix="${elapsed:+${COLOR_ARROW-}${elapsed}${COLOR_RESET}}${DRY_MODE:+${COLOR_ARROW-}${DRY_MODE-}${COLOR_RESET}}${arrow:+${COLOR_ARROW-}${arrow} ${COLOR_RESET}}"
+		fmt_prefix_nocol="${elapsed-}${DRY_MODE-}${arrow:+${arrow} }"
+		#fmt_prefix2="${arrow2:+${COLOR_ARROW-}${arrow2} ${COLOR_RESET}}"
+		fmt_prefix2=align
+		fmt_sufx="${COLOR_RESET}"
 		;;
 	*)
-		printf "${elapsed-}${DRY_MODE-}${arrow:+${arrow} }%s${NL}" "$*"
+		fmt_prefix="${elapsed-}${DRY_MODE-}${arrow:+${arrow} }"
+		fmt_prefix_nocol=
+		#fmt_prefix2="${arrow2:+${arrow2} }"
+		fmt_prefix2=align
+		fmt_sufx=
 		;;
 	esac
+	# Add in prefix/sufx for subsequent lines if needed.
+	case "${fmt_prefix2:+set}.${fmt_sufx:+set}" in
+	".") ;;
+	*)
+		case "${fmt}" in
+		*"\n"*)
+			case "${fmt_prefix2}" in
+			"align")
+				# Fill in the 2nd line with blanks to align
+				# with the first line.
+				local fmt_prefix_blank
+
+				_gsub "${fmt_prefix_nocol:-${fmt_prefix}}" \
+				    "*" " " fmt_prefix_blank
+				_gsub "${fmt}" "\n" \
+				    "${fmt_sufx}\n${fmt_prefix_blank}" \
+				    fmt
+				;;
+			*)
+				# Use fmt_prefix2 as the prefix for
+				# subsequent lines.
+				_gsub "${fmt}" "\n" \
+				    "${fmt_sufx}\n${fmt_prefix2}" \
+				    fmt
+				;;
+			esac
+			;;
+		esac
+		;;
+	esac
+	printf "${fmt_prefix}${fmt}${fmt_sufx}${nl}" "$@"
+}
+
+msg_fmt() {
+	local -; set +x
+	local fmt="$1"
+	shift
+	local nl
+
+	# Need to split out the end newline for color handling in
+	# _msg_fmt_n.
+	case "${fmt}" in
+	*"\n")
+		fmt="${fmt%"\n"}"
+		nl="\n"
+		;;
+	*)
+		nl=
+		;;
+	esac
+	_msg_fmt_n "${fmt}" "${nl}" "$@"
 }
 
 msg_n() {
-	_msg_n '' "$@"
+	_msg_fmt_n "%s" '' "$*"
 }
 
 msg() {
-	_msg_n "\n" "$@"
+	_msg_fmt_n "%s" "\n" "$*"
 }
 
 msg_verbose() {
-	_msg_n "\n" "$@"
+	_msg_fmt_n "%s" "\n" "$*"
 }
 
 msg_error() {
@@ -283,7 +349,7 @@ msg_dev() {
 
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
 	COLOR_ARROW="${COLOR_DEV}" \
-	    _msg_n "\n" "${COLOR_DEV}Dev:${COLOR_RESET}" "$@" >&2
+	    _msg_fmt_n "\n" "${COLOR_DEV}Dev:${COLOR_RESET} $*" >&2
 }
 
 msg_debug() {
@@ -292,7 +358,7 @@ msg_debug() {
 
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
 	COLOR_ARROW="${COLOR_DEBUG}" \
-	    _msg_n "\n" "${COLOR_DEBUG}Debug:${COLOR_RESET}" "$@" >&2
+	    _msg_fmt_n "\n" "${COLOR_DEBUG}Debug:${COLOR_RESET} $*" >&2
 }
 
 msg_warn() {
@@ -307,8 +373,7 @@ msg_warn() {
 		unset prefix
 	fi
 	COLOR_ARROW="${COLOR_WARN}" \
-	    _msg_n "\n" ${prefix:+"${COLOR_WARN}${prefix}${COLOR_RESET}"} \
-	    "$@" >&2
+	    _msg_fmt_n "%s" "\n" "${prefix:+${COLOR_WARN}${prefix}${COLOR_RESET} }$*" >&2
 }
 
 job_msg() {
@@ -329,7 +394,7 @@ job_msg() {
 		unset output
 		;;
 	esac
-	redirect_to_bulk _msg_n "\n" ${output:+"${output}"} "$@"
+	redirect_to_bulk _msg_fmt_n "%s" "\n" "${output:+${output} }$*"
 }
 
 # Stubbed until post_getopts
@@ -337,7 +402,7 @@ job_msg_verbose() {
 	job_msg "$@"
 }
 
-: "${JOB_STATUS_TITLE_WIDTH:=9}"
+: "${JOB_STATUS_TITLE_WIDTH:=10}"
 job_msg_status() {
 	[ "$#" -eq 3 ] || [ "$#" -eq 4 ] ||
 	    eargs job_msg_status msgfunc title originspec pkgname '[msg]'
@@ -538,7 +603,7 @@ logfile() {
 	_logfile logfile "${pkgname}"
 	echo "${logfile}"
 }
- 
+
 _log_path_top() {
 	local -; set -u +x
 
@@ -908,6 +973,18 @@ eargs() {
 	esac
 }
 
+pkgbuild_done() {
+	[ $# -eq 1 ] || eargs pkgbuild_done pkgname
+	local pkgname="$1"
+	local shash_bucket
+
+	for shash_bucket in \
+	    pkgname-check_shlibs \
+	    ; do
+		shash_unset "${shash_bucket}" "${pkgname}" || :
+	done
+}
+
 run_hook() {
 	local -; set +x
 	[ $# -ge 2 ] || eargs run_hook hook event args
@@ -1079,11 +1156,11 @@ buildlog_start() {
 	    ${PORT_FLAGS} \
 	    ${make_vars}
 
-	echo "build started at $(date)"
+	echo "build started at $(date -Iseconds)"
 	case "${PKG_REPRODUCIBLE}" in
 	"yes") ;;
 	*)
-		date=$(env TZ=UTC date "+%Y-%m-%dT%H:%M:%S%z")
+		date=$(date -u -Iseconds)
 		pkg_note_add "${pkgname}" build_timestamp "${date}"
 		;;
 	esac
@@ -1105,7 +1182,7 @@ buildlog_start() {
 			    "${git_modified}"
 			echo "Ports top unclean checkout: ${git_modified}"
 		fi
-		if git_get_hash_and_dirty "${mnt:?}/${portdir:?}" \
+		if git_get_hash_and_dirty "${mnt:?}/${portdir:?}" 1 \
 		    git_hash git_modified; then
 			echo "Port dir last git commit: ${git_hash}"
 			pkg_note_add "${pkgname}" port_git_hash "${git_hash}"
@@ -1182,7 +1259,7 @@ buildlog_stop() {
 
 	_log_path log
 
-	echo "build of ${originspec} | ${pkgname} ended at $(date)"
+	echo "build of ${originspec} | ${pkgname} ended at $(date -Iseconds)"
 	case "${TIME_START_JOB:+set}" in
 	set)
 		now=$(clock -monotonic)
@@ -1384,7 +1461,7 @@ update_stats() {
 	lock_acquire update_stats || return 1
 	critical_start
 
-	for type in built failed ignored; do
+	for type in built failed inspected ignored; do
 		_bget '' "ports.${type}"
 		bset "stats_${type}" "${_read_file_lines_read:?}"
 	done
@@ -1405,6 +1482,7 @@ update_stats_queued() {
 	_log_path log
 	sort "${log:?}/.poudriere.ports.tobuild" \
 	    "${log:?}/.poudriere.ports.ignored" \
+	    "${log:?}/.poudriere.ports.inspected" \
 	    "${log:?}/.poudriere.ports.skipped" \
 	    "${log:?}/.poudriere.ports.fetched" \
 	    | write_atomic "${log:?}/.poudriere.ports.queued"
@@ -1695,8 +1773,8 @@ show_dry_run_summary() {
 }
 
 show_build_summary() {
-	local status nbb nbf nbs nbi nbq nbp ndone nbtobuild buildname
-	local log now elapsed buildtime queue_width nbtb
+	local status nbb nbf nbs nbi nbin nbq nbp ndone nbremaining buildname
+	local log now elapsed buildtime nbtb
 
 	_bget status status || status=unknown
 	_log_path log
@@ -1719,43 +1797,35 @@ show_build_summary() {
 	update_remaining || :
 	_bget nbf stats_failed || nbf=0
 	_bget nbi stats_ignored || nbi=0
+	_bget nbin stats_inspected || nbin=0
 	_bget nbs stats_skipped || nbs=0
 	_bget nbp stats_fetched || nbp=0
 	_bget nbb stats_built || nbb=0
 	_bget nbtb stats_tobuild || nbtb=0
-	ndone=$((nbb + nbf + nbi + nbs + nbp))
-	nbtobuild=$((nbq - ndone))
+	ndone=$((nbb + nbf + nbi + nbin + nbs + nbp))
+	nbremaining=$((nbq - ndone))
 
-	if [ ${nbq} -gt 9999 ]; then
-		queue_width=5
-	elif [ ${nbq} -gt 999 ]; then
-		queue_width=4
-	elif [ ${nbq} -gt 99 ]; then
-		queue_width=3
-	else
-		queue_width=2
-	fi
-
-	printf "[%s] [%s] [%s] \
-Queued: %-${queue_width}d \
-${COLOR_SUCCESS}Built: %-${queue_width}d \
-${COLOR_FAIL}Failed: %-${queue_width}d \
-${COLOR_SKIP}Skipped: %-${queue_width}d \
-${COLOR_IGNORE}Ignored: %-${queue_width}d \
-${COLOR_FETCHED}Fetched: %-${queue_width}d \
-${COLOR_RESET}Tobuild: %-${queue_width}d  Time: %s\n" \
-	    "${MASTERNAME}" "${buildname}" "${status%%:*}" \
-	    "${nbq}" "${nbb}" "${nbf}" "${nbs}" "${nbi}" "${nbp}" \
-	    "${nbtobuild}" "${buildtime}"
-	case "${nbtobuild}" in
-	-*) dev_err "${EX_SOFTWARE}" "show_build_summary: negative tobuild count" ;;
+	msg_fmt "[%s] [%s] [%s] Time: %s\n\
+Queued: %d \
+${COLOR_IGNORE}Inspected: %d \
+${COLOR_IGNORE}Ignored: %d \
+${COLOR_SUCCESS}Built: %d \
+${COLOR_FAIL}Failed: %d \
+${COLOR_SKIP}Skipped: %d \
+${COLOR_FETCHED}Fetched: %d \
+${COLOR_RESET}Remaining: %d\n" \
+	    "${MASTERNAME}" "${buildname}" "${status%%:*}" "${buildtime}" \
+	    "${nbq}" "${nbin}" "${nbi}" "${nbb}" "${nbf}" "${nbs}" "${nbp}" \
+	    "${nbremaining}"
+	case "${nbremaining}" in
+	-*) dev_err "${EX_SOFTWARE}" "show_build_summary: negative remaining count" ;;
 	esac
 	case "${status}" in
 	idle:)
-		case "${nbtobuild}" in
+		case "${nbremaining}" in
 		0) ;;
 		*)
-			dev_err "${EX_SOFTWARE}" "show_build_summary: tobuild count >0 after build"
+			dev_err "${EX_SOFTWARE}" "show_build_summary: remaining count >0 after build"
 		esac
 	esac
 }
@@ -2298,7 +2368,6 @@ do_jail_mounts() {
 	local from="$1"
 	local mnt="$2"
 	local name="$3"
-	local devfspath="null zero random urandom stdin stdout stderr fd fd/* pts pts/*"
 	local srcpath nullpaths nullpath p arch
 
 	# from==mnt is via jail -u
@@ -2342,10 +2411,8 @@ do_jail_mounts() {
 
 	mount -t devfs devfs ${mnt:?}/dev
 	if [ ${JAILED} -eq 0 ]; then
-		devfs -m ${mnt:?}/dev rule apply hide
-		for p in ${devfspath} ; do
-			devfs -m ${mnt:?}/dev/ rule apply path "${p}" unhide
-		done
+		devfs -m ${mnt:?}/dev ruleset ${DEVFS_RULESET}
+		devfs -m ${mnt:?}/dev rule applyset
 	fi
 
 	if [ "${USE_FDESCFS}" = "yes" ] && \
@@ -2502,7 +2569,7 @@ enter_interactive() {
 		set)
 			cat >> "${MASTERMNT:?}/etc/motd" <<-EOF
 			FLAVOR:			${flavor}
-			
+
 			A FLAVOR was used to build but is not in the environment.
 			Remember to pass FLAVOR to make:
 				make FLAVOR=${flavor}
@@ -2547,6 +2614,12 @@ enter_interactive() {
 		chown -R "${PORTBUILD_USER}" "${MASTERMNT:?}/wrkdirs"
 		;;
 	esac
+	case "${EMULATOR:+set}" in
+	set)
+		# Needed for su(1) to work.
+		chmod u+s "${MASTERMNT:?}${EMULATOR}"
+		;;
+	esac
 
 	if [ ${INTERACTIVE_MODE} -eq 1 ]; then
 		if [ -n "${INTERACTIVE_SHELL}" ]; then
@@ -2571,6 +2644,11 @@ enter_interactive() {
 		fi
 		JNETNAME="n" injail_tty env -i TERM=${SAVED_TERM} \
 		    /usr/bin/login -fp root || :
+		case "${EMULATOR:+set}" in
+		set)
+			chmod u-s "${MASTERMNT:?}${EMULATOR}"
+			;;
+		esac
 	elif [ ${INTERACTIVE_MODE} -eq 2 ]; then
 		# XXX: Not tested/supported with bulk yet.
 		msg "Leaving jail ${MASTERNAME}-n running, mounted at ${MASTERMNT} for interactive run testing"
@@ -2982,6 +3060,7 @@ symlink to .latest/${name}"
 
 show_build_results() {
 	local failed built ignored skipped nbbuilt nbfailed nbignored nbskipped
+	local inspected nbinspected
 	local nbfetched fetched
 
 	failed=$(bget ports.failed | awk '{print $1 ":" $3 }' | xargs echo)
@@ -2991,11 +3070,13 @@ show_build_results() {
 	    '{print $1 ":" color_phase $3 color_port }' | xargs echo)
 	built=$(bget ports.built | awk '{print $1}' | xargs echo)
 	ignored=$(bget ports.ignored | awk '{print $1}' | xargs echo)
+	inspected=$(bget ports.inspected | awk '{print $1}' | xargs echo)
 	fetched=$(bget ports.fetched | awk '{print $1}' | xargs echo)
 	skipped=$(bget ports.skipped | awk '{print $1}' | sort -u | xargs echo)
 	_bget nbbuilt stats_built
 	_bget nbfailed stats_failed
 	_bget nbignored stats_ignored
+	_bget nbinspected stats_inspected
 	_bget nbskipped stats_skipped
 	_bget nbfetched stats_fetched || stats_fetched=0
 
@@ -3014,6 +3095,10 @@ show_build_results() {
 	if [ $nbignored -gt 0 ]; then
 		COLOR_ARROW="${COLOR_IGNORE}" \
 		    msg "${COLOR_IGNORE}Ignored ports: ${COLOR_PORT}${ignored}"
+	fi
+	if [ $nbinspected -gt 0 ]; then
+		COLOR_ARROW="${COLOR_IGNORE}" \
+		    msg "${COLOR_IGNORE}Inspected ports: ${COLOR_PORT}${inspected}"
 	fi
 	if [ $nbfetched -gt 0 ]; then
 		COLOR_ARROW="${COLOR_FETCHED}" \
@@ -3674,6 +3759,12 @@ jail_start() {
 	# Generate /var/run/os-release
 	injail service os-release start || :
 
+	case "${BUILD_AS_NON_ROOT-}" in
+	no)
+		PORTBUILD_USER="root"
+		PORTBUILD_GROUP="wheel"
+		;;
+	esac
 	portbuild_gid=$(injail pw groupshow "${PORTBUILD_GROUP}" 2>/dev/null | cut -d : -f3 || :)
 	case "${portbuild_gid}" in
 	"")
@@ -3753,7 +3844,7 @@ jail_start() {
 		    \( -depth 1 -name wrkdirs -prune \) -o \
 		    \( -type d -o -type f -o -type l \) \
 		    -exec chflags -fh schg {} +
-		chflags noschg \
+		chflags -R noschg \
 		    "${tomnt:?}${LOCALBASE:-/usr/local}" \
 		    "${tomnt:?}${PREFIX:-/usr/local}" \
 		    "${tomnt:?}/usr/home" \
@@ -4043,7 +4134,8 @@ download_from_repo_check_pkg() {
 	local remote_all_cats="$9"
 	local output="${10}"
 	local pkgbase bpkg_glob selected_options remote_options found
-	local run_deps lib_deps raw_deps dep dep_pkgname local_deps remote_deps
+	local run_deps lib_deps raw_deps dep dep_pkgname
+	local local_deps local_deps_vers remote_deps
 	local remote_abi remote_osversion remote_prefix prefix no_arch
 	local -
 
@@ -4165,18 +4257,39 @@ download_from_repo_check_pkg() {
 	raw_deps="${run_deps:+${run_deps} }${lib_deps}"
 	local_deps=$(for dep in ${raw_deps}; do
 		get_pkgname_from_originspec "${dep#*:}" dep_pkgname || continue
+		case "${PKG_NO_VERSION_FOR_DEPS}" in
+		"no") echo "${dep_pkgname}" ;;
+		*) echo "${dep_pkgname%-*}" ;;
+		esac
+	done | sort -u | paste -s -d ' ' -)
+	local_deps_vers=$(for dep in ${raw_deps}; do
+		get_pkgname_from_originspec "${dep#*:}" dep_pkgname || continue
 		echo "${dep_pkgname}"
 	done | sort -u | paste -s -d ' ' -)
 	remote_deps=$(awk -vpkgbase="${pkgbase}" ' \
 	    BEGIN {printed=0}
-	    $1 == pkgbase {print $2;printed=1}
+	    $1 == pkgbase {
+		    # Trim out PKG_NO_VERSION_FOR_DEPS missing version
+		    sub(/-\(null\)$/, "", $2)
+		    print $2
+		    printed=1
+	    }
 	    $1 != pkgbase && printed == 1 {exit}
 	    ' \
 	    "${remote_all_deps}" | sort -u | paste -s -d ' ' -)
-	case "${local_deps}" in
-	"${remote_deps}") ;;
+	case "${remote_deps}" in
+	# All the deps are unversioned and match local
+	"${local_deps}") ;;
+	# The deps are versioned but match local.
+	# XXX: Can take this out once PKG_NO_VERSION_FOR_DEPS is default
+	# enabled in official packages; We may delete this fetched package
+	# if a deep dependency is deleted by delete_old_pkg().  See
+	# download_from_repo_post_delete() for other side of this.
+	"${local_deps_vers}") ;;
 	*)
 		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: deps wanted: ${local_deps}"
+		# XXX: Can take this out once PKG_NO_VERSION_FOR_DEPS is default enabled in official packages
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: deps wanted: ${local_deps_vers}"
 		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: deps remote: ${remote_deps}"
 		return
 		;;
@@ -4378,7 +4491,7 @@ download_from_repo() {
 			continue
 		fi
 		echo "${pkgname}"
-	done | tee "${MASTER_DATADIR:?}/pkg_fetch" | (
+	done | sort | tee "${MASTER_DATADIR:?}/pkg_fetch" | (
 		cd "${PACKAGES_PKG_CACHE:?}"
 		sed -e "s,\$,.${PKG_EXT}," |
 		    xargs -J % ln -fL % "${packages_rel:?}/All/"
@@ -4444,8 +4557,28 @@ download_from_repo_post_delete() {
 	parallel_start
 	while mapfile_read_loop "${MASTER_DATADIR:?}/pkg_fetch" fpkgname; do
 		if [ ! -e "${PACKAGES}/All/${fpkgname}.${PKG_EXT}" ]; then
-			msg_debug "download_from_repo_post_delete: We lost ${COLOR_PORT}${fpkgname}.${PKG_EXT}${COLOR_RESET}" >&2
-			continue
+			case "${PKG_NO_VERSION_FOR_DEPS}" in
+			"no")
+				# Due to not recursively validating a package
+				# will be used, we still may fetch a package
+				# and then later delete it.
+				# The PKG_NO_VERSION_FOR_DEPS=yes feature is
+				# not prone to this error since we do not
+				# recursively delete.
+				# Package fetch: Using cached copy of python311-3.11.9_1
+				# Package fetch: Using cached copy of py311-setuptools-63.1.0_1
+				# Deleting python311-3.11.9_1.pkg: missing dependency: readline-8.2.10
+				# Deleting py311-setuptools-63.1.0_1.pkg: missing dependency: python311-3.11.9_1
+				msg_debug "download_from_repo_post_delete: We lost fetched ${COLOR_PORT}${fpkgname}.${PKG_EXT}${COLOR_RESET}"
+				continue
+				;;
+			*)
+				# We should not be fetching packages and then
+				# deleting them.  Let's get the user to report
+				# to us to not waste bandwidth.
+				err ${EX_SOFTWARE} "download_from_repo_post_delete: We lost fetched unversioned ${COLOR_PORT}${fpkgname}.${PKG_EXT}${COLOR_RESET}"
+				;;
+			esac
 		fi
 		echo "${fpkgname}"
 	done | while mapfile_read_loop_redir fpkgname; do
@@ -4535,7 +4668,7 @@ sanity_check_pkg() {
 	[ $# -eq 1 ] || eargs sanity_check_pkg pkg
 	local pkg="$1"
 	local compiled_deps_pkgnames pkgname dep_pkgname
-	local pkgfile
+	local pkgfile reason displayed_warning
 
 	pkgfile="${pkg##*/}"
 	pkgname="${pkgfile%.*}"
@@ -4548,13 +4681,54 @@ sanity_check_pkg() {
 		delete_pkg "${pkg}"
 		return 65	# Package deleted, need another pass
 	fi
+	displayed_warning=0
 	for dep_pkgname in ${compiled_deps_pkgnames}; do
-		if [ ! -e "${PACKAGES:?}/All/${dep_pkgname}.${PKG_EXT}" ]; then
-			msg_debug "${COLOR_PORT}${pkg}${COLOR_RESET} needs missing ${COLOR_PORT}${dep_pkgname}${COLOR_RESET}"
-			msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: missing dependency: ${COLOR_PORT}${dep_pkgname}${COLOR_RESET}"
-			delete_pkg "${pkg}"
-			return 65	# Package deleted, need another pass
+		case "${dep_pkgname}" in
+		*"-(null)")
+			# Dependency generated with PKG_NO_VERSION_FOR_DEPS
+			# which means this package doesn't care about any
+			# specific dependency's version.
+			case "${displayed_warning}" in
+			0)
+				msg_debug "${COLOR_PORT}${pkgname}${COLOR_RESET} has unversioned dependencies: ${COLOR_PORT}${compiled_deps_pkgnames}${COLOR_RESET}"
+				displayed_warning=1
+				;;
+			esac
+			case "${PKG_NO_VERSION_FOR_DEPS}" in
+			"no")
+				# This package format is no longer acceptable
+				msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: unwanted unversioned dependency: ${COLOR_PORT}${dep_pkgname}${COLOR_RESET}"
+				delete_pkg "${pkg}"
+				return 65	# Package deleted, need another pass
+				;;
+			esac
+			# Nothing more to do if it is already in
+			# PKG_NO_VERSION_FOR_DEPS format.
+			return 0
+			;;
+		esac
+		if [ -e "${PACKAGES:?}/All/${dep_pkgname}.${PKG_EXT}" ]; then
+			continue
 		fi
+		case "${PKG_NO_VERSION_FOR_DEPS}" in
+		"no")
+			reason="missing dependency"
+			;;
+		*)
+			if ! pkgqueue_contains build "${dep_pkgname}"; then
+				reason="missing versioned dependency"
+			else
+				# The dependency is queued with the
+				# same needed version so this is not a
+				# violation.
+				continue
+			fi
+			;;
+		esac
+		msg_debug "${COLOR_PORT}${pkg}${COLOR_RESET} needs ${reason} ${COLOR_PORT}${dep_pkgname}${COLOR_RESET}"
+		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: ${reason}: ${COLOR_PORT}${dep_pkgname}${COLOR_RESET}"
+		delete_pkg "${pkg}"
+		return 65	# Package deleted, need another pass
 	done
 
 	return 0
@@ -4958,8 +5132,7 @@ build_port() {
 			*"linux"*) ;;
 			*)
 				msg "Checking shared library dependencies"
-				# Not using PKG_BIN to avoid bootstrap issues.
-				cleanenv injail "${LOCALBASE}/sbin/pkg" query '%Fp' "${pkgname}" | \
+				cleanenv injail "${PKG_BIN}" query '%Fp' "${pkgname}" | \
 				    cleanenv injail xargs readelf -d 2>/dev/null | \
 				    grep NEEDED | sort -u
 				;;
@@ -4982,6 +5155,12 @@ build_port() {
 			# Only set PKGENV during 'package' to prevent
 			# testport-built packages from going into the main repo
 			pkg_notes_get "${pkgname}" "${PKGENV}" pkgenv
+			case "${PKG_NO_VERSION_FOR_DEPS}" in
+			"no") ;;
+			*)
+				pkgenv="${pkgenv:+${pkgenv} }PKG_NO_VERSION_FOR_DEPS=1"
+				;;
+			esac
 			phaseenv="${phaseenv:+${phaseenv}${pkgenv:+ }}${pkgenv}"
 			;;
 		esac
@@ -5699,6 +5878,7 @@ crashed_build() {
 		COLOR_ARROW="${COLOR_FAIL}" job_msg_status \
 		    "Finished" "${originspec}" "${pkgname}" \
 		    "Failed: ${COLOR_PHASE}${failed_phase}"
+		pkgbuild_done "${pkgname}"
 		run_hook pkgbuild failed "${origin}" "${pkgname}" \
 		    "${failed_phase}" \
 		    "${log_error}"
@@ -5762,6 +5942,7 @@ clean_pool() {
 			    job_msg_status "Skipping" \
 			    "${skipped_originspec}" "${skipped_pkgname}" \
 			    "Dependent port ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_SKIP} ${clean_rdepends}"
+			pkgbuild_done "${skipped_pkgname}"
 			if [ "${DRY_RUN:-0}" -eq 0 ]; then
 				redirect_to_bulk \
 				    run_hook pkgbuild skipped \
@@ -5823,14 +6004,49 @@ build_pkg() {
 
 	get_originspec_from_pkgname originspec "${pkgname}"
 	originspec_decode "${originspec}" port FLAVOR subpkg
-	bset_job_status "starting" "${originspec}" "${pkgname}"
-	job_msg_status "Building" "${port}${FLAVOR:+@${FLAVOR}}${subpkg:+~${subpkg}}" "${pkgname}"
+
+	ensure_pkg_installed || :
+
+	if [ -f "${PACKAGES:?}/All/${pkgname:?}.${PKG_EXT}" ]; then
+		job_msg_status "Inspecting" "${port}${FLAVOR:+@${FLAVOR}}" \
+		    "${pkgname}" "determining shlib requirements"
+		if ! shash_exists pkgname-check_shlibs "${pkgname}"; then
+			err ${EX_SOFTWARE} "build_pkg: Trying to build ${COLOR_PORT}${pkgname}${COLOR_RESET} when the package is already present"
+		fi
+		bset_job_status "inspecting" "${originspec}" "${pkgname}"
+		if package_libdeps_satisfied "${pkgname}"; then
+			local ignore
+
+			ignore="no rebuild needed for shlib chase"
+			badd ports.inspected "${originspec} ${pkgname} ${ignore}"
+			COLOR_ARROW="${COLOR_SUCCESS}" \
+			    job_msg_status_debug "Finished" \
+			    "${port}${FLAVOR:+@${FLAVOR}}" "${pkgname}" \
+			    "Nothing to do"
+			pkgbuild_done "${pkgname}"
+			clean_pool "run" "${pkgname}" "${originspec}" \
+			    "${clean_rdepends}"
+			clean_pool "build" "${pkgname}" "${originspec}" \
+			    "${clean_rdepends}"
+			bset ${MY_JOBID} status "done:"
+			echo ${MY_JOBID} >&6
+			return 0
+		fi
+		bset_job_status "starting" "${originspec}" "${pkgname}"
+		job_msg_status "Building" "${port}${FLAVOR:+@${FLAVOR}}${subpkg:+~${subpkg}}" \
+		    "${pkgname}" "missed shlib PORTREVISION chase"
+	else
+		bset_job_status "starting" "${originspec}" "${pkgname}"
+		job_msg_status "Building" "${port}${FLAVOR:+@${FLAVOR}}${subpkg:+~${subpkg}}" \
+		    "${pkgname}"
+	fi
 
 	MAKE_ARGS="${FLAVOR:+ FLAVOR=${FLAVOR}}"
 	_lookup_portdir portdir "${port}"
 
 	pkgbase="${pkgname%-*}"
 	_gsub_var_name "${pkgbase}" pkgname_varname
+	eval "MAX_EXECUTION_TIME=\${MAX_EXECUTION_TIME_${pkgname_varname}:-${MAX_EXECUTION_TIME:-}}"
 	eval "MAX_FILES=\${MAX_FILES_${pkgname_varname}:-${DEFAULT_MAX_FILES}}"
 	eval "MAX_MEMORY=\${MAX_MEMORY_${pkgname_varname}:-${MAX_MEMORY:-}}"
 	if [ -n "${MAX_MEMORY}" -o -n "${MAX_FILES}" ]; then
@@ -5939,6 +6155,7 @@ build_pkg() {
 		    job_msg_status "Finished" \
 		    "${port}${FLAVOR:+@${FLAVOR}}" "${pkgname}" \
 		    "Success"
+		pkgbuild_done "${pkgname}"
 		redirect_to_bulk \
 		    run_hook pkgbuild success "${port}" "${pkgname}"
 		# Cache information for next run
@@ -5965,8 +6182,10 @@ build_pkg() {
 		    job_msg_status "Finished" \
 		    "${port}${FLAVOR:+@${FLAVOR}}" "${pkgname}" \
 		    "Failed: ${COLOR_PHASE}${failed_phase}"
+		pkgbuild_done "${pkgname}"
 		redirect_to_bulk \
-		    run_hook pkgbuild failed "${port}" "${pkgname}" "${failed_phase}" \
+		    run_hook pkgbuild failed "${port}" "${pkgname}" \
+		    "${failed_phase}" \
 		    "${log:?}/logs/errors/${pkgname:?}.log"
 		# ret=2 is a test failure
 		if [ ${ret} -eq 2 ]; then
@@ -6363,11 +6582,11 @@ ensure_pkg_installed() {
 		fi
 		;;
 	esac
-	pkg_file="${MASTERMNT:?}/packages/Latest/pkg.${PKG_EXT:?}"
+	pkg_file="${mnt:?}/packages/Latest/pkg.${PKG_EXT:?}"
 	# If we are testing pkg itself then use the new package
 	if was_a_testport_run && [ -n "${PKGNAME-}" ] &&
-	    [ -r "${MASTERMNT:?}/tmp/pkgs/${PKGNAME:?}.${PKG_EXT:?}" ]; then
-		pkg_file="${MASTERMNT:?}/tmp/pkgs/${PKGNAME:?}.${PKG_EXT:?}"
+	    [ -r "${mnt:?}/tmp/pkgs/${PKGNAME:?}.${PKG_EXT:?}" ]; then
+		pkg_file="${mnt:?}/tmp/pkgs/${PKGNAME:?}.${PKG_EXT:?}"
 	fi
 	# Hack, speed up QEMU usage on pkg-repo.
 	if [ ${QEMU_EMULATING} -eq 1 ] && \
@@ -6389,9 +6608,9 @@ ensure_pkg_installed() {
 	if [ ! -r "${pkg_file}" ]; then
 		return 1
 	fi
-	mkdir -p "${MASTERMNT:?}/${PKG_BIN%/*}" ||
-	    err 1 "ensure_pkg_installed: mkdir ${MASTERMNT}/${PKG_BIN%/*}"
-	injail tar xf "${pkg_file#${MASTERMNT:?}}" \
+	mkdir -p "${mnt:?}/${PKG_BIN%/*}" ||
+	    err 1 "ensure_pkg_installed: mkdir ${mnt}/${PKG_BIN%/*}"
+	injail tar xf "${pkg_file#${mnt:?}}" \
 	    -C "${PKG_BIN%/*}" -s ",.*/,," "*/pkg-static"
 }
 
@@ -6422,7 +6641,6 @@ ensure_pkg_installed() {
 #   (requires default-on CHECK_CHANGED_DEPS)
 # - Changed options
 #   (requires default-on CHECK_CHANGED_OPTIONS)
-# - Recursive: rebuild if a dependency was rebuilt due to this.
 #
 # These are handled by pkg (pkg_jobs_need_upgrade()) but not Poudriere yet:
 #
@@ -6435,8 +6653,8 @@ ensure_pkg_installed() {
 # Some expensive lookups are delayed until the last possible moment as
 # earlier cheaper checks may delete the package.
 #
-delete_old_pkg() {
-	[ $# -eq 2 ] || eargs delete_old_pkg pkgname delete_unqueued
+_delete_old_pkg() {
+	[ $# -eq 2 ] || eargs _delete_old_pkg pkgname delete_unqueued
 	local pkg="$1"
 	local delete_unqueued="$2"
 	local mnt pkgfile pkgname new_pkgname
@@ -6669,10 +6887,11 @@ delete_old_pkg() {
 	"no") ;;
 	*)
 		current_deps=""
-		# FIXME: Move into Infrastructure/scripts and 
+		# FIXME: Move into Infrastructure/scripts and
 		# 'make actual-run-depends-list' after enough testing,
 		# which will avoida all of the injail hacks
 
+		# pkgname-lib_deps pkgname-run_deps
 		for td in lib run; do
 			shash_remove "pkgname-${td}_deps" "${new_pkgname}" \
 			raw_deps || raw_deps=
@@ -6751,7 +6970,7 @@ delete_old_pkg() {
 						err 1 "Invalid dependency for ${COLOR_PORT}${pkgname}${COLOR_RESET}: ${d}"
 						;;
 					esac
-					current_deps="${current_deps} ${dpath}"
+					current_deps="${current_deps:+${current_deps} }${dpath}"
 					;;
 				esac
 			done
@@ -6882,6 +7101,31 @@ delete_old_pkg() {
 	done
 }
 
+delete_old_pkg() {
+	[ $# -eq 2 ] || eargs delete_old_pkg pkgname delete_unqueued
+	local pkg="$1"
+	local delete_unqueued="$2"
+	local shlib_required_count pkgfile pkgname
+
+	pkgfile="${pkg##*/}"
+	pkgname="${pkgfile%.*}"
+
+	_delete_old_pkg "${pkg}" "${delete_unqueued}" || return
+	if [ ! -f "${PACKAGES:?}/All/${pkgname:?}.${PKG_EXT}" ]; then
+		return 0
+	fi
+	# The package is kept.
+
+	# If the package has shlib dependencies then we need to recheck it
+	# later to ensure those dependencies are still provided by another
+	# package.
+	pkg_get_shlib_required_count shlib_required_count "${pkg}" || return
+	case "${shlib_required_count-}" in
+	""|0) return 0 ;;
+	esac
+	shash_set pkgname-check_shlibs "${pkgname}" "1"
+}
+
 delete_old_pkgs() {
 	local delete_unqueued
 
@@ -6939,6 +7183,192 @@ delete_old_pkgs() {
 	parallel_stop
 
 	run_hook delete_old_pkgs stop
+}
+
+_package_recursive_deps() {
+	[ $# -eq 1 ] || eargs _package_recursive_deps pkgfile
+	local pkgfile="$1"
+	local dep_pkgname compiled_deps_pkgnames dep_pkgbase dep_pkgfile fn
+
+	pkg_get_dep_origin_pkgnames '' compiled_deps_pkgnames "${pkgfile:?}"
+	for dep_pkgname in ${compiled_deps_pkgnames?}; do
+		case "${dep_pkgname:?}" in
+		*"-(null)")
+			dep_pkgbase="${dep_pkgname%-*}"
+			for dep_pkgfile in \
+			    "${PACKAGES:?}/All/${dep_pkgbase:?}-"*.${PKG_EXT}; do
+				fn="${dep_pkgfile##*/}"
+				case "${fn}" in
+				# No matches
+				"${dep_pkgbase}-*.${PKG_EXT}") break ;;
+				esac
+				case "${fn%-*}" in
+				"${dep_pkgbase}") ;;
+				# It is probably a -devel close match
+				*) continue ;;
+				esac
+				echo "${fn}"
+				package_recursive_deps "${dep_pkgfile:?}"
+			done
+			;;
+		*)
+			fn="${dep_pkgname:?}.${PKG_EXT}"
+			dep_pkgfile="${PACKAGES:?}/All/${fn:?}"
+			if [ ! -f "${dep_pkgfile:?}" ]; then
+				continue
+			fi
+			echo "${fn}"
+			package_recursive_deps "${dep_pkgfile:?}"
+			;;
+		esac
+	done | sort -u
+}
+
+package_recursive_deps() {
+	[ $# -eq 1 ] || eargs package_recursive_deps pkgfile
+	local pkgfile="$1"
+
+	cache_call - _package_recursive_deps "${pkgfile:?}"
+}
+
+_package_deps_provided_libs() {
+	[ $# -eq 1 ] || eargs _package_deps_provided_libs pkgfile
+	local pkgfile="$1"
+
+	package_recursive_deps "${pkgfile:?}" |
+	    while mapfile_read_loop_redir dep_pkgfile; do
+		dep_pkgfile="${PACKAGES:?}/All/${dep_pkgfile:?}"
+		pkg_get_shlib_provides mapfile_handle "${dep_pkgfile:?}" ||
+		    continue
+		mapfile_cat "${mapfile_handle:?}"
+		mapfile_close "${mapfile_handle}" || :
+		package_deps_provided_libs "${dep_pkgfile:?}"
+	done | sort -u
+}
+
+package_deps_provided_libs() {
+	[ $# -eq 1 ] || eargs package_deps_provided_libs pkgfile
+	local pkgfile="$1"
+
+	cache_call - _package_deps_provided_libs "${pkgfile:?}"
+}
+
+# If the package has shlib dependencies we need to ensure that
+# their package dependencies provide them.  It is possible that
+# a PORTREVISION chase was missed by a committer or from a change
+# of quarterly branch.
+package_libdeps_satisfied() {
+	[ $# -eq 1 ] || eargs package_libdeps_satisfied pkgname
+	local pkgname="$1"
+	local pkgfile
+	local mapfile_handle ret
+	local shlib shlibs_required shlibs_provided shlib_name
+
+	if ! ensure_pkg_installed; then
+		# Probably building pkg right now
+		return 0
+	fi
+
+	pkgfile="${PACKAGES:?}/All/${pkgname:?}.${PKG_EXT:?}"
+	# Compare the dependencies in the file to what its dep *packages*
+	# provide. The metadata in ports is not relevant here.
+	shlibs_provided="$(package_deps_provided_libs "${pkgfile:?}" |
+	    paste -d ' ' -s -)"
+	msg_debug "${COLOR_PORT}${pkgname}${COLOR_RESET}: provides: ${shlibs_provided}"
+	case "${shlibs_provided:+set}" in
+	"")
+		msg_debug "${COLOR_PORT}${pkgname}${COLOR_RESET} misses all its shlibs"
+		return 1
+		;;
+	esac
+	pkg_get_shlib_requires mapfile_handle "${pkgfile:?}" ||
+	    err "${EX_SOFTWARE}" "package_libdeps_satisfied: Failed to lookup shlib_requires from ${pkgfile}"
+	# $(mapfile_cat) avoids a fork while $(pkg_get_shlib_requires -) does not.
+	shlibs_required="$(mapfile_cat "${mapfile_handle}")"
+	mapfile_close "${mapfile_handle}" || :
+	msg_debug "${COLOR_PORT}${pkgname}${COLOR_RESET}: required: ${shlibs_required}"
+	ret=0
+	for shlib in ${shlibs_required}; do
+		shlib_name="${shlib%.so*}"
+		case " ${shlibs_provided} " in
+		# Success
+		*" ${shlib} "*) ;;
+		# A different version! We need to rebuild to use it.
+		# This supports X.Y.Z for each 0-999.
+		# There is probably a better way to do this. We need to see
+		# if some package provides a library we need but a different
+		# version and thus we need to rebuild.
+		# This is avoiding a situation where no package provides the
+		# library and we do a needless rebuild. The last case here
+		# covers that.
+		*" ${shlib_name}.so."[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9][0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9][0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9][0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9][0-9][0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9][0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9][0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9][0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9][0-9][0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9][0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9][0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9][0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9][0-9][0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9][0-9].[0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9][0-9].[0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9][0-9].[0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9][0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9][0-9].[0-9][0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9][0-9].[0-9][0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9][0-9].[0-9][0-9][0-9].[0-9][0-9][0-9]" "*|\
+		EOL)
+			ret=1
+			job_msg_warn "${COLOR_PORT}${pkgname}${COLOR_RESET} will be rebuilt as it misses ${shlib}"
+			break
+			;;
+		# Nothing similar. Bogus dependency. Avoid rebuilding
+		# because some library leaked in without a proper LIB_DEPENDS
+		# so a rebuild may just yield the same library version again.
+		# The port should be fixed to properly track the library.
+		# It likely is failing the QA check for leaked libraries.
+		*)
+			job_msg_verbose "${COLOR_PORT}${pkgname}${COLOR_RESET} misses ${shlib} which no dependency provides. This will be ignored but should be fixed in the port."
+			;;
+		esac
+	done
+	return "${ret}"
 }
 
 _lock_acquire() {
@@ -8866,7 +9296,7 @@ fetch_global_port_vars() {
 	if was_a_bulk_run; then
 		local git_hash git_modified git_dirty
 
-		if git_get_hash_and_dirty "${MASTERMNT?}/${PORTSDIR:?}" \
+		if git_get_hash_and_dirty "${MASTERMNT?}/${PORTSDIR:?}" 0 \
 		    git_hash git_modified; then
 			shash_set ports_metadata top_git_hash "${git_hash}"
 			case "${git_modified}" in
@@ -8889,11 +9319,12 @@ fetch_global_port_vars() {
 }
 
 git_get_hash_and_dirty() {
-	[ "$#" -eq 3 ] || eargs git_get_hash_and_dirty dir git_hash_var \
-	    git_modified_var
+	[ "$#" -eq 4 ] || eargs git_get_hash_and_dirty git_dir inport \
+	    git_hash_var git_modified_var
 	local git_dir="$1"
-	local gghd_git_hash_var="$2"
-	local gghd_git_modified_var="$3"
+	local inport="$2"
+	local gghd_git_hash_var="$3"
+	local gghd_git_modified_var="$4"
 	local gghd_git_hash gghd_git_modified
 
 	if [ ! -x "${GIT_CMD}" ]; then
@@ -8905,9 +9336,16 @@ git_get_hash_and_dirty() {
 	    --format=%h .)
 	gghd_git_modified=no
 	msg_n "Inspecting ${git_dir} for modifications to git checkout..."
-	if git_tree_dirty "${git_dir:?}" 1; then
-		gghd_git_modified=yes
-	fi
+	case "${GIT_TREE_DIRTY_CHECK-}" in
+	no)
+		gghd_git_modified=unknown
+		;;
+	*)
+		if git_tree_dirty "${git_dir:?}" "${inport}"; then
+			gghd_git_modified=yes
+		fi
+		;;
+	esac
 	echo " ${gghd_git_modified}"
 	setvar "${gghd_git_hash_var}" "${gghd_git_hash}"
 	setvar "${gghd_git_modified_var}" "${gghd_git_modified}"
@@ -9002,24 +9440,29 @@ trim_ignored_pkg() {
 	    "${origin}${flavor:+@${flavor}}${subpkg:+~${subpkg}}" "${pkgname}" \
 	    "${ignore}"
 	if [ "${DRY_RUN:-0}" -eq 0 ]; then
-		local log
+		case "${LOGS_FOR_IGNORED-}" in
+		"yes")
+			local log
 
-		_log_path log
-		_logfile logfile "${pkgname}"
-		{
-			local NO_GIT
+			_log_path log
+			_logfile logfile "${pkgname}"
+			{
+				local NO_GIT
 
-			NO_GIT=1 buildlog_start "${pkgname}" "${originspec}"
-			print_phase_header "check-sanity"
-			echo "Ignoring: ${ignore}"
-			print_phase_footer
-			buildlog_stop "${pkgname}" "${originspec}" 0
-		} | write_atomic "${logfile}"
-		ln -fs "../${pkgname:?}.log" \
-		    "${log:?}/logs/ignored/${pkgname:?}.log"
+				NO_GIT=1 buildlog_start "${pkgname}" "${originspec}"
+				print_phase_header "check-sanity"
+				echo "Ignoring: ${ignore}"
+				print_phase_footer
+				buildlog_stop "${pkgname}" "${originspec}" 0
+			} | write_atomic "${logfile}"
+			ln -fs "../${pkgname:?}.log" \
+			    "${log:?}/logs/ignored/${pkgname:?}.log"
+			;;
+		esac
 		run_hook pkgbuild ignored "${origin}" "${pkgname}" "${ignore}"
 	fi
 	badd ports.ignored "${originspec} ${pkgname} ${ignore}"
+	pkgbuild_done "${pkgname}"
 	clean_pool "build" "${pkgname}" "${originspec}" "ignored"
 	clean_pool "run" "${pkgname}" "${originspec}" "ignored"
 }
@@ -9089,6 +9532,7 @@ prepare_ports() {
 			bset stats_built 0
 			bset stats_failed 0
 			bset stats_ignored 0
+			bset stats_inspected 0
 			bset stats_skipped 0
 			bset stats_fetched 0
 			:> "${log:?}/.data.json"
@@ -9098,6 +9542,7 @@ prepare_ports() {
 			:> "${log:?}/.poudriere.ports.built"
 			:> "${log:?}/.poudriere.ports.failed"
 			:> "${log:?}/.poudriere.ports.ignored"
+			:> "${log:?}/.poudriere.ports.inspected"
 			:> "${log:?}/.poudriere.ports.skipped"
 			:> "${log:?}/.poudriere.ports.fetched"
 			# Link this build as the /latest
@@ -9241,6 +9686,7 @@ prepare_ports() {
 			    "${log:?}/.poudriere.ports.built" \
 			    "${log:?}/.poudriere.ports.failed" \
 			    "${log:?}/.poudriere.ports.ignored" \
+			    "${log:?}/.poudriere.ports.inspected" \
 			    "${log:?}/.poudriere.ports.fetched" \
 			    "${log:?}/.poudriere.ports.skipped" | \
 			    pkgqueue_remove_many_pipe "build"
@@ -9265,6 +9711,8 @@ prepare_ports() {
 		fi
 		delete_old_pkgs
 
+		# PKG_NO_VERSION_FOR_DEPS still uses this to trim out old
+		# packages with versioned-dependencies which no longer exist.
 		if [ ${SKIP_RECURSIVE_REBUILD} -eq 0 ]; then
 			msg_verbose "Checking packages for missing dependencies"
 			while :; do
@@ -9614,7 +10062,7 @@ calculate_ospart_size() {
 	set) calculate_size_in_mb SWAP_SIZE ;;
 	"") SWAP_SIZE=0 ;;
 	esac
-	
+
 	OS_SIZE=$(( ( FULL_SIZE - CFG_SIZE - DATA_SIZE - SWAP_SIZE ) / NUM_PART ))
 	msg "OS Partiton size: ${OS_SIZE}m"
 }
@@ -9954,6 +10402,7 @@ if [ ! -d ${POUDRIERED}/jails ]; then
 			zfs inherit -r ${NS}:stats_failed ${fs}
 			zfs inherit -r ${NS}:stats_skipped ${fs}
 			zfs inherit -r ${NS}:stats_ignored ${fs}
+			zfs inherit -r ${NS}:stats_inspected ${fs}
 			zfs inherit -r ${NS}:stats_queued ${fs}
 			zfs inherit -r ${NS}:status ${fs}
 		done
@@ -10061,6 +10510,7 @@ esac
 : ${CLEAN:=0}
 : ${CLEAN_LISTED:=0}
 : ${SKIP_RECURSIVE_REBUILD:=0}
+: ${PKG_NO_VERSION_FOR_DEPS:=no}
 : ${VERBOSE:=0}
 : ${QEMU_EMULATING:=0}
 : ${PORTTESTING:=0}
@@ -10077,6 +10527,7 @@ esac
 : ${PKG_REPRODUCIBLE:=no}
 : ${HTML_JSON_UPDATE_INTERVAL:=2}
 : ${HTML_TRACK_REMAINING:=no}
+: ${GIT_TREE_DIRTY_CHECK:=yes}
 : ${FORCE_MOUNT_HASH:=no}
 : ${DELETE_UNQUEUED_PACKAGES:=no}
 : ${DELETE_UNKNOWN_FILES:=yes}
@@ -10129,6 +10580,7 @@ esac
 : ${FLAVOR_DEFAULT_ALL:=no}
 : ${NULLFS_PATHS:="/rescue /usr/share /usr/tests /usr/lib32"}
 : ${PACKAGE_FETCH_URL:="pkg+http://pkg.FreeBSD.org/\${ABI}"}
+: ${DEVFS_RULESET:=4}
 : ${PKG_HASH:=no}
 
 : ${POUDRIERE_TMPDIR:=$(command mktemp -dt poudriere)}

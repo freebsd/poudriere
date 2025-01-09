@@ -67,6 +67,10 @@ Options:
     -p tree     -- Specify on which ports tree the bulk build will be done
     -R          -- Clean RESTRICTED packages after building
     -r          -- Resursively test all dependencies as well
+    -S          -- Don't recursively rebuild packages affected by other
+                   packages requiring incremental rebuild. This can result
+                   in broken packages if the ones updated do not retain
+                   a stable ABI.
     -t          -- Test the specified ports for leftovers. Add -r to
                    recursively test all dependencies as well.
     -T          -- Try to build broken ports anyway
@@ -181,8 +185,7 @@ while getopts "ab:B:CcFf:HiIj:J:knNO:p:RrSTtvwz:" FLAG; do
 			PORTTESTING_RECURSIVE=1
 			;;
 		S)
-			# Kept for compat
-			:
+			SKIP_RECURSIVE_REBUILD=1
 			;;
 		T)
 			export TRYBROKEN=yes
@@ -259,7 +262,9 @@ if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then
 fi
 
 prepare_ports
-show_build_summary
+if [ "${DRY_RUN}" -eq 0 ]; then
+	show_build_summary
+fi
 show_dry_run_summary
 markfs prepkg ${MASTERMNT}
 

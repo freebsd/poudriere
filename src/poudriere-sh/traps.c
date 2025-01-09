@@ -64,7 +64,7 @@ trap_pushcmd(int argc, char **argv)
 {
 	struct sigdata *sd;
 	char buf[32];
-	int nextidx, idx, signo;
+	int nextidx, idx, ret, signo;
 
 	if (argc != 3)
 		errx(EX_USAGE, "%s", "Usage: trap_push <signal> <var_return>");
@@ -73,6 +73,7 @@ trap_pushcmd(int argc, char **argv)
 		errx(EX_DATAERR, "Invalid signal %s", argv[1]);
 
 	INTOFF;
+	ret = 0;
 	nextidx = -1;
 	for (idx = 0; idx < MAX_SIGNALS; idx++) {
 		if (signals[idx] == NULL) {
@@ -90,9 +91,11 @@ trap_pushcmd(int argc, char **argv)
 
 	signals[nextidx] = sd;
 	INTON;
-	setvar(argv[2], buf, 0);
+	if (setvarsafe(argv[2], buf, 0)) {
+		ret = 1;
+	}
 
-	return (0);
+	return (ret);
 }
 
 int

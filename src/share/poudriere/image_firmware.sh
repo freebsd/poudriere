@@ -144,7 +144,7 @@ firmware_generate()
 		${SWAPLAST} \
 		-o "${OUTPUTDIR}/${FINALIMAGE}"
 	rm -rf ${espfilename}
- 	mv ${WRKDIR}/raw.img "${OUTPUTDIR}/${IMAGENAME}-upgrade.img
+	mv ${WRKDIR}/raw.img "${OUTPUTDIR}/${IMAGENAME}"-upgrade.img
 }
 
 rawfirmware_check()

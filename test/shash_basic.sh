@@ -6,6 +6,15 @@ MASTERMNT=$(mktemp -d)
 
 echo "Working on ${MASTERMNT}"
 SHASH_VAR_PATH="${MASTERMNT}"
+value=
+assert_ret 0 shash_set blank key ""
+assert_ret 0 shash_get blank key value
+assert "" "${value}"
+assert_ret 0 shash_unset blank key
+value=
+assert_ret 0 shash_set blank key $'\n'
+assert_ret 0 shash_get blank key value
+assert "" "${value}"
 assert_ret 1 shash_remove pkgname-origin "pkg-1.7" value
 assert_ret 0 shash_unset pkgname-origin "pkg-1.7"
 assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
@@ -76,6 +85,14 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	handle=unset
 	assert_ret_not 0 shash_read_mapfile nonexistent key handle
 	assert "unset" "${handle}"
+}
+
+# shash_read on nonexistent var-key should fail
+{
+	TMP="$(mktemp -ut shash_read)"
+	assert_ret_not 0 shash_read nonexistent key > "${TMP}"
+	assert_ret_not 0 test -s "${TMP}"
+	rm -f "${TMP}"
 }
 
 # shash_read_mapfile on existing var-key should pass
@@ -155,7 +172,7 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 		done
 		exit "${lines}"
 	)
-	assert 0 "$?" "shash_read pkgmetadata annotations-blank1 should not read any lines. lines=$?"
+	assert 1 "$?" "shash_read pkgmetadata annotations-blank1 should read 1 line. lines=$?"
 
 	assert_ret 0 shash_exists pkgmetadata "annotations-blank1"
 
@@ -169,6 +186,10 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	shash_set pkgmetadata "annotations-blank2" "bogus"
 	echo -n | shash_write pkgmetadata "annotations-blank2"
 	assert "0" "$?" "shash_write pkgmetadata annotations-blank2"
+	assert_ret 0 shash_exists pkgmetadata "annotations-blank2"
+	value=
+	assert_ret 0 shash_get pkgmetadata "annotations-blank2" value
+	assert "" "${value}"
 
 	lines=0
 	shash_read pkgmetadata "annotations-blank2" |
@@ -202,6 +223,10 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	shash_set pkgmetadata "annotations-blank3" "bogus"
 	: | shash_write pkgmetadata "annotations-blank3"
 	assert "0" "$?" "shash_write pkgmetadata annotations-blank3"
+	assert_ret 0 shash_exists pkgmetadata "annotations-blank3"
+	value=
+	assert_ret 0 shash_get pkgmetadata "annotations-blank3" value
+	assert "" "${value}"
 
 	lines=0
 	shash_read pkgmetadata "annotations-blank3" |
@@ -236,6 +261,10 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	shash_set pkgmetadata "annotations-blank4" "bogus"
 	echo | shash_write pkgmetadata "annotations-blank4"
 	assert "0" "$?" "shash_write pkgmetadata annotations-blank4"
+	assert_ret 0 shash_exists pkgmetadata "annotations-blank4"
+	value=
+	assert_ret 0 shash_get pkgmetadata "annotations-blank4" value
+	assert "" "${value}"
 
 	lines=0
 	shash_read pkgmetadata "annotations-blank4" |
@@ -262,6 +291,64 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	value=unset
 	assert_ret 0 shash_get pkgmetadata "annotations-blank4" value
 	assert "empty" "${value:-empty}"
+}
+
+# shash_write with tee
+{
+
+	assert_ret 1 shash_exists description "pkg-foo"
+	TMP="$(mktemp -ut shash_tee)"
+	cat > "${TMP}" <<-EOF
+	This is a test package description for pkg-foo.
+
+	This package is used for testing shash_tee.
+	WWW: www.test.com
+	EOF
+	cp -f "${TMP}" "${TMP}.save" # XXX: assert_file deletes currently
+	cat "${TMP}" | assert_ret 0 shash_write -T description "pkg-foo" > "${TMP}.3"
+	assert 0 "$?" "shash_tee"
+	assert_file "${TMP}" "${TMP}.3"
+	mv -f "${TMP}.save" "${TMP}" # XXX: assert_file deletes currently
+	assert_ret 0 shash_read description "pkg-foo" > "${TMP}.2"
+	assert_file "${TMP}" "${TMP}.2"
+	rm -f "${TMP}" "${TMP}.2" "${TMP}.3"
+	assert_ret 0 shash_unset description "pkg-foo"
+}
+
+# shash_tee with just newline is valid; newline should be trimmed
+{
+
+	assert_ret 1 shash_exists description "pkg-foo"
+	TMP="$(mktemp -ut shash_tee)"
+	echo > "${TMP}"
+	assert_ret 0 test -s  "${TMP}"
+	cp -f "${TMP}" "${TMP}.save" # XXX: assert_file deletes currently
+	cat "${TMP}" | assert_ret 0 shash_write -T description "pkg-foo" > "${TMP}.3"
+	assert 0 "$?" "shash_tee"
+	assert_file "${TMP}" "${TMP}.3"
+	mv -f "${TMP}.save" "${TMP}" # XXX: assert_file deletes currently
+	assert_ret 0 shash_read description "pkg-foo" > "${TMP}.2"
+	assert_file "${TMP}" "${TMP}.2"
+	rm -f "${TMP}" "${TMP}.2" "${TMP}.3"
+	assert_ret 0 shash_unset description "pkg-foo"
+}
+
+# shash_tee with empth data is still valid
+{
+
+	assert_ret 1 shash_exists description "pkg-foo"
+	TMP="$(mktemp -ut shash_tee)"
+	: > "${TMP}"
+	assert_ret 1 test -s  "${TMP}"
+	cp -f "${TMP}" "${TMP}.save" # XXX: assert_file deletes currently
+	cat "${TMP}" | assert_ret 0 shash_write -T description "pkg-foo" > "${TMP}.3"
+	assert 0 "$?" "shash_tee"
+	assert_file "${TMP}" "${TMP}.3"
+	mv -f "${TMP}.save" "${TMP}" # XXX: assert_file deletes currently
+	assert_ret 0 shash_read description "pkg-foo" > "${TMP}.2"
+	assert_file "${TMP}" "${TMP}.2"
+	rm -f "${TMP}" "${TMP}.2" "${TMP}.3"
+	assert_ret 0 shash_unset description "pkg-foo"
 }
 
 rm -rf "${MASTERMNT}"

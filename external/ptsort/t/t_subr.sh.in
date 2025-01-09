@@ -33,7 +33,7 @@
 #
 # To use this, add the following at the top of your test script:
 #
-# . t_subr.sh
+# . ./t_subr.sh
 #
 # Run your tests, invoking either not_ok() or ok() after each.
 #

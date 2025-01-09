@@ -1,1 +1,50 @@
-You know what to do.
+# Building and installing ptsort
+
+## Prerequisites
+
+This software should build and run on any reasonably modern POSIX-like
+system including BSD, macOS, and most Linux distributions, requiring
+only a POSIX-compatible Make and a C compiler.
+
+If you checked out the source code directly from the repository, you
+will also need GNU autoconf and automake.
+
+## Generating the configure script
+
+If you downloaded a release tarball, you can skip this step, as the
+configure script has been pregenerated for your convenience.
+
+If you checked out the source code directly from the repository, you
+will need to generate the configure script before you can run it.
+Simply run the provided script:
+
+    $ ./autogen.sh
+
+## Configuring
+
+Run the configure script to generate an appropriate `lib/config.h` for
+your system, optionally specifying an alternate installation prefix:
+
+    $ ./configure --prefix=$HOME
+
+## Building
+
+To build, simply make the default target:
+
+    $ make
+
+## Running the tests
+
+To run the provided tests, make the `check` target:
+
+    $ make check
+
+## Installing
+
+To install, make the `install` target, optionally specifying an
+alternate prefix:
+
+    $ make install prefix=$HOME
+
+Note that you do not need to specify the prefix here if you already
+did so when running the configure script.

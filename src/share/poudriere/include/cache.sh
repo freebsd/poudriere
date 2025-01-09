@@ -28,7 +28,22 @@
 
 cache_invalidate() {
 	local -; set +x
-	[ $# -ge 1 ] || eargs cache_invalidate function [params]
+	[ "$#" -ge 1 ] || eargs cache_invalidate [-K key] function [params]
+	local flag Kflag
+	local OPTIND=1
+
+	Kflag=
+	while getopts "K:" flag; do
+		case "${flag}" in
+		K)
+			# If key is empty just use a (.)
+			Kflag="${OPTARG:-.}"
+			;;
+		*) err "${EX_USAGE}" "cache_invalidate: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ "$#" -ge 1 ] || eargs cache_invalidate [-K key] function [params]
 	local function="$1"
 	shift
 	local var key
@@ -38,7 +53,8 @@ cache_invalidate() {
 	# request.
 
 	var="cached-${function}"
-	encode_args key "$@"
+	encode_args key "${Kflag:-$@}"
+
 	msg_dev "cache_invalidate: Invalidating ${function}($*)"
 	shash_unset "${var}" "${key}" || :
 }
@@ -63,7 +79,22 @@ _cache_set() {
 
 cache_set() {
 	local -; set +x
-	[ $# -ge 2 ] || eargs cache_set value function [params]
+	[ "$#" -ge 2 ] || eargs cache_set [-K key] value function [params]
+	local flag Kflag
+	local OPTIND=1
+
+	Kflag=
+	while getopts "K:" flag; do
+		case "${flag}" in
+		K)
+			# If key is empty just use a (.)
+			Kflag="${OPTARG:-.}"
+			;;
+		*) err "${EX_USAGE}" "cache_set: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ "$#" -ge 2 ] || eargs cache_set [-K key] value function [params]
 	local value="$1"
 	local function="$2"
 	shift 2
@@ -74,7 +105,7 @@ cache_set() {
 	fi
 
 	var="cached-${function}"
-	encode_args key "$@"
+	encode_args key "${Kflag:-$@}"
 	msg_dev "cache_set: Caching value for ${function}($*)"
 	_cache_set "${var}" "${key}" "${value}"
 }
@@ -113,7 +144,7 @@ _cache_tee() {
 	local cw_var="$1"
 	local cw_key="$2"
 
-	shash_tee "${cw_var}" "${cw_key}"
+	shash_write -T "${cw_var}" "${cw_key}"
 }
 
 _cache_exists() {
@@ -130,7 +161,22 @@ _cache_exists() {
 # Usage: cache_call result_var function args
 cache_call() {
 	local -; set +x
-	[ $# -ge 2 ] || eargs cache_call "<var_return | ->" function [params]
+	[ "$#" -ge 2 ] || eargs cache_call [-K key] "<var_return | ->" function [params]
+	local flag Kflag
+	local OPTIND=1
+
+	Kflag=
+	while getopts "K:" flag; do
+		case "${flag}" in
+		K)
+			# If key is empty just use a (.)
+			Kflag="${OPTARG:-.}"
+			;;
+		*) err "${EX_USAGE}" "cache_call: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ "$#" -ge 2 ] || eargs cache_call [-K key] "<var_return | ->" function [params]
 	local var_return="$1"
 	local function="$2"
 	shift 2
@@ -139,7 +185,7 @@ cache_call() {
 
 	case "${var_return}" in
 	-)
-		_cache_call_pipe "${function}" "$@"
+		_cache_call_pipe ${Kflag:+-K "${Kflag}"} "${function}" "$@"
 		return
 		;;
 	esac
@@ -147,7 +193,7 @@ cache_call() {
 	# If the value is not already in the cache then
 	# look it up and store the result in the cache.
 	cc_var="cached-${function}"
-	encode_args cc_key "$@"
+	encode_args cc_key "${Kflag:-$@}"
 
 	if [ "${USE_CACHE_CALL}" -eq 0 ] ||
 	    ! _cache_get "${cc_var}" "${cc_key}" "${var_return}"; then
@@ -173,7 +219,22 @@ cache_call() {
 # from the function.
 cache_call_sv() {
 	local -; set +x
-	[ $# -ge 2 ] || eargs cache_call_sv var_return function [params] [sv_value for return var]
+	[ "$#" -ge 2 ] || eargs cache_call_sv [-K key] var_return function [params] [sv_value for return var]
+	local flag Kflag
+	local OPTIND=1
+
+	Kflag=
+	while getopts "K:" flag; do
+		case "${flag}" in
+		K)
+			# If key is empty just use a (.)
+			Kflag="${OPTARG:-.}"
+			;;
+		*) err "${EX_USAGE}" "cache_call_sv: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ "$#" -ge 2 ] || eargs cache_call_sv [-K key] var_return function [params] [sv_value for return var]
 	local var_return="$1"
 	local function="$2"
 	shift 2
@@ -183,7 +244,7 @@ cache_call_sv() {
 	# If the value is not already in the cache then
 	# look it up and store the result in the cache.
 	cc_var="cached-${function}"
-	encode_args cc_key "$@"
+	encode_args cc_key "${Kflag:-$@}"
 
 	if [ "${USE_CACHE_CALL}" -eq 0 ] ||
 	    ! _cache_get "${cc_var}" "${cc_key}" "${var_return}"; then
@@ -216,7 +277,22 @@ cache_call_sv() {
 # Usage: cache_call function args
 _cache_call_pipe() {
 	local -; set +x
-	[ $# -ge 1 ] || eargs _cache_call_pipe function [params]
+	[ "$#" -ge 1 ] || eargs _cache_call_pipe [-K key] function [params]
+	local flag Kflag
+	local OPTIND=1
+
+	Kflag=
+	while getopts "K:" flag; do
+		case "${flag}" in
+		K)
+			# If key is empty just use a (.)
+			Kflag="${OPTARG:-.}"
+			;;
+		*) err "${EX_USAGE}" "_cache_call_pipe: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ "$#" -ge 1 ] || eargs _cache_call_pipe [-K key] function [params]
 	local function="$1"
 	shift 1
 	local -; set +e # Need to capture error without ||
@@ -226,7 +302,7 @@ _cache_call_pipe() {
 	# If the value is not already in the cache then
 	# look it up and store the result in the cache.
 	ccp_var="cached-${function}"
-	encode_args ccp_key "$@"
+	encode_args ccp_key "${Kflag:-$@}"
 
 	if [ "${USE_CACHE_CALL}" -eq 0 ]; then
 		${function} "$@"

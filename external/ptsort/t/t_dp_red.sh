@@ -28,7 +28,7 @@
 # SUCH DAMAGE.
 #
 
-. t_subr.sh
+. ./t_subr.sh
 
 ifile="${abs_srcdir}/t_dp_red.ti"
 ofile="${abs_srcdir}/t_dp_red.to"

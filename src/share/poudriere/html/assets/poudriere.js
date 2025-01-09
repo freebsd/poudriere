@@ -178,7 +178,7 @@ function determine_canvas_width() {
 }
 
 function update_canvas(stats) {
-  var queued, built, failed, skipped, ignored, fetched, remaining, pctdone;
+  var queued, built, failed, skipped, inspected, ignored, fetched, remaining, pctdone;
   var height, width, x, context, canvas, pctdonetxt;
 
   if (stats.queued === undefined) {
@@ -201,9 +201,10 @@ function update_canvas(stats) {
   built = stats.built;
   failed = stats.failed;
   skipped = stats.skipped;
+  inspected = stats.inspected;
   ignored = stats.ignored;
   fetched = stats.fetched;
-  remaining = queued - built - failed - skipped - ignored - fetched;
+  remaining = queued - built - failed - skipped - inspected - ignored - fetched;
 
   context = canvas.getContext("2d");
 
@@ -221,6 +222,7 @@ function update_canvas(stats) {
   context.stroke();
   x += minidraw(x, height, width, context, "#00CC00", queued, built);
   x += minidraw(x, height, width, context, "#E00000", queued, failed);
+  x += minidraw(x, height, width, context, "#FF9900", queued, inspected);
   x += minidraw(x, height, width, context, "#FF9900", queued, ignored);
   x += minidraw(x, height, width, context, "#228B22", queued, fetched);
   x += minidraw(x, height, width, context, "#CC6633", queued, skipped);
@@ -545,6 +547,10 @@ function format_status_row(status, row, n) {
     table_row.push(format_pkgname(row.pkgname));
     table_row.push(format_origin(row.origin, row.flavor));
     table_row.push(format_pkgname(row.depends));
+  } else if (status == "inspected") {
+    table_row.push(format_pkgname(row.pkgname));
+    table_row.push(format_origin(row.origin, row.flavor));
+    table_row.push(row.reason);
   } else if (status == "ignored") {
     table_row.push(format_pkgname(row.pkgname));
     table_row.push(format_origin(row.origin, row.flavor));
@@ -805,7 +811,7 @@ function process_data_jail(data) {
   var row, build, buildname, stat, types, latest, remaining, count, dtrow;
 
   if (data.builds) {
-    types = ["queued", "built", "failed", "skipped", "ignored", "fetched"];
+    types = ["queued", "built", "failed", "skipped", "inspected", "ignored", "fetched"];
     dtrow = new DTRow("builds_table", "builds_div");
     for (buildname in data.builds) {
       row = {};
@@ -830,6 +836,7 @@ function process_data_jail(data) {
           (parseInt(build.stats["built"]) +
             parseInt(build.stats["failed"]) +
             parseInt(build.stats["skipped"]) +
+            parseInt(build.stats["inspected"]) +
             parseInt(build.stats["ignored"]) +
             parseInt(build.stats["fetched"]))
         : 0;
@@ -838,7 +845,15 @@ function process_data_jail(data) {
       }
       row.stat_remaining = remaining;
       row.status = translate_status(build.status);
-      row.elapsed = build.elapsed ? build.elapsed : "";
+      if (build.elapsed) {
+        row.elapsed = build.elapsed;
+      } else if (build.snap && build.snap.elapsed) {
+        row.elapsed = format_duration(parseInt(build.snap.elapsed));
+      } else if (build.started && build.ended) {
+        row.elapsed = format_duration(parseInt(build.ended) - parseInt(build.started));
+      } else {
+        row.elapsed = "";
+      }
 
       dtrow.queue(row);
     }
@@ -870,7 +885,7 @@ function process_data_index(data) {
   var master, mastername, stat, types, latest, remaining, row, count, dtrow;
 
   if (data.masternames) {
-    types = ["queued", "built", "failed", "skipped", "ignored", "fetched"];
+    types = ["queued", "built", "failed", "skipped", "inspected", "ignored", "fetched"];
     dtrow = new DTRow("latest_builds_table", "latest_builds_div");
     for (mastername in data.masternames) {
       row = {};
@@ -895,12 +910,21 @@ function process_data_index(data) {
           (parseInt(master.stats["built"]) +
             parseInt(master.stats["failed"]) +
             parseInt(master.stats["skipped"]) +
+            parseInt(master.stats["inspected"]) +
             parseInt(master.stats["ignored"]) +
             parseInt(master.stats["fetched"]))
         : 0;
       row.stat_remaining = isNaN(remaining) ? 0 : remaining;
       row.status = translate_status(master.status);
-      row.elapsed = master.elapsed ? master.elapsed : "";
+      if (master.elapsed) {
+        row.elapsed = master.elapsed;
+      } else if (master.snap && master.snap.elapsed) {
+        row.elapsed = format_duration(parseInt(master.snap.elapsed));
+      } else if (master.started && master.ended) {
+        row.elapsed = format_duration(parseInt(master.ended) - parseInt(master.started));
+      } else {
+        row.elapsed = "";
+      }
 
       dtrow.queue(row);
     }
@@ -1120,6 +1144,14 @@ function setup_build() {
       origin_column,
       pkgname_column,
     ],
+    inspected: [
+      build_order_column,
+      pkgname_column,
+      origin_column,
+      {
+        sWidth: "25em",
+      },
+    ],
     ignored: [
       build_order_column,
       pkgname_column,
@@ -1150,6 +1182,7 @@ function setup_build() {
     "built",
     "failed",
     "skipped",
+    "inspected",
     "ignored",
     "fetched",
     "remaining",
@@ -1196,6 +1229,7 @@ function setup_jail() {
     $.extend({}, stat_column, { data: "stat_built" }),
     $.extend({}, stat_column, { data: "stat_failed" }),
     $.extend({}, stat_column, { data: "stat_skipped" }),
+    $.extend({}, stat_column, { data: "stat_inspected" }),
     $.extend({}, stat_column, { data: "stat_ignored" }),
     $.extend({}, stat_column, { data: "stat_fetched" }),
     $.extend({}, stat_column, { data: "stat_remaining" }),
@@ -1233,7 +1267,7 @@ function setup_jail() {
         $("td", row).addClass("latest");
       }
     },
-    order: [[0, "asc"]], // Sort by buildname
+    order: [[0, "desc"]], // Sort by buildname
   });
 
   //applyHovering('builds_table');
@@ -1297,6 +1331,7 @@ function setup_index() {
     $.extend({}, stat_column, { data: "stat_built" }),
     $.extend({}, stat_column, { data: "stat_failed" }),
     $.extend({}, stat_column, { data: "stat_skipped" }),
+    $.extend({}, stat_column, { data: "stat_inspected" }),
     $.extend({}, stat_column, { data: "stat_ignored" }),
     $.extend({}, stat_column, { data: "stat_fetched" }),
     $.extend({}, stat_column, { data: "stat_remaining" }),

@@ -108,7 +108,7 @@ shash_set() {
 	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
-	case "${value:+set}" in
+	case "${value+set}" in
 	set) echo "${value}" ;;
 	esac > "${_shash_varkey_file}"
 }
@@ -138,24 +138,27 @@ shash_read_mapfile() {
 
 shash_write() {
 	local -; set +x
-	[ $# -eq 2 ] || eargs shash_write var key
+	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] || eargs shash_write [-T] var key
+	local flag Tflag
+	local OPTIND=1
+
+	Tflag=
+	while getopts "T" flag; do
+		case "${flag}" in
+		T)
+			Tflag=1
+			;;
+		*) err "${EX_USAGE}" "write_atomic: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ "$#" -eq 2 ] || eargs shash_write [-T] var key
 	local var="$1"
 	local key="$2"
 	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
-	write_atomic "${_shash_varkey_file}"
-}
-
-shash_tee() {
-	local -; set +x
-	[ $# -eq 2 ] || eargs shash_tee var key
-	local var="$1"
-	local key="$2"
-	local _shash_varkey_file
-
-	_shash_varkey_file "${var}" "${key}"
-	write_atomic_tee "${_shash_varkey_file}"
+	write_atomic ${Tflag:+-T} "${_shash_varkey_file}"
 }
 
 shash_remove_var() {
@@ -194,5 +197,6 @@ shash_unset() {
 	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
+	# Unquoted for globbing
 	rm -f ${_shash_varkey_file}
 }

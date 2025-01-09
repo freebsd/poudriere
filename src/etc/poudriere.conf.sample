@@ -1,7 +1,7 @@
 
 # Poudriere can optionally use ZFS for its ports/jail storage. For
 # ZFS define ZPOOL, otherwise set NO_ZFS=yes
-# 
+#
 #### ZFS
 # The pool where poudriere will create all the filesystems it needs
 # poudriere will use ${ZPOOL}/${ZROOTFS} as its root
@@ -240,6 +240,8 @@ DISTFILES_CACHE=/usr/ports/distfiles
 
 # This defines the max time (in seconds) that a command may run for a build
 # before it is killed for taking too long. Default: 86400
+# This can also be set per PKGBASE, such as MAX_EXECUTION_TIME_RStudio=86400.
+# Package names with hyphens (-) should be replaced with underscores (_).
 #MAX_EXECUTION_TIME=86400
 
 # This defines the time (in seconds) before a command is considered to
@@ -383,6 +385,17 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # be fetched.
 # Default: everything
 #PACKAGE_FETCH_WHITELIST="gcc* rust llvm*"
+
+# If the ports tree is a git checkout then it is inspected for whether it
+# is "dirty". This information is stored in a package annotation to help
+# with debugging. It can be slow over NFS.
+# Set to "no" to disable.
+# Default: yes
+#GIT_TREE_DIRTY_CHECK=yes
+
+# The devfs ruleset to apply inside the jail to /dev
+# See /etc/defaults/devfs.rules for the default one
+#DEVFS_RULESET=4
 
 # Have pkg create the repo such that each package is named with the short hash
 # of its file contents in the package filename, with symlinks to the traditional

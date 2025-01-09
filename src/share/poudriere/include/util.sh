@@ -171,7 +171,7 @@ getvar() {
 		ret=1
 		case "${_getvar_var_return}" in
 		""|-) ;;
-		*) setvar "${_getvar_var_return}" "" ;;
+		*) unset "${_getvar_var_return}" ;;
 		esac
 		;;
 	*)
@@ -573,7 +573,7 @@ read_file() {
 			if [ ! -r "${file:?}" ]; then
 				case "${var_return}" in
 				""|-) ;;
-				*) setvar "${var_return}" "" ;;
+				*) unset "${var_return}" ;;
 				esac
 				return 1
 			fi
@@ -611,7 +611,7 @@ read_line() {
 	local max_reads reads _ret _line maph IFS
 
 	if [ ! -f "${file}" ]; then
-		setvar "${var_return}" ""
+		unset "${var_return}"
 		return 1
 	fi
 
@@ -646,19 +646,47 @@ read_line() {
 }
 
 readlines() {
-	[ "$#" -ge 0 ] || eargs readlines '[vars...]'
+	[ "$#" -ge 0 ] || eargs readlines [-T] '[vars...]'
+	local flag Tflag
+	local OPTIND=1
 
-	readlines_file "/dev/stdin" "$@"
+	Tflag=
+	while getopts "T" flag; do
+		case "${flag}" in
+		T)
+			Tflag=1
+			;;
+		*) err "${EX_USAGE}" "readlines: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ "$#" -ge 0 ] || eargs readlines [-T] '[vars...]'
+
+	readlines_file ${Tflag:+-T} "/dev/stdin" "$@"
 }
 
 readlines_file() {
 	# Blank vars will still read and output $_readlines_lines_read
-	[ "$#" -ge 1 ] || eargs readlines_file file '[vars...]'
-	local rl_file="$1"
-	shift
+	[ "$#" -ge 1 ] || eargs readlines_file [-T] file '[vars...]'
+	local rl_file
 	local rl_var rl_line rl_var_count rl_line_count
 	local rl_rest rl_nl rl_handle ret
-	local IFS
+	local flag Tflag
+	local OPTIND=1 IFS
+
+	Tflag=0
+	while getopts "T" flag; do
+		case "${flag}" in
+		T)
+			Tflag=1
+			;;
+		*) err "${EX_USAGE}" "readlines_file: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ "$#" -ge 1 ] || eargs readlines_file [-T] file '[vars...]'
+	rl_file="$1"
+	shift
 
 	_readlines_lines_read=0
 	case "${rl_file:?}" in
@@ -666,20 +694,25 @@ readlines_file() {
 	*)
 		if [ ! -r "${rl_file:?}" ]; then
 			for rl_var in "$@"; do
-				setvar "${rl_var}" ""
+				unset "${rl_var}"
 			done
 			return 1
 		fi
 		;;
 	esac
 
-	rl_nl=$'\n'
+	rl_nl=${RL_NL-$'\n'}
 	rl_var_count="$#"
-	rl_rest=
+	unset rl_rest
 	ret=0
 	if mapfile -F rl_handle "${rl_file:?}" "r"; then
 		while IFS= mapfile_read "${rl_handle}" rl_line; do
 			_readlines_lines_read="$((_readlines_lines_read + 1))"
+			case "${Tflag}" in
+			1)
+				echo "${rl_line}"
+				;;
+			esac
 			case "${rl_var_count}" in
 			0)
 				;;
@@ -688,9 +721,13 @@ readlines_file() {
 				;;
 			*)
 				rl_var_count="$((rl_var_count - 1))"
-				rl_var="${1:?}"
+				rl_var="${1?}"
 				shift
-				setvar "${rl_var}" "${rl_line}"
+				case "${rl_var:+set}" in
+				set)
+					setvar "${rl_var}" "${rl_line}"
+					;;
+				esac
 				;;
 			esac
 		done
@@ -701,15 +738,19 @@ readlines_file() {
 	case "${rl_var_count}" in
 	0) ;;
 	*)
-		case "${rl_rest:+set}" in
+		case "${rl_rest+set}" in
 		set)
-			rl_var="${1:?}"
+			rl_var="${1?}"
 			shift
-			setvar "${rl_var}" "${rl_rest}"
+			case "${rl_var:+set}" in
+			set)
+				setvar "${rl_var}" "${rl_rest}"
+				;;
+			esac
 			;;
 		esac
 		for rl_var in "$@"; do
-			setvar "${rl_var}" ""
+			unset "${rl_var}"
 		done
 		;;
 	esac
@@ -942,6 +983,18 @@ mapfile_keeps_file_open_on_eof() {
 mapfile_supports_multiple_handles() {
 	return 0
 }
+
+# Wrap builtin mapfile_close() to handle mapfile_read_proc() cleanup needs.
+mapfile_close() {
+	[ "$#" -eq 1 ] || eargs mapfile_close handle
+	local handle="$1"
+	local ret
+
+	ret=0
+	command mapfile_close "${handle}" || ret="$?"
+	_mapfile_read_proc_close "${handle}" || ret="$?"
+	return "${ret}"
+}
 ;;
 *)
 mapfile() {
@@ -1140,6 +1193,7 @@ mapfile_close() {
 	fi
 	hash_unset mapfile_file "${handle}"
 	hash_unset mapfile_modes "${handle}"
+	_mapfile_read_proc_close "${handle}"
 }
 
 # This is for reading from a file in a loop while avoiding a pipe.
@@ -1247,13 +1301,44 @@ mapfile_read_loop_redir() {
 	fi
 }
 
+# Helper to workaround lack of process substitution.
+mapfile_read_proc() {
+	[ "$#" -ge 1 ] || eargs mapfile_read_proc handle_name cmd...
+	local _mapfile_read_proc_handle="$1"
+	shift 1
+	local spawn_jobid ret tmp _real_handle
+
+	tmp="$(mktemp -ut mapfile_read_proc_fifo)"
+	mkfifo "${tmp}" || return
+	spawn_job _pipe_func_job "${tmp}" "$@"
+	if mapfile "${_mapfile_read_proc_handle}" "${tmp}" "re"; then
+		getvar "${_mapfile_read_proc_handle}" _real_handle
+		hash_set mapfile_read_proc_job "${_real_handle}" "${spawn_jobid}"
+	else
+		kill_job 1 "%${spawn_jobid}" || ret="$?"
+	fi
+	return "${ret}"
+}
+
+_mapfile_read_proc_close() {
+	[ "$#" -eq 1 ] || eargs _mapfile_read_proc_close handle
+	local handle="$1"
+	local job ret
+
+	ret=0
+	if hash_remove mapfile_read_proc_job "${handle}" job; then
+		kill_job 1 "%${job}" || ret="$?"
+	fi
+	return "${ret}"
+}
+
 _pipe_func_job() {
 	[ "$#" -gt 2 ] || eargs _pipe_func_job _mf_fifo function [args...]
 	local _mf_fifo="$1"
 	shift 1
 
 	setproctitle "pipe_func($1)"
-	exec < /dev/null
+	#exec < /dev/null
 	exec > "${_mf_fifo}"
 	unlink "${_mf_fifo}"
 	"$@"
@@ -1269,7 +1354,7 @@ pipe_func() {
 	[ $# -ge 4 ] || eargs pipe_func [-H handle_var] 'read' read-params [...] -- func [params]
 	local _mf_handle_var _mf_cookie_val
 	local _mf_key _mf_read_params _mf_handle _mf_ret _mf_shift _mf_var
-	local _mf_fifo _mf_job
+	local _mf_fifo _mf_job spawn_jobid
 	local OPTIND=1 flag Hflag
 
 	Hflag=0
@@ -1739,20 +1824,27 @@ write_atomic_cmp() {
 	_write_atomic 1 0 "${dest}" || return
 }
 
+# -T is for teeing
 write_atomic() {
 	local -; set +x
-	[ $# -eq 1 ] || eargs write_atomic destfile "< content"
+	[ $# -ge 1 ] || eargs write_atomic [-T] destfile "< content"
+	local flag Tflag
+	local OPTIND=1
+
+	Tflag=0
+	while getopts "T" flag; do
+		case "${flag}" in
+		T)
+			Tflag=1
+			;;
+		*) err "${EX_USAGE}" "write_atomic: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ $# -eq 1 ] || eargs write_atomic [-T] destfile "< content"
 	local dest="$1"
 
-	_write_atomic 0 0 "${dest}" || return
-}
-
-write_atomic_tee() {
-	local -; set +x
-	[ $# -eq 1 ] || eargs write_atomic_tee destfile "< content"
-	local dest="$1"
-
-	_write_atomic 0 1 "${dest}" || return
+	_write_atomic 0 "${Tflag}" "${dest}" || return
 }
 
 # Place environment requirements on entering a function

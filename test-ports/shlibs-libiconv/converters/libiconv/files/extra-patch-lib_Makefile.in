@@ -1,0 +1,11 @@
+--- lib/Makefile.in.orig	2023-01-20 21:55:20 UTC
++++ lib/Makefile.in
+@@ -51,7 +51,7 @@ SHELL = @SHELL@
+ 
+ # Before making a release, change this according to the libtool documentation,
+ # section "Library interface versions".
+-LIBICONV_VERSION_INFO = 8:1:6
++LIBICONV_VERSION_INFO = 9:0:0
+ 
+ PACKAGE_VERSION = @VERSION@
+ 

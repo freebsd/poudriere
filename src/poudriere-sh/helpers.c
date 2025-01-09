@@ -190,7 +190,8 @@ randintcmd(int argc, char **argv)
 	INTON;
 	if (argc == 3) {
 		snprintf(valstr, sizeof(valstr), "%u", value);
-		setvar(argv[2], valstr, 0);
+		if (setvarsafe(argv[2], valstr, 0))
+			ret = 1;
 	} else
 		printf("%u\n", value);
 	return (ret);
@@ -199,7 +200,7 @@ randintcmd(int argc, char **argv)
 int
 getvarcmd(int argc, char **argv)
 {
-	const char *value;
+	const char *value, *var, *var_return;
 	int ret;
 
 	if (argc != 2 && argc != 3)
@@ -207,18 +208,31 @@ getvarcmd(int argc, char **argv)
 
 	value = NULL;
 	ret = 0;
-	if ((value = lookupvar(argv[1])) == NULL) {
-		value = "";
+	var = argv[1];
+	var_return = argv[2];
+	if ((value = lookupvar(var)) == NULL) {
+		value = NULL;
 		ret = 1;
 		goto out;
 	}
 out:
 	if (argc == 3 &&
-	    argv[2][0] != '\0' &&
-	    strcmp(argv[2], "-") != 0) {
-		setvar(argv[2], value, 0);
-	} else if (strcmp(value, "") != 0)
+	    var_return[0] != '\0' &&
+	    strcmp(var_return, "-") != 0) {
+		if (value == NULL) {
+			INTOFF;
+			if (unsetvar(var_return)) {
+				ret = 1;
+			}
+			INTON;
+		} else {
+			if (setvarsafe(var_return, value, 0)) {
+				ret = 1;
+			}
+		}
+	} else if (value != NULL && strcmp(value, "") != 0) {
 		printf("%s\n", value);
+	}
 	return (ret);
 }
 
@@ -237,11 +251,13 @@ _gsub_var_namecmd(int argc, char **argv)
 {
 	char *n;
 	char newvar[512];
+	int ret;
 
 	if (argc != 3)
 		errx(EX_USAGE, "%s", "Usage: _gsub_var_name <var> <var_return>");
 	const char *string = argv[1];
 	const char *var_return = argv[2];
+	ret = 0;
 	n = newvar;
 	for (const char *p = string; *p != '\0'; ++p) {
 		if (!is_in_name(*p))
@@ -252,8 +268,10 @@ _gsub_var_namecmd(int argc, char **argv)
 			errx(EX_DATAERR, "var too long");
 	}
 	*n = '\0';
-	setvar(var_return, newvar, 0);
-	return (0);
+	if (setvarsafe(var_return, newvar, 0)) {
+		ret = 1;
+	}
+	return (ret);
 }
 
 int
@@ -261,6 +279,7 @@ _gsub_badcharscmd(int argc, char **argv)
 {
 	char *n;
 	char newvar[512];
+	int ret;
 
 	if (argc != 4)
 		errx(EX_USAGE, "%s", "Usage: _gsub_badchars <var> <badchars> "
@@ -268,6 +287,7 @@ _gsub_badcharscmd(int argc, char **argv)
 	const char *string = argv[1];
 	const char *badchars = argv[2];
 	const char *var_return = argv[3];
+	ret = 0;
 	n = newvar;
 	for (const char *p = string; *p != '\0'; ++p) {
 		if (strchr(badchars, *p) != NULL)
@@ -278,8 +298,10 @@ _gsub_badcharscmd(int argc, char **argv)
 			errx(EX_DATAERR, "var too long");
 	}
 	*n = '\0';
-	setvar(var_return, newvar, 0);
-	return (0);
+	if (setvarsafe(var_return, newvar, 0)) {
+		ret = 1;
+	}
+	return (ret);
 }
 
 static int
@@ -472,8 +494,11 @@ _gsub(char **argv, const char *var_return)
 empty_pattern:
 	if (var_return == NULL)
 		printf("%s\n", outstr);
-	else
-		setvar(var_return, outstr, 0);
+	else {
+		if (setvarsafe(var_return, outstr, 0)) {
+			ret = 1;
+		}
+	}
 	if (sbuf_free) {
 		assert(is_int_on());
 		sbuf_delete(&newstr);

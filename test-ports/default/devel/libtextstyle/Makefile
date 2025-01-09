@@ -23,6 +23,8 @@ INSTALL_TARGET=	install-strip
 TEST_TARGET=	check
 WRKSRC_SUBDIR=	libtextstyle
 
+CFLAGS+=	-Wno-error=incompatible-function-pointer-types
+
 INFO=		libtextstyle
 
 OPTIONS_DEFINE=	DOCS

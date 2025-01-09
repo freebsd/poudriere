@@ -54,12 +54,9 @@
 
 #include "bltin/bltin.h"
 #include "helpers.h"
-#undef FILE
-#undef fclose
-#undef fdopen
-#undef fdclose
-#undef fopen
-#undef fwrite
+#undef FILE	/* Avoid sh version */
+#undef fwrite	/* Avoid sh version */
+#undef fputc	/* Avoid sh version */
 #include "eval.h"
 #include "redir.h"
 #include "trap.h"
@@ -261,8 +258,9 @@ mapfilecmd(int argc, char **argv)
 	struct mapped_data *md;
 	const char *file, *var_return, *modes;
 	char handle[32];
-	int ch, qflag, Fflag;
+	int ch, qflag, Fflag, ret;
 
+	ret = 0;
 	Fflag = qflag = 0;
 	while ((ch = getopt(argc, argv, "Fq")) != -1) {
 		switch (ch) {
@@ -297,18 +295,23 @@ mapfilecmd(int argc, char **argv)
 		assert(is_int_on());
 	}
 	if ((md == NULL) && qflag) {
-		INTON;
-		return (EX_NOINPUT);
+		ret = EX_NOINPUT;
+		goto done;
 	}
 	assert(md != NULL);
 
 	snprintf(handle, sizeof(handle), "%d", md->handle);
-	setvar(var_return, handle, 0);
+	if (setvarsafe(var_return, handle, 0)) {
+		md_close(md);
+		ret = 1;
+		goto done;
+	}
 	debug("%d: Mapped %s to handle '%s' modes '%s'\n", getpid(),
 	    md->file, handle, modes);
+done:
 	INTON;
 
-	return (0);
+	return (ret);
 }
 
 int
@@ -417,7 +420,10 @@ _mapfile_readcmd(struct mapped_data *md, int argc, char **argv)
 		}
 		if (*(var_return_ptr + 1) != NULL && ifsp != NULL) {
 			*ifsp++ = '\0';
-			setvar(*var_return_ptr++, linep, 0);
+			if (setvarsafe(*var_return_ptr++, linep, 0)) {
+				ret = 1;
+				goto done;
+			}
 			linep = ifsp;
 		} else {
 			/* No more vars/words, set the rest in the last var. */
@@ -430,15 +436,22 @@ _mapfile_readcmd(struct mapped_data *md, int argc, char **argv)
 					--linelen;
 				linep[linelen] = '\0';
 			}
-			setvar(*var_return_ptr++, linep, 0);
+			if (setvarsafe(*var_return_ptr++, linep, 0)) {
+				ret = 1;
+				goto done;
+			}
 			break;
 		}
 	}
-	INTON;
 
 	/* Set any remaining args to "" */
-	while (*var_return_ptr != NULL)
-		setvar(*var_return_ptr++, "", 0);
+	while (*var_return_ptr != NULL) {
+		if (unsetvar(*var_return_ptr++)) {
+			goto done;
+		}
+	}
+done:
+	INTON;
 
 	return (ret);
 }
@@ -690,6 +703,7 @@ mapfile_cat_filecmd(int argc, char **argv)
 		/* Create handle */
 		md = _mapfile_open(file, "r", 1, qflag);
 		if ((md == NULL) && qflag) {
+			ret = 1;
 			INTON;
 			continue;
 		}
