@@ -222,7 +222,7 @@ function update_canvas(stats) {
   context.stroke();
   x += minidraw(x, height, width, context, "#00CC00", queued, built);
   x += minidraw(x, height, width, context, "#E00000", queued, failed);
-  x += minidraw(x, height, width, context, "#DD2255", queued, inspected);
+  x += minidraw(x, height, width, context, "#FF9900", queued, inspected);
   x += minidraw(x, height, width, context, "#FF9900", queued, ignored);
   x += minidraw(x, height, width, context, "#228B22", queued, fetched);
   x += minidraw(x, height, width, context, "#CC6633", queued, skipped);
