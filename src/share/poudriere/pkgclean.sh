@@ -286,6 +286,11 @@ check_should_delete_pkg() {
 	local file="$1"
 
 	case "${file}" in
+	*"/Hashed")
+		if [ -d "${file}" ]; then
+			return 0
+		fi
+		;;
 	*".${PKG_EXT}")
 		if should_delete "${file}"; then
 			echo "${file}" >> "${BADFILES_LIST:?}"
