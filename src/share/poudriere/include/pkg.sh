@@ -544,6 +544,20 @@ pkg_version() {
 	local ver2="$2"
 	local ver1_expanded ver2_expanded
 
+	case "${ver1}${ver2}" in
+	*[a-zA-Z]*)
+		local PKG_BIN PKG_VERSION
+
+		if which -s pkg-static; then
+			pkg-static version -t "${ver1}" "${ver2}"
+			return
+		fi
+		msg_warn "pkg_version: Unable to parse without pkg: -t ${ver1} ${ver2}"
+		echo "?"
+		return 1
+		;;
+	esac
+
 	ver1_expanded="$(_pkg_version_expanded "${ver1}")"
 	ver2_expanded="$(_pkg_version_expanded "${ver2}")"
 	if [ "${ver1_expanded}" -gt "${ver2_expanded}" ]; then
