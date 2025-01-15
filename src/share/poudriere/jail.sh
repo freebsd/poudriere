@@ -389,7 +389,15 @@ update_jail() {
 	esac
 	pkgbase=$(jget ${JAILNAME} pkgbase)
 	if [ -n "${pkgbase}" ] && [ "${pkgbase}" -eq 1 ]; then
-	    update_pkgbase
+		setup_src_conf "make"
+		setup_src_conf "src"
+		setup_src_conf "src-env"
+		SETUP_CONFS=1
+		export __MAKE_CONF=${JAILMNT}/etc/make.conf
+		export SRCCONF=${JAILMNT}/etc/src.conf
+		export SRC_ENV_CONF=${JAILMNT}/etc/src-env.conf
+		update_pkgbase
+		cleanup_confs
 	fi
 	jset ${JAILNAME} timestamp $(clock -epoch)
 }
