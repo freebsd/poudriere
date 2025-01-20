@@ -58,7 +58,8 @@ Options:
                        the disk image and mount it to \$WRKDIR/world before
                        installing the contents to the image
     -c overlaydir   -- The content of the overlay directory will be copied into
-                       the image
+                       the image. Owners and permissions will be overwritten if
+                       an <overlaydir>.mtree file is found
     -f packagelist  -- List of packages to install
     -h hostname     -- The image hostname
     -i originimage  -- Origin image name
@@ -577,6 +578,14 @@ if [ -n "${PACKAGELIST}" ]; then
 	umount ${WRKDIR:?}/world/tmp/packages
 	rmdir ${WRKDIR:?}/world/tmp/packages
 	rm ${WRKDIR:?}/world/var/db/pkg/repo-* 2>/dev/null || :
+fi
+
+if [ -f "${EXTRADIR}".mtree ]; then
+	# This file could be created with:
+	# mtree -bcjn -F freebsd9 -k uname,gname,mode -p $EXTRADIR > $EXTRADIR.mtree
+	# And must be applyied after installing packages to declare packages’
+	# users and groups
+	chroot "${WRKDIR}/world" mtree -eiU <"${EXTRADIR}".mtree
 fi
 
 if [ -f "${POST_BUILD_SCRIPT}" ]; then
