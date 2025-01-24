@@ -1873,7 +1873,7 @@ _siginfo_handler() {
 		format_origin_phase="%%c \b%%s \b%%-%ds${COLOR_RESET} \b%%c %%-%ds ${COLOR_PORT}%%%ds %%c %%-%ds${COLOR_RESET} ${COLOR_PHASE}%%%ds${COLOR_RESET} %%-%ds %%-%ds %%%ds %%%ds"
 		display_setup "${format_origin_phase}"
 		display_add " " "" "ID" " " "TOTAL" "ORIGIN" " " "PKGNAME" "PHASE" \
-			    "PHASE" "TMPFS" "CPU%" "MEM%"
+			    "TIME" "TMPFS" "CPU%" "MEM%"
 
 		while mapfile_read_loop_redir j cpu mem; do
 			j="${j#*-job-}"
