@@ -129,9 +129,9 @@ build_jail_json() {
 	{
 		echo "{\"builds\":{"
 		echo "${log_path_jail:?}"/*/.data.mini.json | \
-		    xargs /usr/bin/awk -f "${AWKPREFIX:?}/json_jail.awk" |
+		    /usr/bin/xargs /usr/bin/awk -f "${AWKPREFIX:?}/json_jail.awk" |
 		    /usr/bin/sed -e '/^$/d' | \
-		    paste -s -d , -
+		    /usr/bin/paste -s -d , -
 		echo "}}"
 	} | write_atomic_cmp "${log_path_jail:?}/.data.json" || ret="$?"
 	critical_end
@@ -157,9 +157,9 @@ build_top_json() {
 		done
 		echo "{\"masternames\":{"
 		echo */latest/.data.mini.json | \
-		    xargs /usr/bin/awk -f "${AWKPREFIX:?}/json_top.awk" 2>/dev/null | \
+		    /usr/bin/xargs /usr/bin/awk -f "${AWKPREFIX:?}/json_top.awk" 2>/dev/null | \
 		    /usr/bin/sed -e '/^$/d' | \
-		    paste -s -d , -
+		    /usr/bin/paste -s -d , -
 		echo "}}"
 	) | write_atomic_cmp "${log_path_top:?}/.data.json" || ret="$?"
 	critical_end
