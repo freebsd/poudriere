@@ -133,9 +133,20 @@ firmware_generate()
 	fi
 	espfilename=$(mktemp /tmp/efiboot.XXXXXX)
 	make_esp_file ${espfilename} ${ESP_SIZE} ${WRKDIR}/world/boot/gptboot.efi
-	mkimg -s gpt -C ${IMAGESIZE} -b ${mnt}/boot/pmbr \
+	# Some platform (ie: aarch64) doesn't have MBR bootloader
+	if [ -f ${mnt}/boot/pmbr ]; then
+		pmbr="-b ${mnt}/boot/pmbr"
+	else
+		pmbr=""
+	fi
+	if [ -f ${mnt}/boot/gptboot ]; then
+		gptboot="-p freebsd-boot:=${mnt}/boot/gptboot"
+	else
+		gptboot=""
+	fi
+	mkimg -s gpt -C ${IMAGESIZE} ${pmbr} \
 		-p efi/efiboot0:=${espfilename} \
-		-p freebsd-boot:=${mnt}/boot/gptboot \
+		${gptboot} \
 		-p freebsd-ufs/${IMAGENAME}1:=${WRKDIR}/raw.img \
 		-p freebsd-ufs/${IMAGENAME}2:=${WRKDIR}/raw.img \
 		-p freebsd-ufs/cfg:=${WRKDIR}/cfg.img \
