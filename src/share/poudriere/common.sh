@@ -7311,7 +7311,7 @@ package_libdeps_satisfied() {
 		shlib_name="${shlib%.so*}"
 		case " ${shlibs_provided} " in
 		# Success
-		*" ${shlib} "*) ;;
+		*" ${shlib%:32} "*) ;;
 		# A different version! We need to rebuild to use it.
 		# This supports X.Y.Z for each 0-999.
 		# There is probably a better way to do this. We need to see
