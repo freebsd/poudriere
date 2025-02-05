@@ -379,6 +379,7 @@ update_jail() {
 			err 1 "pkg update failed"
 		pkg -o IGNORE_OSVERSION=yes -o ABI="FreeBSD:${VERSION}:${ARCH}" -o REPOS_DIR="${JAILMNT}/etc/pkg" -r "${JAILMNT}" upgrade -y || \
 			err 1 "pkg upgrade failed"
+		markfs clean ${JAILMNT}
 		;;
 	csup|null|tar)
 		err 1 "Upgrade is not supported with ${METHOD}; to upgrade, please delete and recreate the jail"
