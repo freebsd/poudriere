@@ -205,6 +205,38 @@ yes) ;;
 	alias dev_err='# ' ;;
 esac
 
+# Extract key type from PKG_REPO_SIGNING_KEY.
+key_type() {
+	local keyspec="${PKG_REPO_SIGNING_KEY}"
+
+	case "${keyspec}" in
+	rsa:*)
+		# Strip an rsa: prefix to avoid new pkg features if we're just using
+		# rsa.
+		;;
+	*:*)
+		echo "${keyspec%%:*}"
+		;;
+	esac
+}
+
+# Extract key path from PKG_REPO_SIGNING_KEY.  It may be prefixed with an
+# optional key type.
+key_path() {
+	keyspec="${PKG_REPO_SIGNING_KEY}"
+
+	case "${keyspec}" in
+	*:*)
+		# Key is prefixed with a type, but we'll pass the type along to avoid
+		# having to bake knowledge of valid types in multiple projects.
+		echo "${keyspec#*:}"
+		;;
+	*)
+		echo "${keyspec}"
+		;;
+	esac
+}
+
 # Message functions that depend on VERBOSE are stubbed out in post_getopts.
 
 _msg_fmt_n() {
@@ -9613,7 +9645,8 @@ prepare_ports() {
 
 	case "${PKG_REPO_SIGNING_KEY:+set}" in
 	set)
-		if [ ! -f "${PKG_REPO_SIGNING_KEY}" ]; then
+		local repokeypath=$(key_path)
+		if [ ! -f "${repokeypath}" ]; then
 			err 1 "PKG_REPO_SIGNING_KEY defined but the file is missing."
 		fi
 		;;
@@ -9977,15 +10010,19 @@ build_repo() {
 
 	mkdir -p ${MASTERMNT}/tmp/packages
 	if [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
+		local repokeyprefix=$(key_type)
+		local repokeypath=$(key_path)
+		# Avoid a ${type}: prefix for rsa keys.
+		[ -n "${repokeyprefix}" ] && repokeyprefix="${repokeyprefix}:"
 		msg "Signing repository with key: ${PKG_REPO_SIGNING_KEY}"
-		install -m 0400 "${PKG_REPO_SIGNING_KEY}" \
+		install -m 0400 "${repokeypath}" \
 			"${MASTERMNT:?}/tmp/repo.key"
 		injail ${PKG_BIN:?} repo \
 			${PKG_REPO_FLAGS-} \
 			${pkg_repo_list_files:+"${pkg_repo_list_files}"} \
 			-o /tmp/packages \
 			${PKG_META} \
-			/packages /tmp/repo.key ||
+			/packages "${repokeyprefix}"/tmp/repo.key ||
 		    err "$?" "Failed to sign pkg repository"
 		unlink "${MASTERMNT:?}/tmp/repo.key"
 	elif [ "${PKG_REPO_FROM_HOST:-no}" = "yes" ]; then
