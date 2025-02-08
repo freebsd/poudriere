@@ -602,7 +602,7 @@ sign_pkg() {
 	[ $# -eq 2 ] || eargs sign_pkg sigtype pkgfile
 	local sigtype="$1"
 	local pkgfile="$2"
-	local repokeytype=$(key_type)
+	local repokeytype=$(repo_key_type)
 
 	msg "Signing pkg bootstrap with method: ${sigtype}"
 	case "${sigtype}" in
@@ -619,7 +619,7 @@ sign_pkg() {
 				-binary -out "${pkgfile}.pubkeysig"
 			;;
 		*)
-			local repokeypath=$(key_path)
+			local repokeypath=$(repo_key_path)
 
 			pkg key --sign -t "${repokeytype}" "${repokeypath}" < "${pkgfile}" \
 			    > "${pkgfile}.pubkeysig"

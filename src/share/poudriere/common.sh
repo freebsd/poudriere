@@ -206,7 +206,7 @@ yes) ;;
 esac
 
 # Extract key type from PKG_REPO_SIGNING_KEY.
-key_type() {
+repo_key_type() {
 	local keyspec="${PKG_REPO_SIGNING_KEY}"
 
 	case "${keyspec}" in
@@ -222,8 +222,8 @@ key_type() {
 
 # Extract key path from PKG_REPO_SIGNING_KEY.  It may be prefixed with an
 # optional key type.
-key_path() {
-	keyspec="${PKG_REPO_SIGNING_KEY}"
+repo_key_path() {
+	local keyspec="${PKG_REPO_SIGNING_KEY}"
 
 	case "${keyspec}" in
 	*:*)
@@ -9645,7 +9645,7 @@ prepare_ports() {
 
 	case "${PKG_REPO_SIGNING_KEY:+set}" in
 	set)
-		local repokeypath=$(key_path)
+		local repokeypath=$(repo_key_path)
 		if [ ! -f "${repokeypath}" ]; then
 			err 1 "PKG_REPO_SIGNING_KEY defined but the file is missing."
 		fi
@@ -10010,10 +10010,12 @@ build_repo() {
 
 	mkdir -p ${MASTERMNT}/tmp/packages
 	if [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
-		local repokeyprefix=$(key_type)
-		local repokeypath=$(key_path)
+		local repokeyprefix=$(repo_key_type)
+		local repokeypath=$(repo_key_path)
 		# Avoid a ${type}: prefix for rsa keys.
-		[ -n "${repokeyprefix}" ] && repokeyprefix="${repokeyprefix}:"
+		if [ -n "${repokeyprefix}" ]; then
+			repokeyprefix="${repokeyprefix}:"
+		fi
 		msg "Signing repository with key: ${PKG_REPO_SIGNING_KEY}"
 		install -m 0400 "${repokeypath}" \
 			"${MASTERMNT:?}/tmp/repo.key"
