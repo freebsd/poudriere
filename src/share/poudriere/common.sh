@@ -9745,7 +9745,6 @@ prepare_ports() {
 		else
 			trim_ignored
 		fi
-		download_from_repo
 		if ! ensure_pkg_installed; then
 			delete_all_pkgs "pkg bootstrap missing: unable to inspect existing packages"
 		fi
@@ -9776,6 +9775,7 @@ prepare_ports() {
 			msg "Skipping recursive rebuild"
 		fi
 
+		download_from_repo
 		delete_stale_symlinks_and_empty_dirs
 		delete_stale_pkg_cache
 		download_from_repo_post_delete
