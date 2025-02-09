@@ -38,7 +38,7 @@
 .Nm
 .Fl a
 .Fl j Ar name
-.Op Fl CcFHIikmNnRrSTtvw
+.Op Fl CcFHIikMmNnRrSTtvw
 .Op Fl B Ar name
 .Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
@@ -48,7 +48,7 @@
 .Nm
 .Fl f Ar file Op Fl f Ar file2 Ar ...
 .Fl j Ar name
-.Op Fl CcFHIikmNnRrSTtvw
+.Op Fl CcFHIikMmNnRrSTtvw
 .Op Fl B Ar name
 .Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
@@ -57,7 +57,7 @@
 .Op Fl z Ar set
 .Nm
 .Fl j Ar name
-.Op Fl CcFHIikmNnRrSTtvw
+.Op Fl CcFHIikMmNnRrSTtvw
 .Op Fl B Ar name
 .Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
@@ -285,9 +285,14 @@ when using
 Do not skip dependent ports on findings.
 This flag is automatically set when using
 .Fl at .
+.It Fl M
+Same as
+.Fl M
+but also includes runtime dependencies.
 .It Fl m
-Build a minimal repository or thin repository which only contains the packages
-that has been listed to be built, note that this option is incompatible with
+Build a minimal repository, or thin repository, which only contains the packages
+that have been listed to be built.
+This option is incompatible with
 .Fl a .
 .It Fl N
 Do not build a package repository when the build is completed.

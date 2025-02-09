@@ -9990,43 +9990,48 @@ clean_restricted() {
 }
 
 add_pkg_to_repo() {
-	local pkgname=$1
-	local target=$2
-	[ -f ${target}/${pkgname}.${PKG_EXT} ] && return
-	if [ ${SMALL_REPO} -eq 1 ]; then
-		for dep in $(injail ${PKG_BIN} info -qd -F /packages/All/${pkgname}.${PKG_EXT}); do
-			add_pkg_to_repo ${dep} ${target}
+	[ "$#" -eq 2 ] || eargs add_pkg_to_repo pkgname target
+	local pkgname="$1"
+	local target="$2"
+	local dep
+
+	if [ -f "${target}/${pkgname}.${PKG_EXT}" ]; then
+		return
+	fi
+	if [ "${SMALL_REPO:-0}" -eq 1 ]; then
+		for dep in $(injail "${PKG_BIN:?}" info -qd \
+		    -F "/packages/All/${pkgname}.${PKG_EXT}"); do
+			add_pkg_to_repo "${dep}" "${target}"
 		done
 	fi
-	cp ${PACKAGES}/All/${pkgname}.${PKG_EXT} ${target}/
+	cp "${PACKAGES:?}/All/${pkgname}.${PKG_EXT}" "${target}/"
 }
 
 build_thin_repo() {
+	local pkgname
+
 	# Try to be as atomic as possible in recreating the new thin repo
-	mkdir -p ${THIN_PACKAGES}/All.new
-	while mapfile_read_loop "all_pkgs" \
-	    _pkgname _originspec _rdep _ignore; do
-		if [ "${_rdep}" = "listed" ] ; then
-			add_pkg_to_repo ${_pkgname} \
-				${THIN_PACKAGES}/All.new
-		fi
+	mkdir -p "${THIN_PACKAGES:?}/All.new"
+	listed_pkgnames | while mapfile_read_loop pkgname; do
+		add_pkg_to_repo "${pkgname}" "${THIN_PACKAGES:?}/All.new"
 	done
-	if [ ${SMALL_REPO} -eq 1 ]; then
-		cp ${PACKAGES}/All/pkg-*.txz ${THIN_PACKAGES}/All.new
+	if [ "${SMALL_REPO:-0}" -eq 1 ]; then
+		cp "${PACKAGES:?}"/All/pkg-*.txz "${THIN_PACKAGES:?}"/All.new
 	fi
-	if [ -d "${THIN_PACKAGES}/Latest" ]; then
-		rm -rf "${THIN_PACKAGES}/Latest"
-		if [ ${SMALL_REPO} -eq 1 ]; then
-			mkdir ${THIN_PACKAGES}/Latest
-			cp -RP ${PACKAGES}/Latest/pkg.${PKG_EXT} ${THIN_PACKAGES}/Latest
+	if [ -d "${THIN_PACKAGES:?}/Latest" ]; then
+		rm -rf "${THIN_PACKAGES:?}/Latest"
+		if [ "${SMALL_REPO:-0}" -eq 1 ]; then
+			mkdir "${THIN_PACKAGES:?}/Latest"
+			cp -RP "${PACKAGES:?}/Latest/pkg.${PKG_EXT}" \
+			    "${THIN_PACKAGES:?}/Latest"
 		fi
 	fi
-	if [ -d "${THIN_PACKAGES}/All" ]; then
-		mv ${THIN_PACKAGES}/All ${THIN_PACKAGES}/All.old
+	if [ -d "${THIN_PACKAGES:?}/All" ]; then
+		mv "${THIN_PACKAGES:?}/All" "${THIN_PACKAGES:?}/All.old"
 	fi
-	mv ${THIN_PACKAGES}/All.new ${THIN_PACKAGES}/All
-	if [ -d "${THIN_PACKAGES}/All" ]; then
-		rm -rf ${THIN_PACKAGES}/All.old
+	mv "${THIN_PACKAGES:?}/All.new" "${THIN_PACKAGES:?}/All"
+	if [ -d "${THIN_PACKAGES:?}/All" ]; then
+		rm -rf "${THIN_PACKAGES:?}/All.old"
 	fi
 }
 
@@ -10034,7 +10039,7 @@ build_repo() {
 	local origin pkg_repo_list_files hashcmd
 	local packages
 
-	if [ ${THIN_REPO} -eq 1 ]; then
+	if [ "${THIN_REPO:-0}" -eq 1 ]; then
 		msg "Creating thin pkg repository"
 		packages="${THIN_PACKAGES:?}"
 	else
@@ -10059,12 +10064,12 @@ build_repo() {
 		unset pkg_repo_list_files
 		;;
 	esac
-	if [ ${THIN_REPO} -eq 1 ]; then
+	if [ "${THIN_REPO:-0}" -eq 1 ]; then
 		build_thin_repo
 		# only overwrite the packages repo with the thin one
 		# after having extracted pkg because pkg might not
 		# be on the thin repo
-		PACKAGES="${THIN_PACKAGES}" mount_packages -o ro
+		PACKAGES="${THIN_PACKAGES:?}" mount_packages -o ro
 	fi
 	run_hook pkgrepo sign "${packages:?}" "${PKG_REPO_SIGNING_KEY}" \
 	    "${PKG_REPO_FROM_HOST:-no}" "${PKG_REPO_META_FILE}"

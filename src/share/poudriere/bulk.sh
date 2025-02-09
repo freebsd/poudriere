@@ -59,10 +59,10 @@ Options:
     -j name     -- Run only on the given jail
     -k          -- When doing testing with -t, don't consider failures as
                    fatal; don't skip dependent ports on findings.
-    -m          -- minimal repository, only create a repository with the listed
-                   packages, incompatible with -a.
     -M          -- medium repository, only create a repository with the listed
                    packages and their runtime dependencies, incompatible with -a.
+    -m          -- minimal repository, only create a repository with the listed
+                   packages, incompatible with -a.
     -N          -- Do not build package repository when build completed
     -NN         -- Do not commit package repository when build completed
     -n          -- Dry-run. Show what will be done, but do not build
