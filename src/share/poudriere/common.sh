@@ -7290,6 +7290,15 @@ __package_deps_provided_libs() {
 	    -name '*.so*' \
 	    ! -name 'libprivate*' |
 	    awk -F/ '{print $NF}'
+
+	if [ -d "${mnt}/usr/lib32" ]; then
+		find "${mnt:?}/usr/lib32" \
+		    -maxdepth 1 \
+		    -type f \
+		    -name '*.so*' \
+		    ! -name 'libprivate*' |
+		    awk -F/ '{print $NF ":32"}'
+	fi
 }
 
 # Wrapper to handle sort -u
