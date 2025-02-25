@@ -101,7 +101,7 @@ usb_generate()
 		gptboot="-p freebsd-boot:=${mnt}/boot/gptboot"
 	fi
 	mkimg -s gpt ${pmbr} \
-	      -p efi:=${espfilename} \
+	      -p efi/efiboot0:=${espfilename} \
 	      ${gptboot} \
 	      ${SWAPFIRST} \
 	      -p freebsd-ufs:=${ufsimage} \

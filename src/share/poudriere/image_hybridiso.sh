@@ -80,7 +80,7 @@ hybridiso_generate()
 		if [ "$et_platform" = "efi" ]; then
 			espstart=$(expr $et_lba \* 2048)
 			espsize=$(expr $et_sectors \* 512)
-			espparam="-p efi::$espsize:$espstart"
+			espparam="-p efi/efiboot0::$espsize:$espstart"
 			break
 		fi
 	done

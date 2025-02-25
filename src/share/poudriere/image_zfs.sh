@@ -175,7 +175,7 @@ zfs_generate()
 			gptboot="-p freebsd-boot:=${gptbootfilename}"
 		fi
 		mkimg -s gpt ${pmbr} \
-			  -p efi:=${espfilename} \
+			  -p efi/efiboot0:=${espfilename} \
 			  ${gptboot} \
 			  ${SWAPFIRST} \
 			  -p freebsd-zfs:=${zfsimage} \
