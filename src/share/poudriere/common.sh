@@ -10353,6 +10353,7 @@ for val in ${USE_TMPFS}; do
 	data) TMPFS_DATA=1 ;;
 	all) TMPFS_ALL=1 ;;
 	localbase) TMPFS_LOCALBASE=1 ;;
+	image) TMPFS_IMAGE=1 ;;
 	yes)
 		TMPFS_WRKDIR=1
 		TMPFS_DATA=1

@@ -85,7 +85,7 @@ delete_image() {
 	[ -z "${md}" ] || /sbin/mdconfig -d -u ${md#md}
 	[ -z "${zfs_zsnapshot}" ] || zfs destroy -r ${zfs_zsnapshot:?}
 
-	TMPFS_ALL=0 destroyfs ${WRKDIR:?} image || :
+	destroyfs ${WRKDIR:?} image || :
 }
 
 cleanup_image() {
@@ -434,6 +434,9 @@ CLEANUP_HOOK=cleanup_image
 [ -d "${POUDRIERE_DATA}/images" ] || \
     mkdir "${POUDRIERE_DATA:?}/images"
 WRKDIR=$(mktemp -d ${POUDRIERE_DATA}/images/${IMAGENAME}-XXXX)
+if [ "${TMPFS_IMAGE:-0}" -eq 1 -o "${TMPFS_ALL}" -eq 1 ]; then
+	mnt_tmpfs image "${WRKDIR:?}"
+fi
 _jget mnt ${JAILNAME} mnt || err 1 "Missing mnt metadata for jail"
 excludelist=$(mktemp -t excludelist)
 mkdir -p ${WRKDIR:?}/world
