@@ -100,7 +100,10 @@ _gsub_badchars() {
 		esac
 	done
 	case "${badchars}" in
-	*-*) _gsub "${badchars}" "-" "" badchars ;;
+	*-*)
+		_gsub "${badchars}" "-" "" badchars
+		badchars="${badchars}-"
+		;;
 	esac
 
 	_gsub "${string}" "[${badchars}]" _ "${var_return}"

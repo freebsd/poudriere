@@ -78,3 +78,6 @@ assert "_foo_\$__bar_" "${output}" "_gsub_badchars should match line ${LINENO}"
 
 assert_ret 0 _gsub_badchars "!foo/\$%^bar%" "^^!a-zA-Z0-9_" output
 assert "_foo/\$%_b_r%" "${output}" "_gsub_badchars should match line ${LINENO}"
+
+assert_ret 0 _gsub_badchars "foo-bar" "-" output
+assert "foo_bar" "${output}" "_gsub_badchars should match line ${LINENO}"
