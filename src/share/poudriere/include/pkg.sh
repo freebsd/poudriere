@@ -545,7 +545,7 @@ pkg_version() {
 	local ver1_expanded ver2_expanded
 
 	case "${ver1}${ver2}" in
-	*[a-zA-Z]*)
+	*[a-zA-Z+]*)
 		local PKG_BIN PKG_VERSION
 
 		if which -s pkg-static; then
