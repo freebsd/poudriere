@@ -480,4 +480,4 @@ if [ "${ret}" -eq 1 ] || [ "${FORCE_BUILD_REPO}" -eq 1 ]; then
 		msg "Cleaned all packages but ${PACKAGES} may need to be removed manually."
 	fi
 fi
-run_hook pkgclean done ${ret} ${BUILD_REPO}
+run_hook pkgclean done ${ret} ${BUILD_REPO} ${FORCE_BUILD_REPO}
