@@ -40,3 +40,4 @@ END {
 	for (n in a)
 		print "These packages depend on each other: " a[n]
 }
+# vim: set sts=8 sw=8 ts=8 noet:
