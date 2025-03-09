@@ -141,13 +141,13 @@ delete_jail() {
 	method=$(jget ${JAILNAME} method)
 	if [ "${method}" = "null" ]; then
 		# Legacy jail cleanup. New jails don't create this file.
-		if [ -f "${JAILMNT}/etc/login.conf.orig" ]; then
-			mv -f ${JAILMNT}/etc/login.conf.orig \
-			    ${JAILMNT}/etc/login.conf
-			cap_mkdb ${JAILMNT}/etc/login.conf
+		if [ -f "${JAILMNT:?}/etc/login.conf.orig" ]; then
+			mv -f ${JAILMNT:?}/etc/login.conf.orig \
+			    ${JAILMNT:?}/etc/login.conf
+			cap_mkdb ${JAILMNT:?}/etc/login.conf
 		fi
 	else
-		TMPFS_ALL=0 destroyfs ${JAILMNT} jail || :
+		TMPFS_ALL=0 destroyfs ${JAILMNT:?} jail || :
 	fi
 	cache_dir="${POUDRIERE_DATA}/cache/${JAILNAME}-*"
 	rm -rfx ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} \
