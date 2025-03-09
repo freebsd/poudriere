@@ -109,6 +109,12 @@ shift $((OPTIND-1))
 CMD="$1"
 shift
 
+case "$-" in
+*x*)
+	SETX="-x"
+	;;
+esac
+
 # Valid command list.
 case "${CMD}" in
 api|bulk|distclean|daemon|image|jail|foreachport|logclean|ports|options|pkgclean|queue|status|testport)
