@@ -2109,7 +2109,7 @@ get_data_dir() {
 		fi
 		# Set properties on top dataset and let underlying ones inherit them
 		# Explicitly set properties for values diverging from top dataset
-		zfs create -p -o atime=off \
+		zfs create -o atime=off \
 			-o compression=on \
 			-o mountpoint=${BASEFS} \
 			${ZPOOL}${ZROOTFS}
