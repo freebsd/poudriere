@@ -78,6 +78,7 @@ EOF
 
 SETX=""
 SETE=
+Xflag=0
 while getopts "Ade:ENvxX" FLAG; do
 	case "${FLAG}" in
 	A)
@@ -106,9 +107,7 @@ while getopts "Ade:ENvxX" FLAG; do
 		SETX="-x"
 		;;
 	X)
-		SETX="-x"
-		SETX_EXIT='1'
-		env_set SETX_EXIT
+		Xflag=1
 		;;
 	*)
 		usage
@@ -121,6 +120,18 @@ shift $((OPTIND-1))
 [ $# -lt 1 ] && usage
 CMD="$1"
 shift
+
+case "$-" in
+*x*)
+	Xflag=1
+	;;
+esac
+
+if [ "${Xflag}" -eq 1 ]; then
+	SETX="-x"
+	SETX_EXIT='1'
+	env_set SETX_EXIT
+fi
 
 # Valid command list.
 case "${CMD}" in
