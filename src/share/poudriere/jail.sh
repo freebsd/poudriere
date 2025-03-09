@@ -131,7 +131,7 @@ list_jail() {
 
 delete_jail() {
 	local cache_dir method
-	local clean_dir depth
+	local cleandir depth
 
 	[ -z "${JAILNAME}" ] && usage JAILNAME
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
@@ -164,8 +164,8 @@ delete_jail() {
 		packages) cleandir="${POUDRIERE_DATA}/packages"; depth=1 ;;
 		wrkdirs) cleandir="${POUDRIERE_DATA}/wkdirs"; depth=1 ;;
 	esac
-	if [ -n "${clean_dir}" ]; then
-		find -x "${clean_dir}/" -name "${JAILNAME}-*" \
+	if [ -n "${cleandir}" ]; then
+		find -x "${cleandir:?}/" -name "${JAILNAME}-*" \
 		    ${depth:+-maxdepth ${depth}} -print0 | \
 		    xargs -0 rm -rfx || :
 	fi
