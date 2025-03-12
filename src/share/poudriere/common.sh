@@ -6936,7 +6936,14 @@ _delete_old_pkg() {
 		# which will avoida all of the injail hacks
 
 		# pkgname-lib_deps pkgname-run_deps
-		for td in lib run; do
+		dep_types=""
+		if have_ports_feature AUTO_LIB_DEPENDS; then
+			dep_types="run"
+		else
+			dep_types="lib run"
+		fi
+
+		for td in ${dep_types}; do
 			shash_remove "pkgname-${td}_deps" "${new_pkgname}" \
 			raw_deps || raw_deps=
 			for d in ${raw_deps}; do
