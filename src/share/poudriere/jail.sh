@@ -1270,7 +1270,7 @@ shift $((OPTIND-1))
 post_getopts
 
 METHOD=${METHOD:-${METHOD_DEF}}
-CLEANJAIL=${CLEAN:-none}
+CLEANJAIL=${CLEANJAIL:-none}
 if [ -n "${JAILNAME}" -a "${COMMAND}" != "create" ]; then
 	_jget ARCH ${JAILNAME} arch || :
 	_jget JAILFS ${JAILNAME} fs || :
