@@ -30,14 +30,6 @@
  * SUCH DAMAGE.
  */
 
-#ifndef lint
-#if 0
-static char sccsid[] = "@(#)jobs.c	8.5 (Berkeley) 5/4/95";
-#endif
-#endif /* not lint */
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/resource.h>
@@ -101,7 +93,7 @@ struct job {
 	short nprocs;		/* number of processes */
 	pid_t pgrp;		/* process group of this job */
 	char state;		/* true if job is finished */
-	char used;		/* true if this entry is in used */
+	char used;		/* true if this entry is in use */
 	char changed;		/* true if status has changed */
 	char foreground;	/* true if running in the foreground */
 	char remembered;	/* true if $! referenced */

@@ -66,5 +66,10 @@ find "${DESTDIR}" -name '*.c' -o -name '*.h' -o -name '*.def' -o -name 'mk*'
 } | sed -e '$ ! s,$, \\,' \
     > external/sh/Makefile.sources
 git add -f external/sh/Makefile.sources
-find -s external/patches/sh -type f -name '*.patch' -exec \
-    git apply -v --index --directory=external {} +
+find -s external/patches/sh -type f -name '*.patch' | while read patch; do
+	echo ">> Applying: ${patch}" >&2
+	if ! git apply -v --index --directory=external "${patch}"; then
+		echo "Failed applying patch ${patch}" >&2
+		exit 1
+	fi
+done

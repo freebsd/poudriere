@@ -4,19 +4,6 @@ Date:   Sat Nov 19 16:39:09 2022 -0800
 
     sh: Track function for PS4
 
-diff --git external/sh/eval.c external/sh/eval.c
-index 44364aed5..c60716111 100644
---- external/sh/eval.c
-+++ external/sh/eval.c
-@@ -1049,6 +1049,8 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
- 		}
- 		handler = &jmploc;
- 		funcnest++;
-+		mklocal("FUNCNAME");
-+		setvar("FUNCNAME", argv[0], 0);
- 		redirect(cmd->ncmd.redirect, REDIR_PUSH);
- 		INTON;
- 		for (i = 0; i < varlist.count; i++)
 diff --git external/sh/expand.c external/sh/expand.c
 index b08101a7d..c8ef3b187 100644
 --- external/sh/expand.c

@@ -32,20 +32,6 @@
  * SUCH DAMAGE.
  */
 
-#ifndef lint
-static char const copyright[] =
-"@(#) Copyright (c) 1991, 1993\n\
-	The Regents of the University of California.  All rights reserved.\n";
-#endif /* not lint */
-
-#ifndef lint
-#if 0
-static char sccsid[] = "@(#)main.c	8.6 (Berkeley) 5/28/95";
-#endif
-#endif /* not lint */
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <stdio.h>
 #include <signal.h>
 #include <sys/stat.h>
@@ -100,9 +86,16 @@ static char *find_dot_file(char *);
 int
 main(int argc, char *argv[])
 {
-	struct stackmark smark, smark2;
+	/*
+	 * As smark is accessed after a longjmp, it cannot be a local in main().
+	 * The C standard specifies that the values of non-volatile local
+	 * variables are unspecified after a jump if modified between the
+	 * setjmp and longjmp.
+	 */
+	static struct stackmark smark, smark2;
 	volatile int state;
 	char *shinit;
+	int login;
 
 	(void) setlocale(LC_ALL, "");
 	initcharset();
@@ -137,13 +130,13 @@ main(int argc, char *argv[])
 	initvar();
 	setstackmark(&smark);
 	setstackmark(&smark2);
-	procargs(argc, argv);
+	login = procargs(argc, argv);
 	trap_init();
 	pwd_init(iflag);
 	INTON;
 	if (iflag)
 		chkmail(1);
-	if (argv[0] && argv[0][0] == '-') {
+	if (login) {
 		state = 1;
 		read_profile("/etc/profile");
 state1:

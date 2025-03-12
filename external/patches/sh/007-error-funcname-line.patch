@@ -2,7 +2,7 @@ diff --git external/sh/error.c external/sh/error.c
 index 76a6b25c8..6a7e2609e 100644
 --- external/sh/error.c
 +++ external/sh/error.c
-@@ -44,6 +44,7 @@ __FBSDID("$FreeBSD$");
+@@ -44,6 +44,7 @@
  
  #include "shell.h"
  #include "eval.h"
@@ -10,7 +10,7 @@ index 76a6b25c8..6a7e2609e 100644
  #include "main.h"
  #include "options.h"
  #include "output.h"
-@@ -51,6 +52,7 @@ __FBSDID("$FreeBSD$");
+@@ -51,6 +52,7 @@
  #include "nodes.h" /* show.h needs nodes.h */
  #include "show.h"
  #include "trap.h"

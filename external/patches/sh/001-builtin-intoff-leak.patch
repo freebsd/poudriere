@@ -2,9 +2,7 @@ diff --git external/sh/eval.c external/sh/eval.c
 index 362fd798d..49fa3ebf6 100644
 --- external/sh/eval.c
 +++ external/sh/eval.c
-@@ -38,6 +38,7 @@ static char sccsid[] = "@(#)eval.c	8.9 (Berkeley) 6/8/95";
- #include <sys/cdefs.h>
- __FBSDID("$FreeBSD$");
+@@ -40,4 +40,5 @@ static char sccsid[] = "@(#)eval.c	8.9 (Berkeley) 6/8/95";
  
 +#include <assert.h>
  #include <paths.h>

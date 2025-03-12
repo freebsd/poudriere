@@ -200,6 +200,7 @@ sh_CFLAGS=		$(AM_CFLAGS) -Wno-extra \
 sh_LDADD=		${sh_hist_LDADD} -lsbuf
 if MAINTAINER_MODE
 sh_hist_LDADD=		-ledit
+sh_hist_CFLAGS=		-Wno-pointer-sign
 else
 sh_hist_CFLAGS=		-DNO_HISTORY
 endif

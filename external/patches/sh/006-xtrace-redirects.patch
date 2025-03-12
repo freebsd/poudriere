@@ -169,7 +169,6 @@ index c60716111..4785edb09 100644
  	/* Now locate the command. */
  	if (argc == 0) {
 diff --git external/sh/eval.h external/sh/eval.h
-index d8a12eb79..7400a166c 100644
 --- external/sh/eval.h
 +++ external/sh/eval.h
 @@ -68,3 +68,8 @@ extern int skipcount;
@@ -182,10 +181,9 @@ index d8a12eb79..7400a166c 100644
 +void xtracestr_n(const char * __restrict, ...) __printflike(1, 2);
 +void xtracestr_flush(const char * __restrict, ...) __printflike(1, 2);
 diff --git external/sh/redir.c external/sh/redir.c
-index e820fd2c0..0c49c0f6f 100644
 --- external/sh/redir.c
 +++ external/sh/redir.c
-@@ -53,6 +53,7 @@ __FBSDID("$FreeBSD$");
+@@ -53,6 +53,7 @@
   * Code for dealing with input/output redirection.
   */
  

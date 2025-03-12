@@ -843,6 +843,7 @@ sh_CFLAGS = $(AM_CFLAGS) -Wno-extra -DSHELL -std=gnu99 -DVTABSIZE=1000 \
 sh_LDADD = ${sh_hist_LDADD} -lsbuf
 @MAINTAINER_MODE_TRUE@sh_hist_LDADD = -ledit
 @MAINTAINER_MODE_FALSE@sh_hist_CFLAGS = -DNO_HISTORY
+@MAINTAINER_MODE_TRUE@sh_hist_CFLAGS = -Wno-pointer-sign
 sh_SOURCES = external/sh/alias.c external/sh/alias.h \
 	external/sh/arith.h external/sh/arith_yacc.c \
 	external/sh/arith_yacc.h external/sh/arith_yylex.c \

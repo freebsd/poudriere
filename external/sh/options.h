@@ -30,9 +30,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)options.h	8.2 (Berkeley) 5/4/95
- * $FreeBSD$
  */
 
 struct shparam {
@@ -112,7 +109,7 @@ extern char **argptr;		/* argument list for builtin commands */
 extern char *shoptarg;		/* set by nextopt */
 extern char *nextopt_optptr;	/* used by nextopt */
 
-void procargs(int, char **);
+int procargs(int, char **);
 void optschanged(void);
 void freeparam(struct shparam *);
 int nextopt(const char *);
