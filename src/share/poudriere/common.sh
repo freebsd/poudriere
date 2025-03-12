@@ -4437,6 +4437,7 @@ download_from_repo() {
 	    PACKAGESITE="${packagesite:?}" \
 	    ${pkg_bin} update -f; then
 		msg "Package fetch: Not fetching as remote repository is unavailable."
+		rm -f "${missing_pkgs}"
 		return 0
 	fi
 
