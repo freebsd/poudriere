@@ -3885,6 +3885,12 @@ download_from_repo() {
 		msg "Package fetch: Not fetching as remote repository is unavailable."
 		return 0
 	fi
+	# Don't trust pkg-update to return its error
+	if ! injail ${pkg_bin} rquery -U %n pkg >/dev/null; then
+		msg "Package fetch: Failed to fetch package repository."
+		rm -f "${missing_pkgs}"
+		return 0
+	fi
 
 	remote_pkg_ver=$(injail ${pkg_bin} rquery -U %v ${P_PKG_PKGBASE:?})
 	local_pkg_name="${P_PKG_PKGNAME:?}"
@@ -3955,9 +3961,14 @@ download_from_repo() {
 	    "${MASTERMNT}/var/cache/pkg"
 	${NULLMOUNT} "${PACKAGES_PKG_CACHE}" "${MASTERMNT}/var/cache/pkg" || \
 	    err 1 "null mount failed for pkg cache"
-	JNETNAME="n" injail xargs \
+	if ! JNETNAME="n" injail xargs \
 	    env ASSUME_ALWAYS_YES=yes \
-	    ${pkg_bin} fetch -U < "${wantedpkgs}"
+	    ${pkg_bin} fetch -U < "${wantedpkgs}"; then
+		msg "Package fetch: Error fetching packages"
+		umountfs "${MASTERMNT:?}/var/cache/pkg"
+		rm -f "${wantedpkgs}"
+		return 0
+	fi
 	relpath "${PACKAGES}" "${PACKAGES_PKG_CACHE}" packages_rel
 	while mapfile_read_loop "${wantedpkgs}" pkgname; do
 		if [ ! -e "${PACKAGES_PKG_CACHE}/${pkgname}.${PKG_EXT}" ]; then
