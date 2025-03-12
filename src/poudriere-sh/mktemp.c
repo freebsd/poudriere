@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 1994, 1995, 1996, 1998 Peter Wemm <peter@netplex.com.au>
  * All rights reserved.
  *
@@ -33,29 +35,34 @@
  * A cleanup, misc options and mkdtemp() calls were added to try and work
  * more like the OpenBSD version - which was first to publish the interface.
  */
-#include <sys/param.h>
 
 #include <err.h>
+#include <getopt.h>
 #include <paths.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sysexits.h>
 #include <unistd.h>
 
-#ifndef lint
-static const char rcsid[] =
-	"$FreeBSD$";
-#endif /* not lint */
-
-static void usage(void);
-
 #ifdef SHELL
+#include <sys/param.h>
+#include <sysexits.h>
 #define main _mktemp_internal
 #include "bltin/bltin.h"
 #include "var.h"
 #include "helpers.h"
 #endif
+
+static void usage(void) __dead2;
+
+static const struct option long_opts[] = {
+	{"directory",	no_argument,	NULL,	'd'},
+	{"tmpdir",	optional_argument,	NULL,	'p'},
+	{"quiet",	no_argument,	NULL,	'q'},
+	{"dry-run",	no_argument,	NULL,	'u'},
+	{NULL,		no_argument,	NULL,	0},
+};
 
 int
 #ifdef SHELL
@@ -65,19 +72,37 @@ main(int argc, char **argv)
 #endif
 {
 	int c, fd, ret;
-	char *tmpdir;
-	const char *prefix;
+	const char *prefix, *tmpdir;
 	char *name;
 	int dflag, qflag, tflag, uflag;
+	bool prefer_tmpdir;
 
 	ret = dflag = qflag = tflag = uflag = 0;
+	prefer_tmpdir = true;
 	prefix = "mktemp";
 	name = NULL;
+	tmpdir = NULL;
 
-	while ((c = getopt(argc, argv, "dqt:u")) != -1) {
+#ifdef SHELL
+	while ((c = getopt(argc, argv, "dp:qt:u")) != -1) {
+#else
+	while ((c = getopt_long(argc, argv, "dp:qt:u", long_opts, NULL)) != -1) {
+#endif
 		switch (c) {
 		case 'd':
 			dflag++;
+			break;
+
+		case 'p':
+			tmpdir = optarg;
+			if (tmpdir == NULL || *tmpdir == '\0')
+				tmpdir = getenv("TMPDIR");
+
+			/*
+			 * We've already done the necessary environment
+			 * fallback, skip the later one.
+			 */
+			prefer_tmpdir = false;
 			break;
 
 		case 'q':
@@ -104,17 +129,37 @@ main(int argc, char **argv)
 	if (!tflag && argc < 1) {
 		tflag = 1;
 		prefix = "tmp";
+
+		/*
+		 * For this implied -t mode, we actually want to swap the usual
+		 * order of precedence: -p, then TMPDIR, then /tmp.
+		 */
+		prefer_tmpdir = false;
 	}
 
 	if (tflag) {
-		tmpdir = getenv("TMPDIR");
 #ifdef SHELL
 		INTOFF;
 #endif
+		const char *envtmp;
+		size_t len;
+
+		envtmp = NULL;
+
+		/*
+		 * $TMPDIR preferred over `-p` if specified, for compatibility.
+		 */
+		if (prefer_tmpdir || tmpdir == NULL)
+			envtmp = getenv("TMPDIR");
+		if (envtmp != NULL)
+			tmpdir = envtmp;
 		if (tmpdir == NULL)
-			asprintf(&name, "%s%s.XXXXXXXX", _PATH_TMP, prefix);
+			tmpdir = _PATH_TMP;
+		len = strlen(tmpdir);
+		if (len > 0 && tmpdir[len - 1] == '/')
+			asprintf(&name, "%s%s.XXXXXXXXXX", tmpdir, prefix);
 		else
-			asprintf(&name, "%s/%s.XXXXXXXX", tmpdir, prefix);
+			asprintf(&name, "%s/%s.XXXXXXXXXX", tmpdir, prefix);
 		/* if this fails, the program is in big trouble already */
 		if (name == NULL) {
 #ifdef SHELL
@@ -126,14 +171,19 @@ main(int argc, char **argv)
 				errx(1, "cannot generate template");
 		}
 	}
-		
+
 	/* generate all requested files */
 	while (name != NULL || argc > 0) {
 		if (name == NULL) {
 #ifdef SHELL
 			INTOFF;
 #endif
-			name = strdup(argv[0]);
+			if (!tflag && tmpdir != NULL)
+				asprintf(&name, "%s/%s", tmpdir, argv[0]);
+			else
+				name = strdup(argv[0]);
+			if (name == NULL)
+				err(1, "%s", argv[0]);
 			argv++;
 			argc--;
 		}
@@ -226,8 +276,9 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-		"usage: mktemp [-d] [-q] [-t prefix] [-u] template ...\n");
+		"usage: mktemp [-d] [-p tmpdir] [-q] [-t prefix] [-u] template "
+		"...\n");
 	fprintf(stderr,
-		"       mktemp [-d] [-q] [-u] -t prefix \n");
+		"       mktemp [-d] [-p tmpdir] [-q] [-u] -t prefix \n");
 	exit (1);
 }
