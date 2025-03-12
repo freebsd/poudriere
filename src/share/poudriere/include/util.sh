@@ -1784,8 +1784,8 @@ _write_atomic() {
 	local dest="$3"
 	local tmpfile_handle tmpfile ret
 
-	TMPDIR="${dest%/*}" mapfile_mktemp tmpfile_handle tmpfile \
-	    -ut ".write_atomic-${dest##*/}" ||
+	mapfile_mktemp tmpfile_handle tmpfile \
+	    -p "${dest%/*}" -ut ".write_atomic-${dest##*/}" ||
 	    err $? "write_atomic unable to create tmpfile in ${dest%/*}"
 	ret=0
 	if [ "${tee}" -eq 1 ]; then
@@ -1926,16 +1926,23 @@ _mktemp() {
 	shift
 	local TMPDIR ret _mktemp_tmpfile datatmpdir
 
-	case "${TMPDIR-}" in
-	"")
-		TMPDIR="${POUDRIERE_TMPDIR-}"
-		case "${STATUS:-0}.${MNT_DATADIR-}" in
-		1."") ;;
-		1.*)
-			datatmpdir="${MNT_DATADIR:?}/tmp"
-			if [ -d "${datatmpdir}" ]; then
-				TMPDIR="${datatmpdir}"
-			fi
+	# If no preferred dir is passed in then use ${POUDRIERE_TMPDIR}
+	case "${@}" in
+	*'-p '*|*--tmpdir=*)
+		;;
+	*)
+		case "${TMPDIR-}" in
+		"")
+			TMPDIR="${POUDRIERE_TMPDIR-}"
+			case "${STATUS:-0}.${MNT_DATADIR-}" in
+			1."") ;;
+			1.*)
+				datatmpdir="${MNT_DATADIR:?}/tmp"
+				if [ -d "${datatmpdir}" ]; then
+					TMPDIR="${datatmpdir}"
+				fi
+				;;
+			esac
 			;;
 		esac
 		;;
