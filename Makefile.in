@@ -17,7 +17,6 @@
 
 
 
-
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -119,8 +118,7 @@ DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
 	$(dist_btjs_DATA) $(dist_dtcss_DATA) $(dist_dtimages_DATA) \
 	$(dist_dtjs_DATA) $(dist_examples_DATA) $(dist_hook_DATA) \
 	$(dist_html_DATA) $(dist_jquery_DATA) $(dist_pkgdata_DATA) \
-	$(dist_sysconf_DATA) $(dist_include_HEADERS) \
-	$(am__DIST_COMMON)
+	$(dist_shinclude_DATA) $(dist_sysconf_DATA) $(am__DIST_COMMON)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
@@ -135,7 +133,7 @@ am__installdirs = "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(bindir)" \
 	"$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(examplesdir)" \
 	"$(DESTDIR)$(hookdir)" "$(DESTDIR)$(htmldir)" \
 	"$(DESTDIR)$(jquerydir)" "$(DESTDIR)$(pkgdatadir)" \
-	"$(DESTDIR)$(sysconfdir)" "$(DESTDIR)$(includedir)"
+	"$(DESTDIR)$(shincludedir)" "$(DESTDIR)$(sysconfdir)"
 PROGRAMS = $(noinst_PROGRAMS) $(pkglibexec_PROGRAMS)
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libptsort_la_LIBADD =
@@ -457,8 +455,7 @@ DATA = $(dist_assets_DATA) $(dist_awk_DATA) $(dist_btcss_DATA) \
 	$(dist_btjs_DATA) $(dist_dtcss_DATA) $(dist_dtimages_DATA) \
 	$(dist_dtjs_DATA) $(dist_examples_DATA) $(dist_hook_DATA) \
 	$(dist_html_DATA) $(dist_jquery_DATA) $(dist_pkgdata_DATA) \
-	$(dist_sysconf_DATA)
-HEADERS = $(dist_include_HEADERS)
+	$(dist_shinclude_DATA) $(dist_sysconf_DATA)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 am__recursive_targets = \
@@ -649,7 +646,7 @@ host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
 htmldir = $(pkgdatadir)/html
-includedir = $(pkgdatadir)/include
+includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
@@ -681,6 +678,7 @@ CLEANFILES = $(dist_rc_SCRIPTS) libucl.a libptsort.a \
 MOSTLYCLEANFILES = poudriere
 ACLOCAL_AMFLAGS = -I m4
 awkdir = $(pkgdatadir)/awk
+shincludedir = $(pkgdatadir)/include
 assetsdir = $(htmldir)/assets
 bootstrapdir = $(assetsdir)/bootstrap-5.3.2
 btcssdir = $(bootstrapdir)/css
@@ -750,7 +748,7 @@ dist_pkgdata_DATA = \
 			src/share/poudriere/status.sh \
 			src/share/poudriere/testport.sh
 
-dist_include_HEADERS = \
+dist_shinclude_DATA = \
 			src/share/poudriere/include/asserts.sh \
 			src/share/poudriere/include/cache.sh \
 			src/share/poudriere/include/colors.sh \
@@ -2887,6 +2885,27 @@ uninstall-dist_pkgdataDATA:
 	@list='$(dist_pkgdata_DATA)'; test -n "$(pkgdatadir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(pkgdatadir)'; $(am__uninstall_files_from_dir)
+install-dist_shincludeDATA: $(dist_shinclude_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(dist_shinclude_DATA)'; test -n "$(shincludedir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(shincludedir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(shincludedir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(shincludedir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(shincludedir)" || exit $$?; \
+	done
+
+uninstall-dist_shincludeDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_shinclude_DATA)'; test -n "$(shincludedir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(shincludedir)'; $(am__uninstall_files_from_dir)
 install-dist_sysconfDATA: $(dist_sysconf_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(dist_sysconf_DATA)'; test -n "$(sysconfdir)" || list=; \
@@ -2908,27 +2927,6 @@ uninstall-dist_sysconfDATA:
 	@list='$(dist_sysconf_DATA)'; test -n "$(sysconfdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(sysconfdir)'; $(am__uninstall_files_from_dir)
-install-dist_includeHEADERS: $(dist_include_HEADERS)
-	@$(NORMAL_INSTALL)
-	@list='$(dist_include_HEADERS)'; test -n "$(includedir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(includedir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(includedir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_HEADER) $$files '$(DESTDIR)$(includedir)'"; \
-	  $(INSTALL_HEADER) $$files "$(DESTDIR)$(includedir)" || exit $$?; \
-	done
-
-uninstall-dist_includeHEADERS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(dist_include_HEADERS)'; test -n "$(includedir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(includedir)'; $(am__uninstall_files_from_dir)
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run 'make' without going through this Makefile.
@@ -3233,11 +3231,10 @@ distcleancheck: distclean
 	       exit 1; } >&2
 check-am: all-am
 check: check-recursive
-all-am: Makefile $(PROGRAMS) $(LTLIBRARIES) $(SCRIPTS) $(MANS) $(DATA) \
-		$(HEADERS)
+all-am: Makefile $(PROGRAMS) $(LTLIBRARIES) $(SCRIPTS) $(MANS) $(DATA)
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(rcdir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(assetsdir)" "$(DESTDIR)$(awkdir)" "$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(examplesdir)" "$(DESTDIR)$(hookdir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(jquerydir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(sysconfdir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(rcdir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(assetsdir)" "$(DESTDIR)$(awkdir)" "$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(examplesdir)" "$(DESTDIR)$(hookdir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(jquerydir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(shincludedir)" "$(DESTDIR)$(sysconfdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -3423,8 +3420,8 @@ install-data-am: install-dist_assetsDATA install-dist_awkDATA \
 	install-dist_dtcssDATA install-dist_dtimagesDATA \
 	install-dist_dtjsDATA install-dist_examplesDATA \
 	install-dist_hookDATA install-dist_htmlDATA \
-	install-dist_includeHEADERS install-dist_jqueryDATA \
-	install-dist_pkgdataDATA install-dist_rcSCRIPTS install-man
+	install-dist_jqueryDATA install-dist_pkgdataDATA \
+	install-dist_rcSCRIPTS install-dist_shincludeDATA install-man
 
 install-dvi: install-dvi-recursive
 
@@ -3560,9 +3557,9 @@ uninstall-am: uninstall-dist_assetsDATA uninstall-dist_awkDATA \
 	uninstall-dist_btjsDATA uninstall-dist_dtcssDATA \
 	uninstall-dist_dtimagesDATA uninstall-dist_dtjsDATA \
 	uninstall-dist_examplesDATA uninstall-dist_hookDATA \
-	uninstall-dist_htmlDATA uninstall-dist_includeHEADERS \
-	uninstall-dist_jqueryDATA uninstall-dist_pkgdataDATA \
-	uninstall-dist_rcSCRIPTS uninstall-dist_sysconfDATA \
+	uninstall-dist_htmlDATA uninstall-dist_jqueryDATA \
+	uninstall-dist_pkgdataDATA uninstall-dist_rcSCRIPTS \
+	uninstall-dist_shincludeDATA uninstall-dist_sysconfDATA \
 	uninstall-man uninstall-pkglibexecPROGRAMS
 
 uninstall-man: uninstall-man8
@@ -3585,8 +3582,8 @@ uninstall-man: uninstall-man8
 	install-dist_dtcssDATA install-dist_dtimagesDATA \
 	install-dist_dtjsDATA install-dist_examplesDATA \
 	install-dist_hookDATA install-dist_htmlDATA \
-	install-dist_includeHEADERS install-dist_jqueryDATA \
-	install-dist_pkgdataDATA install-dist_rcSCRIPTS \
+	install-dist_jqueryDATA install-dist_pkgdataDATA \
+	install-dist_rcSCRIPTS install-dist_shincludeDATA \
 	install-dist_sysconfDATA install-dvi install-dvi-am \
 	install-exec install-exec-am install-html install-html-am \
 	install-info install-info-am install-man install-man8 \
@@ -3601,9 +3598,9 @@ uninstall-man: uninstall-man8
 	uninstall-dist_btjsDATA uninstall-dist_dtcssDATA \
 	uninstall-dist_dtimagesDATA uninstall-dist_dtjsDATA \
 	uninstall-dist_examplesDATA uninstall-dist_hookDATA \
-	uninstall-dist_htmlDATA uninstall-dist_includeHEADERS \
-	uninstall-dist_jqueryDATA uninstall-dist_pkgdataDATA \
-	uninstall-dist_rcSCRIPTS uninstall-dist_sysconfDATA \
+	uninstall-dist_htmlDATA uninstall-dist_jqueryDATA \
+	uninstall-dist_pkgdataDATA uninstall-dist_rcSCRIPTS \
+	uninstall-dist_shincludeDATA uninstall-dist_sysconfDATA \
 	uninstall-man uninstall-man8 uninstall-pkglibexecPROGRAMS
 
 .PRECIOUS: Makefile

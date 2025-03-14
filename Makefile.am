@@ -14,7 +14,7 @@ endif
 
 awkdir=	$(pkgdatadir)/awk
 htmldir= $(pkgdatadir)/html
-includedir= $(pkgdatadir)/include
+shincludedir= $(pkgdatadir)/include
 assetsdir= $(htmldir)/assets
 bootstrapdir= $(assetsdir)/bootstrap-5.3.2
 btcssdir= $(bootstrapdir)/css
@@ -87,7 +87,7 @@ dist_pkgdata_DATA=	\
 			src/share/poudriere/status.sh \
 			src/share/poudriere/testport.sh
 
-dist_include_HEADERS= \
+dist_shinclude_DATA= \
 			src/share/poudriere/include/asserts.sh \
 			src/share/poudriere/include/cache.sh \
 			src/share/poudriere/include/colors.sh \
