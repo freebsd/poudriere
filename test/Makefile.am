@@ -1,6 +1,7 @@
 MOSTLYCLEANFILES=
 MOSTLYCLEANFILES+=	$(TEST_LOGS:.log=.log.truss)
 MOSTLYCLEANFILES+=	$(TEST_LOGS:.log=*.log)
+MOSTLYCLEANFILES+=	prep.sh.trs prep.sh.log
 
 EXTRA_DIST= $(TESTS) \
 	    $(JAIL_TESTS) \
