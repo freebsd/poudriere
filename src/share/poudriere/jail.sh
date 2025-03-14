@@ -78,7 +78,7 @@ Options:
                      Only applies if TARGET_ARCH and HOST_ARCH are different.
 
 Options for -d:
-    -C clean      -- Clean remaining data existing in poudriere data folder.
+    -C clean      -- Clean remaining data existing in poudriere data directory.
                      See poudriere(8) for more details. Can be one of:
                        all, cache, logs, packages, wrkdirs
     -y            -- Do not prompt for confirmation when deleting a jail.
