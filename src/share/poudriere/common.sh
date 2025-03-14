@@ -7276,7 +7276,8 @@ package_recursive_deps() {
 	[ $# -eq 1 ] || eargs package_recursive_deps pkgfile
 	local pkgfile="$1"
 
-	cache_call - _package_recursive_deps "${pkgfile:?}"
+	cache_call -K "${pkgfile##*/}" - \
+	    _package_recursive_deps "${pkgfile:?}"
 }
 
 __package_deps_provided_libs() {
@@ -7321,7 +7322,8 @@ package_deps_provided_libs() {
 	[ $# -eq 1 ] || eargs package_deps_provided_libs pkgfile
 	local pkgfile="$1"
 
-	cache_call - _package_deps_provided_libs "${pkgfile:?}"
+	cache_call -K "${pkgfile##*/}" - \
+	    _package_deps_provided_libs "${pkgfile:?}"
 }
 
 # If the package has shlib dependencies we need to ensure that
