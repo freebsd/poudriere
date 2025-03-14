@@ -876,18 +876,17 @@ _pkgqueue_find_all_pool_references() {
 		echo "deps/${pkg_dir_name}"
 	fi
 	# Cleanup deps/*/${pkgqueue_job}
-	pkgqueue_dir rdep_dir_name "${pkgqueue_job}"
-	for rpn in rdeps/"${rdep_dir_name}"/*; do
+	for rpn in rdeps/"${pkg_dir_name}"/*; do
 		case "${rpn}" in
 		# empty dir
-		"rdeps/${rdep_dir_name}/*") break ;;
+		"rdeps/${pkg_dir_name}/*") break ;;
 		esac
 		dep_pkgqueue_job="${rpn##*/}"
 		pkgqueue_dir dep_dir_name "${dep_pkgqueue_job}"
 		echo "deps/${dep_dir_name}/${pkgqueue_job}"
 	done
-	if [ -e "rdeps/${rdep_dir_name}" ]; then
-		echo "rdeps/${rdep_dir_name}"
+	if [ -e "rdeps/${pkg_dir_name}" ]; then
+		echo "rdeps/${pkg_dir_name}"
 	fi
 }
 
