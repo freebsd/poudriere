@@ -2340,61 +2340,6 @@ rm() {
 	command rm "$@"
 }
 
-_update_relpaths() {
-	local -; set +x
-	[ $# -eq 2 ] || eargs _update_relpaths oldroot newroot
-	local oldroot="$1"
-	local newroot="$2"
-	local varname
-
-	for varname in ${RELATIVE_PATH_VARS}; do
-		make_relative "${varname}" "${oldroot}" "${newroot}"
-	done
-}
-
-add_relpath_var() {
-	[ $# -eq 1 ] || eargs add_relpath_var varname
-	local varname="$1"
-	local value
-
-	getvar "${varname}" value ||
-	    err ${EX_SOFTWARE} "add_relpath_var: \$${varname} path must be set"
-	case " ${RELATIVE_PATH_VARS} " in
-	*" ${varname} "*) ;;
-	*) RELATIVE_PATH_VARS="${RELATIVE_PATH_VARS:+${RELATIVE_PATH_VARS} }${varname}" ;;
-	esac
-	if ! issetvar "${varname}_ABS"; then
-		case "${value}" in
-		/*) ;;
-		*)
-			[ -e "${value}" ] ||
-			    err ${EX_SOFTWARE} "add_relpath_var: \$${varname} value '${value}' must exist or be absolute already"
-			value="$(realpath "${value}")"
-		    ;;
-		esac
-		setvar "${varname}_ABS" "${value}"
-	fi
-	make_relative "${varname}"
-}
-
-# Handle relative path change needs
-cd() {
-	local ret
-
-	ret=0
-	critical_start
-	command cd "$@" || ret=$?
-	# Handle fixing relative paths
-	case "${OLDPWD}" in
-	"${PWD}") ;;
-	*)
-		_update_relpaths "${OLDPWD}" "${PWD}" || :
-		;;
-	esac
-	critical_end
-	return ${ret}
-}
-
 do_jail_mounts() {
 	[ $# -eq 3 ] || eargs do_jail_mounts from mnt name
 	local from="$1"
