@@ -126,6 +126,71 @@ _hash_var_name() {
 	_gsub_var_name "${HASH_VAR_NAME_PREFIX}B${1}_K${2}" _hash_var_name
 }
 
+hash_vars() {
+	local -; set +x
+	[ "$#" -eq 3 ] || [ "$#" -eq 2 ] ||
+	    eargs hash_vars var_return 'var|*' 'key|*'
+	local _hash_vars_return="$1"
+	local var="$2"
+	local key="${3:-*}"
+	local _hash_vars_list ret line lkey
+
+	_hash_vars_list=
+	while read -r line; do
+		# shellcheck disable=SC2027
+		case "${line}" in
+		"${HASH_VAR_NAME_PREFIX:?}B"${var:?}"_K"${key:?}"="*)
+			# shellcheck disable=SC2295
+			line="${line#"${HASH_VAR_NAME_PREFIX:?}"B}"
+			line="${line%%=*}"
+			lkey="${line}"
+			lkey="${line##*_K}"
+			line="${line%%_K*}"
+			_hash_vars_list="${_hash_vars_list:+${_hash_vars_list} }${line:?}:${lkey:?}"
+			;;
+		esac
+	done <<-EOF
+	$(set)
+	EOF
+	case "${_hash_vars_return:?}" in
+	""|"-")
+		case "${_hash_vars_list?}" in
+		"") ;;
+		*)
+			echo "${_hash_vars_list?}"
+			;;
+		esac
+		;;
+	*)
+		setvar "${_hash_vars_return:?}" "${_hash_vars_list?}" ||
+		    return
+		;;
+	esac
+	case "${_hash_vars_list?}" in
+	"")
+		return 1
+		;;
+	esac
+	return 0
+}
+
+hash_assert_no_vars() {
+       local -; set +x
+       [ "$#" -eq 1 ] || [ "$#" -eq 2 ] ||
+           eargs hash_assert_no_vars 'var|*' 'key|*'
+       local hanv_var="$1"
+       local hanv_key="${2-}"
+       local hanv_vars
+
+       if ! hash_vars hanv_vars "${hanv_var:?}" "${hanv_key}"; then
+               return 0
+       fi
+       for hanv_var in ${hanv_vars}; do
+	       msg_warn "Leaked hash var: ${hanv_var}"
+       done
+       return 1
+}
+
 hash_isset() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs hash_isset var key
