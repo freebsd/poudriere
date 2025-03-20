@@ -161,21 +161,21 @@ getvar() {
 	[ $# -eq 1 -o $# -eq 2 ] || eargs getvar var [var_return]
 	local _getvar_var="$1"
 	local _getvar_var_return="$2"
-	local ret _getvar_value
+	local _getvar_ret _getvar_value
 
 	eval "_getvar_value=\${${_getvar_var}-gv__null}"
 
 	case "${_getvar_value}" in
 	gv__null)
 		_getvar_value=
-		ret=1
+		_getvar_ret=1
 		case "${_getvar_var_return}" in
 		""|-) ;;
 		*) unset "${_getvar_var_return}" ;;
 		esac
 		;;
 	*)
-		ret=0
+		_getvar_ret=0
 		case "${_getvar_var_return}" in
 		""|-) echo "${_getvar_value}" ;;
 		*) setvar "${_getvar_var_return}" "${_getvar_value}" ;;
@@ -183,7 +183,7 @@ getvar() {
 		;;
 	esac
 
-	return "${ret}"
+	return "${_getvar_ret}"
 }
 fi
 
