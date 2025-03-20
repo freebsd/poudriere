@@ -1503,7 +1503,7 @@ pipe_func() {
 # Create a new temporary file and return a handle to it
 mapfile_mktemp() {
 	local -; set +x
-	[ $# -gt 2 ] || eargs mapfile_mktemp handle_var_return \
+	[ $# -ge 2 ] || eargs mapfile_mktemp handle_var_return \
 	    tmpfile_var_return "mktemp(1)-params"
 	local handle_var_return="$1"
 	local tmpfile_var_return="$2"

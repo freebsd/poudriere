@@ -260,7 +260,7 @@ _mktempcmd(int argc, char **argv)
 	char output_str[MAXPATHLEN], *var_return;
 	int ret;
 
-	if (argc < 3)
+	if (argc < 2)
 		errx(EX_USAGE, "%s", "Usage: _mktemp <var_return> "
 		    "mktemp(1) params...");
 	var_return = argv[1];
