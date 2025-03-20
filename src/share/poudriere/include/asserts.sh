@@ -367,6 +367,7 @@ _assert_out() {
 
 	aecho TEST "${lineinfo}" "'${expected}' == '\$($*)'"
 
+	ret=0
 	case "${expected}" in
 	-)
 		tmpfile="$(mktemp -ut assert_out)"
@@ -376,8 +377,7 @@ _assert_out() {
 		return "${ret}"
 		;;
 	*)
-		out="$(set_pipefail; set -e; "$@" | cat -vet)"
-		ret="$?"
+		out="$(set_pipefail; set -e; "$@" | cat -vet)" || ret="$?"
 		;;
 	esac
 	case "${unordered:-0}" in
@@ -417,7 +417,9 @@ _assert_stack() {
 	echo "${expected}" | tr ' ' '\n' | sort | sed -e '/^$/d' > \
 	    "${expected_tmp}"
 	cmp -s "${have_tmp}" "${expected_tmp}" || ret=$?
-	[ ${ret} -ne 0 ] && comm "${have_tmp}" "${expected_tmp}" >&2
+	if [ ${ret} -ne 0 ]; then
+		comm "${have_tmp}" "${expected_tmp}" >&2
+	fi
 
 	rm -f "${have_tmp}" "${expected_tmp}"
 	assert 0 "${ret}" \
