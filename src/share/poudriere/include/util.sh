@@ -1277,7 +1277,7 @@ mapfile_read_loop() {
 		return 0
 	else
 		ret=$?
-		mapfile_close "${_handle}"
+		mapfile_close "${_handle}" || ret="$?"
 		hash_unset mapfile_handle "${_hkey}"
 		return ${ret}
 	fi
@@ -1480,7 +1480,7 @@ pipe_func() {
 	else
 		# EOF
 		_mf_ret="$?"
-		mapfile_close "${_mf_handle}"
+		mapfile_close "${_mf_handle}" || _mf_ret="$?"
 		hash_unset pipe_func_read_params "${_mf_key}"
 		hash_unset pipe_func_handle "${_mf_key}"
 		hash_unset pipe_func_shift "${_mf_key}"
