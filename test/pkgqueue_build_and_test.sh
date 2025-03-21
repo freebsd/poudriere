@@ -20,7 +20,7 @@ assert_true pkgqueue_compute_rdeps
 pkgqueue_list="$(pkgqueue_list "build" | LC_ALL=C sort | paste -d ' ' -s -)"
 assert 0 "$?"
 assert "$(sorted "bash patchutils pkg")" "${pkgqueue_list}"
-assert_out "" pkgqueue_find_dead_packages
+assert_out 0 "" pkgqueue_find_dead_packages
 
 assert_true pkgqueue_prioritize "build" bash 50
 assert_true pkgqueue_prioritize test pkg 49

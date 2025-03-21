@@ -11,19 +11,19 @@ assert_ret 0 stack_push STACK "02 QQ"
 assert "2" "$(stack_size STACK)"
 assert_stack STACK "02 QQ${STACK_SEP}01 TT"
 assert "2" "$(stack_size STACK)"
-assert_true assert_out '02 QQ%01 TT$' stack_expand STACK %
-assert_true assert_out '02 QQ%01 TT$' stack_expand_front STACK %
-assert_true assert_out '01 TT%02 QQ$' stack_expand_back STACK %
-assert_true assert_out '02 QQ$'$'\n''01 TT$' stack_expand STACK $'\n'
-assert_true assert_out '02 QQ$'$'\n''01 TT$' stack_expand_front STACK $'\n'
-assert_true assert_out '01 TT$'$'\n''02 QQ$' stack_expand_back STACK $'\n'
-assert_true assert_out '02 QQ'$'\008''01 TT$' stack_expand STACK $'\008'
-assert_true assert_out '02 QQ'$'\008''01 TT$' stack_expand_front STACK $'\008'
-assert_true assert_out '01 TT'$'\008''02 QQ$' stack_expand_back STACK $'\008'
+assert_true assert_out 0 '02 QQ%01 TT$' stack_expand STACK %
+assert_true assert_out 0 '02 QQ%01 TT$' stack_expand_front STACK %
+assert_true assert_out 0 '01 TT%02 QQ$' stack_expand_back STACK %
+assert_true assert_out 0 '02 QQ$'$'\n''01 TT$' stack_expand STACK $'\n'
+assert_true assert_out 0 '02 QQ$'$'\n''01 TT$' stack_expand_front STACK $'\n'
+assert_true assert_out 0 '01 TT$'$'\n''02 QQ$' stack_expand_back STACK $'\n'
+assert_true assert_out 0 '02 QQ'$'\008''01 TT$' stack_expand STACK $'\008'
+assert_true assert_out 0 '02 QQ'$'\008''01 TT$' stack_expand_front STACK $'\008'
+assert_true assert_out 0 '01 TT'$'\008''02 QQ$' stack_expand_back STACK $'\008'
 
-assert_true assert_out '02 QQXRW01 TT$' stack_expand STACK XRW
-assert_true assert_out '02 QQXRW01 TT$' stack_expand_front STACK XRW
-assert_true assert_out '01 TTXRW02 QQ$' stack_expand_back STACK XRW
+assert_true assert_out 0 '02 QQXRW01 TT$' stack_expand STACK XRW
+assert_true assert_out 0 '02 QQXRW01 TT$' stack_expand_front STACK XRW
+assert_true assert_out 0 '01 TTXRW02 QQ$' stack_expand_back STACK XRW
 
 {
 	output=
@@ -62,14 +62,14 @@ assert_true assert_out '01 TTXRW02 QQ$' stack_expand_back STACK XRW
 	assert_true stack_set STACK $'\n' '02 QQ'$'\n''01 TT'
 	assert_stack STACK "02 QQ${STACK_SEP}01 TT"
 	assert "2" "$(stack_size STACK)"
-	assert_out '02 QQ$'$'\n''01 TT$' stack_expand STACK $'\n'
+	assert_out 0 '02 QQ$'$'\n''01 TT$' stack_expand STACK $'\n'
 }
 
 {
 	assert_true stack_set STACK $'\n' '02 QQ'$'\n''01 TT'
 	assert_stack STACK "02 QQ${STACK_SEP}01 TT"
 	assert "2" "$(stack_size STACK)"
-	assert_out '02 QQ$'$'\n''01 TT$' stack_expand STACK $'\n'
+	assert_out 0 '02 QQ$'$'\n''01 TT$' stack_expand STACK $'\n'
 }
 
 {
@@ -88,7 +88,7 @@ assert_true assert_out '01 TTXRW02 QQ$' stack_expand_back STACK XRW
 	assert_true stack_set_args STACK '02 QQ' '01 TT'
 	assert "2" "$(stack_size STACK)"
 	assert_stack STACK "02 QQ${STACK_SEP}01 TT"
-	assert_out '02 QQ$'$'\n''01 TT$' stack_expand STACK $'\n'
+	assert_out 0 '02 QQ$'$'\n''01 TT$' stack_expand STACK $'\n'
 }
 
 {

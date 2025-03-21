@@ -21,7 +21,7 @@ assert 8 "${CAUGHT_ERR_STATUS}"
 assert "core error" "${CAUGHT_ERR_MSG}"
 unset CAUGHT_ERR_STATUS CAUGHT_ERR_MSG
 
-assert_ret 9 eval assert_out 'stdout$' foo
+assert_out 9 'stdout$' foo
 # Only the test framework version of err() captures error like this
 assert_false [ -e "${ERR_CHECK:?}" ]
 assert "null" "${CRASHED-null}"

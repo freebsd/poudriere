@@ -28,7 +28,7 @@ while get_test_context; do
 	pkgqueue_list="$(pkgqueue_list "build" | LC_ALL=C sort | paste -d ' ' -s -)"
 	assert 0 "$?"
 	assert "$(sorted "bash llvm pkg rust zsh")" "${pkgqueue_list}"
-	assert_out "" pkgqueue_find_dead_packages
+	assert_out 0 "" pkgqueue_find_dead_packages
 	assert_true pkgqueue_prioritize "build" rust 60
 	assert_true pkgqueue_prioritize "build" llvm 59
 	assert_true pkgqueue_prioritize "build" zsh 50

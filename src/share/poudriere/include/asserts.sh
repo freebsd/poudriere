@@ -358,11 +358,13 @@ alias assert_false='assert_ret_not 0'
 
 _assert_out() {
 	local -; set +x +u +e
-	[ "$#" -ge 3 ] || eargs assert_out expected command '[args]'
+	[ "$#" -ge 4 ] ||
+	    eargs assert_out expected_ret expected command '[args]'
 	local lineinfo="$1"
 	local unordered="$2"
-	local expected="$3"
-	shift 3
+	local expected_ret="$3"
+	local expected="$4"
+	shift 4
 	local out ret tmpfile
 
 	aecho TEST "${lineinfo}" "'${expected}' == '\$($*)'"
@@ -374,10 +376,12 @@ _assert_out() {
 		(set_pipefail; set -e; "$@" ) > "${tmpfile}"
 		ret="$?"
 		_assert_file "${lineinfo}" "${unordered}" - "${tmpfile}"
+		_assert "${lineinfo:?}" "${expected_ret}" "${ret}"
 		return "${ret}"
 		;;
 	*)
 		out="$(set_pipefail; set -e; "$@" | cat -vet)" || ret="$?"
+		_assert "${lineinfo:?}" "${expected_ret}" "${ret}"
 		;;
 	esac
 	case "${unordered:-0}" in

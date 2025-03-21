@@ -25,11 +25,11 @@ assert_true pkgqueue_compute_rdeps
 pkgqueue_list="$(pkgqueue_list "build" | LC_ALL=C sort | paste -d ' ' -s -)"
 assert 0 "$?"
 assert "$(sorted "bash devtools zsh patchutils pkg")" "${pkgqueue_list}"
-assert_out "" pkgqueue_find_dead_packages
+assert_out 0 "" pkgqueue_find_dead_packages
 assert_true pkgqueue_prioritize "build" bash 50
 assert_true pkgqueue_prioritize "build" zsh 49
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" pkg <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" pkg <<-EOF
 deps/p/build${PKGQUEUE_JOB_SEP:?}pkg
 deps/b/build${PKGQUEUE_JOB_SEP:?}bash/build${PKGQUEUE_JOB_SEP:?}pkg
 deps/d/build${PKGQUEUE_JOB_SEP:?}devtools/build${PKGQUEUE_JOB_SEP:?}pkg
@@ -39,7 +39,7 @@ rdeps/p/build${PKGQUEUE_JOB_SEP:?}pkg
 EOF
 assert 0 "$?"
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" patchutils <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" patchutils <<-EOF
 rdeps/b/build${PKGQUEUE_JOB_SEP:?}bash/build${PKGQUEUE_JOB_SEP:?}patchutils
 rdeps/p/build${PKGQUEUE_JOB_SEP:?}pkg/build${PKGQUEUE_JOB_SEP:?}patchutils
 deps/p/build${PKGQUEUE_JOB_SEP:?}patchutils
@@ -48,7 +48,7 @@ rdeps/p/build${PKGQUEUE_JOB_SEP:?}patchutils
 EOF
 assert 0 "$?"
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" bash <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" bash <<-EOF
 rdeps/p/build${PKGQUEUE_JOB_SEP:?}pkg/build${PKGQUEUE_JOB_SEP:?}bash
 deps/b/build${PKGQUEUE_JOB_SEP:?}bash
 deps/d/build${PKGQUEUE_JOB_SEP:?}devtools/build${PKGQUEUE_JOB_SEP:?}bash
@@ -57,7 +57,7 @@ rdeps/b/build${PKGQUEUE_JOB_SEP:?}bash
 EOF
 assert 0 "$?"
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" devtools <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" devtools <<-EOF
 rdeps/b/build${PKGQUEUE_JOB_SEP:?}bash/build${PKGQUEUE_JOB_SEP:?}devtools
 rdeps/p/build${PKGQUEUE_JOB_SEP:?}patchutils/build${PKGQUEUE_JOB_SEP:?}devtools
 rdeps/p/build${PKGQUEUE_JOB_SEP:?}pkg/build${PKGQUEUE_JOB_SEP:?}devtools
@@ -65,7 +65,7 @@ deps/d/build${PKGQUEUE_JOB_SEP:?}devtools
 EOF
 assert 0 "$?"
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" zsh <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" zsh <<-EOF
 rdeps/p/build${PKGQUEUE_JOB_SEP:?}pkg/build${PKGQUEUE_JOB_SEP:?}zsh
 deps/z/build${PKGQUEUE_JOB_SEP:?}zsh
 EOF
@@ -75,7 +75,7 @@ assert_true pkgqueue_move_ready_to_pool
 
 # Nothing should have changed except that deps/p/pkg is moved out of the queue.
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" pkg <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" pkg <<-EOF
 deps/b/build${PKGQUEUE_JOB_SEP:?}bash/build${PKGQUEUE_JOB_SEP:?}pkg
 deps/d/build${PKGQUEUE_JOB_SEP:?}devtools/build${PKGQUEUE_JOB_SEP:?}pkg
 deps/p/build${PKGQUEUE_JOB_SEP:?}patchutils/build${PKGQUEUE_JOB_SEP:?}pkg
@@ -84,7 +84,7 @@ rdeps/p/build${PKGQUEUE_JOB_SEP:?}pkg
 EOF
 assert 0 "$?"
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" patchutils <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" patchutils <<-EOF
 rdeps/b/build${PKGQUEUE_JOB_SEP:?}bash/build${PKGQUEUE_JOB_SEP:?}patchutils
 rdeps/p/build${PKGQUEUE_JOB_SEP:?}pkg/build${PKGQUEUE_JOB_SEP:?}patchutils
 deps/p/build${PKGQUEUE_JOB_SEP:?}patchutils
@@ -93,7 +93,7 @@ rdeps/p/build${PKGQUEUE_JOB_SEP:?}patchutils
 EOF
 assert 0 "$?"
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" bash <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" bash <<-EOF
 rdeps/p/build${PKGQUEUE_JOB_SEP:?}pkg/build${PKGQUEUE_JOB_SEP:?}bash
 deps/b/build${PKGQUEUE_JOB_SEP:?}bash
 deps/d/build${PKGQUEUE_JOB_SEP:?}devtools/build${PKGQUEUE_JOB_SEP:?}bash
@@ -102,7 +102,7 @@ rdeps/b/build${PKGQUEUE_JOB_SEP:?}bash
 EOF
 assert 0 "$?"
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" devtools <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" devtools <<-EOF
 rdeps/b/build${PKGQUEUE_JOB_SEP:?}bash/build${PKGQUEUE_JOB_SEP:?}devtools
 rdeps/p/build${PKGQUEUE_JOB_SEP:?}patchutils/build${PKGQUEUE_JOB_SEP:?}devtools
 rdeps/p/build${PKGQUEUE_JOB_SEP:?}pkg/build${PKGQUEUE_JOB_SEP:?}devtools
@@ -110,7 +110,7 @@ deps/d/build${PKGQUEUE_JOB_SEP:?}devtools
 EOF
 assert 0 "$?"
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" zsh <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" zsh <<-EOF
 rdeps/p/build${PKGQUEUE_JOB_SEP:?}pkg/build${PKGQUEUE_JOB_SEP:?}zsh
 deps/z/build${PKGQUEUE_JOB_SEP:?}zsh
 EOF
@@ -127,31 +127,31 @@ assert_true pkgqueue_job_done "${job_type}" "${pkgname}"
 
 # pkg is gone, zsh and bash are moved out as well as they are reday-to-"build"
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" pkg <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" pkg <<-EOF
 EOF
 assert 0 "$?"
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" patchutils <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" patchutils <<-EOF
 rdeps/b/build${PKGQUEUE_JOB_SEP:?}bash/build${PKGQUEUE_JOB_SEP:?}patchutils
 deps/p/build${PKGQUEUE_JOB_SEP:?}patchutils
 deps/d/build${PKGQUEUE_JOB_SEP:?}devtools/build${PKGQUEUE_JOB_SEP:?}patchutils
 rdeps/p/build${PKGQUEUE_JOB_SEP:?}patchutils
 EOF
 assert 0 "$?"
-assert_out_unordered - pkgqueue_find_all_pool_references "build" bash <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" bash <<-EOF
 deps/d/build${PKGQUEUE_JOB_SEP:?}devtools/build${PKGQUEUE_JOB_SEP:?}bash
 deps/p/build${PKGQUEUE_JOB_SEP:?}patchutils/build${PKGQUEUE_JOB_SEP:?}bash
 rdeps/b/build${PKGQUEUE_JOB_SEP:?}bash
 EOF
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" devtools <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" devtools <<-EOF
 rdeps/b/build${PKGQUEUE_JOB_SEP:?}bash/build${PKGQUEUE_JOB_SEP:?}devtools
 rdeps/p/build${PKGQUEUE_JOB_SEP:?}patchutils/build${PKGQUEUE_JOB_SEP:?}devtools
 deps/d/build${PKGQUEUE_JOB_SEP:?}devtools
 EOF
 assert 0 "$?"
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" zsh <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" zsh <<-EOF
 EOF
 assert 0 "$?"
 
@@ -164,25 +164,25 @@ assert_true pkgqueue_job_done "${job_type}" "${pkgname}"
 
 # bash is gone, patchutils is eligible now
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" pkg <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" pkg <<-EOF
 EOF
 assert 0 "$?"
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" patchutils <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" patchutils <<-EOF
 deps/d/build${PKGQUEUE_JOB_SEP:?}devtools/build${PKGQUEUE_JOB_SEP:?}patchutils
 rdeps/p/build${PKGQUEUE_JOB_SEP:?}patchutils
 EOF
 assert 0 "$?"
-assert_out_unordered - pkgqueue_find_all_pool_references "build" bash <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" bash <<-EOF
 EOF
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" devtools <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" devtools <<-EOF
 rdeps/p/build${PKGQUEUE_JOB_SEP:?}patchutils/build${PKGQUEUE_JOB_SEP:?}devtools
 deps/d/build${PKGQUEUE_JOB_SEP:?}devtools
 EOF
 assert 0 "$?"
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" zsh <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" zsh <<-EOF
 EOF
 assert 0 "$?"
 
@@ -196,25 +196,25 @@ assert_true pkgqueue_job_done "${job_type}" "${pkgname}"
 
 # zsh is gone, patchutils is next and then devtools
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" pkg <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" pkg <<-EOF
 EOF
 assert 0 "$?"
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" patchutils <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" patchutils <<-EOF
 deps/d/build${PKGQUEUE_JOB_SEP:?}devtools/build${PKGQUEUE_JOB_SEP:?}patchutils
 rdeps/p/build${PKGQUEUE_JOB_SEP:?}patchutils
 EOF
 assert 0 "$?"
-assert_out_unordered - pkgqueue_find_all_pool_references "build" bash <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" bash <<-EOF
 EOF
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" devtools <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" devtools <<-EOF
 rdeps/p/build${PKGQUEUE_JOB_SEP:?}patchutils/build${PKGQUEUE_JOB_SEP:?}devtools
 deps/d/build${PKGQUEUE_JOB_SEP:?}devtools
 EOF
 assert 0 "$?"
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" zsh <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" zsh <<-EOF
 EOF
 assert 0 "$?"
 
@@ -227,21 +227,21 @@ assert_true pkgqueue_job_done "${job_type}" "${pkgname}"
 
 # patchutils is gone, only devtools remains
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" pkg <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" pkg <<-EOF
 EOF
 assert 0 "$?"
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" patchutils <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" patchutils <<-EOF
 EOF
 assert 0 "$?"
-assert_out_unordered - pkgqueue_find_all_pool_references "build" bash <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" bash <<-EOF
 EOF
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" devtools <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" devtools <<-EOF
 EOF
 assert 0 "$?"
 
-assert_out_unordered - pkgqueue_find_all_pool_references "build" zsh <<-EOF
+assert_out_unordered 0 - pkgqueue_find_all_pool_references "build" zsh <<-EOF
 EOF
 assert 0 "$?"
 
