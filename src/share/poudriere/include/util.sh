@@ -37,6 +37,13 @@ if ! type setproctitle 2>/dev/null >&2; then
 	setproctitle() { :; }
 fi
 
+unimplemented() {
+	[ "$#" -ge 1 ] || eargs unimplemented funcname '[args]'
+	local funcname="$1"
+	shift
+	err "${EX_SOFTWARE-70}" "${funcname} unimplemented. Args: $*"
+}
+
 # Encode $@ for later decoding
 encode_args() {
 	local -; set +x
