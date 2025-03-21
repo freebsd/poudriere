@@ -1408,7 +1408,7 @@ _pipe_func_job() {
 pipe_func() {
 	[ $# -ge 4 ] || eargs pipe_func [-H handle_var] 'read' read-params [...] -- func [params]
 	local _mf_handle_var _mf_cookie_val
-	local _mf_key _mf_read_params _mf_handle _mf_ret _mf_shift _mf_var
+	local _mf_key _mf_read_params _mf_handle _mf_ret _mf_var
 	local _mf_fifo _mf_job spawn_jobid
 	local OPTIND=1 flag Hflag
 
@@ -1448,12 +1448,8 @@ pipe_func() {
 	if hash_get pipe_func_handle "${_mf_key}" _mf_handle; then
 		hash_get pipe_func_read_params "${_mf_key}" _mf_read_params ||
 		    err "${EX_SOFTWARE}" "pipe_func: No stored read params for ${_mf_key}"
-		hash_get pipe_func_shift "${_mf_key}" _mf_shift ||
-		    err "${EX_SOFTWARE}" "pipe_func: No stored shift for ${_mf_key}"
-		shift "${_mf_shift}"
 	else
 		_mf_read_params=
-		_mf_shift=0
 		while :; do
 			_mf_var="$1"
 			shift
@@ -1467,7 +1463,6 @@ pipe_func() {
 			esac
 		done
 		# "$@" is now the function and params
-		hash_set pipe_func_shift "${_mf_key}" "${_mf_shift}"
 		hash_set pipe_func_read_params "${_mf_key}" "${_mf_read_params}"
 		_mf_fifo="$(mktemp -ut pipe_func.fifo)"
 		mkfifo "${_mf_fifo}"
