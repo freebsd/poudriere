@@ -68,6 +68,7 @@ writer() {
 	assert_true mapfile file_read "${TMP}" "re"
 	assert_true mapfile file_write1 "${TMP2}" "ae"
 	assert_true mapfile file_write2 "${TMP3}" "we"
+	assert_false catch_err mapfile_read "${file_write2}" blah
 	assert_true mapfile_write "${file_write1}" "file_write1"
 	assert_true mapfile_write "${file_write2}" "file_write2"
 	assert_true mapfile_read "${file_read}" line

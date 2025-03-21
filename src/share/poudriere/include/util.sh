@@ -1172,17 +1172,24 @@ mapfile() {
 }
 
 mapfile_read() {
-	local -; set +x
+	local -; set +x -u
 	[ $# -ge 2 ] || eargs mapfile_read handle output_var ...
 	local handle="$1"
 	shift
+	local mapfile_read_modes
 
-	if hash_get mapfile_fd "${handle}" fd; then
-		read_blocking -r "$@" <&"${fd}"
-	else
-		err "${EX_SOFTWARE}" "mapfile_read: ${handle} is not open for reading"
-		err "${EX_SOFTWARE}" "mapfile_read: Handle '${handle}' is not open${_mapfile_handle:+, '${_mapfile_handle}' is}."
+	if ! hash_get mapfile_fd "${handle}" fd; then
+		err "${EX_SOFTWARE}" "mapfile_read: ${handle} is not open"
 	fi
+	hash_get mapfile_modes "${handle}" mapfile_read_modes
+	case "${mapfile_read_modes}" in
+	*r*|*+*) ;;
+	*)
+		err "${EX_SOFTWARE}" "mapfile_read: ${handle} is not open for reading, modes=${mapfile_read_modes}"
+		;;
+	esac
+
+	read_blocking -r "$@" <&"${fd}"
 }
 
 mapfile_write() {
