@@ -191,8 +191,7 @@ catch_err() {
 		CAUGHT_ERR_STATUS="${ret}"
 		case "${TEST_OVERRIDE_ERR:-1}" in
 		1)
-			read_file CAUGHT_ERR_MSG "${ERR_CHECK}" ||
-			    err "${EX_SOFTWARE}" "catch_err: Failed to read ${ERR_CHECK}"
+			CAUGHT_ERR_MSG="$(cat "${ERR_CHECK}")"
 			unlink "${ERR_CHECK}"
 			ERR_CHECK="$(mktemp -ut err)"
 			;;
