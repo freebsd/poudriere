@@ -373,7 +373,7 @@ _assert_out() {
 	case "${expected}" in
 	-)
 		tmpfile="$(mktemp -ut assert_out)"
-		(set_pipefail; set -e; "$@" ) > "${tmpfile}"
+		(set_pipefail; set -e; "$@" ) < /dev/null > "${tmpfile}"
 		ret="$?"
 		_assert_file "${lineinfo}" "${unordered}" - "${tmpfile}"
 		_assert "${lineinfo:?}" "${expected_ret}" "${ret}"
