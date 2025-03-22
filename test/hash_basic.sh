@@ -39,7 +39,9 @@ assert_ret 1 hash_isset_var 'blah'
 
 assert_true hash_vars vars '*' '*'
 assert "blah2:1 foo:1 pkgname_origin:pkg_2_0" "${vars}"
-hash_unset blah2 1
+value=
+assert_true hash_remove blah2 1 value
+assert "foo" "${value}"
 assert_true hash_vars vars '*' '*'
 assert "foo:1 pkgname_origin:pkg_2_0" "${vars}"
 hash_unset foo 1
@@ -48,5 +50,11 @@ assert "pkgname_origin:pkg_2_0" "${vars}"
 hash_unset pkgname_origin "pkg-2.0"
 assert_false hash_vars vars '*' '*'
 assert "" "${vars}"
+assert_false hash_remove pkgname_origin "pkg-2.0"
+
+assert_true hash_set blah key var
+assert_true hash_isset blah key
+assert_true hash_remove blah key
+assert_false hash_isset blah key
 
 exit 0

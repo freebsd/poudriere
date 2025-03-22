@@ -338,21 +338,31 @@ hash_set() {
 	setvar "${_hash_var_name}" "${_value}"
 }
 
+# Similar to hash_unset but returns the value or error if not set.
 hash_remove() {
-	local -; set +x
-	[ $# -eq 3 ] || eargs hash_remove var key var_return
+	local -; set +x -u
+	[ "$#" -eq 3 ] || [ "$#" -eq 2 ] ||
+	    eargs hash_remove var key '[var_return]'
 	local hr_var="$1"
 	local hr_key="$2"
-	local hr_var_return="$3"
-	local _hash_var_name hr_ret
+	local hr_var_return="${3-}"
+	local _hash_var_name hr_val hr_ret
 
 	_hash_var_name "${hr_var}" "${hr_key}"
 	hr_ret=0
-	getvar "${_hash_var_name}" "${hr_var_return}" || hr_ret=$?
-	if [ ${hr_ret} -eq 0 ]; then
-		unset "${_hash_var_name}"
-	fi
-	return ${hr_ret}
+	getvar "${_hash_var_name}" hr_val || hr_ret="$?"
+	unset "${_hash_var_name}"
+	case "${hr_ret}" in
+	0) ;;
+	*)
+		return "${hr_ret}"
+		;;
+	esac
+	case "${hr_var_return}" in
+	"") ;;
+	*) setvar "${hr_var_return}" "${hr_val}" || return ;;
+	esac
+	return "${hr_ret}"
 }
 
 hash_unset() {
