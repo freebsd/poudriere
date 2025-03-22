@@ -341,18 +341,18 @@ hash_set() {
 hash_remove() {
 	local -; set +x
 	[ $# -eq 3 ] || eargs hash_remove var key var_return
-	local _var="$1"
-	local _key="$2"
-	local var_return="$3"
-	local _hash_var_name ret
+	local hr_var="$1"
+	local hr_key="$2"
+	local hr_var_return="$3"
+	local _hash_var_name hr_ret
 
-	_hash_var_name "${_var}" "${_key}"
-	ret=0
-	getvar "${_hash_var_name}" "${var_return}" || ret=$?
-	if [ ${ret} -eq 0 ]; then
+	_hash_var_name "${hr_var}" "${hr_key}"
+	hr_ret=0
+	getvar "${_hash_var_name}" "${hr_var_return}" || hr_ret=$?
+	if [ ${hr_ret} -eq 0 ]; then
 		unset "${_hash_var_name}"
 	fi
-	return ${ret}
+	return ${hr_ret}
 }
 
 hash_unset() {
