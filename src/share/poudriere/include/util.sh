@@ -48,20 +48,20 @@ unimplemented() {
 encode_args() {
 	local -; set +x
 	[ $# -ge 1 ] || eargs encode_args var_return [args]
-	local var_return="$1"
+	local ea_var_return="$1"
 	shift
-	local _args IFS
+	local ea_args IFS
 
 	IFS="${ENCODE_SEP}"
-	_args="$*"
+	ea_args="$*"
 	unset IFS
 	# Trailing empty fields need special handling.
-	case "${_args}" in
+	case "${ea_args}" in
 	*"${ENCODE_SEP}")
-		setvar "${var_return}" "${_args}${ENCODE_SEP}"
+		setvar "${ea_var_return}" "${ea_args}${ENCODE_SEP}"
 		;;
 	*)
-		setvar "${var_return}" "${_args}"
+		setvar "${ea_var_return}" "${ea_args}"
 		;;
 	esac
 }
@@ -109,26 +109,26 @@ decode_args_vars() {
 	local -; set +x -f
 	[ $# -ge 2 ] || eargs decode_args_vars data var1 [var2... varN]
 	local encoded_args_data="$1"
-	local _value _var IFS
+	local dav_val dav_var IFS
 	shift
-	local _vars="$*"
+	local dav_vars="$*"
 
 	IFS="${ENCODE_SEP}"
 	set -- ${encoded_args_data}
 	unset IFS
-	for _value; do
+	for dav_val; do
 		# Select the next var to populate.
-		_var="${_vars%% *}"
-		case "${_vars}" in
+		dav_var="${dav_vars%% *}"
+		case "${dav_vars}" in
 		# Last one - set all remaining to here
-		"${_var}")
-			setvar "${_var}" "$*"
+		"${dav_var}")
+			setvar "${dav_var}" "$*"
 			break
 			;;
 		*)
-			setvar "${_var}" "${_value}"
+			setvar "${dav_var}" "${dav_val}"
 			# Pop off the var
-			_vars="${_vars#"${_var}" }"
+			dav_vars="${dav_vars#"${dav_var}" }"
 			shift
 			;;
 		esac
@@ -138,12 +138,12 @@ decode_args_vars() {
 if ! type issetvar >/dev/null 2>&1; then
 issetvar() {
 	[ $# -eq 1 ] || eargs issetvar var
-	local var="$1"
-	local _evalue
+	local issetvar_var="$1"
+	local issetvar_val
 
-	eval "_evalue=\${${var}-isv__null}"
+	eval "issetvar_val=\${${issetvar_var}-isv__null}"
 
-	case "${_evalue}" in
+	case "${issetvar_val}" in
 	"isv__null") return 1 ;;
 	esac
 	return 0
@@ -222,82 +222,84 @@ decrvar() {
 _relpath_common() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs _relpath_common dir1 dir2
-	local dir1 dir2 common other
+	local _rc_dir1 _rc_dir2 _rc_common _rc_other
 
-	dir1=$(realpath -q "$1" || echo "$1" | sed -e 's,//*,/,g') || return 1
-	dir1="${dir1%/}/"
-	dir2=$(realpath -q "$2" || echo "$2" | sed -e 's,//*,/,g') || return 1
-	dir2="${dir2%/}/"
-	if [ "${#dir1}" -ge "${#dir2}" ]; then
-		common="${dir1}"
-		other="${dir2}"
+	_rc_dir1=$(realpath -q "$1" || echo "$1" | sed -e 's,//*,/,g') || return 1
+	_rc_dir1="${_rc_dir1%/}/"
+	_rc_dir2=$(realpath -q "$2" || echo "$2" | sed -e 's,//*,/,g') || return 1
+	_rc_dir2="${_rc_dir2%/}/"
+	if [ "${#_rc_dir1}" -ge "${#_rc_dir2}" ]; then
+		_rc_common="${_rc_dir1}"
+		_rc_other="${_rc_dir2}"
 	else
-		common="${dir2}"
-		other="${dir1}"
+		_rc_common="${_rc_dir2}"
+		_rc_other="${_rc_dir1}"
 	fi
 	# Trim away path components until they match
-	#while [ "${other#${common%/}/}" = "${other}" -a -n "${common}" ]; do
-	#	common="${common%/*}"
+	#while [ "${_rc_other#${_rc_common%/}/}" = "${_rc_other}" -a -n "${_rc_common}" ]; do
+	#	_rc_common="${_rc_common%/*}"
 	#done
 	while :; do
-		case "${common:+set}" in
+		case "${_rc_common:+set}" in
 		set)
-			case "${other}" in
-			"${common%/}/"*)
+			case "${_rc_other}" in
+			"${_rc_common%/}/"*)
 				break
 				;;
 			*)
-				common="${common%/*}"
+				_rc_common="${_rc_common%/*}"
 				;;
 			esac
 			;;
 		"") break ;;
 		esac
 	done
-	common="${common%/}"
-	common="${common:-/}"
-	dir1="${dir1#"${common}"/}"
-	dir1="${dir1#/}"
-	dir1="${dir1%/}"
-	dir1="${dir1:-.}"
-	dir2="${dir2#"${common}"/}"
-	dir2="${dir2#/}"
-	dir2="${dir2%/}"
-	dir2="${dir2:-.}"
+	_rc_common="${_rc_common%/}"
+	_rc_common="${_rc_common:-/}"
+	_rc_dir1="${_rc_dir1#"${_rc_common}"/}"
+	_rc_dir1="${_rc_dir1#/}"
+	_rc_dir1="${_rc_dir1%/}"
+	_rc_dir1="${_rc_dir1:-.}"
+	_rc_dir2="${_rc_dir2#"${_rc_common}"/}"
+	_rc_dir2="${_rc_dir2#/}"
+	_rc_dir2="${_rc_dir2%/}"
+	_rc_dir2="${_rc_dir2:-.}"
 
-	_relpath_common="${common}"
-	_relpath_common_dir1="${dir1}"
-	_relpath_common_dir2="${dir2}"
+	_relpath_common="${_rc_common}"
+	_relpath_common_dir1="${_rc_dir1}"
+	_relpath_common_dir2="${_rc_dir2}"
 }
 
 # See _relpath_common
 relpath_common() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs relpath_common dir1 dir2
-	local dir1="$1"
-	local dir2="$2"
+	local rc_dir1="$1"
+	local rc_dir2="$2"
 	local _relpath_common _relpath_common_dir1 _relpath_common_dir2
 
-	_relpath_common "${dir1}" "${dir2}"
+	_relpath_common "${rc_dir1}" "${rc_dir2}"
 	echo "${_relpath_common} ${_relpath_common_dir1} ${_relpath_common_dir2}"
 }
+
+: "${RELPATH_DEFAULT_VAR:=_relpath}"
 
 # Given 2 paths, return the relative path from the 2nd to the first
 _relpath() {
 	local -; set +x -f
 	[ $# -eq 2 -o $# -eq 3 ] || eargs _relpath dir1 dir2 [var_return]
-	local dir1="$1"
-	local dir2="$2"
-	local var_return="${3:-_relpath}"
+	local _r_dir1="$1"
+	local _r_dir2="$2"
+	local _r_var="${3:-"${RELPATH_DEFAULT_VAR}"}"
 	local _relpath_common _relpath_common_dir1 _relpath_common_dir2
-	local newpath IFS
+	local _r_newpath IFS
 
 	# Find the common prefix
-	_relpath_common "${dir1}" "${dir2}"
+	_relpath_common "${_r_dir1}" "${_r_dir2}"
 
 	case "${_relpath_common_dir2}" in
 	".")
-		newpath="${_relpath_common_dir1}"
+		_r_newpath="${_relpath_common_dir1}"
 		;;
 	*)
 		# Replace each component in _relpath_common_dir2 with
@@ -305,23 +307,23 @@ _relpath() {
 		IFS="/"
 		case "${_relpath_common_dir1}" in
 		".")
-			newpath=
+			_r_newpath=
 			;;
 		*)
-			newpath="${_relpath_common_dir1}"
+			_r_newpath="${_relpath_common_dir1}"
 			;;
 		esac
 		set -- ${_relpath_common_dir2}
 		while [ $# -gt 0 ]; do
-			newpath="..${newpath:+/}${newpath}"
+			_r_newpath="..${_r_newpath:+/}${_r_newpath}"
 			shift
 		done
 		;;
 	esac
 
-	case "${var_return}" in
-	-) echo "${newpath}" ;;
-	*) setvar "${var_return}" "${newpath}" ;;
+	case "${_r_var}" in
+	-) echo "${_r_newpath}" ;;
+	*) setvar "${_r_var}" "${_r_newpath}" ;;
 	esac
 }
 
@@ -329,12 +331,12 @@ _relpath() {
 relpath() {
 	local -; set +x
 	[ $# -eq 2 -o $# -eq 3 ] || eargs relpath dir1 dir2 [var_return]
-	local dir1="$1"
-	local dir2="$2"
-	local outvar="${3:-"-"}"
-	local _relpath
+	local r_dir1="$1"
+	local r_dir2="$2"
+	local r_var="${3:-"-"}"
+	local "${RELPATH_DEFAULT_VAR}"
 
-	_relpath "${dir1}" "${dir2}" "${outvar}"
+	_relpath "${r_dir1}" "${r_dir2}" "${r_var}"
 }
 
 in_reldir() {
@@ -342,7 +344,7 @@ in_reldir() {
 	local reldir_var="$1"
 	shift
 	local reldir_val reldir_abs_val nested_dir wanted_dir
-	local ret oldpwd
+	local ir_ret ir_oldpwd
 
 	case "${reldir_var}" in
 	*/*)
@@ -360,77 +362,77 @@ in_reldir() {
 	wanted_dir="${reldir_val:?}${nested_dir:+/${nested_dir}}"
 	case "${PWD}" in
 	"${wanted_dir:?}")
-		oldpwd=
+		ir_oldpwd=
 		;;
 	*)
 		cd "${wanted_dir:?}"
-		oldpwd="${OLDPWD}"
+		ir_oldpwd="${OLDPWD}"
 		;;
 	esac
 
-	ret=0
-	"$@" || ret="$?"
+	ir_ret=0
+	"$@" || ir_ret="$?"
 
-	case "${oldpwd:+set}" in
-	set) cd "${oldpwd}" ;;
+	case "${ir_oldpwd:+set}" in
+	set) cd "${ir_oldpwd}" ;;
 	esac
 
-	return "${ret}"
+	return "${ir_ret}"
 }
 
 make_relative() {
 	[ $# -eq 1 -o $# -eq 3 ] || eargs make_relative varname \
 	    [oldroot newroot]
-	local varname="$1"
-	local oldroot="${2:-${PWD}}"
-	local newroot="${3:-${PWD}}"
-	local value
+	local mr_var="$1"
+	local mr_oldroot="${2:-${PWD}}"
+	local mr_newroot="${3:-${PWD}}"
+	local mr_val
 
-	getvar "${varname}" value || return 0
-	case "${value}" in
+	getvar "${mr_var}" mr_val || return 0
+	case "${mr_val}" in
 	"") return 0 ;;
 	esac
-	case "${value}" in
-	/*)	_relpath "${value}" "${newroot}" "${varname}" ;;
-	*)	_relpath "${oldroot}/${value}" "${newroot}" "${varname}" ;;
+	case "${mr_val}" in
+	/*)	_relpath "${mr_val}" "${mr_newroot}" "${mr_var}" ;;
+	*)	_relpath "${mr_oldroot}/${mr_val}" "${mr_newroot}" "${mr_var}" ;;
 	esac
 }
 
 _update_relpaths() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs _update_relpaths oldroot newroot
-	local oldroot="$1"
-	local newroot="$2"
-	local varname
+	local _ur_oldroot="$1"
+	local _ur_newroot="$2"
+	local _ur_var
 
-	for varname in ${RELATIVE_PATH_VARS}; do
-		make_relative "${varname}" "${oldroot}" "${newroot}"
+	for _ur_var in ${RELATIVE_PATH_VARS}; do
+		make_relative "${_ur_var}" "${_ur_oldroot}" "${_ur_newroot}"
 	done
 }
 
 add_relpath_var() {
 	[ $# -eq 1 ] || eargs add_relpath_var varname
-	local varname="$1"
-	local value
+	local arv_var="$1"
+	local arv_val
 
-	getvar "${varname}" value ||
-	    err ${EX_SOFTWARE} "add_relpath_var: \$${varname} path must be set"
+	getvar "${arv_var}" arv_val ||
+	    err ${EX_SOFTWARE} "add_relpath_var: \$${arv_var} path must be set"
 	case " ${RELATIVE_PATH_VARS} " in
-	*" ${varname} "*) ;;
-	*) RELATIVE_PATH_VARS="${RELATIVE_PATH_VARS:+${RELATIVE_PATH_VARS} }${varname}" ;;
+	*" ${arv_var} "*) ;;
+	*) RELATIVE_PATH_VARS="${RELATIVE_PATH_VARS:+${RELATIVE_PATH_VARS} }${arv_var}" ;;
 	esac
-	if ! issetvar "${varname}_ABS"; then
-		case "${value}" in
+	if ! issetvar "${arv_var}_ABS"; then
+		case "${arv_val}" in
 		/*) ;;
 		*)
-			[ -e "${value}" ] ||
-			    err ${EX_SOFTWARE} "add_relpath_var: \$${varname} value '${value}' must exist or be absolute already"
-			value="$(realpath "${value}")"
+			[ -e "${arv_val}" ] ||
+			    err ${EX_SOFTWARE} "add_relpath_var: \$${arv_var} value '${arv_val}' must exist or be absolute already"
+			arv_val="$(realpath "${arv_val}")"
 		    ;;
 		esac
-		setvar "${varname}_ABS" "${value}"
+		setvar "${arv_var}_ABS" "${arv_val}"
 	fi
-	make_relative "${varname}"
+	make_relative "${arv_var}"
 }
 
 # Handle relative path change needs
@@ -615,24 +617,23 @@ read_file() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs read_file var_return file
 	local var_return="$1"
-	local file="$2"
-	local _data
-	local _ret - IFS
+	local rf_file="$2"
+	local rf_ret - IFS
 
 	# var_return may be empty if only $_read_file_lines_read is being
 	# used.
-	_ret=0
+	rf_ret=0
 	_read_file_lines_read=0
 
 	set +e
 
 	if ! mapfile_builtin && [ "${READ_FILE_USE_CAT:-0}" -eq 1 ]; then
-		local _data
+		local rf_data
 
-		case "${file:?}" in
+		case "${rf_file:?}" in
 		-|/dev/stdin|/dev/fd/0) ;;
 		*)
-			if [ ! -r "${file:?}" ]; then
+			if [ ! -r "${rf_file:?}" ]; then
 				case "${var_return}" in
 				""|-) ;;
 				*) unset "${var_return}" ;;
@@ -643,24 +644,24 @@ read_file() {
 		esac
 		case "${var_return:+set}" in
 		set)
-			_data="$(cat "${file}")" || _ret="$?"
+			rf_data="$(cat "${rf_file}")" || rf_ret="$?"
 			;;
 		esac
-		count_lines "${file}" _read_file_lines_read ||
+		count_lines "${rf_file}" _read_file_lines_read ||
 		    _read_file_lines_read=0
 
 		case "${var_return}" in
 		"") ;;
-		-) echo "${_data}" ;;
-		*) setvar "${var_return}" "${_data}" ;;
+		-) echo "${rf_data}" ;;
+		*) setvar "${var_return}" "${rf_data}" ;;
 		esac
 
-		return "${_ret}"
+		return "${rf_ret}"
 	else
-		readlines_file "${file}" ${var_return:+"${var_return}"} ||
-		    _ret="$?"
+		readlines_file "${rf_file}" ${var_return:+"${var_return}"} ||
+		    rf_ret="$?"
 		_read_file_lines_read="${_readlines_lines_read:?}"
-		return "${_ret}"
+		return "${rf_ret}"
 	fi
 }
 
@@ -668,43 +669,44 @@ read_file() {
 read_line() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs read_line var_return file
-	local var_return="$1"
-	local file="$2"
-	local max_reads reads _ret _line maph IFS
+	local rl_var="$1"
+	local rl_file="$2"
+	local rl_max_reads rl_reads rl_ret rl_line rl_handle IFS
 
-	if [ ! -f "${file}" ]; then
-		unset "${var_return}"
+	if [ ! -f "${rl_file}" ]; then
+		unset "${rl_var}"
 		return 1
 	fi
 
-	_ret=0
+	rl_ret=0
 	if mapfile_builtin; then
-		if mapfile -F maph "${file}"; then
-			IFS= mapfile_read "${maph}" "${var_return}" || _ret=$?
-			mapfile_close "${maph}" || :
+		if mapfile -F rl_handle "${rl_file}"; then
+			IFS= mapfile_read "${rl_handle}" "${rl_var}" ||
+			    rl_ret="$?"
+			mapfile_close "${rl_handle}" || :
 		else
-			_ret=$?
+			rl_ret="$?"
 		fi
 
-		return ${_ret}
+		return "${rl_ret}"
 	fi
 
-	max_reads=100
-	reads=0
+	rl_max_reads=100
+	rl_reads=0
 
 	# Read until a full line is returned.
-	until [ ${reads} -eq ${max_reads} ] || \
-	    IFS= read -t 1 -r _line < "${file}"; do
+	until [ ${rl_reads} -eq ${rl_max_reads} ] || \
+	    IFS= read -t 1 -r rl_line < "${rl_file}"; do
 		sleep 0.1
-		reads=$((reads + 1))
+		rl_reads=$((rl_reads + 1))
 	done
-	if [ "${reads}" -eq "${max_reads}" ]; then
-		_ret=1
+	if [ "${rl_reads}" -eq "${rl_max_reads}" ]; then
+		rl_ret=1
 	fi
 
-	setvar "${var_return}" "${_line}"
+	setvar "${rl_var}" "${rl_line}"
 
-	return ${_ret}
+	return "${rl_ret}"
 }
 
 readlines() {
@@ -730,9 +732,9 @@ readlines() {
 readlines_file() {
 	# Blank vars will still read and output $_readlines_lines_read
 	[ "$#" -ge 1 ] || eargs readlines_file [-T] file '[vars...]'
-	local rl_file
-	local rl_var rl_line rl_var_count rl_line_count
-	local rl_rest rl_nl rl_handle ret
+	local rlf_file
+	local rlf_var rlf_line rlf_var_count
+	local rlf_rest rlf_nl rlf_handle rlf_ret
 	local flag Tflag
 	local OPTIND=1 IFS
 
@@ -747,76 +749,76 @@ readlines_file() {
 	done
 	shift $((OPTIND-1))
 	[ "$#" -ge 1 ] || eargs readlines_file [-T] file '[vars...]'
-	rl_file="$1"
+	rlf_file="$1"
 	shift
 
 	_readlines_lines_read=0
-	case "${rl_file:?}" in
-	-|/dev/stdin|/dev/fd/0) rl_file="/dev/fd/0" ;;
+	case "${rlf_file:?}" in
+	-|/dev/stdin|/dev/fd/0) rlf_file="/dev/fd/0" ;;
 	*)
-		if [ ! -r "${rl_file:?}" ]; then
-			for rl_var in "$@"; do
-				unset "${rl_var}"
+		if [ ! -r "${rlf_file:?}" ]; then
+			for rlf_var in "$@"; do
+				unset "${rlf_var}"
 			done
 			return 1
 		fi
 		;;
 	esac
 
-	rl_nl=${RL_NL-$'\n'}
-	rl_var_count="$#"
-	unset rl_rest
-	ret=0
-	if mapfile -F rl_handle "${rl_file:?}" "r"; then
-		while IFS= mapfile_read "${rl_handle}" rl_line; do
+	rlf_nl=${RL_NL-$'\n'}
+	rlf_var_count="$#"
+	unset rlf_rest
+	rlf_ret=0
+	if mapfile -F rlf_handle "${rlf_file:?}" "r"; then
+		while IFS= mapfile_read "${rlf_handle}" rlf_line; do
 			_readlines_lines_read="$((_readlines_lines_read + 1))"
 			case "${Tflag}" in
 			1)
-				echo "${rl_line}"
+				echo "${rlf_line}"
 				;;
 			esac
-			case "${rl_var_count}" in
+			case "${rlf_var_count}" in
 			0)
 				;;
 			1)
-				rl_rest="${rl_rest:+${rl_rest}${rl_nl}}${rl_line}"
+				rlf_rest="${rlf_rest:+${rlf_rest}${rlf_nl}}${rlf_line}"
 				;;
 			*)
-				rl_var_count="$((rl_var_count - 1))"
-				rl_var="${1?}"
+				rlf_var_count="$((rlf_var_count - 1))"
+				rlf_var="${1?}"
 				shift
-				case "${rl_var:+set}" in
+				case "${rlf_var:+set}" in
 				set)
-					setvar "${rl_var}" "${rl_line}"
+					setvar "${rlf_var}" "${rlf_line}"
 					;;
 				esac
 				;;
 			esac
 		done
-		mapfile_close "${rl_handle}" || ret="$?"
+		mapfile_close "${rlf_handle}" || rlf_ret="$?"
 	else
-		ret=1
+		rlf_ret=1
 	fi
-	case "${rl_var_count}" in
+	case "${rlf_var_count}" in
 	0) ;;
 	*)
-		case "${rl_rest+set}" in
+		case "${rlf_rest+set}" in
 		set)
-			rl_var="${1?}"
+			rlf_var="${1?}"
 			shift
-			case "${rl_var:+set}" in
+			case "${rlf_var:+set}" in
 			set)
-				setvar "${rl_var}" "${rl_rest}"
+				setvar "${rlf_var}" "${rlf_rest}"
 				;;
 			esac
 			;;
 		esac
-		for rl_var in "$@"; do
-			unset "${rl_var}"
+		for rlf_var in "$@"; do
+			unset "${rlf_var}"
 		done
 		;;
 	esac
-	return "${ret}"
+	return "${rlf_ret}"
 }
 
 readarray() {
@@ -843,12 +845,12 @@ readarray_file() {
 read_blocking() {
 	local -; set +x
 	[ $# -ge 1 ] || eargs read_blocking read_args
-	local _ret
+	local rb_ret
 
 	while :; do
-		_ret=0
-		read "$@" || _ret=$?
-		case ${_ret} in
+		rb_ret=0
+		read "$@" || rb_ret="$?"
+		case ${rb_ret} in
 			# Read again on SIGINFO interrupts
 			157) continue ;;
 			# Valid EOF
@@ -859,7 +861,7 @@ read_blocking() {
 			*) break ;;
 		esac
 	done
-	return ${_ret}
+	return "${rb_ret}"
 }
 
 # Same as read_blocking() but it reads an entire raw line.
@@ -868,12 +870,12 @@ read_blocking() {
 read_blocking_line() {
 	local -; set +x
 	[ $# -ge 1 ] || eargs read_blocking_line read_args
-	local _ret IFS
+	local rbl_ret IFS
 
 	while :; do
-		_ret=0
-		IFS= read -r "$@" || _ret=$?
-		case ${_ret} in
+		rbl_ret=0
+		IFS= read -r "$@" || rbl_ret="$?"
+		case ${rbl_ret} in
 			# Read again on SIGINFO interrupts
 			157) continue ;;
 			# Valid EOF
@@ -884,7 +886,7 @@ read_blocking_line() {
 			*) break ;;
 		esac
 	done
-	return ${_ret}
+	return "${rbl_ret}"
 }
 
 # SIGINFO traps won't abort the read, and if the pipe goes away or
@@ -893,13 +895,13 @@ read_pipe() {
 	local -; set +x
 	[ $# -ge 2 ] || eargs read_pipe fifo read_args
 	local fifo="$1"
-	local _ret resread resopen
+	local rp_ret resread resopen
 	shift
 
-	_ret=0
+	rp_ret=0
 	while :; do
 		if ! [ -p "${fifo}" ]; then
-			_ret=32
+			rp_ret=32
 			break
 		fi
 		# Separately handle open(2) and read(builtin) errors
@@ -918,20 +920,20 @@ read_pipe() {
 			# Success
 			0) ;;
 			# Unknown problem or signal, just return the error.
-			*) _ret=${resopen}; break ;;
+			*) rp_ret="${resopen}"; break ;;
 		esac
 		case ${resread} in
 			# Read again on SIGINFO interrupts
 			157) continue ;;
 			# Valid EOF
-			1) _ret=${resread}; break ;;
+			1) rp_ret="${resread}"; break ;;
 			# Success
 			0) break ;;
 			# Unknown problem or signal, just return the error.
-			*) _ret=${resread}; break ;;
+			*) rp_ret="${resread}"; break ;;
 		esac
 	done
-	return ${_ret}
+	return "${rp_ret}"
 }
 
 # Ignore EOF
@@ -939,15 +941,20 @@ read_pipe_noeof() {
 	local -; set +x
 	[ $# -ge 2 ] || eargs read_pipe_noeof fifo read_args
 	local fifo="$1"
-	local _ret
+	local rpn_ret
 	shift
 
 	while :; do
-		_ret=0
-		read_pipe "${fifo}" "$@" || _ret=$?
-		[ ${_ret} -eq 1 ] || break
+		rpn_ret=0
+		read_pipe "${fifo}" "$@" || rpn_ret="$?"
+		case "${rpn_ret}" in
+		1) ;;
+		*)
+			break
+			;;
+		esac
 	done
-	return ${_ret}
+	return "${rpn_ret}"
 }
 
 # This is avoiding EINTR errors when writing to a pipe due to SIGINFO traps
@@ -1011,24 +1018,24 @@ _pipe_hold_child() {
 pipe_hold() {
 	[ $# -ge 3 ] || eargs pipe_hold var_return_jobid watch_pid fifos...
 	local var_return_jobid="$1"
-	local watch_pid="$2"
+	local ph_pid="$2"
 	shift 2
-	local sync_fifo sync ret
+	local ph_fifo ph_sync ph_ret
 
-	ret=0
-	sync=
-	sync_fifo=$(mktemp -ut pipe_hold)
-	mkfifo "${sync_fifo}"
+	ph_ret=0
+	ph_sync=
+	ph_fifo=$(mktemp -ut pipe_hold)
+	mkfifo "${ph_fifo}"
 
-	spawn_job_protected _pipe_hold_child "${sync_fifo}" "${watch_pid}" "$@"
+	spawn_job_protected _pipe_hold_child "${ph_fifo}" "${ph_pid}" "$@"
 	setvar "${var_return_jobid}" "${spawn_jobid}"
-	read_pipe "${sync_fifo}" sync || ret="$?"
-	case "${sync}" in
+	read_pipe "${ph_fifo}" ph_sync || ph_ret="$?"
+	case "${ph_sync}" in
 	ready) ;;
 	*) err 1 "pipe_hold failure" ;;
 	esac
-	unlink "${sync_fifo}"
-	return "${ret}"
+	unlink "${ph_fifo}"
+	return "${ph_ret}"
 }
 
 case "$(type mapfile 2>/dev/null)" in
@@ -1174,22 +1181,22 @@ mapfile() {
 mapfile_read() {
 	local -; set +x -u
 	[ $# -ge 2 ] || eargs mapfile_read handle output_var ...
-	local handle="$1"
+	local mapfile_read_handle="$1"
 	shift
-	local mapfile_read_modes
+	local mapfile_read_fd mapfile_read_modes
 
-	if ! hash_get mapfile_fd "${handle}" fd; then
-		err "${EX_SOFTWARE}" "mapfile_read: ${handle} is not open"
+	if ! hash_get mapfile_fd "${mapfile_read_handle}" mapfile_read_fd; then
+		err "${EX_SOFTWARE}" "mapfile_read: ${mapfile_read_handle} is not open"
 	fi
-	hash_get mapfile_modes "${handle}" mapfile_read_modes
+	hash_get mapfile_modes "${mapfile_read_handle}" mapfile_read_modes
 	case "${mapfile_read_modes}" in
 	*r*|*+*) ;;
 	*)
-		err "${EX_SOFTWARE}" "mapfile_read: ${handle} is not open for reading, modes=${mapfile_read_modes}"
+		err "${EX_SOFTWARE}" "mapfile_read: ${mapfile_read_handle} is not open for reading, modes=${mapfile_read_modes}"
 		;;
 	esac
 
-	read_blocking -r "$@" <&"${fd}"
+	read_blocking -r "$@" <&"${mapfile_read_fd}"
 }
 
 mapfile_write() {
@@ -1272,15 +1279,15 @@ mapfile_close() {
 mapfile_read_loop() {
 	local -; set +x
 	[ $# -ge 2 ] || eargs mapfile_read_loop file vars
-	local _file="$1"
+	local mrl_file="$1"
 	shift
-	local _hkey _handle ret
+	local mrl_hkey mrl_handle mrl_ret
 
-	case "${_file}" in
+	case "${mrl_file}" in
 	-|/dev/stdin|/dev/fd/0)
-		ret=0
-		read -r "$@" || ret="$?"
-		return "${ret}"
+		mrl_ret=0
+		read -r "$@" || mrl_ret="$?"
+		return "${mrl_ret}"
 		;;
 	esac
 
@@ -1288,20 +1295,20 @@ mapfile_read_loop() {
 	# using an anonymous handle on stdin - which if nested in a
 	# pipe would reuse the already-opened handle from the parent
 	# pipe.
-	_hkey="${_file}.$*"
+	mrl_hkey="${mrl_file}.$*"
 
-	if ! hash_get mapfile_handle "${_hkey}" _handle; then
-		mapfile _handle "${_file}" "re" || return "$?"
-		hash_set mapfile_handle "${_hkey}" "${_handle}"
+	if ! hash_get mapfile_handle "${mrl_hkey}" mrl_handle; then
+		mapfile mrl_handle "${mrl_file}" "re" || return "$?"
+		hash_set mapfile_handle "${mrl_hkey}" "${mrl_handle}"
 	fi
 
-	if mapfile_read "${_handle}" "$@"; then
+	if mapfile_read "${mrl_handle}" "$@"; then
 		return 0
 	else
-		ret=$?
-		mapfile_close "${_handle}" || ret="$?"
-		hash_unset mapfile_handle "${_hkey}"
-		return ${ret}
+		mrl_ret="$?"
+		mapfile_close "${mrl_handle}" || mrl_ret="$?"
+		hash_unset mapfile_handle "${mrl_hkey}"
+		return "${mrl_ret}"
 	fi
 }
 
@@ -1547,15 +1554,15 @@ noclobber() {
 
 # Ignore SIGPIPE
 nopipe() {
-	local opipe _ret
+	local opipe nopipe_ret
 
 	trap_push PIPE opipe
 	trap '' PIPE
-	_ret=0
-	"$@" || _ret=$?
+	nopipe_ret=0
+	"$@" || nopipe_ret=$?
 	trap_pop PIPE "${opipe}"
 
-	return ${_ret}
+	return "${nopipe_ret}"
 }
 
 # Detect if pipefail support is available in the shell.  The shell
@@ -1919,57 +1926,57 @@ write_atomic() {
 required_env() {
 	local -; set +x
 	[ $# -ge 3 ] || eargs required_env function VAR VALUE VAR... VALUE...
-	local function="$1"
-	local var expected_value actual_value ret neg
-	local errors
+	local re_func="$1"
+	local re_var re_expected_val re_val re_ret re_neg
+	local re_errors
 
-	errors=
+	re_errors=
 	shift
-	ret=0
-	neg=
+	re_ret=0
+	re_neg=
 	if [ $(($# % 2)) -ne 0 ]; then
-		err ${EX_SOFTWARE} "wrong number of arguments to required_env() calling ${function}: expected function followed by pairs of VAR VALUE"
+		err ${EX_SOFTWARE} "wrong number of arguments to required_env() calling ${re_func}: expected function followed by pairs of VAR VALUE"
 	fi
 	while [ $# -ne 0 ]; do
-		var="$1"
-		expected_value="$2"
+		re_var="$1"
+		re_expected_val="$2"
 		shift 2 || \
 		    err ${EX_SOFTWARE} "wrong number of arguments to required_env()"
-		case "${var}" in
+		case "${re_var}" in
 		*!)
-			neg="!"
-			var="${var%!}"
-			getvar "${var}" actual_value || actual_value=re__null
+			re_neg="!"
+			re_var="${re_var%!}"
+			getvar "${re_var}" re_val || re_val=re__null
 			# !expected
-			case "${expected_value}" in
+			case "${re_expected_val}" in
 			"")
-				case "${actual_value}" in
+				case "${re_val}" in
 				# Special case: SET and not blank is wanted
 				"re__null"|"")
-					expected_value="empty or re__null"
+					re_expected_val="empty or re__null"
 					;;
 				*) continue ;;
 				esac
 				;;
-			"${actual_value}") ;;
+			"${re_val}") ;;
 			*) continue ;;
 			esac
 			;;
 		*)
-			neg=
-			getvar "${var}" actual_value || actual_value=re__null
-			case "${actual_value}" in
-			"${expected_value}") continue ;;
+			re_neg=
+			getvar "${re_var}" re_val || re_val=re__null
+			case "${re_val}" in
+			"${re_expected_val}") continue ;;
 			esac
 			;;
 		esac
-		ret=$((ret + 1))
-		stack_push errors "expected ${var} ${neg}= '${expected_value}' actual: '${actual_value}'"
+		re_ret=$((re_ret + 1))
+		stack_push re_errors "expected ${re_var} ${re_neg}= '${re_expected_val}' actual: '${re_val}'"
 	done
-	if [ "${ret}" -ne 0 ]; then
-		err "${EX_SOFTWARE}" "entered ${function}() with wrong environment:"$'\n'$'\t'"$(stack_expand errors $'\n'$'\t')"
+	if [ "${re_ret}" -ne 0 ]; then
+		err "${EX_SOFTWARE}" "entered ${re_func}() with wrong environment:"$'\n'$'\t'"$(stack_expand re_errors $'\n'$'\t')"
 	fi
-	return "${ret}"
+	return "${re_ret}"
 }
 
 if ! type getpid >/dev/null 2>&1; then

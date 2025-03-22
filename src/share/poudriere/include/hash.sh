@@ -50,30 +50,30 @@ if ! type _gsub 2>/dev/null >&2; then
 _gsub() {
 	[ "$#" -eq 3 ] || [ "$#" -eq 4 ] ||
 	    eargs _gsub string pattern replacement '[var_return]'
-	local string="$1"
-	local pattern="$2"
-	local replacement="$3"
-	local var_return="${4:-_gsub}"
-	local result_l result_r
+	local gsub_str="$1"
+	local gsub_pat="$2"
+	local gsub_repl="$3"
+	local gsub_out_var="${4:-_gsub}"
+	local gsub_res_l gsub_res_r
 
-	result_l=
-	result_r="${string}"
+	gsub_res_l=
+	gsub_res_r="${gsub_str}"
 
 	# Trying to match everything really means any char.
 	# Without this we get into an infinite loop on this case.
-	case "${pattern}" in
-	"*") pattern="?" ;;
+	case "${gsub_pat}" in
+	"*") gsub_pat="?" ;;
 	esac
 
-	case "${pattern:+set}" in
+	case "${gsub_pat:+set}" in
 	set)
 		while :; do
-			case ${result_r} in
-			*${pattern}*)
+			case ${gsub_res_r} in
+			*${gsub_pat}*)
 				# shellcheck disable=SC2295
-				result_l=${result_l}${result_r%%${pattern}*}${replacement}
+				gsub_res_l=${gsub_res_l}${gsub_res_r%%${gsub_pat}*}${gsub_repl}
 				# shellcheck disable=SC2295
-				result_r=${result_r#*${pattern}}
+				gsub_res_r=${gsub_res_r#*${gsub_pat}}
 				;;
 			*)
 				break
@@ -83,7 +83,7 @@ _gsub() {
 		;;
 	esac
 
-	setvar "${var_return}" "${result_l}${result_r}"
+	setvar "${gsub_out_var}" "${gsub_res_l}${gsub_res_r}"
 }
 fi
 
@@ -143,22 +143,22 @@ hash_vars() {
 	[ "$#" -eq 3 ] || [ "$#" -eq 2 ] ||
 	    eargs hash_vars var_return 'var|*' 'key|*'
 	local _hash_vars_return="$1"
-	local var="$2"
-	local key="${3:-*}"
-	local _hash_vars_list ret line lkey
+	local _hash_vars_var="$2"
+	local _hash_vars_key="${3:-*}"
+	local _hash_vars_list hv_line hv_lkey
 
 	_hash_vars_list=
-	while read -r line; do
+	while read -r hv_line; do
 		# shellcheck disable=SC2027
-		case "${line}" in
-		"${HASH_VAR_NAME_PREFIX:?}B"${var:?}"_K"${key:?}"="*)
+		case "${hv_line}" in
+		"${HASH_VAR_NAME_PREFIX:?}B"${_hash_vars_var:?}"_K"${_hash_vars_key:?}"="*)
 			# shellcheck disable=SC2295
-			line="${line#"${HASH_VAR_NAME_PREFIX:?}"B}"
-			line="${line%%=*}"
-			lkey="${line}"
-			lkey="${line##*_K}"
-			line="${line%%_K*}"
-			_hash_vars_list="${_hash_vars_list:+${_hash_vars_list} }${line:?}:${lkey:?}"
+			hv_line="${hv_line#"${HASH_VAR_NAME_PREFIX:?}"B}"
+			hv_line="${hv_line%%=*}"
+			hv_lkey="${hv_line}"
+			hv_lkey="${hv_line##*_K}"
+			hv_line="${hv_line%%_K*}"
+			_hash_vars_list="${_hash_vars_list:+${_hash_vars_list} }${hv_line:?}:${hv_lkey:?}"
 			;;
 		esac
 	done <<-EOF
@@ -206,47 +206,47 @@ hash_assert_no_vars() {
 hash_isset() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs hash_isset var key
-	local _var="$1"
-	local _key="$2"
+	local hi_var="$1"
+	local hi_key="$2"
 	local _hash_var_name
 
-	_hash_var_name "${_var}" "${_key}"
+	_hash_var_name "${hi_var}" "${hi_key}"
 	issetvar "${_hash_var_name}"
 }
 
 hash_isset_var() {
 	local -; set +x
 	[ $# -eq 1 ] || eargs hash_isset_var var
-	local _var="$1"
-	local _line _hash_var_name ret IFS
+	local hiv_var="$1"
+	local hiv_line _hash_var_name hiv_ret IFS
 
-	_hash_var_name "${_var}" ""
-	ret=1
-	while IFS= mapfile_read_loop_redir _line; do
+	_hash_var_name "${hiv_var}" ""
+	hiv_ret=1
+	while IFS= mapfile_read_loop_redir hiv_line; do
 		# XXX: mapfile_read_loop can't safely return/break
-		if [ "${ret}" -eq 0 ]; then
+		if [ "${hiv_ret}" -eq 0 ]; then
 			continue
 		fi
-		case "${_line}" in
+		case "${hiv_line}" in
 		${_hash_var_name}*=*)
-			ret=0
+			hiv_ret=0
 			;;
 		*) continue ;;
 		esac
 	done <<-EOF
 	$(set)
 	EOF
-	return "${ret}"
+	return "${hiv_ret}"
 }
 
 hash_get() {
 	local -; set +x
 	[ $# -eq 3 ] || eargs hash_get var key var_return
-	local _var="$1"
-	local _key="$2"
+	local hg_var="$1"
+	local hg_key="$2"
 	local _hash_var_name
 
-	_hash_var_name "${_var}" "${_key}"
+	_hash_var_name "${hg_var}" "${hg_key}"
 	getvar "${_hash_var_name}" "${3}"
 }
 
@@ -341,12 +341,12 @@ hash_foreach_back() {
 hash_set() {
 	local -; set +x -u
 	[ $# -eq 3 ] || eargs hash_set var key value
-	local _var="$1"
-	local _key="$2"
-	local _value="$3"
+	local hash_set_var="$1"
+	local hash_set_key="$2"
+	local hash_set_val="$3"
 	local _hash_var_name
 
-	_hash_var_name "${_var}" "${_key}"
+	_hash_var_name "${hash_set_var}" "${hash_set_key}"
 	case "$-" in
 	*C*)
 		# noclobber is set.
@@ -356,7 +356,7 @@ hash_set() {
 			return 1
 		fi
 	esac
-	setvar "${_hash_var_name}" "${_value}"
+	setvar "${_hash_var_name}" "${hash_set_val}"
 }
 
 # Similar to hash_unset but returns the value or error if not set.
@@ -389,28 +389,28 @@ hash_remove() {
 hash_unset() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs hash_unset var key
-	local _var="$1"
-	local _key="$2"
+	local hu_var="$1"
+	local hu_key="$2"
 	local _hash_var_name
 
-	_hash_var_name "${_var}" "${_key}"
+	_hash_var_name "${hu_var}" "${hu_key}"
 	unset "${_hash_var_name}"
 }
 
 hash_unset_var() {
 	local -; set +x
 	[ $# -eq 1 ] || eargs hash_unset_var var
-	local _var="$1"
-	local _key _line _hash_var_name
+	local huv_var="$1"
+	local huv_key huv_line _hash_var_name
 
-	_hash_var_name "${_var}" ""
-	while IFS= mapfile_read_loop_redir _line; do
-		case "${_line}" in
+	_hash_var_name "${huv_var}" ""
+	while IFS= mapfile_read_loop_redir huv_line; do
+		case "${huv_line}" in
 		"${_hash_var_name}"*=*) ;;
 		*) continue ;;
 		esac
-		_key="${_line%%=*}"
-		unset "${_key}"
+		huv_key="${huv_line%%=*}"
+		unset "${huv_key}"
 	done <<-EOF
 	$(set)
 	EOF
@@ -419,41 +419,41 @@ hash_unset_var() {
 list_contains() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs list_contains var item
-	local _var="$1"
-	local item="$2"
-	local _value
+	local lc_var="$1"
+	local lc_item="$2"
+	local lc_val
 
-	getvar "${_var}" _value || _value=
-	case " ${_value} " in *" ${item} "*) ;; *) return 1 ;; esac
+	getvar "${lc_var}" lc_val || lc_val=
+	case " ${lc_val} " in *" ${lc_item} "*) ;; *) return 1 ;; esac
 	return 0
 }
 
 list_add() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs list_add var item
-	local _var="$1"
-	local item="$2"
-	local _value
+	local la_var="$1"
+	local la_item="$2"
+	local la_value
 
-	getvar "${_var}" _value || _value=
-	case " ${_value} " in *" ${item} "*) return 0 ;; esac
-	setvar "${_var}" "${_value:+${_value} }${item}"
+	getvar "${la_var}" la_value || la_value=
+	case " ${la_value} " in *" ${la_item} "*) return 0 ;; esac
+	setvar "${la_var}" "${la_value:+${la_value} }${la_item}"
 }
 
 list_remove() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs list_remove var item
-	local _var="$1"
-	local item="$2"
-	local _value newvalue
+	local lr_var="$1"
+	local lr_item="$2"
+	local lr_val lr_newval
 
-	getvar "${_var}" _value || _value=
-	_value=" ${_value} "
-	case "${_value}" in *" ${item} "*) ;; *) return 1 ;; esac
-	newvalue="${_value% "${item}" *} ${_value##* "${item}" }"
-	newvalue="${newvalue# }"
-	newvalue="${newvalue% }"
-	setvar "${_var}" "${newvalue}"
+	getvar "${lr_var}" lr_val || lr_val=
+	lr_val=" ${lr_val} "
+	case "${lr_val}" in *" ${lr_item} "*) ;; *) return 1 ;; esac
+	lr_newval="${lr_val% "${lr_item}" *} ${lr_val##* "${lr_item}" }"
+	lr_newval="${lr_newval# }"
+	lr_newval="${lr_newval% }"
+	setvar "${lr_var}" "${lr_newval}"
 }
 
 stack_push() {
