@@ -5921,7 +5921,9 @@ clean_pool() {
 		    pkgname_is_listed "${skipped_pkgname}"; then
 			trim_ignored_pkg "${skipped_pkgname}" "${skipped_originspec}" "Dependent port ${originspec} | ${pkgname} ${clean_rdepends}"
 		else
-			if ! noclobber shash_set pkgname-skipped "${skipped_pkgname}" 1; then
+			if ! noclobber \
+			    shash_set pkgname-skipped \
+			    "${skipped_pkgname}" 1 2>/dev/null; then
 				msg_debug "clean_pool: Skipping duplicate ${skipped_pkgname}"
 				continue
 			fi
@@ -6482,8 +6484,8 @@ deps_fetch_vars() {
 	# Check if this PKGNAME already exists, which is sometimes fatal.
 	# Two different originspecs of the same origin but with
 	# different FLAVORS may result in the same PKGNAME.
-	if ! noclobber shash_set pkgname-originspec "${_pkgname}" \
-	    "${originspec}"; then
+	if ! noclobber shash_set pkgname-originspec \
+	    "${_pkgname}" "${originspec}" 2>/dev/null; then
 		shash_get pkgname-originspec "${_pkgname}" _existing_originspec
 		case "${_existing_originspec}" in
 		"${originspec}")
@@ -9448,7 +9450,8 @@ trim_ignored_pkg() {
 	local ignore="$3"
 	local origin flavor subpkg logfile
 
-	if ! noclobber shash_set pkgname-trim_ignored "${pkgname}" 1; then
+	if ! noclobber shash_set pkgname-trim_ignored \
+	    "${pkgname}" 1 2>/dev/null; then
 		msg_debug "trim_ignored_pkg: Skipping duplicate ${pkgname}"
 		return 0
 	fi

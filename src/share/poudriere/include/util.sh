@@ -1536,12 +1536,11 @@ mapfile_mktemp() {
 	setvar "${tmpfile_var_return}" "${mm_tmpfile}"
 }
 
-# This uses open(O_CREAT), woot.
 noclobber() {
 	local -
 	set -C
 
-	"$@" 2>/dev/null
+	"$@"
 }
 
 # Ignore SIGPIPE
