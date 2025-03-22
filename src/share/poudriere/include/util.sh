@@ -1276,6 +1276,14 @@ mapfile_read_loop() {
 	shift
 	local _hkey _handle ret
 
+	case "${_file}" in
+	-|/dev/stdin|/dev/fd/0)
+		ret=0
+		read -r "$@" || ret="$?"
+		return "${ret}"
+		;;
+	esac
+
 	# Store the handle based on the params passed in since it is
 	# using an anonymous handle on stdin - which if nested in a
 	# pipe would reuse the already-opened handle from the parent
@@ -1361,13 +1369,7 @@ esac
 
 # Alias for mapfile_read_loop "/dev/stdin" vars...
 mapfile_read_loop_redir() {
-	[ $# -ge 1 ] || eargs mapfile_read_loop_redir vars
-
-	if mapfile_builtin; then
-		mapfile_read_loop "-" "$@"
-	else
-		read -r "$@"
-	fi
+	mapfile_read_loop "/dev/stdin" "$@"
 }
 
 # Helper to workaround lack of process substitution.
