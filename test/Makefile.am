@@ -44,6 +44,7 @@ TESTS=\
 	gsub.sh \
 	hash_basic.sh \
 	hash_stack.sh \
+	herepipe.sh \
 	jobs.sh \
 	list.sh \
 	locked_mkdir.sh \

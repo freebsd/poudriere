@@ -7647,8 +7647,8 @@ port_var_fetch() {
 	local -; set +x -f
 	[ $# -ge 3 ] || eargs port_var_fetch origin PORTVAR var_set ...
 	local origin="$1"
-	local _make_origin _makeflags _vars ret
-	local _portvar _var _line _errexit shiftcnt varcnt
+	local _make_origin _makeflags pvf_vars pvf_ret
+	local _portvar pvf_var pvf_line shiftcnt varcnt
 	# Use a tab rather than space to allow FOO='BLAH BLAH' assignments
 	# and lookups like -V'${PKG_DEPENDS} ${BUILD_DEPENDS}'
 	local IFS sep=$'\t'
@@ -7676,16 +7676,16 @@ port_var_fetch() {
 			# This is an assignment, no associated variable
 			# for storage.
 			_makeflags="${_makeflags:+${_makeflags}${sep}}${_portvar}"
-			_vars="${_vars:+${_vars} }${assign_var}"
+			pvf_vars="${pvf_vars:+${pvf_vars} }${assign_var}"
 			shift 1
 			;;
 		*)
 			if [ "$#" -eq 1 ]; then
 				break
 			fi
-			_var="$2"
+			pvf_var="$2"
 			_makeflags="${_makeflags:+${_makeflags}${sep}}-V${_portvar}"
-			_vars="${_vars:+${_vars} }${_var}"
+			pvf_vars="${pvf_vars:+${pvf_vars} }${pvf_var}"
 			shift 2
 			;;
 		esac
@@ -7693,26 +7693,13 @@ port_var_fetch() {
 
 	[ $# -eq 0 ] || eargs port_var_fetch origin PORTVAR var_set ...
 
-	_errexit="!errexit!"
-	ret=0
+	pvf_ret=0
 	set -o noglob
-	set -- ${_vars}
+	set -- ${pvf_vars}
 	set +o noglob
 	varcnt="$#"
 	shiftcnt=0
-	while IFS= mapfile_read_loop_redir _line; do
-		case "${_line}" in
-		"${_errexit} "*)
-			ret="${_line#* }"
-			# Encountered an error, abort parsing anything further.
-			# Cleanup already-set vars of 'make: stopped in'
-			# stuff in case the caller is ignoring our non-0
-			# return status.  The shiftcnt handler can deal with
-			# this all itself.
-			shiftcnt=0
-			break
-			;;
-		esac
+	while herepipe_read pvf_ret pvf_line; do
 		# Skip assignment vars.
 		# This var was just an assignment, no actual value to read from
 		# stdout.  Shift until we find an actual -V var.
@@ -7731,14 +7718,26 @@ port_var_fetch() {
 		# We may have more lines than expected on an error, but our
 		# errexit output is last, so keep reading until then.
 		if [ "$#" -gt 0 ]; then
-			setvar "$1" "${_line}" || return "$?"
+			setvar "$1" "${pvf_line}" || return "$?"
 			shift
 			shiftcnt="$((shiftcnt + 1))"
 		fi
 	done <<-EOF
-	$(IFS="${sep}"; ${MASTERNAME+injail} /usr/bin/make ${_make_origin} ${_makeflags-} ||
-	    echo "${_errexit} $?")
+	$({
+		herepipe_trap
+		IFS="${sep}"; ${MASTERNAME+injail} /usr/bin/make ${_make_origin} ${_makeflags-}
+	})
 	EOF
+	case "${pvf_ret}" in
+	0) ;;
+	*)
+		# Cleanup already-set vars of 'make: stopped in'
+		# stuff in case the caller is ignoring our non-0
+		# return status.  The shiftcnt handler can deal with
+		# this all itself.
+		shiftcnt=0
+		;;
+	esac
 
 	# If the entire output was blank, then $() ate all of the excess
 	# newlines, which resulted in some vars not getting setvar'd.
@@ -7747,7 +7746,7 @@ port_var_fetch() {
 	"${varcnt}") ;;
 	*)
 		set -o noglob
-		set -- ${_vars}
+		set -- ${pvf_vars}
 		set +o noglob
 		# Be sure to start at the last setvar'd value.
 		if [ "${shiftcnt}" -gt 0 ]; then
@@ -7773,7 +7772,7 @@ port_var_fetch() {
 		;;
 	esac
 
-	return "${ret}"
+	return "${pvf_ret}"
 }
 
 port_var_fetch_originspec() {

@@ -485,8 +485,8 @@ TESTS = array.sh builtins.sh builtins-cut.sh builtins-paste.sh \
 	encode_args.sh err.sh err_catch.sh err_catch_framework.sh \
 	err_pipe_delayed.sh getpid.sh getvar.sh \
 	git_get_hash_and_dirty.sh git_tree_dirty.sh globmatch.sh \
-	gsub.sh hash_basic.sh hash_stack.sh jobs.sh list.sh \
-	locked_mkdir.sh locked_mkdir_waiters.sh \
+	gsub.sh hash_basic.sh hash_stack.sh herepipe.sh jobs.sh \
+	list.sh locked_mkdir.sh locked_mkdir_waiters.sh \
 	locked_mkdir_waiters_all_lose.sh locked_mkdir_waiters_kill.sh \
 	locks.sh locks_critical_section.sh \
 	locks_critical_section_nested.sh logging.sh mapfile.sh \
@@ -1014,6 +1014,13 @@ hash_basic.sh.log: hash_basic.sh
 hash_stack.sh.log: hash_stack.sh
 	@p='hash_stack.sh'; \
 	b='hash_stack.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+herepipe.sh.log: herepipe.sh
+	@p='herepipe.sh'; \
+	b='herepipe.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

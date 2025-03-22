@@ -89,14 +89,22 @@ assert "" "${pkgname}" "PKGNAME shouldn't have gotten a value in a failed lookup
 pkgname=
 port_var_fetch "port_var_fetch1" \
     FAIL=1 \
-    PKGNAME pkgname 2>/dev/null
+    PKGNAME pkgname
 assert 1 $? "port_var_fetch with FAIL set should fail"
 assert "" "${pkgname}" "PKGNAME shouldn't have gotten a value in a failed lookup"
+
+# Insert a valid between the failures. Some deep implementations may
+# wrongly cache the error from the last call.
+pkgname=
+port_var_fetch "port_var_fetch1" \
+    PKGNAME pkgname
+assert 0 "$?"
+assert "py34-sqlrelay-1.0.0_2" "${pkgname}" "PKGNAME"
 
 # Check for a syntax error failure
 pkgname=
 port_var_fetch "port_var_fetch_syntax_error" \
-    PKGNAME pkgname 2>/dev/null
+    PKGNAME pkgname
 assert 1 $? "port_var_fetch should detect make syntax error failure"
 assert "" "${pkgname}" "PKGNAME shouldn't have gotten a value in a failed lookup"
 
@@ -105,7 +113,7 @@ port_var_fetch "port_var_fetch_syntax_error" \
     PKG_DEPENDS pkg_depends \
     BUILD_DEPENDS build_depends \
     FETCH_DEPENDS fetch_depends \
-    PKGNAME pkgname 2>/dev/null
+    PKGNAME pkgname
 assert 1 $? "port_var_fetch should detect make syntax error failure"
 assert "" "${pkg_depends}" "PKG_DEPENDS shouldn't have gotten a value in a failed lookup"
 assert "" "${build_depends}" "BUILD_DEPENDS shouldn't have gotten a value in a failed lookup"
@@ -114,6 +122,6 @@ assert "" "${pkgname}" "PKGNAME shouldn't have gotten a value in a failed lookup
 
 # Lookup 1 value with multiple errors returned
 port_var_fetch "port_var_fetch_syntax_error" \
-    PKGNAME pkgname 2>/dev/null
+    PKGNAME pkgname
 assert 1 $? "port_var_fetch should detect make syntax error with 1 -V"
 assert "" "${pkgname}" "PKGNAME shouldn't have gotten a value in a failed lookup"
