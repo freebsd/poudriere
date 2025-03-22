@@ -7669,7 +7669,7 @@ port_var_fetch() {
 
 	shift
 
-	while [ $# -gt 0 ]; do
+	while [ "$#" -gt 0 ]; do
 		_portvar="$1"
 		case "${_portvar}" in
 		*=*)
@@ -7680,7 +7680,7 @@ port_var_fetch() {
 			shift 1
 			;;
 		*)
-			if [ $# -eq 1 ]; then
+			if [ "$#" -eq 1 ]; then
 				break
 			fi
 			_var="$2"
@@ -7695,9 +7695,10 @@ port_var_fetch() {
 
 	_errexit="!errexit!"
 	ret=0
-
+	set -o noglob
 	set -- ${_vars}
-	varcnt=$#
+	set +o noglob
+	varcnt="$#"
 	shiftcnt=0
 	while IFS= mapfile_read_loop_redir _line; do
 		case "${_line}" in
@@ -7712,10 +7713,11 @@ port_var_fetch() {
 			break
 			;;
 		esac
+		# Skip assignment vars.
 		# This var was just an assignment, no actual value to read from
 		# stdout.  Shift until we find an actual -V var.
 		# while [ "${1}" = "${assign_var}" ]; do
-		while :; do
+		while [ "$#" -gt 0 ]; do
 			case "${1}" in
 			"${assign_var}")
 				shift
@@ -7728,10 +7730,10 @@ port_var_fetch() {
 		done
 		# We may have more lines than expected on an error, but our
 		# errexit output is last, so keep reading until then.
-		if [ $# -gt 0 ]; then
-			setvar "$1" "${_line}" || return $?
+		if [ "$#" -gt 0 ]; then
+			setvar "$1" "${_line}" || return "$?"
 			shift
-			shiftcnt=$((shiftcnt + 1))
+			shiftcnt="$((shiftcnt + 1))"
 		fi
 	done <<-EOF
 	$(IFS="${sep}"; ${MASTERNAME+injail} /usr/bin/make ${_make_origin} ${_makeflags-} ||
@@ -7741,25 +7743,37 @@ port_var_fetch() {
 	# If the entire output was blank, then $() ate all of the excess
 	# newlines, which resulted in some vars not getting setvar'd.
 	# This could also be cleaning up after the errexit case.
-	if [ ${shiftcnt} -ne ${varcnt} ]; then
+	case "${shiftcnt}" in
+	"${varcnt}") ;;
+	*)
+		set -o noglob
 		set -- ${_vars}
+		set +o noglob
 		# Be sure to start at the last setvar'd value.
-		if [ ${shiftcnt} -gt 0 ]; then
-			shift ${shiftcnt}
+		if [ "${shiftcnt}" -gt 0 ]; then
+			shift "${shiftcnt}"
 		fi
-		while [ $# -gt 0 ]; do
-			# Skip assignment vars
-			while [ $# -gt 0 ] && [ "${1}" = "${assign_var}" ]; do
-				shift
+		while [ "$#" -gt 0 ]; do
+			# Skip assignment vars.
+			while [ "$#" -gt 0 ]; do
+				case "${1}" in
+				"${assign_var}")
+					shift
+					;;
+				*)
+					break
+					;;
+				esac
 			done
-			if [ $# -gt 0 ]; then
-				setvar "$1" "" || return $?
+			if [ "$#" -gt 0 ]; then
+				setvar "$1" "" || return "$?"
 				shift
 			fi
 		done
-	fi
+		;;
+	esac
 
-	return ${ret}
+	return "${ret}"
 }
 
 port_var_fetch_originspec() {
