@@ -24,8 +24,12 @@ assert_ret 1 hash_isset_var 'blah'
 hash_set blah 1 foo
 hash_set blah 2 foo
 hash_set blah 3 foo
-hash_set blah 45 foo
-hash_set blah2 1 foo
+assert_true hash_set blah 45 foo
+assert_true hash_set blah2 1 foo
+assert_true hash_set blah2 1 foo
+assert_false noclobber hash_set blah2 1 BAD
+hash_get blah2 1 value
+assert "foo" "${value}"
 hash_set foo 1 foo
 assert_ret 0 hash_isset_var 'blah'
 assert_ret 0 hash_unset_var 'blah'

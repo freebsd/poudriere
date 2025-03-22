@@ -327,7 +327,7 @@ hash_foreach_back() {
 }
 
 hash_set() {
-	local -; set +x
+	local -; set +x -u
 	[ $# -eq 3 ] || eargs hash_set var key value
 	local _var="$1"
 	local _key="$2"
@@ -335,6 +335,15 @@ hash_set() {
 	local _hash_var_name
 
 	_hash_var_name "${_var}" "${_key}"
+	case "$-" in
+	*C*)
+		# noclobber is set.
+		# - Only set the value if it was not already set.
+		# - Return error if already set.
+		if issetvar "${_hash_var_name}"; then
+			return 1
+		fi
+	esac
 	setvar "${_hash_var_name}" "${_value}"
 }
 
