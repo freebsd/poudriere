@@ -22,10 +22,12 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+# shellcheck shell=ksh
+
 # Taken from bin/sh/mksyntax.sh is_in_name()
-: ${HASH_VAR_NAME_SUB_GLOB:="[!a-zA-Z0-9_]"}
-: ${HASH_VAR_NAME_PREFIX:="_HASH_"}
-: ${STACK_SEP:=$'\002'}
+: "${HASH_VAR_NAME_SUB_GLOB:="[!a-zA-Z0-9_]"}"
+: "${HASH_VAR_NAME_PREFIX:="_HASH_"}"
+: "${STACK_SEP:="$'\002'"}"
 
 if ! type eargs 2>/dev/null >&2; then
 	eargs() {
@@ -46,13 +48,16 @@ if ! type _gsub 2>/dev/null >&2; then
 # Based on Shell Scripting Recipes - Chris F.A. Johnson (c) 2005
 # Replace a pattern without needing a subshell/exec
 _gsub() {
-	[ $# -eq 3 -o $# -eq 4 ] || eargs _gsub string pattern replacement \
-	    [var_return]
+	[ "$#" -eq 3 ] || [ "$#" -eq 4 ] ||
+	    eargs _gsub string pattern replacement '[var_return]'
 	local string="$1"
 	local pattern="$2"
 	local replacement="$3"
 	local var_return="${4:-_gsub}"
-	local result_l= result_r="${string}"
+	local result_l result_r
+
+	result_l=
+	result_r="${string}"
 
 	# Trying to match everything really means any char.
 	# Without this we get into an infinite loop on this case.
@@ -63,10 +68,11 @@ _gsub() {
 	case "${pattern:+set}" in
 	set)
 		while :; do
-			# shellcheck disable=SC2295
 			case ${result_r} in
 			*${pattern}*)
+				# shellcheck disable=SC2295
 				result_l=${result_l}${result_r%%${pattern}*}${replacement}
+				# shellcheck disable=SC2295
 				result_r=${result_r#*${pattern}}
 				;;
 			*)
@@ -498,14 +504,14 @@ stack_pop_front() {
 		return 1
 		;;
 	esac
-	spf_item="${spf_value%%${STACK_SEP}*}"
+	spf_item="${spf_value%%"${STACK_SEP}"*}"
 	case "${spf_item}" in
 	"${spf_value}" )
 		# Last pop
 		spf_value=""
 		;;
 	*)
-		spf_value="${spf_value#*${STACK_SEP}}"
+		spf_value="${spf_value#*"${STACK_SEP}"}"
 		;;
 	esac
 	setvar "${spf_var}" "${spf_value}"
@@ -529,14 +535,14 @@ stack_pop_back() {
 		return 1
 		;;
 	esac
-	spb_item="${spb_value##*${STACK_SEP}}"
+	spb_item="${spb_value##*"${STACK_SEP}"}"
 	case "${spb_item}" in
 	"${spb_value}" )
 		# Last pop
 		spb_value=""
 		;;
 	*)
-		spb_value="${spb_value%${STACK_SEP}*}"
+		spb_value="${spb_value%"${STACK_SEP}"*}"
 		;;
 	esac
 	setvar "${spb_var}" "${spb_value}"
@@ -619,10 +625,11 @@ stack_set() {
 	local si_data="${3-}"
 	local IFS -
 
-	set -f
 	IFS="${si_separator:?}"
+	set -o noglob
+	# shellcheck disable=SC2086
 	set -- ${si_data}
-	set +f
+	set +o noglob
 	unset IFS
 	stack_set_args "${si_stack_var}" "$@"
 }
@@ -645,7 +652,7 @@ stack_set_args() {
 stack_expand_front() {
 	local -; set +x
 	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] ||
-	    eargs stack_expand_front stack_var separator [var_return_output]
+	    eargs stack_expand_front stack_var separator '[var_return_output]'
 	local sef_stack_var="$1"
 	local sef_separator="$2"
 	local sef_var_return="${3-}"
@@ -653,9 +660,10 @@ stack_expand_front() {
 
 	getvar "${sef_stack_var}" sef_stack || return
 	IFS="${STACK_SEP}"
-	set -f
+	set -o noglob
+	# shellcheck disable=SC2086
 	set -- ${sef_stack}
-	set +f
+	set +o noglob
 	case "${sef_separator}" in
 	?)
 		IFS="${sef_separator}"
@@ -686,7 +694,7 @@ stack_expand() {
 stack_expand_back() {
 	local -; set +x
 	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] ||
-	    eargs stack_expand_back stack_var separator [var_return_output]
+	    eargs stack_expand_back stack_var separator '[var_return_output]'
 	local seb_stack_var="$1"
 	local seb_separator="$2"
 	local seb_var_return="${3-}"
@@ -695,9 +703,10 @@ stack_expand_back() {
 
 	getvar "${seb_stack_var}" seb_stack || return
 	IFS="${STACK_SEP}"
-	set -f
+	set -o noglob
+	# shellcheck disable=SC2086
 	set -- ${seb_stack}
-	set +f
+	set +o noglob
 	unset IFS
 	seb_output=
 	for seb_item in "$@"; do
@@ -771,7 +780,6 @@ array_unset() {
 	    eargs array_unset array_var '[idx]'
 	local au_array_var="$1"
 	local au_idx="$2"
-	local au_count
 
 	case "${au_idx:+set}" in
 	set)
