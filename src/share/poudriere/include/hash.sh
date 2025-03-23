@@ -54,6 +54,12 @@ _gsub() {
 	local var_return="${4:-_gsub}"
 	local result_l= result_r="${string}"
 
+	# Trying to match everything really means any char.
+	# Without this we get into an infinite loop on this case.
+	case "${pattern}" in
+	"*") pattern="?" ;;
+	esac
+
 	case "${pattern:+set}" in
 	set)
 		while :; do
