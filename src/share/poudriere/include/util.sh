@@ -1144,6 +1144,36 @@ mapfile() {
 	esac
 	setvar "${handle_name}" "${_hkey}"
 	case "${_file}" in
+	-|/dev/stdin|/dev/fd/0)
+		case "${_modes}" in
+		*r*|*+*)
+			hash_set mapfile_fd "${_hkey}" "0"
+			;;
+		*)
+			err 1 "mapfile: Invalid operation on stdin"
+			;;
+		esac
+		;;
+	/dev/stdout|/dev/fd/1)
+		case "${_modes}" in
+		*w*|*a*)
+			hash_set mapfile_fd "${_hkey}" "1"
+			;;
+		*)
+			err 1 "mapfile: Invalid operation on stdout"
+			;;
+		esac
+		;;
+	/dev/stderr|/dev/fd/2)
+		case "${_modes}" in
+		*w*|*a*)
+			hash_set mapfile_fd "${_hkey}" "2"
+			;;
+		*)
+			err 1 "mapfile: Invalid operation on stderr"
+			;;
+		esac
+		;;
 	/dev/fd/[0-9])
 		hash_set mapfile_fd "${_hkey}" "${_file#/dev/fd/}"
 		;;
