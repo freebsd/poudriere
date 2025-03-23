@@ -22,7 +22,9 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-: ${ENCODE_SEP:=$'\002'}
+# shellcheck shell=ksh disable=SC2128
+
+: "${ENCODE_SEP:="$'\002'"}"
 
 if ! type eargs 2>/dev/null >&2; then
 	eargs() {
@@ -47,7 +49,7 @@ unimplemented() {
 # Encode $@ for later decoding
 encode_args() {
 	local -; set +x
-	[ $# -ge 1 ] || eargs encode_args var_return [args]
+	[ "$#" -ge 1 ] || eargs encode_args var_return '[args]'
 	local ea_var_return="$1"
 	shift
 	local ea_args IFS
@@ -107,14 +109,18 @@ _decode_args() {
 # Decode data from encode_args
 decode_args_vars() {
 	local -; set +x -f
-	[ $# -ge 2 ] || eargs decode_args_vars data var1 [var2... varN]
+	[ $# -ge 2 ] || eargs decode_args_vars data var1 '[var2... varN]'
 	local encoded_args_data="$1"
 	local dav_val dav_var IFS
+	local -
 	shift
 	local dav_vars="$*"
 
 	IFS="${ENCODE_SEP}"
+	set -o noglob
+	# shellcheck disable=SC2086
 	set -- ${encoded_args_data}
+	set +o noglob
 	unset IFS
 	for dav_val; do
 		# Select the next var to populate.
@@ -157,7 +163,7 @@ setvar() {
 	shift
 	local _setvar_value="$*"
 
-	read -r "${_setvar_var}" <<-EOF
+	read -r "${_setvar_var?}" <<-EOF
 	${_setvar_value}
 	EOF
 }
@@ -165,7 +171,7 @@ fi
 
 if ! type getvar >/dev/null 2>&1; then
 getvar() {
-	[ $# -eq 1 -o $# -eq 2 ] || eargs getvar var [var_return]
+	[ "$#" -eq 1 ] || [ "$#" -eq 2 ] || eargs getvar var '[var_return]'
 	local _getvar_var="$1"
 	local _getvar_var_return="$2"
 	local _getvar_ret _getvar_value
@@ -224,8 +230,10 @@ _relpath_common() {
 	[ $# -eq 2 ] || eargs _relpath_common dir1 dir2
 	local _rc_dir1 _rc_dir2 _rc_common _rc_other
 
+	# shellcheck disable=SC2001
 	_rc_dir1=$(realpath -q "$1" || echo "$1" | sed -e 's,//*,/,g') || return 1
 	_rc_dir1="${_rc_dir1%/}/"
+	# shellcheck disable=SC2001
 	_rc_dir2=$(realpath -q "$2" || echo "$2" | sed -e 's,//*,/,g') || return 1
 	_rc_dir2="${_rc_dir2%/}/"
 	if [ "${#_rc_dir1}" -ge "${#_rc_dir2}" ]; then
@@ -287,12 +295,14 @@ relpath_common() {
 # Given 2 paths, return the relative path from the 2nd to the first
 _relpath() {
 	local -; set +x -f
-	[ $# -eq 2 -o $# -eq 3 ] || eargs _relpath dir1 dir2 [var_return]
+	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] ||
+	    eargs _relpath dir1 dir2 '[var_return]'
 	local _r_dir1="$1"
 	local _r_dir2="$2"
 	local _r_var="${3:-"${RELPATH_DEFAULT_VAR}"}"
 	local _relpath_common _relpath_common_dir1 _relpath_common_dir2
 	local _r_newpath IFS
+	local -
 
 	# Find the common prefix
 	_relpath_common "${_r_dir1}" "${_r_dir2}"
@@ -313,7 +323,10 @@ _relpath() {
 			_r_newpath="${_relpath_common_dir1}"
 			;;
 		esac
+		set -o noglob
+		# shellcheck disable=SC2086
 		set -- ${_relpath_common_dir2}
+		set +o noglob
 		while [ $# -gt 0 ]; do
 			_r_newpath="..${_r_newpath:+/}${_r_newpath}"
 			shift
@@ -330,7 +343,8 @@ _relpath() {
 # See _relpath
 relpath() {
 	local -; set +x
-	[ $# -eq 2 -o $# -eq 3 ] || eargs relpath dir1 dir2 [var_return]
+	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] ||
+	    eargs relpath dir1 dir2 '[var_return]'
 	local r_dir1="$1"
 	local r_dir2="$2"
 	local r_var="${3:-"-"}"
@@ -343,7 +357,9 @@ in_reldir() {
 	[ "$#" -ge 2 ] || eargs in_reldir reldir_var cmd 'args...'
 	local reldir_var="$1"
 	shift
-	local reldir_val reldir_abs_val nested_dir wanted_dir
+	local reldir_val nested_dir wanted_dir
+	# shellcheck disable=SC2034
+	local reldir_abs_val
 	local ir_ret ir_oldpwd
 
 	case "${reldir_var}" in
@@ -381,7 +397,7 @@ in_reldir() {
 }
 
 make_relative() {
-	[ $# -eq 1 -o $# -eq 3 ] || eargs make_relative varname \
+	[ "$#" -eq 1 ] || [ "$#" -eq 3 ] || eargs make_relative varname \
 	    [oldroot newroot]
 	local mr_var="$1"
 	local mr_oldroot="${2:-${PWD}}"
@@ -416,7 +432,7 @@ add_relpath_var() {
 	local arv_val
 
 	getvar "${arv_var}" arv_val ||
-	    err ${EX_SOFTWARE} "add_relpath_var: \$${arv_var} path must be set"
+	    err "${EX_SOFTWARE}" "add_relpath_var: \$${arv_var} path must be set"
 	case " ${RELATIVE_PATH_VARS} " in
 	*" ${arv_var} "*) ;;
 	*) RELATIVE_PATH_VARS="${RELATIVE_PATH_VARS:+${RELATIVE_PATH_VARS} }${arv_var}" ;;
@@ -426,7 +442,7 @@ add_relpath_var() {
 		/*) ;;
 		*)
 			[ -e "${arv_val}" ] ||
-			    err ${EX_SOFTWARE} "add_relpath_var: \$${arv_var} value '${arv_val}' must exist or be absolute already"
+			    err "${EX_SOFTWARE}" "add_relpath_var: \$${arv_var} value '${arv_val}' must exist or be absolute already"
 			arv_val="$(realpath "${arv_val}")"
 		    ;;
 		esac
@@ -457,7 +473,8 @@ case "$(type randint 2>/dev/null)" in
 "randint is a shell builtin") ;;
 *)
 randint() {
-	[ "$#" -eq 1 -o "$#" -eq 2 ] || eargs randint max_val [var_return]
+	[ "$#" -eq 1 ] || [ "$#" -eq 2 ] ||
+	    eargs randint max_val '[var_return]'
 	local max_val="$1"
 	local var_return="${2-}"
 	local val
@@ -474,7 +491,8 @@ esac
 
 _trap_ignore_block() {
 	local -; set +x
-	[ "$#" -ge 3 ] || eargs _trap_ignore_block ignore_bool tmp_var SIG [SIG...]
+	[ "$#" -ge 3 ] ||
+	    eargs _trap_ignore_block ignore_bool tmp_var SIG '[SIG...]'
 	local tib_ignore_bool="$1"
 	local tib_tmp_var="$2"
 	local sig tmp_val oact bucket
@@ -505,12 +523,12 @@ _trap_ignore_block() {
 }
 
 trap_save_block() {
-	[ "$#" -ge 2 ] || eargs trap_save_block tmp_var SIG [SIG...]
+	[ "$#" -ge 2 ] || eargs trap_save_block tmp_var SIG '[SIG...]'
 	_trap_ignore_block 0 "$@"
 }
 
 trap_ignore_block() {
-	[ "$#" -ge 2 ] || eargs trap_save_block tmp_var SIG [SIG...]
+	[ "$#" -ge 2 ] || eargs trap_save_block tmp_var SIG '[SIG...]'
 	_trap_ignore_block 1 "$@"
 }
 
@@ -522,9 +540,10 @@ trap_push() {
 	[ $# -eq 2 ] || eargs trap_push signal var_return
 	local signal="$1"
 	local var_return="$2"
-	local _trap ltrap ldash lhandler lsig
+	local _trap ldash lhandler lsig
 
 	_trap="-"
+	# shellcheck disable=SC2034
 	while read -r ltrap ldash lhandler lsig; do
 		case "${lsig}" in
 		*" "*)
@@ -539,7 +558,7 @@ trap_push() {
 		*) continue ;;
 		esac
 		_trap="${lhandler}"
-		trap - ${signal}
+		trap - "${signal}"
 		break
 	done <<-EOF
 	$(trap)
@@ -555,7 +574,7 @@ trap_pop() {
 	local _trap="$2"
 
 	case "${_trap:+set}" in
-	set) eval trap -- "${_trap}" ${signal} || : ;;
+	set) eval trap -- "${_trap}" "${signal}" || : ;;
 	"") return 1 ;;
 	esac
 }
@@ -579,6 +598,7 @@ critical_start() {
 		if ! getvar "_crit_caught_${sig}" caught_sig; then
 			setvar "_crit_caught_${sig}" 0
 		fi
+		# shellcheck disable=SC2064
 		trap "_crit_caught_${sig}=1" "${sig}"
 		hash_set crit_saved_trap "${sig}-${_CRITSNEST}" "${saved_trap}"
 	done
@@ -588,12 +608,12 @@ critical_end() {
 	local -; set +x
 	local sig saved_trap caught_sig oldnest
 
-	[ ${_CRITSNEST:--1} -ne -1 ] || \
+	[ "${_CRITSNEST:--1}" -ne -1 ] ||
 	    err 1 "critical_end called without critical_start"
 
-	oldnest=${_CRITSNEST}
-	_CRITSNEST=$((_CRITSNEST - 1))
-	[ ${_CRITSNEST} -eq 0 ] || return 0
+	oldnest="${_CRITSNEST}"
+	_CRITSNEST="$((_CRITSNEST - 1))"
+	[ "${_CRITSNEST}" -eq 0 ] || return 0
 	for sig in ${CRITICAL_START_BLOCK_SIGS}; do
 		if hash_remove crit_saved_trap "${sig}-${oldnest}" saved_trap; then
 			trap_pop "${sig}" "${saved_trap}"
@@ -603,10 +623,12 @@ critical_end() {
 	# Send the signal to our real PID, not the rootshell.
 	for sig in ${CRITICAL_START_BLOCK_SIGS}; do
 		getvar "_crit_caught_${sig}" caught_sig
-		if [ "${caught_sig}" -eq 1 -a "${_CRITSNEST}" -eq 0 ]; then
+		case "${caught_sig}.${_CRITSNEST}" in
+		"1.0")
 			setvar "_crit_caught_${sig}" 0
 			raise "${sig}"
-		fi
+			;;
+		esac
 	done
 }
 ;;
@@ -710,7 +732,7 @@ read_line() {
 }
 
 readlines() {
-	[ "$#" -ge 0 ] || eargs readlines [-T] '[vars...]'
+	[ "$#" -ge 0 ] || eargs readlines '[-T]' '[vars...]'
 	local flag Tflag
 	local OPTIND=1
 
@@ -724,14 +746,14 @@ readlines() {
 		esac
 	done
 	shift $((OPTIND-1))
-	[ "$#" -ge 0 ] || eargs readlines [-T] '[vars...]'
+	[ "$#" -ge 0 ] || eargs readlines '[-T]' '[vars...]'
 
 	readlines_file ${Tflag:+-T} "/dev/stdin" "$@"
 }
 
 readlines_file() {
 	# Blank vars will still read and output $_readlines_lines_read
-	[ "$#" -ge 1 ] || eargs readlines_file [-T] file '[vars...]'
+	[ "$#" -ge 1 ] || eargs readlines_file '[-T]' file '[vars...]'
 	local rlf_file
 	local rlf_var rlf_line rlf_var_count
 	local rlf_rest rlf_nl rlf_handle rlf_ret
@@ -748,7 +770,7 @@ readlines_file() {
 		esac
 	done
 	shift $((OPTIND-1))
-	[ "$#" -ge 1 ] || eargs readlines_file [-T] file '[vars...]'
+	[ "$#" -ge 1 ] || eargs readlines_file '[-T]' file '[vars...]'
 	rlf_file="$1"
 	shift
 
@@ -849,7 +871,7 @@ read_blocking() {
 
 	while :; do
 		rb_ret=0
-		read "$@" || rb_ret="$?"
+		read -r "$@" || rb_ret="$?"
 		case ${rb_ret} in
 			# Read again on SIGINFO interrupts
 			157) continue ;;
@@ -960,9 +982,11 @@ read_pipe_noeof() {
 # This is avoiding EINTR errors when writing to a pipe due to SIGINFO traps
 write_pipe() {
 	local -; set +x
-	[ $# -ge 1 ] || eargs write_pipe fifo [write_args]
+	[ "$#" -ge 1 ] || eargs write_pipe fifo '[write_args]'
 	local fifo="$1"
-	local ret tmp
+	local ret
+	# shellcheck disable=SC2034
+	local tmp
 	shift
 
 	# If this is not a pipe then return an error immediately
@@ -975,6 +999,7 @@ write_pipe() {
 	msg_dev "write_pipe ${fifo}:" "$@"
 	unset tmp
 	while trap_ignore_block tmp INFO; do
+		# shellcheck disable=SC2320
 		echo "$@" > "${fifo}" || ret=$?
 	done
 
@@ -1010,6 +1035,7 @@ _pipe_hold_child() {
 	1) exec 4<> "$1" ;;
 	esac || err "$?" "_pipe_hold_child: exec"
 	# Alert parent we're ready
+	# shellcheck disable=SC2320
 	echo ready >&3 || err "$?" "pwrite"
 	exec pwait "${watch_pid}" 3<&- 2>/dev/null || err "$?" "pwait"
 }
@@ -1020,13 +1046,14 @@ pipe_hold() {
 	local var_return_jobid="$1"
 	local ph_pid="$2"
 	shift 2
-	local ph_fifo ph_sync ph_ret
+	local spawn_jobid ph_fifo ph_sync ph_ret
 
 	ph_ret=0
 	ph_sync=
 	ph_fifo=$(mktemp -ut pipe_hold)
 	mkfifo "${ph_fifo}"
 
+	unset spawn_jobid
 	spawn_job_protected _pipe_hold_child "${ph_fifo}" "${ph_pid}" "$@"
 	setvar "${var_return_jobid}" "${spawn_jobid}"
 	read_pipe "${ph_fifo}" ph_sync || ph_ret="$?"
@@ -1075,12 +1102,15 @@ mapfile() {
 	while getopts "Fq" flag; do
 		case "${flag}" in
 		q) qflag=1 ;;
-		F) # builtin compat ;;
+		F)
+			# builtin compat
+			;;
+		*) err 1 "mapfile: Invalid flag ${flag}" ;;
 		esac
 	done
 	shift $((OPTIND-1))
 
-	[ $# -eq 2 -o $# -eq 3 ] || eargs mapfile handle_name file modes
+	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] || eargs mapfile handle_name file modes
 	local handle_name="$1"
 	local _file="$2"
 	local _modes="$3"
@@ -1226,12 +1256,12 @@ mapfile_read() {
 		;;
 	esac
 
-	read_blocking -r "$@" <&"${mapfile_read_fd}"
+	read_blocking "$@" <&"${mapfile_read_fd}"
 }
 
 mapfile_write() {
 	local -; set +x
-	[ $# -ge 1 ] || eargs mapfile_write handle [-nT] [data]
+	[ $# -ge 1 ] || eargs mapfile_write handle '[-nT]' '[data]'
 	local handle="$1"
 	shift
 	local ret handle fd nflag Tflag flag OPTIND=1 file
@@ -1247,7 +1277,7 @@ mapfile_write() {
 		esac
 	done
 	shift $((OPTIND-1))
-	[ $# -ge 0 ] || eargs mapfile_write handle [-nT] [data]
+	[ $# -ge 0 ] || eargs mapfile_write handle '[-nT]' '[data]'
 
 	if [ "$#" -eq 0 ]; then
 		local data
@@ -1328,6 +1358,7 @@ mapfile_read_loop() {
 	mrl_hkey="${mrl_file}.$*"
 
 	if ! hash_get mapfile_handle "${mrl_hkey}" mrl_handle; then
+		# shellcheck disable=SC2034
 		mapfile mrl_handle "${mrl_file}" "re" || return "$?"
 		hash_set mapfile_handle "${mrl_hkey}" "${mrl_handle}"
 	fi
@@ -1366,6 +1397,7 @@ mapfile_cat_file() {
 	while getopts "q" flag; do
 		case "${flag}" in
 		q) qflag=1 ;;
+		*) err 1 "mapfile_cat_file: Invalid flag ${flag}" ;;
 		esac
 	done
 	shift $((OPTIND-1))
@@ -1379,6 +1411,7 @@ mapfile_cat_file() {
 		case "${_file}" in
 		-) _file="/dev/fd/0" ;;
 		esac
+		# shellcheck disable=SC2034
 		if mapfile ${qflag:+-q} -F _handle "${_file}" "r"; then
 			mapfile_cat "${_handle}" || ret="$?"
 			mapfile_close "${_handle}" || ret="$?"
@@ -1419,6 +1452,7 @@ mapfile_read_proc() {
 	tmp="$(mktemp -ut mapfile_read_proc_fifo)"
 	mkfifo "${tmp}" || return
 	spawn_job _pipe_func_job "${tmp}" "$@"
+	# shellcheck disable=SC2034
 	if mapfile "${_mapfile_read_proc_handle}" "${tmp}" "re"; then
 		getvar "${_mapfile_read_proc_handle}" _real_handle
 		hash_set mapfile_read_proc_job "${_real_handle}" "${spawn_jobid}"
@@ -1441,7 +1475,7 @@ _mapfile_read_proc_close() {
 }
 
 _pipe_func_job() {
-	[ "$#" -gt 2 ] || eargs _pipe_func_job _mf_fifo function [args...]
+	[ "$#" -gt 2 ] || eargs _pipe_func_job _mf_fifo function '[args...]'
 	local _mf_fifo="$1"
 	shift 1
 
@@ -1459,11 +1493,14 @@ _pipe_func_job() {
 # Note that due to the kernel pipe write buffer the child will not block
 # between every read from the child.
 pipe_func() {
-	[ $# -ge 4 ] || eargs pipe_func [-H handle_var] 'read' read-params [...] -- func [params]
+	[ "$#" -ge 4 ] ||
+	    eargs pipe_func '[-H handle_var]' 'read' read-params '[...]' \
+	    -- func '[params]'
 	local _mf_handle_var _mf_cookie_val
 	local _mf_key _mf_read_params _mf_handle _mf_ret _mf_var
 	local _mf_fifo _mf_job spawn_jobid
 	local OPTIND=1 flag Hflag
+	local -
 
 	Hflag=0
 	while getopts "H:" flag; do
@@ -1528,24 +1565,28 @@ pipe_func() {
 	fi
 
 	# Read from fifo back to caller
-	if mapfile_read "${_mf_handle}" ${_mf_read_params}; then
-		return 0
-	else
-		# EOF
-		_mf_ret="$?"
-		mapfile_close "${_mf_handle}" || _mf_ret="$?"
-		hash_unset pipe_func_read_params "${_mf_key}"
-		hash_unset pipe_func_handle "${_mf_key}"
-		hash_unset pipe_func_shift "${_mf_key}"
-		hash_remove pipe_func_fifo  "${_mf_key}" _mf_fifo ||
-		    err "${EX_SOFTWARE}" "pipe_func: No stored fifo for ${_mf_key}"
-		unlink "${_mf_fifo}"
-		hash_remove pipe_func_job  "${_mf_key}" _mf_job ||
-		    err "${EX_SOFTWARE}" "pipe_func: No stored job for ${_mf_key}"
-		kill_job 1 "%${_mf_job}" || _mf_ret="$?"
-		unset "${_mf_handle_var}"
-		return "${_mf_ret}"
-	fi
+	set -o noglob
+	# shellcheck disable=SC2086
+	mapfile_read "${_mf_handle}" ${_mf_read_params} || _mf_ret="$?"
+	set +o noglob
+	case "${_mf_ret}" in
+	0)
+		return
+		;;
+	esac
+	# EOF
+	mapfile_close "${_mf_handle}" || _mf_ret="$?"
+	hash_unset pipe_func_read_params "${_mf_key}"
+	hash_unset pipe_func_handle "${_mf_key}"
+	hash_unset pipe_func_shift "${_mf_key}"
+	hash_remove pipe_func_fifo  "${_mf_key}" _mf_fifo ||
+	    err "${EX_SOFTWARE}" "pipe_func: No stored fifo for ${_mf_key}"
+	unlink "${_mf_fifo}"
+	hash_remove pipe_func_job  "${_mf_key}" _mf_job ||
+	    err "${EX_SOFTWARE}" "pipe_func: No stored job for ${_mf_key}"
+	kill_job 1 "%${_mf_job}" || _mf_ret="$?"
+	unset "${_mf_handle_var}"
+	return "${_mf_ret}"
 }
 
 # Create a new temporary file and return a handle to it
@@ -1566,6 +1607,7 @@ mapfile_mktemp() {
 		return "${ret}"
 	fi
 	ret=0
+	# shellcheck disable=SC2034
 	mapfile "${handle_var_return}" "${mm_tmpfile}" "we" || ret="$?"
 	if [ "${ret}" -ne 0 ]; then
 		setvar "${handle_var_return}" ""
@@ -1620,6 +1662,7 @@ prefix_stderr_quick() {
 
 	{
 		{
+			# shellcheck disable=SC2034
 			MSG_NESTED_STDERR=1
 			case "${flags}" in
 			*x*) set -x ;;
@@ -1681,6 +1724,7 @@ prefix_stderr() {
 	exec 2> "${prefixpipe}"
 	unlink "${prefixpipe}"
 
+	# shellcheck disable=SC2034
 	MSG_NESTED_STDERR=1
 	ret=0
 	case $- in *e*) errexit=1; set +e ;; *) errexit=0 ;; esac
@@ -1729,6 +1773,7 @@ prefix_stdout() {
 	exec > "${prefixpipe}"
 	unlink "${prefixpipe}"
 
+	# shellcheck disable=SC2034
 	MSG_NESTED=1
 	ret=0
 	case $- in *e*) errexit=1; set +e ;; *) errexit=0 ;; esac
@@ -1781,7 +1826,9 @@ prefix_output() {
 	exec 2> "${prefixpipe_stderr}"
 	unlink "${prefixpipe_stderr}"
 
+	# shellcheck disable=SC2034
 	MSG_NESTED=1
+	# shellcheck disable=SC2034
 	MSG_NESTED_STDERR=1
 	ret=0
 	case $- in *e*) errexit=1; set +e ;; *) errexit=0 ;; esac
@@ -1798,7 +1845,7 @@ prefix_output() {
 }
 
 timespecsub() {
-	[ $# -eq 2 -o $# -eq 3 ] || eargs timespecsub now then [var_return]
+	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] || eargs timespecsub now 'then' '[var_return]'
 	local now_timespec="$1"
 	local then_timespec="$2"
 	local _var_return="$3"
@@ -1888,7 +1935,7 @@ _write_atomic() {
 
 	mapfile_mktemp tmpfile_handle tmpfile \
 	    -p "${dest%/*}" -ut ".write_atomic-${dest##*/}" ||
-	    err $? "write_atomic unable to create tmpfile in ${dest%/*}"
+	    err "$?" "write_atomic unable to create tmpfile in ${dest%/*}"
 	ret=0
 	if [ "${tee}" -eq 1 ]; then
 		mapfile_write "${tmpfile_handle}" -T || ret="$?"
@@ -1929,7 +1976,7 @@ write_atomic_cmp() {
 # -T is for teeing
 write_atomic() {
 	local -; set +x
-	[ $# -ge 1 ] || eargs write_atomic [-T] destfile "< content"
+	[ $# -ge 1 ] || eargs write_atomic '[-T]' destfile "< content"
 	local flag Tflag
 	local OPTIND=1
 
@@ -1943,7 +1990,7 @@ write_atomic() {
 		esac
 	done
 	shift $((OPTIND-1))
-	[ $# -eq 1 ] || eargs write_atomic [-T] destfile "< content"
+	[ $# -eq 1 ] || eargs write_atomic '[-T]' destfile "< content"
 	local dest="$1"
 
 	_write_atomic 0 "${Tflag}" "${dest}" || return
@@ -1960,18 +2007,19 @@ required_env() {
 	local re_var re_expected_val re_val re_ret re_neg
 	local re_errors
 
+	# shellcheck disable=SC2034
 	re_errors=
 	shift
 	re_ret=0
 	re_neg=
 	if [ $(($# % 2)) -ne 0 ]; then
-		err ${EX_SOFTWARE} "wrong number of arguments to required_env() calling ${re_func}: expected function followed by pairs of VAR VALUE"
+		err "${EX_SOFTWARE}" "wrong number of arguments to required_env() calling ${re_func}: expected function followed by pairs of VAR VALUE"
 	fi
 	while [ $# -ne 0 ]; do
 		re_var="$1"
 		re_expected_val="$2"
 		shift 2 || \
-		    err ${EX_SOFTWARE} "wrong number of arguments to required_env()"
+		    err "${EX_SOFTWARE}" "wrong number of arguments to required_env()"
 		case "${re_var}" in
 		*!)
 			re_neg="!"
@@ -2083,7 +2131,7 @@ globmatch() {
 
 	case "${glob}" in
 	*"*"*|*"?"*|*"["*) ;;
-	*) err ${EX_DATAERR} "globmatch: '${glob}' is not a glob" ;;
+	*) err "${EX_DATAERR}" "globmatch: '${glob}' is not a glob" ;;
 	esac
 
 	for match in ${glob}; do
@@ -2133,7 +2181,7 @@ sorted() {
 
 # Wrapper to make wc -l only return a number.
 count_lines() {
-	[ "$#" -le 2 ] || eargs count_lines file [var_return]
+	[ "$#" -le 2 ] || eargs count_lines file '[var_return]'
 	local cl_file="$1"
 	local cl_var_return="${2-}"
 	local cl_count cl_ret
