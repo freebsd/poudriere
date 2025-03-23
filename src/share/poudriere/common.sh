@@ -998,10 +998,34 @@ jstop() {
 eargs() {
 	local fname="$1"
 	shift
-	case $# in
+	local var least max range
+
+	least=0
+	unset max
+	case "$*" in
+	*...*) max=inf ;;
+	esac
+	for var in $@; do
+		case "${var}" in
+		'['*) ;;
+		*)
+			least="$((least + 1))"
+			;;
+		esac
+	done
+	: "${max:="$#"}"
+	case "${max}" in
+	"${least}")
+		range="${max}"
+		;;
+	*)
+		range="${least}-${max}"
+		;;
+	esac
+	case "$#" in
 	0) err ${EX_SOFTWARE} "${fname}: No arguments expected" ;;
 	1) err ${EX_SOFTWARE} "${fname}: 1 argument expected: $1" ;;
-	*) err ${EX_SOFTWARE} "${fname}: $# arguments expected: $*" ;;
+	*) err ${EX_SOFTWARE} "${fname}: ${range} arguments expected: $*" ;;
 	esac
 }
 
