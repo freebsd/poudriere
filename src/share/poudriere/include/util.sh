@@ -231,10 +231,12 @@ _relpath_common() {
 	local _rc_dir1 _rc_dir2 _rc_common _rc_other
 
 	# shellcheck disable=SC2001
-	_rc_dir1=$(realpath -q "$1" || echo "$1" | sed -e 's,//*,/,g') || return 1
+	_rc_dir1=$(realpath -q "$1" || echo "$1" | sed -e 's,//*,/,g') ||
+	    return "${EX_OSERR:-71}"
 	_rc_dir1="${_rc_dir1%/}/"
 	# shellcheck disable=SC2001
-	_rc_dir2=$(realpath -q "$2" || echo "$2" | sed -e 's,//*,/,g') || return 1
+	_rc_dir2=$(realpath -q "$2" || echo "$2" | sed -e 's,//*,/,g') ||
+	    return "${EX_OSERR:-71}"
 	_rc_dir2="${_rc_dir2%/}/"
 	if [ "${#_rc_dir1}" -ge "${#_rc_dir2}" ]; then
 		_rc_common="${_rc_dir1}"
@@ -660,7 +662,7 @@ read_file() {
 				""|-) ;;
 				*) unset "${var_return}" ;;
 				esac
-				return 1
+				return "${EX_NOINPUT:-66}"
 			fi
 			;;
 		esac
@@ -697,7 +699,7 @@ read_line() {
 
 	if [ ! -f "${rl_file}" ]; then
 		unset "${rl_var}"
-		return 1
+		return "${EX_NOINPUT:-66}"
 	fi
 
 	rl_ret=0
@@ -782,7 +784,7 @@ readlines_file() {
 			for rlf_var in "$@"; do
 				unset "${rlf_var}"
 			done
-			return 1
+			return "${EX_NOINPUT:-66}"
 		fi
 		;;
 	esac
@@ -819,7 +821,7 @@ readlines_file() {
 		done
 		mapfile_close "${rlf_handle}" || rlf_ret="$?"
 	else
-		rlf_ret=1
+		rlf_ret="${EX_NOINPUT:-66}"
 	fi
 	case "${rlf_var_count}" in
 	0) ;;
@@ -1133,7 +1135,7 @@ mapfile() {
 				msg_error "mapfile: ${_file}: No such file or directory"
 				;;
 			esac
-			return 1
+			return "${EX_NOINPUT:-66}"
 		fi
 		;;
 	esac
@@ -2192,7 +2194,7 @@ count_lines() {
 	*)
 		if [ ! -r "${cl_file}" ]; then
 			cl_count=0
-			cl_ret=1
+			cl_ret="${EX_NOINPUT:-66}"
 		fi
 		;;
 	esac
