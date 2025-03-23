@@ -142,13 +142,13 @@ set -u
 # fetching.
 while read var; do
 	case "${var}" in
-	abs_top_builddir|\
-	abs_top_srcdir|\
-	srcdir|\
-	bindir|\
-	pkglibexecdir|\
-	pkgdatadir|\
-	VPATH|\
+	am_abs_top_builddir|\
+	am_abs_top_srcdir|\
+	am_srcdir|\
+	am_bindir|\
+	am_pkglibexecdir|\
+	am_pkgdatadir|\
+	am_VPATH|\
 	am_check|am_installcheck|\
 	MAKEFLAGS|\
 	CCACHE*|\
@@ -182,33 +182,33 @@ PATH="/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/sbin:/usr/local/bin:${PATH}"
 
 if [ "${am_check}" -eq 1 ] &&
 	[ "${am_installcheck}" -eq 0 ]; then
-	LIBEXECPREFIX="${abs_top_builddir}"
-	export SCRIPTPREFIX="${abs_top_srcdir}/src/share/poudriere"
+	LIBEXECPREFIX="${am_abs_top_builddir}"
+	export SCRIPTPREFIX="${am_abs_top_srcdir}/src/share/poudriere"
 	export POUDRIEREPATH="poudriere"
 	export PATH="${LIBEXECPREFIX}:${PATH}"
 elif [ "${am_check}" -eq 1 ] &&
 	[ "${am_installcheck}" -eq 1 ]; then
-	LIBEXECPREFIX="${pkglibexecdir}"
-	export SCRIPTPREFIX="${pkgdatadir}"
-	#export POUDRIEREPATH="${bindir}/poudriere"
+	LIBEXECPREFIX="${am_pkglibexecdir}"
+	export SCRIPTPREFIX="${am_pkgdatadir}"
+	#export POUDRIEREPATH="${am_bindir}/poudriere"
 	export POUDRIEREPATH="poudriere"
-	export PATH="${bindir}:${LIBEXECPREFIX}:${PATH}"
+	export PATH="${am_bindir}:${LIBEXECPREFIX}:${PATH}"
 else
-	if [ -z "${abs_top_srcdir-}" ]; then
-		: ${VPATH:="$(realpath "${0%/*}")"}
-		abs_top_srcdir="$(realpath "${VPATH}/..")"
-		abs_top_builddir="${abs_top_srcdir}"
+	if [ -z "${am_abs_top_srcdir-}" ]; then
+		: ${am_VPATH:="$(realpath "${0%/*}")"}
+		am_abs_top_srcdir="$(realpath "${am_VPATH}/..")"
+		am_abs_top_builddir="${am_abs_top_srcdir}"
 	fi
-	LIBEXECPREFIX="${abs_top_builddir}"
-	export SCRIPTPREFIX="${abs_top_srcdir}/src/share/poudriere"
-	export POUDRIEREPATH="${abs_top_builddir}/poudriere"
+	LIBEXECPREFIX="${am_abs_top_builddir}"
+	export SCRIPTPREFIX="${am_abs_top_srcdir}/src/share/poudriere"
+	export POUDRIEREPATH="${am_abs_top_builddir}/poudriere"
 	export PATH="${LIBEXECPREFIX}:${PATH}"
 fi
 if [ -z "${LIBEXECPREFIX-}" ]; then
 	echo "ERROR: Could not determine POUDRIEREPATH" >&2
 	exit 99
 fi
-: ${VPATH:=.}
+: ${am_VPATH:=.}
 : ${SH:=sh}
 if [ "${SH}" = "sh" ]; then
 	SH="${LIBEXECPREFIX}/sh"
@@ -216,7 +216,7 @@ fi
 
 BUILD_DIR="${PWD}"
 # source dir
-THISDIR=${VPATH}
+THISDIR=${am_VPATH}
 THISDIR="$(realpath "${THISDIR}")"
 cd "${THISDIR}"
 

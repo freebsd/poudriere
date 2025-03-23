@@ -929,12 +929,12 @@ jstart() {
 		MAX_MEMORY_BYTES="$((MAX_MEMORY * 1024 * 1024 * 1024))"
 		;;
 	esac
-	network="${localipargs}"
+	network="${LOCALIPARGS}"
 
 	case "${RESTRICT_NETWORKING-}" in
 	"yes") ;;
 	*)
-		network="${ipargs} ${JAIL_NET_PARAMS}"
+		network="${IPARGS} ${JAIL_NET_PARAMS}"
 		;;
 	esac
 
@@ -953,7 +953,7 @@ jstart() {
 	jail -c persist name=${name}-n \
 		path=${mpath:?} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
-		${ipargs} ${JAIL_PARAMS} ${JAIL_NET_PARAMS}
+		${IPARGS} ${JAIL_PARAMS} ${JAIL_NET_PARAMS}
 	return 0
 }
 
@@ -10351,6 +10351,7 @@ set."")
 		esac
 		msg_warn "MUTABLE_BASE=${val} is deprecated. Change to IMMUTABLE_BASE=${IMMUTABLE_BASE}"
 	done
+	unset val
 	;;
 esac
 
@@ -10361,6 +10362,7 @@ for val in ${IMMUTABLE_BASE-}; do
 		*) err 1 "Unknown value for IMMUTABLE_BASE" ;;
 	esac
 done
+unset val
 
 case ${TMPFS_WRKDIR}${TMPFS_DATA}${TMPFS_LOCALBASE}${TMPFS_ALL} in
 1**1|*1*1|**11)
@@ -10473,16 +10475,16 @@ case "${LOIP6:+set}.${LOIP4:+set}" in
 esac
 case "${IPS:?}" in
 01)
-	localipargs="${LOIP6:+ip6.addr=${LOIP6}}"
-	ipargs="ip6=inherit"
+	LOCALIPARGS="${LOIP6:+ip6.addr=${LOIP6}}"
+	IPARGS="ip6=inherit"
 	;;
 10)
-	localipargs="${LOIP4:+ip4.addr=${LOIP4}}"
-	ipargs="ip4=inherit"
+	LOCALIPARGS="${LOIP4:+ip4.addr=${LOIP4}}"
+	IPARGS="ip4=inherit"
 	;;
 11)
-	localipargs="${LOIP4:+ip4.addr=${LOIP4} }${LOIP6:+ip6.addr=${LOIP6}}"
-	ipargs="ip4=inherit ip6=inherit"
+	LOCALIPARGS="${LOIP4:+ip4.addr=${LOIP4} }${LOIP6:+ip6.addr=${LOIP6}}"
+	IPARGS="ip4=inherit ip6=inherit"
 	;;
 esac
 

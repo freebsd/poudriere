@@ -204,12 +204,12 @@ TESTS+=	prep.sh
 $(JAIL_TESTS:.sh=.sh.log): prep.sh.log
 
 run_env= env \
-	 abs_top_builddir="$(abs_top_builddir)" \
-	 abs_top_srcdir="$(abs_top_srcdir)" \
-	 bindir="$(bindir)" \
-	 pkglibexecdir="$(pkglibexecdir)" \
-	 pkgdatadir="$(pkgdatadir)" \
-	 VPATH="$(VPATH)" \
+	 am_abs_top_builddir="$(abs_top_builddir)" \
+	 am_abs_top_srcdir="$(abs_top_srcdir)" \
+	 am_bindir="$(bindir)" \
+	 am_pkglibexecdir="$(pkglibexecdir)" \
+	 am_pkgdatadir="$(pkgdatadir)" \
+	 am_VPATH="$(VPATH)" \
 	 am_check=1
 LOG_COMPILER=	$(run_env) $(SHELL) $(srcdir)/runtest.sh
 

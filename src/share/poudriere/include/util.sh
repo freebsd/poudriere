@@ -1108,14 +1108,14 @@ mapfile() {
 		;;
 	esac
 
-	case "${_mapfile_handle-}" in
+	case "${_MAPFILE_HANDLE-}" in
 	""|"${_hkey}") ;;
 	*)
 		# New file or new process
-		case "${_mapfile_handle##*.}" in
+		case "${_MAPFILE_HANDLE##*.}" in
 		"${mypid}")
 			# Same process so far...
-			case "${_mapfile_handle%.*}" in
+			case "${_MAPFILE_HANDLE%.*}" in
 			"${_file}")
 				err 1 "mapfile: earlier case _hkey should cover this"
 				;;
@@ -1128,7 +1128,7 @@ mapfile() {
 						if mapfile_supports_multiple_handles; then
 							err "${EX_SOFTWARE}" "mapfile() needs updated for multiple handle support"
 						fi
-						err "${EX_SOFTWARE}" "mapfile only supports 1 file at a time without builtin for r+w and r. ${_mapfile_handle} already open: tried to open ${_file}"
+						err "${EX_SOFTWARE}" "mapfile only supports 1 file at a time without builtin for r+w and r. ${_MAPFILE_HANDLE} already open: tried to open ${_file}"
 						;;
 					esac
 					;;
@@ -1138,7 +1138,7 @@ mapfile() {
 			;;
 		*)
 			# Different process. Nuke the tracker.
-			unset _mapfile_handle
+			unset _MAPFILE_HANDLE
 			;;
 		esac
 	esac
@@ -1148,8 +1148,8 @@ mapfile() {
 		hash_set mapfile_fd "${_hkey}" "${_file#/dev/fd/}"
 		;;
 	*)
-		: "${_mapfile_handle:="${_hkey}"}"
-		case "${_mapfile_handle}" in
+		: "${_MAPFILE_HANDLE:="${_hkey}"}"
+		case "${_MAPFILE_HANDLE}" in
 		"${_hkey}")
 			case " ${_modes} " in
 			*r*w*|*w*r*|*+*)
@@ -1260,8 +1260,8 @@ mapfile_close() {
 		8)
 			exec 8>&-
 			case "${handle}" in
-			"${_mapfile_handle-}")
-				unset _mapfile_handle
+			"${_MAPFILE_HANDLE-}")
+				unset _MAPFILE_HANDLE
 				;;
 			esac
 			;;
