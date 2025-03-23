@@ -1346,7 +1346,7 @@ mapfile_read_loop() {
 	case "${mrl_file}" in
 	-|/dev/stdin|/dev/fd/0)
 		mrl_ret=0
-		read -r "$@" || mrl_ret="$?"
+		read_blocking "$@" || mrl_ret="$?"
 		return "${mrl_ret}"
 		;;
 	esac
