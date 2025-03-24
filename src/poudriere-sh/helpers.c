@@ -37,6 +37,7 @@
 #include <sysexits.h>
 
 #include "bltin/bltin.h"
+#include "eval.h"
 #include "syntax.h"
 #include "var.h"
 #define _NEED_SH_FLAGS
@@ -233,6 +234,7 @@ out:
 	} else if (value != NULL && strcmp(value, "") != 0) {
 		printf("%s\n", value);
 	}
+	xtracestr("%s=%s", var, value);
 	return (ret);
 }
 

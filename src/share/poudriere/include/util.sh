@@ -171,12 +171,23 @@ fi
 
 if ! type getvar >/dev/null 2>&1; then
 getvar() {
+	local sx="$-"; local -; set +x
 	[ "$#" -eq 1 ] || [ "$#" -eq 2 ] || eargs getvar var '[var_return]'
 	local _getvar_var="$1"
 	local _getvar_var_return="$2"
 	local _getvar_ret _getvar_value
+	local _getvar_dbg
 
 	eval "_getvar_value=\${${_getvar_var}-gv__null}"
+
+	case "${sx}" in
+	*x*)
+		_getvar_dbg="echo"
+		;;
+	*)
+		_getvar_dbg=":"
+		;;
+	esac
 
 	case "${_getvar_value}" in
 	gv__null)
@@ -186,6 +197,7 @@ getvar() {
 		""|-) ;;
 		*) unset "${_getvar_var_return}" ;;
 		esac
+		"${_getvar_dbg}" "${PS4}unset ${_getvar_var_return}" >&2
 		;;
 	*)
 		_getvar_ret=0
@@ -193,6 +205,7 @@ getvar() {
 		""|-) echo "${_getvar_value}" ;;
 		*) setvar "${_getvar_var_return}" "${_getvar_value}" ;;
 		esac
+		"${_getvar_dbg}" "${PS4}${_getvar_var_return}=${_getvar_value}" >&2
 		;;
 	esac
 
