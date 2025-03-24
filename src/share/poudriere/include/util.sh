@@ -163,9 +163,7 @@ setvar() {
 	shift
 	local _setvar_value="$*"
 
-	read -r "${_setvar_var?}" <<-EOF
-	${_setvar_value}
-	EOF
+	eval "${_setvar_var:?}=\"\${_setvar_value}\""
 }
 fi
 

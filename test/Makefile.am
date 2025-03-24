@@ -83,6 +83,7 @@ TESTS=\
 	relpath.sh \
 	relpath_common.sh \
 	required_env.sh \
+	setvar.sh \
 	shash_basic.sh \
 	stack.sh \
 	stripansi.sh \
