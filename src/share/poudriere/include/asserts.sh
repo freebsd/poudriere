@@ -321,7 +321,8 @@ _assert_ret() {
 	aecho TEST "${lineinfo}" "\$? == ${expected} cmd:" "$*"
 	ret=0
 	"$@" || ret=$?
-	_assert "${lineinfo}" "${expected}" "${ret}" "Bad exit status: ${ret} cmd: $*"
+	reason="Bad exit status: ${ret} cmd: $*"
+	_assert "${lineinfo}" "${expected}" "${ret}" "Bad exit status: ${ret} cmd: $*${REASON:+ "$'\n'" ${REASON}}"
 }
 # This function may be called in "$@" contexts that do not use eval.
 assert_ret() { _assert_ret "" "$@"; }
