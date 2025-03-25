@@ -7324,12 +7324,10 @@ package_libdeps_satisfied() {
 	esac
 	pkg_get_shlib_requires mapfile_handle "${pkgfile:?}" ||
 	    err "${EX_SOFTWARE}" "package_libdeps_satisfied: Failed to lookup shlib_requires from ${pkgfile}"
-	# $(mapfile_cat) avoids a fork while $(pkg_get_shlib_requires -) does not.
-	shlibs_required="$(mapfile_cat "${mapfile_handle}")"
-	mapfile_close "${mapfile_handle}" || :
-	msg_debug "${COLOR_PORT}${pkgname}${COLOR_RESET}: required: ${shlibs_required}"
 	ret=0
-	for shlib in ${shlibs_required}; do
+	unset shlibs_required
+	while mapfile_read "${mapfile_handle}" shlib; do
+		shlibs_required="${shlibs_required:+${shlibs_required} }${shlib}"
 		shlib_name="${shlib%.so*}"
 		case " ${shlibs_provided} " in
 		# Success
@@ -7409,6 +7407,8 @@ package_libdeps_satisfied() {
 			;;
 		esac
 	done
+	mapfile_close "${mapfile_handle}" || :
+	msg_debug "${COLOR_PORT}${pkgname}${COLOR_RESET}: required: ${shlibs_required}"
 	return "${ret}"
 }
 
