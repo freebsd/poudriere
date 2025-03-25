@@ -79,7 +79,7 @@ display_add() {
 		argi=1
 		unset line
 		format=
-		for arg do
+		for arg; do
 			# Collect header custom formats if using dynamic
 			case "${_DISPLAY_FORMAT}" in
 			"dynamic")
