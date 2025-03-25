@@ -605,6 +605,14 @@ stack_foreach_back() {
 	fi
 }
 
+stack_isset() {
+	local -; set +x
+	[ "$#" -eq 1 ] || eargs stack_isset stack_var
+	local si_var="$1"
+
+	issetvar "${si_var}_count"
+}
+
 stack_size() {
 	local -; set +x
 	[ "$#" -eq 1 ] || eargs [ "$#" -eq 2 ] || eargs stack_size stack_var \
