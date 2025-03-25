@@ -23,6 +23,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+# shellcheck shell=ksh
+
 _wait() {
 	local wret ret pid
 
@@ -65,6 +67,7 @@ pwait() {
 		o) oflag=1 ;;
 		t) timeout="${OPTARG}" ;;
 		v) vflag=1 ;;
+		*) err 1 "pwait: Invalid flag ${flag}" ;;
 		esac
 	done
 	shift $((OPTIND-1))
@@ -96,7 +99,7 @@ pwait() {
 }
 
 timed_wait_and_kill_job() {
-	[ $# -eq 2 ] || eargs timed_wait_and_kill_job time jobid
+	[ "$#" -eq 2 ] || eargs timed_wait_and_kill_job time jobid
 	local timeout="$1"
 	local jobid="$2"
 
@@ -116,7 +119,7 @@ timed_wait_and_kill_job() {
 }
 
 kill_job() {
-	[ $# -eq 2 ] || eargs kill_job timeout jobid
+	[ "$#" -eq 2 ] || eargs kill_job timeout jobid
 	local timeout="$1"
 	local jobid="$2"
 
@@ -129,7 +132,7 @@ kill_job() {
 
 # _kill_job funcname jobid :${wait-timeout} SIG :${wait-timeout} SIG
 _kill_job() {
-	[ $# -ge 3 ] || eargs _kill_job funcname jobid 'killspec'
+	[ "$#" -ge 3 ] || eargs _kill_job funcname jobid 'killspec'
 	local funcname="$1"
 	local jobid="$2"
 	local timeout ret pgid status action
@@ -217,6 +220,7 @@ pwait_jobs() {
 		o) oflag=1 ;;
 		t) timeout="${OPTARG}" ;;
 		v) vflag=1 ;;
+		*) err 1 "pwait: Invalid flag ${flag}" ;;
 		esac
 	done
 	shift $((OPTIND-1))
@@ -263,7 +267,8 @@ pwait_jobs() {
 		return 0
 		;;
 	esac
-	set -f
+	set -o noglob
+	# shellcheck disable=SC2086
 	pwait -t "${timeout}" ${vflag:+-v} ${oflag:+-o} ${allpids}
 }
 
@@ -319,8 +324,10 @@ kill_all_jobs() {
 	done <<-EOF
 	$(jobs -l)
 	EOF
-	set -f
+	set -o noglob
+	# shellcheck disable=SC2086
 	kill_jobs "${timeout}" ${alljobs} || ret="$?"
+	set +o noglob
 	case "${ret}" in
 	143) ret=0 ;;
 	esac
@@ -348,7 +355,7 @@ _parallel_exec() {
 		"$@"
 	)
 	ret=$?
-	echo >&9 || :
+	echo . >&9 || :
 	exit ${ret}
 	# set -e will be restored by 'local -'
 }
@@ -368,7 +375,7 @@ parallel_start() {
 	unlink "${fifo}" || :
 	NBPARALLEL=0
 	PARALLEL_JOBNOS=""
-	: ${PARALLEL_JOBS:="$(sysctl -n hw.ncpu)"}
+	: "${PARALLEL_JOBS:="$(sysctl -n hw.ncpu)"}"
 	_SHOULD_REAP=0
 	delay_pipe_fatal_error
 }
@@ -410,9 +417,10 @@ parallel_stop() {
 
 	ret=0
 	if [ "${do_wait}" -eq 1 ]; then
-		set -f
+		set -o noglob
+		# shellcheck disable=SC2086
 		_wait ${PARALLEL_JOBNOS} || ret="$?"
-		set +f
+		set +o noglob
 	fi
 
 	exec 9>&-
@@ -434,7 +442,7 @@ parallel_shutdown() {
 	local ret -
 	local parallel_jobnos jobno
 
-	set -f
+	set -o noglob
 	ret=0
 	# PARALLEL_JOBNOS may be stale if we received SIGINT while
 	# inside of parallel_stop() or _reap_children(). Clean it up
@@ -447,13 +455,14 @@ parallel_shutdown() {
 		fi
 		parallel_jobnos="${parallel_jobnos:+${parallel_jobnos} }${jobno}"
 	done
+	# shellcheck disable=SC2086
 	kill_jobs 30 ${parallel_jobnos-} || ret="$?"
 	parallel_stop 0 || ret="$?"
 	return "${ret}"
 }
 
 parallel_run() {
-	local ret
+	local ret spawn_jobid
 
 	ret=0
 
@@ -469,11 +478,17 @@ parallel_run() {
 	esac
 
 	# Only read once all slots are taken up; burst jobs until maxed out.
-	# NBPARALLEL is never decreased and only inreased until maxed.
+	# NBPARALLEL is never decreased and only increased until maxed.
 	case "${NBPARALLEL}" in
 	"${PARALLEL_JOBS}")
-		a=
-		read_blocking a <&9 || :
+		local a
+
+		if read_blocking a <&9; then
+			case "${a}" in
+			".") ;;
+			*) err 1 "parallel_run: Invalid token: ${a}" ;;
+			esac
+		fi
 		;;
 	esac
 
@@ -487,7 +502,7 @@ parallel_run() {
 }
 
 nohang() {
-	[ $# -gt 5 ] || eargs nohang cmd_timeout log_timeout logfile pidfile cmd
+	[ "$#" -gt 5 ] || eargs nohang cmd_timeout log_timeout logfile pidfile cmd
 	local cmd_timeout
 	local log_timeout
 	local logfile
@@ -505,17 +520,17 @@ nohang() {
 	pidfile="$4"
 	shift 4
 
-	read_timeout=$((log_timeout / 10))
+	read_timeout="$((log_timeout / 10))"
 
-	fifo=$(mktemp -ut nohang.pipe)
-	mkfifo ${fifo}
+	fifo="$(mktemp -ut nohang.pipe)"
+	mkfifo "${fifo}"
 	# If the fifo is over NFS, newly created fifos have the server's
 	# mtime not the client's mtime until the client writes to it
-	touch ${fifo}
-	exec 8<> ${fifo}
-	unlink ${fifo} || :
+	touch "${fifo}"
+	exec 8<> "${fifo}"
+	unlink "${fifo}" || :
 
-	starttime=$(clock -epoch)
+	starttime="$(clock -epoch)"
 
 	# Run the actual command in a child subshell
 	(
@@ -528,16 +543,16 @@ nohang() {
 		fi
 		_spawn_wrapper "$@" || ret=1
 		# Notify the pipe the command is done
-		echo done >&8 2>/dev/null || :
-		exit $ret
+		echo "done" >&8 2>/dev/null || :
+		exit "${ret}"
 	) &
 	childpid=$!
-	echo "$childpid" > ${pidfile}
+	echo "${childpid}" > "${pidfile}"
 
 	# Now wait on the cmd with a timeout on the log's mtime
 	while :; do
-		if ! kill -0 $childpid 2>/dev/null; then
-			_wait $childpid || ret=1
+		if ! kill -0 "${childpid}" 2>/dev/null; then
+			_wait "${childpid}" || ret=1
 			break
 		fi
 
@@ -555,15 +570,15 @@ nohang() {
 		esac
 
 		# Not done, was a timeout, check the log time
-		lastupdated=$(stat -f "%m" ${logfile})
-		now=$(clock -epoch)
+		lastupdated="$(stat -f "%m" "${logfile}")"
+		now="$(clock -epoch)"
 
 		# No need to actually kill anything as stop_build()
 		# will be called and kill -9 -1 the jail later
-		if [ $((now - lastupdated)) -gt $log_timeout ]; then
+		if [ "$((now - lastupdated))" -gt "${log_timeout}" ]; then
 			ret=2
 			break
-		elif [ $((now - starttime)) -gt $cmd_timeout ]; then
+		elif [ "$((now - starttime))" -gt "${cmd_timeout}" ]; then
 			ret=3
 			break
 		fi
@@ -571,16 +586,16 @@ nohang() {
 
 	exec 8>&-
 
-	unlink ${pidfile} || :
+	unlink "${pidfile}" || :
 
-	return $ret
+	return "${ret}"
 }
 
-if [ -f /usr/bin/protect ] && [ $(/usr/bin/id -u) -eq 0 ]; then
+if [ -f /usr/bin/protect ] && [ "$(/usr/bin/id -u)" -eq 0 ]; then
 	PROTECT=/usr/bin/protect
 fi
 madvise_protect() {
-	[ $# -eq 1 ] || eargs madvise_protect pid
+	[ "$#" -eq 1 ] || eargs madvise_protect pid
 	local pid="$1"
 
 	case "${PROTECT:+set}" in
@@ -603,7 +618,7 @@ madvise_protect() {
 
 # Output $(jobs) in a simpler format
 jobs_with_statuses() {
-	[ "$#" -eq 1 ] || eargs jobs_with_statuses '$(jobs)'
+	[ "$#" -eq 1 ] || eargs jobs_with_statuses "\$(jobs)"
 	local jobs_output="$1"
 	local jobs_jobid jobs_rest
 	local jws_jobid jws_status
@@ -617,9 +632,10 @@ jobs_with_statuses() {
 			;;
 		*) continue ;;
 		esac
-		set -f
+		set -o noglob
+		# shellcheck disable=SC2086
 		set -- ${jobs_rest}
-		set +f
+		set +o noglob
 		for jws_arg in "$@"; do
 			case "${jws_arg}" in
 			"+"|"-") continue ;;
@@ -646,7 +662,7 @@ get_job_status() {
 	[ "$#" -eq 2 ] || eargs get_job_status pid var_return
 	local gjs_pid="$1"
 	local gjs_var_return="$2"
-	local gjs_jobid gjs_output ret
+	local gjs_output ret
 	local - gjs_arg
 
 	# Trigger checkzombies(). pwait_racy() in jobs.sh test can make it
@@ -686,9 +702,10 @@ get_job_status() {
 		esac
 		;;
 	esac
-	set -f
+	set -o noglob
+	# shellcheck disable=SC2086
 	set -- ${gjs_output}
-	set +f
+	set +o noglob
 	for gjs_arg in "$@"; do
 		case "${gjs_arg}" in
 		"["*"]") continue ;;
@@ -761,9 +778,11 @@ _spawn_wrapper() {
 		# Reset SIGINT to the default to undo POSIX's SIG_IGN in
 		# 2.11 "Signals and Error Handling". This will ensure no
 		# foreground process is left around on SIGINT.
-		if [ ${SUPPRESS_INT:-0} -eq 0 ]; then
+		case "${SUPPRESS_INT:-0}" in
+		0)
 			trap - INT
-		fi
+			;;
+		esac
 		;;
 	esac
 
@@ -787,12 +806,12 @@ _coprocess_wrapper() {
 
 # Start a background process from function 'name'.
 coprocess_start() {
-	[ $# -eq 1 ] || eargs coprocess_start name
+	[ "$#" -eq 1 ] || eargs coprocess_start name
 	local name="$1"
 	local main pid jobid
 
 	main="${name}_main"
-	spawn_job_protected _coprocess_wrapper ${main}
+	spawn_job_protected _coprocess_wrapper "${main}"
 	pid=$!
 	jobid="${spawn_jobid}"
 
@@ -803,7 +822,7 @@ coprocess_start() {
 }
 
 coprocess_stop() {
-	[ $# -eq 1 ] || eargs coprocess_stop name
+	[ "$#" -eq 1 ] || eargs coprocess_stop name
 	local name="$1"
 	local ret pid jobid
 
@@ -879,7 +898,9 @@ setup_traps() {
 	local sig
 
 	for sig in INT HUP PIPE TERM; do
+		# shellcheck disable=SC2064
 		trap "sig_handler ${sig} ${exit_handler}" "${sig}"
 	done
+	# shellcheck disable=SC2064
 	trap "exit_return ${exit_handler}" EXIT
 }
