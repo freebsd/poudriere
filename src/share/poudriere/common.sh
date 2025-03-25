@@ -7258,10 +7258,8 @@ __package_deps_provided_libs() {
 	package_recursive_deps "${pkgfile:?}" |
 	    while mapfile_read_loop_redir dep_pkgfile; do
 		dep_pkgfile="${PACKAGES:?}/All/${dep_pkgfile:?}"
-		pkg_get_shlib_provides mapfile_handle "${dep_pkgfile:?}" ||
+		pkg_get_shlib_provides - "${dep_pkgfile:?}" ||
 		    continue
-		mapfile_cat "${mapfile_handle:?}"
-		mapfile_close "${mapfile_handle}" || :
 		package_deps_provided_libs "${dep_pkgfile:?}"
 	done
 
