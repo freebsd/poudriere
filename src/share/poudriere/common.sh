@@ -6009,8 +6009,6 @@ build_pkg() {
 	trap '' TSTP
 	setproctitle "build_pkg (${pkgname})" || :
 
-	get_porttesting "${pkgname}" PORTTESTING
-
 	# Don't show timestamps in msg() which goes to logs, only job_msg()
 	# which goes to master
 	NO_ELAPSED_IN_MSG=1
@@ -6056,6 +6054,7 @@ build_pkg() {
 		    "${pkgname}"
 	fi
 
+	get_porttesting "${pkgname}" PORTTESTING
 	MAKE_ARGS="${FLAVOR:+ FLAVOR=${FLAVOR}}"
 	_lookup_portdir portdir "${port}"
 
