@@ -263,7 +263,7 @@ hash_push_front() {
 	local _hash_var_name
 
 	_hash_var_name "${hpf_var}" "${hpf_key}"
-	stack_push "${_hash_var_name}" "${hpf_value}" || return "$?"
+	stack_push "${_hash_var_name}" "${hpf_value}"
 }
 
 hash_push_back() {
@@ -275,7 +275,7 @@ hash_push_back() {
 	local _hash_var_name
 
 	_hash_var_name "${hp_var}" "${hp_key}"
-	stack_push_back "${_hash_var_name}" "${hp_value}" || return "$?"
+	stack_push_back "${_hash_var_name}" "${hp_value}"
 }
 
 hash_pop() {
@@ -291,7 +291,7 @@ hash_pop_front() {
 	local _hash_var_name
 
 	_hash_var_name "${hpf_var}" "${hpf_key}"
-	stack_pop "${_hash_var_name}" "${hpf_var_return}" || return "$?"
+	stack_pop "${_hash_var_name}" "${hpf_var_return}"
 }
 
 hash_pop_back() {
@@ -303,7 +303,7 @@ hash_pop_back() {
 	local _hash_var_name
 
 	_hash_var_name "${hp_var}" "${hp_key}"
-	stack_pop_back "${_hash_var_name}" "${hp_var_return}" || return "$?"
+	stack_pop_back "${_hash_var_name}" "${hp_var_return}"
 }
 
 hash_foreach() {
@@ -320,8 +320,7 @@ hash_foreach_front() {
 	local _hash_var_name
 
 	_hash_var_name "${hff_var}" "${hff_key}"
-	stack_foreach "${_hash_var_name}" "${hff_var_return}" "${hff_tmp_var}" ||
-	    return "$?"
+	stack_foreach "${_hash_var_name}" "${hff_var_return}" "${hff_tmp_var}"
 }
 
 hash_foreach_back() {
@@ -335,7 +334,7 @@ hash_foreach_back() {
 
 	_hash_var_name "${hfb_var}" "${hfb_key}"
 	stack_foreach_back "${_hash_var_name}" "${hfb_var_return}" \
-	    "${hfb_tmp_var}" || return "$?"
+	    "${hfb_tmp_var}"
 }
 
 hash_set() {
