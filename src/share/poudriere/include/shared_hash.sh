@@ -23,10 +23,11 @@
 # SUCH DAMAGE.
 
 # Requires util.sh and hash.sh
+# shellcheck shell=ksh
 
-: ${SHASH_VAR_NAME_SUB_BADCHARS:=" /"}
-: ${SHASH_VAR_PATH:=${TMPDIR:-/tmp}}
-: ${SHASH_VAR_PREFIX=$$}
+: "${SHASH_VAR_NAME_SUB_BADCHARS:=" /"}"
+: "${SHASH_VAR_PATH:="${TMPDIR:-/tmp}"}"
+: "${SHASH_VAR_PREFIX="$$"}"
 add_relpath_var SHASH_VAR_PATH || err "Failed to add SHASH_VAR_PATH to relpaths"
 
 _shash_var_name() {
@@ -65,6 +66,7 @@ shash_get() {
 			break
 			;;
 		esac
+		# shellcheck disable=SC2034
 		if ! mapfile -qF handle "${_f}" "r"; then
 			ret=1
 			continue
@@ -76,8 +78,7 @@ shash_get() {
 	done
 
 	setvar "${var_return}" "${_sh_values}" || return
-
-	return ${ret}
+	return "${ret}"
 }
 
 shash_exists() {
@@ -118,7 +119,7 @@ shash_read() {
 	[ $# -eq 2 ] || eargs shash_read var key
 	local var="$1"
 	local key="$2"
-	local _shash_varkey_file handle line
+	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
 	mapfile_cat_file -q "${_shash_varkey_file}"
@@ -133,6 +134,7 @@ shash_read_mapfile() {
 	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
+	# shellcheck disable=SC2034
 	mapfile -q "${mapfile_handle_var}" "${_shash_varkey_file}" "re"
 }
 
@@ -165,7 +167,7 @@ shash_remove_var() {
 	local -; set +x
 	[ $# -eq 1 ] || eargs shash_remove_var var
 	local var="$1"
-	local _shash_varkey_file
+	local _shash_var_name
 
 	# This assumes globbing works
 	_shash_var_name "${var}%*"
@@ -182,11 +184,13 @@ shash_remove() {
 	local ret
 
 	ret=0
-	shash_get "$@" || ret=$?
-	if [ ${ret} -eq 0 ]; then
+	shash_get "$@" || ret="$?"
+	case "${ret}" in
+	0)
 		shash_unset "${var}" "${key}"
-	fi
-	return ${ret}
+		;;
+	esac
+	return "${ret}"
 }
 
 shash_unset() {
@@ -198,5 +202,6 @@ shash_unset() {
 
 	_shash_varkey_file "${var}" "${key}"
 	# Unquoted for globbing
+	# shellcheck disable=SC2086
 	rm -f ${_shash_varkey_file}
 }
