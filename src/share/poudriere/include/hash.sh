@@ -468,7 +468,8 @@ stack_push_front() {
 	local spf_value
 
 	getvar "${spf_var}" spf_value || spf_value=
-	setvar "${spf_var}" "${spf_item}${spf_value:+${STACK_SEP}${spf_value}}"
+	setvar "${spf_var}" \
+	    "${spf_item}${spf_value:+${STACK_SEP}${spf_value}}" || return
 	incrvar "${spf_var}_count"
 }
 
@@ -480,7 +481,8 @@ stack_push_back() {
 	local spb_value
 
 	getvar "${spb_var}" spb_value || spb_value=
-	setvar "${spb_var}" "${spb_value:+${spb_value}${STACK_SEP}}${spb_item}"
+	setvar "${spb_var}" \
+	    "${spb_value:+${spb_value}${STACK_SEP}}${spb_item}" || return
 	incrvar "${spb_var}_count"
 }
 
@@ -499,7 +501,7 @@ stack_pop_front() {
 	case "${spf_value}" in
 	"")
 		# In a for loop
-		setvar "${spf_item_var_return}" ""
+		setvar "${spf_item_var_return}" "" || return
 		unset "${spf_var}" "${spf_var}_count"
 		return 1
 		;;
@@ -514,8 +516,8 @@ stack_pop_front() {
 		spf_value="${spf_value#*"${STACK_SEP}"}"
 		;;
 	esac
-	setvar "${spf_var}" "${spf_value}"
-	decrvar "${spf_var}_count"
+	setvar "${spf_var}" "${spf_value}" || return
+	decrvar "${spf_var}_count" || return
 	setvar "${spf_item_var_return}" "${spf_item}"
 }
 
@@ -545,8 +547,8 @@ stack_pop_back() {
 		spb_value="${spb_value%"${STACK_SEP}"*}"
 		;;
 	esac
-	setvar "${spb_var}" "${spb_value}"
-	decrvar "${spb_var}_count"
+	setvar "${spb_var}" "${spb_value}" || return
+	decrvar "${spb_var}_count" || return
 	setvar "${spb_item_var_return}" "${spb_item}"
 }
 
@@ -560,13 +562,18 @@ stack_foreach_front() {
 	local sff_var="$1"
 	local sff_item_var_return="$2"
 	local sff_tmp_var="$3"
-	local sff_tmp_stack
+	local sff_tmp_stack sff_tmp_stack_count
 
 	if ! getvar "${sff_tmp_var}" sff_tmp_stack; then
 		getvar "${sff_var}" sff_tmp_stack || return 1
 	fi
+	if ! getvar "${sff_tmp_var}_count" sff_tmp_stack_count; then
+		getvar "${sff_var}_count" sff_tmp_stack_count || return 1
+	fi
 	if stack_pop sff_tmp_stack "${sff_item_var_return}"; then
-		setvar "${sff_tmp_var}" "${sff_tmp_stack-}"
+		setvar "${sff_tmp_var}" "${sff_tmp_stack-}" || return
+		setvar "${sff_tmp_var}_count" "${sff_tmp_stack_count-}" ||
+		    return
 		return 0
 	else
 		unset "${sff_tmp_var}"
@@ -580,13 +587,18 @@ stack_foreach_back() {
 	local sf_var="$1"
 	local sf_item_var_return="$2"
 	local sf_tmp_var="$3"
-	local sf_tmp_stack
+	local sf_tmp_stack sf_tmp_stack_count
 
 	if ! getvar "${sf_tmp_var}" sf_tmp_stack; then
 		getvar "${sf_var}" sf_tmp_stack || return 1
 	fi
+	if ! getvar "${sf_tmp_var}_count" sf_tmp_stack_count; then
+		getvar "${sf_var}_count" sf_tmp_stack_count || return 1
+	fi
 	if stack_pop_back sf_tmp_stack "${sf_item_var_return}"; then
-		setvar "${sf_tmp_var}" "${sf_tmp_stack-}"
+		setvar "${sf_tmp_var}" "${sf_tmp_stack-}" || return
+		setvar "${sf_tmp_var}_count" "${sf_tmp_stack_count-}" ||
+		    return
 		return 0
 	else
 		unset "${sf_tmp_var}"
@@ -605,7 +617,7 @@ stack_size() {
 	getvar "${ss_var}_count" ss_count || ss_count=0
 	case "${ss_var_return}" in
 	""|-) echo "${ss_count}" ;;
-	*) setvar "${ss_var_return}" "${ss_count}" ;;
+	*) setvar "${ss_var_return}" "${ss_count}" || return ;;
 	esac
 }
 
@@ -645,7 +657,7 @@ stack_set_args() {
 	IFS="${STACK_SEP}"
 	si_output="$*"
 	unset IFS
-	setvar "${si_stack_var}_count" "$#"
+	setvar "${si_stack_var}_count" "$#" || return
 	setvar "${si_stack_var}" "${si_output}"
 }
 
@@ -669,7 +681,7 @@ stack_expand_front() {
 		IFS="${sef_separator}"
 		case "${sef_var_return}" in
 		""|-) echo "$*" ;;
-		*) setvar "${sef_var_return}" "$*" ;;
+		*) setvar "${sef_var_return}" "$*" || return ;;
 		esac
 		unset IFS
 		;;
@@ -681,7 +693,7 @@ stack_expand_front() {
 		    sef_output || return
 		case "${sef_var_return}" in
 		""|-) echo "${sef_output}" ;;
-		*) setvar "${sef_var_return}" "${sef_output}" ;;
+		*) setvar "${sef_var_return}" "${sef_output}" || return ;;
 		esac
 		;;
 	esac
@@ -714,7 +726,7 @@ stack_expand_back() {
 	done
 	case "${seb_var_return}" in
 	""|-) echo "${seb_output}" ;;
-	*) setvar "${seb_var_return}" "${seb_output}" ;;
+	*) setvar "${seb_var_return}" "${seb_output}" || return ;;
 	esac
 }
 
@@ -746,7 +758,7 @@ array_size() {
 	getvar "_array_length_${as_array_var}" as_count || as_count=0
 	case "${as_var_return}" in
 	""|-) echo "${as_count}" ;;
-	*) setvar "${as_var_return}" "${as_count}" ;;
+	*) setvar "${as_var_return}" "${as_count}" || return ;;
 	esac
 }
 
@@ -769,7 +781,7 @@ array_set() {
 	shift 2
 
 	if ! array_isset "${as_array_var}" "${as_idx}"; then
-		incrvar "_array_length_${as_array_var}"
+		incrvar "_array_length_${as_array_var}" || return
 	fi
 	hash_set "_array_${as_array_var}" "${as_idx}" "$*"
 }
@@ -802,7 +814,7 @@ array_unset_idx() {
 	if ! array_isset "${aui_array_var}" "${aui_idx}"; then
 		return 1
 	fi
-	decrvar "_array_length_${aui_array_var}"
+	decrvar "_array_length_${aui_array_var}" || return
 	hash_unset "_array_${aui_array_var}" "${aui_idx}"
 	if getvar "_array_length_${aui_array_var}" aui_count; then
 		case "${aui_count}" in
@@ -840,7 +852,8 @@ array_pop_back() {
 	local apb_size
 
 	array_size "${apb_array_var}" apb_size || return 1
-	array_get "${apb_array_var}" "$((apb_size - 1))" "${apb_item_var_return}"
+	array_get "${apb_array_var}" "$((apb_size - 1))" \
+	    "${apb_item_var_return}" || return
 	array_unset "${apb_array_var}" "$((apb_size - 1))"
 }
 
@@ -859,7 +872,8 @@ array_foreach_front() {
 	while [ "${aff_tmp_idx}" -lt "${aff_size}" ]; do
 		if array_get "${aff_var}" "${aff_tmp_idx}" \
 		    "${aff_item_var_return}"; then
-			setvar "${aff_tmp_var}" "$((aff_tmp_idx + 1))"
+			setvar "${aff_tmp_var}" "$((aff_tmp_idx + 1))" ||
+			    return
 			return
 		fi
 		aff_tmp_idx="$((aff_tmp_idx + 1))"

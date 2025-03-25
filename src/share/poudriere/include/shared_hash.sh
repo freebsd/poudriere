@@ -75,7 +75,7 @@ shash_get() {
 		mapfile_close "${handle}" || :
 	done
 
-	setvar "${var_return}" "${_sh_values}"
+	setvar "${var_return}" "${_sh_values}" || return
 
 	return ${ret}
 }

@@ -661,7 +661,7 @@ get_job_status() {
 		"[${gjs_pid#%}] "?" "*)
 			;;
 		"")
-			setvar "${gjs_var_return}" ""
+			setvar "${gjs_var_return}" "" || return
 			return "${ret}"
 			;;
 		*)
@@ -677,7 +677,7 @@ get_job_status() {
 		"["*"] "?" ${gjs_pid} "*)
 			;;
 		"")
-			setvar "${gjs_var_return}" ""
+			setvar "${gjs_var_return}" "" || return
 			return "${ret}"
 			;;
 		*)
@@ -701,12 +701,12 @@ get_job_status() {
 		[0-9][0-9][0-9][0-9][0-9][0-9][0-9]|\
 		[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]) continue ;;
 		*)
-			setvar "${gjs_var_return}" "${gjs_arg}"
+			setvar "${gjs_var_return}" "${gjs_arg}" || return
 			return 0
 		esac
 	done
 
-	setvar "${gjs_var_return}" ""
+	setvar "${gjs_var_return}" "" || return
 	return 1
 }
 
@@ -724,7 +724,7 @@ get_job_id() {
 	"["*"] "?" ${gji_pid} "*)
 		;;
 	"")
-		setvar "${gji_var_return}" ""
+		setvar "${gji_var_return}" "" || return
 		return "${ret}"
 		;;
 	*)

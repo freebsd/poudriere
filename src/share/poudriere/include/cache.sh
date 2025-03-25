@@ -203,7 +203,7 @@ cache_call() {
 		if [ "${USE_CACHE_CALL}" -eq 1 ]; then
 			_cache_set "${cc_var}" "${cc_key}" "${_cc_value}"
 		fi
-		setvar "${var_return}" "${_cc_value}"
+		setvar "${var_return}" "${_cc_value}" || ret="$?"
 	else
 		msg_dev "cache_call: Using cached ${function}($*)"
 		ret=0
@@ -262,7 +262,7 @@ cache_call_sv() {
 		if [ "${USE_CACHE_CALL}" -eq 1 ]; then
 			_cache_set "${cc_var}" "${cc_key}" "${sv_value}"
 		fi
-		setvar "${var_return}" "${sv_value}"
+		setvar "${var_return}" "${sv_value}" || ret="$?"
 	else
 		msg_dev "cache_call_sv: Using cached ${function}($*)"
 		ret=0

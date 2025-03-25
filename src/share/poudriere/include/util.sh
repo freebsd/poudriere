@@ -60,10 +60,10 @@ encode_args() {
 	# Trailing empty fields need special handling.
 	case "${ea_args}" in
 	*"${ENCODE_SEP}")
-		setvar "${ea_var_return}" "${ea_args}${ENCODE_SEP}"
+		setvar "${ea_var_return}" "${ea_args}${ENCODE_SEP}" || return
 		;;
 	*)
-		setvar "${ea_var_return}" "${ea_args}"
+		setvar "${ea_var_return}" "${ea_args}" || return
 		;;
 	esac
 }
@@ -128,11 +128,11 @@ decode_args_vars() {
 		case "${dav_vars}" in
 		# Last one - set all remaining to here
 		"${dav_var}")
-			setvar "${dav_var}" "$*"
+			setvar "${dav_var}" "$*" || return
 			break
 			;;
 		*)
-			setvar "${dav_var}" "${dav_val}"
+			setvar "${dav_var}" "${dav_val}" || return
 			# Pop off the var
 			dav_vars="${dav_vars#"${dav_var}" }"
 			shift
@@ -201,7 +201,10 @@ getvar() {
 		_getvar_ret=0
 		case "${_getvar_var_return}" in
 		""|-) echo "${_getvar_value}" ;;
-		*) setvar "${_getvar_var_return}" "${_getvar_value}" ;;
+		*)
+			setvar "${_getvar_var_return}" "${_getvar_value}" ||
+			    return
+			;;
 		esac
 		"${_getvar_dbg}" "${PS4}${_getvar_var_return}=${_getvar_value}" >&2
 		;;
@@ -349,7 +352,7 @@ _relpath() {
 
 	case "${_r_var}" in
 	-) echo "${_r_newpath}" ;;
-	*) setvar "${_r_var}" "${_r_newpath}" ;;
+	*) setvar "${_r_var}" "${_r_newpath}" || return ;;
 	esac
 }
 
@@ -459,7 +462,7 @@ add_relpath_var() {
 			arv_val="$(realpath "${arv_val}")"
 		    ;;
 		esac
-		setvar "${arv_var}_ABS" "${arv_val}"
+		setvar "${arv_var}_ABS" "${arv_val}" || return
 	fi
 	make_relative "${arv_var}"
 }
@@ -524,7 +527,7 @@ _trap_ignore_block() {
 	fi
 	randint 1000000000 tmp_val
 	bucket="trap_ignore_${tmp_val}"
-	setvar "${tib_tmp_var}" "${tmp_val}"
+	setvar "${tib_tmp_var}" "${tmp_val}" || return
 	for sig; do
 		trap_push "${sig}" "oact" ||
 		    err "${EX_USAGE}" "_trap_ignore_block: trap_push ${sig} failed"
@@ -609,7 +612,7 @@ critical_start() {
 	for sig in ${CRITICAL_START_BLOCK_SIGS}; do
 		trap_push "${sig}" saved_trap
 		if ! getvar "_crit_caught_${sig}" caught_sig; then
-			setvar "_crit_caught_${sig}" 0
+			setvar "_crit_caught_${sig}" 0 || return
 		fi
 		# shellcheck disable=SC2064
 		trap "_crit_caught_${sig}=1" "${sig}"
@@ -638,7 +641,7 @@ critical_end() {
 		getvar "_crit_caught_${sig}" caught_sig
 		case "${caught_sig}.${_CRITSNEST}" in
 		"1.0")
-			setvar "_crit_caught_${sig}" 0
+			setvar "_crit_caught_${sig}" 0 || return
 			raise "${sig}"
 			;;
 		esac
@@ -688,7 +691,7 @@ read_file() {
 		case "${var_return}" in
 		"") ;;
 		-) echo "${rf_data}" ;;
-		*) setvar "${var_return}" "${rf_data}" ;;
+		*) setvar "${var_return}" "${rf_data}" || return ;;
 		esac
 
 		return "${rf_ret}"
@@ -739,7 +742,7 @@ read_line() {
 		rl_ret=1
 	fi
 
-	setvar "${rl_var}" "${rl_line}"
+	setvar "${rl_var}" "${rl_line}" || return
 
 	return "${rl_ret}"
 }
@@ -824,7 +827,12 @@ readlines_file() {
 				shift
 				case "${rlf_var:+set}" in
 				set)
-					setvar "${rlf_var}" "${rlf_line}"
+					setvar "${rlf_var}" "${rlf_line}" ||
+					    rlf_ret="$?"
+					case "${rlf_ret}" in
+					0) ;;
+					*) break ;;
+					esac
 					;;
 				esac
 				;;
@@ -843,7 +851,7 @@ readlines_file() {
 			shift
 			case "${rlf_var:+set}" in
 			set)
-				setvar "${rlf_var}" "${rlf_rest}"
+				setvar "${rlf_var}" "${rlf_rest}" || return
 				;;
 			esac
 			;;
@@ -1068,7 +1076,7 @@ pipe_hold() {
 
 	unset spawn_jobid
 	spawn_job_protected _pipe_hold_child "${ph_fifo}" "${ph_pid}" "$@"
-	setvar "${var_return_jobid}" "${spawn_jobid}"
+	setvar "${var_return_jobid}" "${spawn_jobid}" || ph_ret="$?"
 	read_pipe "${ph_fifo}" ph_sync || ph_ret="$?"
 	case "${ph_sync}" in
 	ready) ;;
@@ -1185,7 +1193,7 @@ mapfile() {
 			;;
 		esac
 	esac
-	setvar "${handle_name}" "${_hkey}"
+	setvar "${handle_name}" "${_hkey}" || ret="$?"
 	case "${_file}" in
 	-|/dev/stdin|/dev/fd/0)
 		case "${_modes}" in
@@ -1532,7 +1540,8 @@ pipe_func() {
 	else
 		if ! getvar "${_mf_handle_var}" _mf_cookie_val; then
 			randint 1000000000 _mf_cookie_val
-			setvar "${_mf_handle_var}" "${_mf_cookie_val}"
+			setvar "${_mf_handle_var}" "${_mf_cookie_val}" ||
+			    return
 		else
 			if [ "${_mf_cookie_val}" -eq "${_mf_cookie_val}" ]; then
 				:
@@ -1615,16 +1624,16 @@ mapfile_mktemp() {
 	ret=0
 	_mktemp mm_tmpfile "$@" || ret="$?"
 	if [ "${ret}" -ne 0 ]; then
-		setvar "${handle_var_return}" ""
-		setvar "${tmpfile_var_return}" ""
+		setvar "${handle_var_return}" "" || return
+		setvar "${tmpfile_var_return}" "" || return
 		return "${ret}"
 	fi
 	ret=0
 	# shellcheck disable=SC2034
 	mapfile "${handle_var_return}" "${mm_tmpfile}" "we" || ret="$?"
 	if [ "${ret}" -ne 0 ]; then
-		setvar "${handle_var_return}" ""
-		setvar "${tmpfile_var_return}" ""
+		setvar "${handle_var_return}" "" || return
+		setvar "${tmpfile_var_return}" "" || return
 		return "${ret}"
 	fi
 	setvar "${tmpfile_var_return}" "${mm_tmpfile}"
@@ -1909,7 +1918,7 @@ timespecsub() {
 		echo "${res_sec}.${res_nsec}"
 		;;
 	*)
-		setvar "${_var_return}" "${res_sec}.${res_nsec}"
+		setvar "${_var_return}" "${res_sec}.${res_nsec}" || return
 		;;
 	esac
 }
@@ -2121,7 +2130,7 @@ _mktemp() {
 
 	export TMPDIR
 	_mktemp_tmpfile="$(command mktemp "$@")" || ret="$?"
-	setvar "${_mktemp_var_return}" "${_mktemp_tmpfile}"
+	setvar "${_mktemp_var_return}" "${_mktemp_tmpfile}" || return
 	return "${ret}"
 }
 
@@ -2164,7 +2173,7 @@ stripansi() {
 	case "${_input}" in
 	*$'\033'"["*) ;;
 	*)
-		setvar "${_output_var}" "${_input}"
+		setvar "${_output_var}" "${_input}" || return
 		return 0
 		;;
 	esac
@@ -2218,7 +2227,7 @@ count_lines() {
 	esac
 	case "${cl_var_return}" in
 	""|-) echo "${cl_count}" ;;
-	*) setvar "${cl_var_return}" "${cl_count}" ;;
+	*) setvar "${cl_var_return}" "${cl_count}" || return ;;
 	esac
 	return "${cl_ret}"
 }

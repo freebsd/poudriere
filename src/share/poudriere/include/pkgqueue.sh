@@ -47,10 +47,10 @@ pkgqueue_job_decode() {
 	__job_type="$1"
 	__job_name="$2"
 	if [ -n "${var_return_job_type}" ]; then
-		setvar "${var_return_job_type}" "${__job_type}"
+		setvar "${var_return_job_type}" "${__job_type}" || return
 	fi
 	if [ -n "${var_return_job_name}" ]; then
-		setvar "${var_return_job_name}" "${__job_name}"
+		setvar "${var_return_job_name}" "${__job_name}" || return
 	fi
 }
 
@@ -105,7 +105,7 @@ pkgqueue_get_next() {
 		esac
 	done
 
-	setvar "${pgn_job_type_var}" "${pgn_job_type}"
+	setvar "${pgn_job_type_var}" "${pgn_job_type}" || return
 	setvar "${pgn_pkgname_var}" "${pgn_pkgname}"
 }
 

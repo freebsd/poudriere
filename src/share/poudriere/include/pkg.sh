@@ -66,7 +66,7 @@ pkg_get_origin() {
 	case "${var_return}" in
 	"") ;;
 	-) echo "${_origin}" ;;
-	*) setvar "${var_return}" "${_origin}" ;;
+	*) setvar "${var_return}" "${_origin}" || return ;;
 	esac
 }
 
@@ -126,7 +126,7 @@ pkg_get_shlib_required_count() {
 	case "${var_return}" in
 	"") ;;
 	-) echo "${_count}" ;;
-	*) setvar "${var_return}" "${_count}" ;;
+	*) setvar "${var_return}" "${_count}" || return ;;
 	esac
 }
 
@@ -170,7 +170,7 @@ pkg_get_annotation() {
 	case "${pga_var_return}" in
 	"") ;;
 	-) echo "${value}" ;;
-	*) setvar "${pga_var_return}" "${value}" ;;
+	*) setvar "${pga_var_return}" "${value}" || return ;;
 	esac
 }
 
@@ -211,7 +211,7 @@ pkg_get_arch() {
 	case "${var_return}" in
 	"") ;;
 	-) echo "${_arch}" ;;
-	*) setvar "${var_return}" "${_arch}" ;;
+	*) setvar "${var_return}" "${_arch}" || return ;;
 	esac
 }
 
@@ -259,12 +259,18 @@ pkg_get_dep_origin_pkgnames() {
 	case "${var_return_origins}" in
 	"") ;;
 	-) echo "${compiled_dep_origins-}" ;;
-	*) setvar "${var_return_origins}" "${compiled_dep_origins-}" ;;
+	*)
+		setvar "${var_return_origins}" "${compiled_dep_origins-}" ||
+		    return
+		;;
 	esac
 	case "${var_return_pkgnames}" in
 	"") ;;
 	-) echo "${compiled_dep_pkgnames-}" ;;
-	*) setvar "${var_return_pkgnames}" "${compiled_dep_pkgnames-}" ;;
+	*)
+		setvar "${var_return_pkgnames}" "${compiled_dep_pkgnames-}" ||
+		    return
+		;;
 	esac
 }
 
@@ -299,7 +305,7 @@ pkg_get_options() {
 	case "${var_return}" in
 	"") ;;
 	-) echo "${_compiled_options-}" ;;
-	*) setvar "${var_return}" "${_compiled_options-}" ;;
+	*) setvar "${var_return}" "${_compiled_options-}" || return ;;
 	esac
 }
 
