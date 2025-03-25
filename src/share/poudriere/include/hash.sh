@@ -218,25 +218,21 @@ hash_isset_var() {
 	local -; set +x
 	[ $# -eq 1 ] || eargs hash_isset_var var
 	local hiv_var="$1"
-	local hiv_line _hash_var_name hiv_ret IFS
+	local hiv_line _hash_var_name IFS
+	local -
 
+	set -o noglob
 	_hash_var_name "${hiv_var}" ""
-	hiv_ret=1
 	while IFS= mapfile_read_loop_redir hiv_line; do
-		# XXX: mapfile_read_loop can't safely return/break
-		if [ "${hiv_ret}" -eq 0 ]; then
-			continue
-		fi
 		case "${hiv_line}" in
 		${_hash_var_name}*=*)
-			hiv_ret=0
+			return 0
 			;;
-		*) continue ;;
 		esac
 	done <<-EOF
 	$(set)
 	EOF
-	return "${hiv_ret}"
+	return 1
 }
 
 hash_get() {
