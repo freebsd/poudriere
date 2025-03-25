@@ -225,6 +225,7 @@ pkg_get_dep_origin_pkgnames() {
 	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 	local fetched_data compiled_dep_origins compiled_dep_pkgnames
 	local origin pkgname
+	local -
 
 	compiled_dep_origins=
 	compiled_dep_pkgnames=
@@ -240,7 +241,10 @@ pkg_get_dep_origin_pkgnames() {
 	"") return 0 ;;
 	esac
 	# Split the data
+	set -o noglob
+	# shellcheck disable=SC2086
 	set -- ${fetched_data}
+	set +o noglob
 	while [ $# -ne 0 ]; do
 		origin="$1"
 		pkgname="$2"
@@ -530,7 +534,10 @@ _pkg_version_expanded() {
 		;;
 	esac
 	_gsub "${ver}" "[_.]" " " ver_sub
+	set -o noglob
+	# shellcheck disable=SC2086
 	set -- ${ver_sub}
+	set +o noglob
 
 	printf "%02d" "${epoch}"
 	while [ $# -gt 0 ]; do
