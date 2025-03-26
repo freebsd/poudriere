@@ -84,7 +84,7 @@ make_getjob() {
 		    pwait -o -t "0.1" "${THIS_JOB}" >/dev/null 2>&1; then
 			# This runtest.sh runner itself was given a job.
 			# Use it before asking the jobserver for more.
-			collectpids "0.1"
+			collectpids "0.1" || :
 			THIS_JOB=1
 			mg_job="this"
 			#echo "GOT JOB ${mg_job}" >&2
@@ -299,15 +299,24 @@ runtest() {
 
 collectpids() {
 	local timeout="$1"
-	local pids_copy
+	local pids_copy tries max
 
 	case "${pids:+set}" in
 	set) ;;
 	*) return 0 ;;
 	esac
 
-	echo "Waiting on pids: ${pids}" >&2
-	until [ -z "${pids:+set}" ]; do
+	# Try a few times depending on the timeout and reduce it each try.
+	case "${timeout}" in
+	*.*)
+		max="${timeout%.*}"
+		max="$((max + 1))"
+		;;
+	*) max="${timeout}" ;;
+	esac
+	tries=0
+	echo "Waiting on pids: ${pids} timeout: ${timeout}" >&2
+	until [ -z "${pids:+set}" ] || [ "${tries}" -eq "${max}" ]; do
 		pwait -o -t "${timeout}" ${pids} >/dev/null 2>&1 || :
 		pids_copy="${pids}"
 		pids=
@@ -348,7 +357,18 @@ collectpids() {
 				;;
 			esac
 		done
+		tries="$((tries + 1))"
+		case "${timeout}" in
+		*.*) ;;
+		*)
+			timeout="$((timeout - 1))"
+			;;
+		esac
 	done
+	if [ -z "${pids:+set}" ]; then
+		return 0
+	fi
+	return 1
 }
 
 _spawn_wrapper() {
@@ -545,7 +565,7 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 			setvar "pid_num_$!" "${TEST_CONTEXT_NUM}"
 			continue
 		fi
-		collectpids 5
+		collectpids 5 || :
 	done
 	{
 		TEST_SUITE_END="$(clock -monotonic)"
