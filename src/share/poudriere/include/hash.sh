@@ -237,7 +237,7 @@ hash_isset_var() {
 
 hash_get() {
 	local -; set +x
-	[ $# -eq 3 ] || eargs hash_get var key var_return
+	[ $# -eq 3 ] || eargs hash_get var key var_return EARGS: "$@"
 	local hg_var="$1"
 	local hg_key="$2"
 	local _hash_var_name

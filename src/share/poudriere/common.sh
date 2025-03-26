@@ -996,24 +996,48 @@ jstop() {
 }
 
 eargs() {
+	[ "$#" -ge 2 ] ||
+		err 1 "Usage: eargs funcname named_var1 '[named_var...]' EARGS: \"\$@\""
 	local fname="$1"
+	# First set of args are the named vars expected.
+	# Optionally then EARGS: values to assign for those vars.
+	# Be sure to pass in $@ to match up vars properly.
 	shift
-	local var least max range
+	local var vars vars2 pre least max maxn cnt range gotargs val vals
+	local namedvals var_sep
+	local gotcnt got
 
+	var_sep="@"
+	gotargs=0
 	least=0
+	cnt=0
 	unset max
-	case "$*" in
-	*...*) max=inf ;;
-	esac
-	for var in $@; do
-		case "${var}" in
-		'['*) ;;
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		"EARGS:")
+			gotargs=1
+			shift
+			# "$*" is now caller's "$*"
+			break
+			;;
+		*...*)
+			max=inf
+			maxn=999
+			;;
+		'['*) # Optional argument
+			:
+			;;
 		*)
 			least="$((least + 1))"
 			;;
 		esac
+		vars="${vars:+${vars} }$1"
+		vars2="${vars2:+${vars2}${var_sep:?}}$1"
+		cnt="$((cnt + 1))"
+		shift
 	done
-	: "${max:="$#"}"
+	: "${max:="${cnt}"}"
+	: "${maxn:="${max}"}"
 	case "${max}" in
 	"${least}")
 		range="${max}"
@@ -1022,10 +1046,76 @@ eargs() {
 		range="${least}-${max}"
 		;;
 	esac
-	case "$#" in
-	0) err ${EX_SOFTWARE} "${fname}: No arguments expected" ;;
-	1) err ${EX_SOFTWARE} "${fname}: 1 argument expected: $1" ;;
-	*) err ${EX_SOFTWARE} "${fname}: ${range} arguments expected: $*" ;;
+	# Match up named vars with values for display. This would be simpler
+	# using any helper function but eargs should be independent.
+	# Special care here to convey how $@ was grouped.
+	# Match <named args> up with actual positional arguments in $@.
+	gotcnt=0
+	for val in "$@"; do
+		gotcnt="$((gotcnt + 1))"
+		case "${vars2}" in
+		"")
+			if [ "${gotcnt}" -gt "${maxn}" ]; then
+				namedvals="${namedvals:+${namedvals}}\" ??=\"${val}"
+			else
+				# Last var to add in.
+				namedvals="${namedvals:+${namedvals} }\"${val}"
+			fi
+			;;
+		*)
+			# Pop off first name
+			var="${vars2%%"${var_sep:?}"*}"
+			vars2="${vars2#"${var}${var_sep:?}"}"
+			case "${var}" in
+			"${vars2}") vars2= ;;
+			esac
+			# on new var need to open a quote
+			namedvals="${namedvals:+${namedvals}\" }\"${val}"
+			# XXX: clever but does not handle [] or -flags right
+			# namedvals="${namedvals:+${namedvals}\" }${var}=\"${val}"
+			;;
+		esac
+	done
+	# Close last double quote.
+	namedvals="${namedvals:+${namedvals}\"}"
+	case "${gotargs}" in
+	0)
+		gotargs=
+		got=
+		;;
+	1)
+		got=", got $#"
+		gotargs="${namedvals:+"$'\n'$'\t'"Received: ${fname} ${namedvals}}"
+		# Missing vars
+		case "${vars2}" in
+		"") ;;
+		*)
+			# Need to reconvert vars2 from var_sep to spaces.
+			local IFS -
+
+			IFS="${var_sep:?}"
+			set -o noglob
+			# shellcheck disable=SC2086
+			set -- ${vars2}
+			set +o noglob
+			unset IFS
+			vars2="$*"
+			gotargs="${gotargs:+${gotargs}}"$'\n'$'\t'"Missing:  ${vars2}"
+			;;
+		esac
+		;;
+	esac
+	vars=$'\n'$'\t'"Expected: ${fname} ${vars}"
+	case "${cnt}" in
+	0)
+		err ${EX_SOFTWARE} "${fname}: No arguments expected${got}:${vars}${gotargs}"
+		;;
+	1)
+		err ${EX_SOFTWARE} "${fname}: 1 argument expected${got}:${vars}${gotargs}"
+		;;
+	*)
+		err ${EX_SOFTWARE} "${fname}: ${range} arguments expected${got}:${vars}${gotargs}"
+		;;
 	esac
 }
 
