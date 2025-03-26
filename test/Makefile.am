@@ -85,6 +85,7 @@ TESTS=\
 	required_env.sh \
 	setvar.sh \
 	shash_basic.sh \
+	shellcheck.sh \
 	stack.sh \
 	stripansi.sh \
 	test_contexts.sh \
