@@ -7380,7 +7380,7 @@ package_deps_provided_libs() {
 	[ $# -eq 1 ] || eargs package_deps_provided_libs pkgfile
 	local pkgfile="$1"
 
-	cache_call -K "${pkgfile##*/}" - \
+	cache_call -K "${JAIL_OSVERSION:?}${pkgfile##*/}" - \
 	    _package_deps_provided_libs "${pkgfile:?}"
 }
 
