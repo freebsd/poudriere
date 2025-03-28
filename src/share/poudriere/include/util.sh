@@ -1097,7 +1097,7 @@ mapfile_keeps_file_open_on_eof() {
 	return 0
 }
 
-mapfile_supports_multiple_handles() {
+mapfile_supports_multiple_read_handles() {
 	return 0
 }
 
@@ -1176,10 +1176,10 @@ mapfile() {
 				*)
 					case " ${_modes} " in
 					*r*w*|*w*r*|*+*|*r*)
-						if mapfile_supports_multiple_handles; then
-							err "${EX_SOFTWARE}" "mapfile() needs updated for multiple handle support"
+						if mapfile_supports_multiple_read_handles; then
+							err "${EX_SOFTWARE}" "mapfile() needs updated for multiple read handle support"
 						fi
-						err "${EX_SOFTWARE}" "mapfile only supports 1 file at a time without builtin for r+w and r. ${_MAPFILE_HANDLE} already open: tried to open ${_file}"
+						err "${EX_SOFTWARE}" "mapfile only supports 1 reader at a time without builtin. ${_MAPFILE_HANDLE} already open: tried to open ${_file}"
 						;;
 					esac
 					;;
@@ -1457,7 +1457,7 @@ mapfile_keeps_file_open_on_eof() {
 	return 1
 }
 
-mapfile_supports_multiple_handles() {
+mapfile_supports_multiple_read_handles() {
 	return 1
 }
 ;;

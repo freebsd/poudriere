@@ -149,7 +149,7 @@ pipe_func_child_exit_success=27
 	assert "${max}" "${lines}"
 }
 
-if mapfile_supports_multiple_handles; then
+if mapfile_supports_multiple_read_handles; then
 # pipe_func nested
 {
 
