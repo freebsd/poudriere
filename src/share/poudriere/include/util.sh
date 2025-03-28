@@ -1229,8 +1229,13 @@ mapfile() {
 		hash_set mapfile_fd "${_hkey}" "${_file#/dev/fd/}"
 		;;
 	*)
-		: "${_MAPFILE_HANDLE:="${_hkey}"}"
-		case "${_MAPFILE_HANDLE}" in
+		case "${_modes}" in
+		*r*|*r*w*|*w*r*|*+*)
+			: "${_MAPFILE_HANDLE:="${_hkey}"}"
+			;;
+		*w*|*a*) ;;
+		esac
+		case "${_MAPFILE_HANDLE-}" in
 		"${_hkey}")
 			case " ${_modes} " in
 			*r*w*|*w*r*|*+*)
