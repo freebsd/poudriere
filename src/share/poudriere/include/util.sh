@@ -1230,7 +1230,7 @@ mapfile() {
 		;;
 	*)
 		case "${_modes}" in
-		*r*|*r*w*|*w*r*|*+*)
+		*r*|*+*)
 			: "${_MAPFILE_HANDLE:="${_hkey}"}"
 			;;
 		*w*|*a*) ;;

@@ -998,4 +998,29 @@ fi
 	#assert_ret_not 0 kill -0 "$!"
 }
 
+{
+	TMP="$(mktemp)"
+	cat > "${TMP}" <<-EOF
+	1 2
+	3 4
+	5
+	6 7 8
+	EOF
+	assert_true mapfile f_out /dev/stdout "w"
+	while mapfile_read_loop "${TMP}" a b; do
+		assert_true mapfile_write "${f_out}" "a=${a} b=${b}"
+	done > "${TMP}.2"
+	assert_true mapfile_close "${f_out}"
+	assert_file - "${TMP}.2" <<-EOF
+	a=1 b=2
+	a=3 b=4
+	a=5 b=
+	a=6 b=7 8
+	EOF
+	rm -f "${TMP}" "${TMP}.2"
+	assert_true hash_assert_no_vars "file*"
+	assert_true hash_assert_no_vars "it*"
+	assert_true hash_assert_no_vars "mapfile*"
+}
+
 exit 0
