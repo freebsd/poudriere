@@ -1286,7 +1286,7 @@ mapfile_read() {
 }
 
 mapfile_write() {
-	local -; set +x
+	local -; set +x -u
 	[ $# -ge 1 ] || eargs mapfile_write handle '[-nT]' '[data]'
 	local handle="$1"
 	shift
@@ -1312,7 +1312,7 @@ mapfile_write() {
 		if [ "${ret}" -ne 0 ]; then
 			return "${ret}"
 		fi
-		case "${data}-${_read_file_lines_read}" in
+		case "${data-}-${_read_file_lines_read}" in
 		# Nothing to write. An alternative here is nflag=1 ;;
 		"-0") return 0 ;;
 		esac
