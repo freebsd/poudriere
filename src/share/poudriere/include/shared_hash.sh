@@ -150,7 +150,7 @@ shash_write() {
 		T)
 			Tflag=1
 			;;
-		*) err "${EX_USAGE}" "write_atomic: Invalid flag ${flag}" ;;
+		*) err "${EX_USAGE}" "shash_write: Invalid flag ${flag}" ;;
 		esac
 	done
 	shift $((OPTIND-1))
