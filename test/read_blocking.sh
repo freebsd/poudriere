@@ -2,12 +2,6 @@ set -e
 . ./common.sh
 set +e
 
-# Depends on https://reviews.freebsd.org/D31876
-if [ "${SH-}" = "/bin/sh" ]; then
-	echo "SKIP: Using stock sh" >&2
-	exit 77
-fi
-
 # Basic timeout test
 {
 	TMP=$(mktemp -u)
