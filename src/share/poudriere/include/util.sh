@@ -46,6 +46,14 @@ unimplemented() {
 	err "${EX_SOFTWARE-70}" "${funcname} unimplemented. Args: $*"
 }
 
+deprecated() {
+	[ "$#" -ge 2 ] || eargs deprecated funcname reason '[args]'
+	local funcname="$1"
+	local reason="$2"
+	shift 2
+	err "${EX_SOFTWARE-70}" "${funcname} deprecated, ${reason}. Args: $*"
+}
+
 # Encode $@ for later decoding
 encode_args() {
 	local -; set +x
