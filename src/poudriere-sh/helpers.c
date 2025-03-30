@@ -239,11 +239,11 @@ out:
 }
 
 int
-issetvarcmd(int argc, char **argv)
+issetcmd(int argc, char **argv)
 {
 
 	if (argc != 2)
-		errx(EX_USAGE, "%s", "Usage: issetvar <var>");
+		errx(EX_USAGE, "%s", "Usage: isset <var>");
 
 	return (lookupvar(argv[1]) == NULL);
 }

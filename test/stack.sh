@@ -253,15 +253,15 @@ assert_true assert_out 0 '01 TTXRW02 QQ$' stack_expand_back STACK XRW
 }
 
 {
-	assert_ret_not 0 issetvar tmp
-	assert_ret_not 0 issetvar empty_stack
+	assert_ret_not 0 isset tmp
+	assert_ret_not 0 isset empty_stack
 	assert_false stack_isset empty_stack
 	assert_ret 1 stack_foreach_front empty_stack val tmp
 }
 
 {
-	assert_ret_not 0 issetvar tmp
-	assert_ret_not 0 issetvar empty_stack
+	assert_ret_not 0 isset tmp
+	assert_ret_not 0 isset empty_stack
 	assert_false stack_isset empty_stack
 	assert_ret 1 stack_foreach_back empty_stack val tmp
 }

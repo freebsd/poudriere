@@ -7592,7 +7592,7 @@ locked() {
 	local lockname="$2"
 	local waittime="${3-}"
 
-	if issetvar "${l_tmp_var}"; then
+	if isset "${l_tmp_var}"; then
 		lock_release "${lockname}"
 		unset "${l_tmp_var}"
 		return 1
@@ -7637,7 +7637,7 @@ slocked() {
 	local lockname="$2"
 	local waittime="${3-}"
 
-	if issetvar "${s_tmp_var}"; then
+	if isset "${s_tmp_var}"; then
 		slock_release "${lockname}"
 		unset "${s_tmp_var}"
 		return 1

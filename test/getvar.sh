@@ -6,7 +6,7 @@ foo="1 2 \$3"
 getvar foo output
 assert "${foo}" "${output}" "1. foo doesn't match"
 assert "${foo}" "$(getvar foo)" "2. foo doesn't match"
-assert_true issetvar foo
+assert_true isset foo
 x=bad
 x="$(getvar foo)"
 assert 0 "$?"
@@ -25,7 +25,7 @@ assert 1 "${ret}" "getvar nonexistent should fail"
 assert "" "${x}" "getvar nonexistent should return empty string"
 x="$(getvar nonexistent; echo .)"
 assert "." "${x}" "getvar nonexistent should return empty string"
-assert_false issetvar nonexistent
+assert_false isset nonexistent
 ret=0
 x=bad
 x="$(getvar nonexistent -)" || ret="$?"

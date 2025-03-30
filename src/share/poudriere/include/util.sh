@@ -149,20 +149,24 @@ decode_args_vars() {
 	done
 }
 
-if ! type issetvar >/dev/null 2>&1; then
-issetvar() {
-	[ $# -eq 1 ] || eargs issetvar var
-	local issetvar_var="$1"
-	local issetvar_val
+if ! type isset >/dev/null 2>&1; then
+isset() {
+	[ $# -eq 1 ] || eargs isset var
+	local isset_var="$1"
+	local isset_val
 
-	eval "issetvar_val=\${${issetvar_var}-isv__null}"
+	eval "isset_val=\${${isset_var}-isv__null}"
 
-	case "${issetvar_val}" in
+	case "${isset_val}" in
 	"isv__null") return 1 ;;
 	esac
 	return 0
 }
 fi
+
+issetvar() {
+	deprecated issetvar "use isset" "$@"
+}
 
 if ! type setvar >/dev/null 2>&1; then
 setvar() {
@@ -461,7 +465,7 @@ add_relpath_var() {
 	*" ${arv_var} "*) ;;
 	*) RELATIVE_PATH_VARS="${RELATIVE_PATH_VARS:+${RELATIVE_PATH_VARS} }${arv_var}" ;;
 	esac
-	if ! issetvar "${arv_var}_ABS"; then
+	if ! isset "${arv_var}_ABS"; then
 		case "${arv_val}" in
 		/*) ;;
 		*)

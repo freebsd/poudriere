@@ -8,7 +8,7 @@ _gsub_var_namecmd -n	_gsub_var_name
 _gsub_badcharscmd -n	_gsub_badchars
 _gsubcmd -n		_gsub
 gsubcmd -n		gsub
-issetvarcmd -n		issetvar
+issetcmd -n		isset
 locked_mkdircmd		locked_mkdir
 mapfilecmd -n		mapfile
 mapfile_catcmd -n	mapfile_cat

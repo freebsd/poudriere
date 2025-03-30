@@ -211,7 +211,7 @@ hash_isset() {
 	local _hash_var_name
 
 	_hash_var_name "${hi_var}" "${hi_key}"
-	issetvar "${_hash_var_name}"
+	isset "${_hash_var_name}"
 }
 
 hash_isset_var() {
@@ -347,7 +347,7 @@ hash_set() {
 		# noclobber is set.
 		# - Only set the value if it was not already set.
 		# - Return error if already set.
-		if issetvar "${_hash_var_name}"; then
+		if isset "${_hash_var_name}"; then
 			return 1
 		fi
 	esac
@@ -606,7 +606,7 @@ stack_isset() {
 	[ "$#" -eq 1 ] || eargs stack_isset stack_var
 	local si_var="$1"
 
-	issetvar "${si_var}_count"
+	isset "${si_var}_count"
 }
 
 stack_size() {
@@ -745,7 +745,7 @@ array_isset() {
 		hash_isset "_array_${as_array_var}" "${as_idx}" || return
 		;;
 	*)
-		issetvar "_array_length_${as_array_var}" || return
+		isset "_array_length_${as_array_var}" || return
 		;;
 	esac
 }
