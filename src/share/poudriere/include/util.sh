@@ -1252,7 +1252,7 @@ mapfile() {
 			;;
 		*)
 			case "${_modes}" in
-			*a*) ;;
+			*a*) :>> "${_file}" ;;
 			*w*) :> "${_file}" ;;
 			esac
 			;;

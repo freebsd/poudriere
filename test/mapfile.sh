@@ -49,6 +49,24 @@ writer() {
 	rm -f "${TMP}"
 }
 
+{
+	TMP=$(mktemp -u)
+	TMP2=$(mktemp -u)
+	TMP3=$(mktemp -u)
+	assert_false mapfile file_read "${TMP}" "re"
+	:> "${TMP}"
+	assert_true mapfile file_read "${TMP}" "re"
+	assert_false test -r "${TMP2}"
+	assert_true mapfile file_write1 "${TMP2}" "ae"
+	assert_true test -r "${TMP2}"
+	assert_true mapfile file_write2 "${TMP3}" "we"
+	assert_true test -r "${TMP3}"
+	assert_true mapfile_close "${file_write2}"
+	assert_true mapfile_close "${file_write1}"
+	assert_true mapfile_close "${file_read}"
+	rm -f "${TMP}" "${TMP2}" "${TMP3}"
+}
+
 # non-builtin can still do writing to multiple files concurrently. Just
 # not reading.
 {
