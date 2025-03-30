@@ -9,7 +9,7 @@
 # Depends on pkgqueue_basic.sh passing
 # Depends on pkgqueue_prioritize "build".sh passing
 # Depends on pkgqueue_remove_many_pipe.sh passing
-. common.sh
+. ./common.sh
 
 set_pipefail
 

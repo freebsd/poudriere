@@ -1,7 +1,7 @@
 LISTPORTS="ports-mgmt/poudriere-devel"
 OVERLAYS="omnibus"
 IMMUTABLE_BASE=schg
-. common.bulk.sh
+. ./common.bulk.sh
 
 do_bulk -t -c ${LISTPORTS}
 assert 0 $? "Bulk should pass"

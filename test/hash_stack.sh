@@ -1,5 +1,5 @@
 set -e
-. common.sh
+. ./common.sh
 set +e
 
 assert_ret 0 hash_push stack a 1

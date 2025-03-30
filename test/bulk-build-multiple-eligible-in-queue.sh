@@ -8,7 +8,7 @@ LISTPORTS="\
 "
 JFLAG=4
 OVERLAYS="omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 do_pkgclean -y -A
 assert 0 "$?" "Pkgclean should pass"

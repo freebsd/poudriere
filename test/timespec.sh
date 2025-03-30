@@ -1,5 +1,5 @@
 set -e
-. common.sh
+. ./common.sh
 set +e
 
 # Use more precision for these tests to avoid some rounding errors if we start

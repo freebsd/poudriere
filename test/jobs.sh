@@ -1,6 +1,6 @@
 # This test is testing very specific formats because get_job_id() depends on it.
 set +e
-. common.sh
+. ./common.sh
 set -e
 
 TMP="$(mktemp -ut jobs)"

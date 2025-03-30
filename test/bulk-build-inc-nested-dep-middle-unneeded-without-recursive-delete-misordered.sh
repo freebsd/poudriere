@@ -9,7 +9,7 @@ LISTPORTS="ports-mgmt/poudriere-devel-dep-FOO misc/foo@default"
 #
 # The tests here likely rely on the "missing" package to be removed by delete_old_pkg()
 OVERLAYS="omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 : ${ASSERT_CONTINUE:=0}
 set_test_contexts - '' '' <<-EOF

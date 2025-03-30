@@ -1,4 +1,4 @@
-. common.sh
+. ./common.sh
 
 contexts="$(mktemp -ut test_contexts)"
 cat > "${contexts}" <<-EOF

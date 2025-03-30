@@ -1,4 +1,4 @@
-. common.sh
+. ./common.sh
 
 mypid="$(getpid)"
 assert 0 "$?" getpid

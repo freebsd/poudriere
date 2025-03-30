@@ -1,5 +1,5 @@
 set +e
-. common.sh
+. ./common.sh
 
 TMP="$(mktemp -ut count_lines)"
 cat > "${TMP}" <<-EOF

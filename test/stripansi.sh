@@ -1,6 +1,6 @@
 set -e
 FORCE_COLORS=1
-. common.sh
+. ./common.sh
 set +e
 
 assert_not "" "${COLOR_BLUE}" "colors are not loaded"

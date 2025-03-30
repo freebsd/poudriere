@@ -1,4 +1,4 @@
-. common.sh
+. ./common.sh
 
 tmp="$(mktemp -ut test_contexts_expanded)"
 expand_test_contexts - > "${tmp}" <<-EOF

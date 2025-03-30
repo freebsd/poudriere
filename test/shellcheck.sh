@@ -1,4 +1,4 @@
-. common.sh
+. ./common.sh
 
 if ! which shellcheck >/dev/null 2>&1; then
 	msg_warn "Skipping as shellcheck is not found"

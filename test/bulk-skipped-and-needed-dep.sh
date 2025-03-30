@@ -10,7 +10,7 @@ LISTPORTS="ports-mgmt/poudriere-devel-dep-IGNORED misc/freebsd-release-manifests
 # ports-mgmt/poudriere-devel-IGNORED depends on misc/freebsd-release-manifests which is skipped
 # but misc/freebsd-release-manifests is listed so should be queued.
 OVERLAYS="omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 do_bulk -c -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"

@@ -6,7 +6,7 @@ LISTPORTS="misc/foo-flavor-double-DEPIGNORED@${FLAVOR_ALL}"
 # is *double* skipped. I.e., it has 2 dependencies which are IGNORED.
 # Test that this port does not get double IGNORED
 OVERLAYS="omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 : ${ASSERT_CONTINUE:=0}
 set_test_contexts - '' '' <<-EOF

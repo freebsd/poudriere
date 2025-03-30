@@ -1,7 +1,7 @@
 LISTPORTS="misc/foop-IGNORED ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-IGNORED-and-skipped"
 # IGNORE should take precedence over skipped.
 OVERLAYS="omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 : ${ASSERT_CONTINUE:=0}
 set_test_contexts - '' '' <<-EOF

@@ -2,7 +2,7 @@ FLAVOR_DEFAULT_ALL=yes
 
 LISTPORTS="misc/foo-FLAVORS-unsorted"
 OVERLAYS="overlay omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 do_bulk -c -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"

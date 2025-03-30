@@ -1,6 +1,6 @@
 TESTPORT="ports-mgmt/pkg"
 LISTPORTS="${TESTPORT}"
-. common.bulk.sh
+. ./common.bulk.sh
 
 # testport will keep old packages so we need to clean out everything
 # before doing the first run to ensure it all builds.

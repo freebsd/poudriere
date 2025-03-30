@@ -1,5 +1,5 @@
 set -e
-. common.sh
+. ./common.sh
 set +e
 
 foo="1 2 \$3"

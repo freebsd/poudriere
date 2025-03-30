@@ -1,5 +1,5 @@
 set -e
-. common.sh
+. ./common.sh
 set +e
 
 # Depends on https://reviews.freebsd.org/D31876

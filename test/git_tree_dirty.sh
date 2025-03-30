@@ -1,5 +1,5 @@
 set -e
-. common.sh
+. ./common.sh
 set +e
 
 if [ ! -x "${GIT_CMD}" ]; then

@@ -5,7 +5,7 @@ LISTPORTS="misc/foo-RUNDEP-misc-foo misc/foo-BUILDDEP-misc-foo"
 # misc/foo-RUNDEP-misc-foo RUN depends on misc/foo@default
 # misc/foo-BUILDDEP-misc-foo BUILD depends on misc/foo@default
 OVERLAYS="omnibus misc"
-. common.bulk.sh
+. ./common.bulk.sh
 
 set_test_contexts - '' '' <<-EOF
 TRIM_ORPHANED_BUILD_DEPS no yes

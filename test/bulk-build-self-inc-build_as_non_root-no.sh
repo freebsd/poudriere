@@ -1,7 +1,7 @@
 LISTPORTS="ports-mgmt/poudriere-devel"
 OVERLAYS="omnibus"
 BUILD_AS_NON_ROOT=no
-. common.bulk.sh
+. ./common.bulk.sh
 
 set_make_conf <<-EOF
 ports-mgmt_poudriere-devel_SET=	CHECKNONROOT

@@ -1,6 +1,6 @@
 LISTPORTS="misc/foo-flavor-double-DEPIGNORED@depignored"
 OVERLAYS="omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 : ${ASSERT_CONTINUE:=0}
 set_test_contexts - '' '' <<-EOF

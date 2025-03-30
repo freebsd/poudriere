@@ -9,7 +9,7 @@ LISTPORTS="converters/libiconv devel/libtextstyle devel/gettext-runtime"
 # gettext-runtime depends on indexinfo libiconv
 # libtextstyle depends on libiconv
 OVERLAYS="omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 set_test_contexts - '' '' <<-EOF
 TRIM_ORPHANED_BUILD_DEPS no

@@ -1,6 +1,6 @@
 LISTPORTS="ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-dep-FOO misc/freebsd-release-manifests@foo"
 OVERLAYS="omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 do_pkgclean -y -A
 assert 0 "$?" "Pkgclean should pass"

@@ -8,7 +8,7 @@ LISTPORTS="ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-dep-FOO misc/fr
 #
 # The tests here likely rely on the "missing" package to be removed by delete_old_pkg()
 OVERLAYS="omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 do_pkgclean -y ports-mgmt/pkg
 assert 0 "$?" "Pkgclean should pass"

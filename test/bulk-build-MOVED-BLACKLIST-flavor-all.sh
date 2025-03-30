@@ -3,7 +3,7 @@ FLAVOR_DEFAULT=-
 LISTPORTS="misc/freebsd-release-manifests@${FLAVOR_ALL}"
 LISTPORTS_MOVED="misc/freebsd-release-manifests-OLD-MOVED@${FLAVOR_ALL}"
 OVERLAYS="omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 : ${ASSERT_CONTINUE:=0}
 set_test_contexts - '' '' <<-EOF

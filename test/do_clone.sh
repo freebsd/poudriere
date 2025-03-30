@@ -1,5 +1,5 @@
 set -e
-. common.sh
+. ./common.sh
 set +e
 
 # This test is not intended to be a comprehesive test of the tool that do_clone

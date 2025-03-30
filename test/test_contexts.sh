@@ -1,4 +1,4 @@
-. common.sh
+. ./common.sh
 
 test_setup() {
 	hash_set setup "${A:?}${B+bad}${C:?}" 1

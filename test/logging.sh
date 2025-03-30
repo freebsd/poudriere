@@ -1,7 +1,7 @@
 VERBOSE=0
 set -e
 FORCE_COLORS=1
-. common.sh
+. ./common.sh
 set +e
 
 COLOR_DEV=

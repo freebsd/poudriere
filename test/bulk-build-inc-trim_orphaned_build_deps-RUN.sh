@@ -2,7 +2,7 @@ LISTPORTS="misc/foo-RUNDEP-misc-foo"
 # Similar to bulk-build-inc-trim_orphaned_build_deps.sh but uses RUN_DEPENDS.
 # misc/foo-RUNDEP-misc-foo RUN depends on misc/foo@default
 OVERLAYS="omnibus misc"
-. common.bulk.sh
+. ./common.bulk.sh
 
 set_test_contexts - '' '' <<-EOF
 TRIM_ORPHANED_BUILD_DEPS no yes

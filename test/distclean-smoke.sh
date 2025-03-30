@@ -1,5 +1,5 @@
 # This test is not doing much but running through a basic distclean.
-. common.bulk.sh
+. ./common.bulk.sh
 
 while slocked locktmp "test-${SCRIPTNAME}" 5; do
 #until slock_acquire "test-${SCRIPTNAME}" 5; do

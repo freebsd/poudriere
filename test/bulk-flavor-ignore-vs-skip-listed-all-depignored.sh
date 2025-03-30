@@ -3,7 +3,7 @@ FLAVOR_DEFAULT_ALL=no
 # XXX: Removing DEFAULT here breaks the framework. It should default to the first flav due to FLAVOR_DEFAULT_ALL=no
 LISTPORTS="misc/foo-all-DEPIGNORED@default"
 OVERLAYS="overlay omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 do_bulk -c -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"

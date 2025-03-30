@@ -3,7 +3,7 @@ OVERLAYS="omnibus"
 TESTPORT_MOVED="misc/freebsd-release-manifests-OLD-MOVED@optional2"
 TESTPORT="misc/freebsd-release-manifests@bar"
 LISTPORTS="${TESTPORT}"
-. common.bulk.sh
+. ./common.bulk.sh
 
 # testport will keep old packages so we need to clean out everything
 # before doing the first run to ensure it all builds.

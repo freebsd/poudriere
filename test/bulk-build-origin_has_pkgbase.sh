@@ -5,7 +5,7 @@
 # the port.
 LISTPORTS="ports-mgmt/poudriere-devel-dep-FOO"
 OVERLAYS="omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 # Build pkg only once as this is a long test otherwise.
 do_bulk ports-mgmt/pkg

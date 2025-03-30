@@ -1,4 +1,4 @@
-. common.sh
+. ./common.sh
 
 set_pipefail
 

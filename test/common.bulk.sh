@@ -6,7 +6,7 @@ INJAIL_HOST=1
 
 : ${SCRIPTNAME:=${0}}
 
-. common.sh
+. ./common.sh
 
 # Strip away @DEFAULT if it is the default FLAVOR
 fix_default_flavor() {

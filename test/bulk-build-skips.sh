@@ -8,7 +8,7 @@ LISTPORTS="\
 "
 JFLAG=4
 OVERLAYS="omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 # This is the same as bulk-build-multiple-eligible-in-queue.sh except that
 # misc/foo will fail to build and cause rdeps to skip.

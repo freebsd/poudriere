@@ -1,7 +1,7 @@
 OVERLAYS=omnibus
 FLAVOR_ALL=all
 LISTPORTS="misc/freebsd-release-manifests@badflavor"
-. common.bulk.sh
+. ./common.bulk.sh
 
 EXPECTED_QUEUED=
 EXPECTED_LISTED=

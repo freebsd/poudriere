@@ -6,7 +6,7 @@ LISTPORTS="devel/libtrue devel/true-buildrun-deps"
 # We use true and libtrue for this test.
 #
 OVERLAYS="omnibus misc"
-. common.bulk.sh
+. ./common.bulk.sh
 
 set_test_contexts - '' '' <<-EOF
 # XXX: Add other combos in

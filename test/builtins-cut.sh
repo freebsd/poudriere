@@ -1,4 +1,4 @@
-. common.sh
+. ./common.sh
 
 case "$(type cut)" in
 *"is a shell builtin") ;;

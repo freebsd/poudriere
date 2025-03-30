@@ -5,7 +5,7 @@ LISTPORTS="misc/foo-FLAVORS-unsorted@default"
 # misc/foo-FLAVORS-unsorted@default build depends on misc/foo-dep-FLAVORS-unsorted@default
 # misc/foo-FLAVORS-unsorted2@default build depends on misc/foo-dep-FLAVORS-unsorted@default
 OVERLAYS="omnibus misc"
-. common.bulk.sh
+. ./common.bulk.sh
 
 set_test_contexts - '' '' <<-EOF
 TRIM_ORPHANED_BUILD_DEPS no yes

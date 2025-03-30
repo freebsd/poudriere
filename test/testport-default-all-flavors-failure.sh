@@ -2,7 +2,7 @@ OVERLAYS=omnibus
 FLAVOR_DEFAULT_ALL=yes
 TESTPORT="misc/freebsd-release-manifests"
 LISTPORTS="${TESTPORT}"
-. common.bulk.sh
+. ./common.bulk.sh
 
 EXPECTED_QUEUED=
 EXPECTED_LISTED=

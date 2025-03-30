@@ -1,6 +1,6 @@
 LISTPORTS="ports-mgmt/poudriere-devel-porttesting"
 OVERLAYS="omnibus porttesting"
-. common.bulk.sh
+. ./common.bulk.sh
 
 do_pkgclean -y -A
 assert 0 "$?" "Pkgclean should pass"

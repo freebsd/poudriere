@@ -1,4 +1,4 @@
-. common.sh
+. ./common.sh
 
 case "$(type wc)" in
 *"is a shell builtin") ;;

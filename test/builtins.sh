@@ -1,4 +1,4 @@
-. common.sh
+. ./common.sh
 
 if [ "${SH-}" = "/bin/sh" ]; then
 	echo "SKIP: Using stock sh" >&2

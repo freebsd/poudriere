@@ -1,7 +1,7 @@
 ALL=1
 OVERLAYS="overlay omnibus"
 set -e
-. common.bulk.sh
+. ./common.bulk.sh
 set +e
 
 do_bulk -c -n -a

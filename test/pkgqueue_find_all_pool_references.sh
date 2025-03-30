@@ -1,6 +1,6 @@
 # Depends on pkgqueue_basic.sh passing
 # Depends on pkgqueue_prioritize "build".sh passing
-. common.sh
+. ./common.sh
 
 set_pipefail
 

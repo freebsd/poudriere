@@ -1,6 +1,6 @@
 LISTPORTS="misc/freebsd-release-manifests@foo ports-mgmt/poudriere-devel-dep-DEFAULT"
 OVERLAYS="omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 do_bulk -c -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"

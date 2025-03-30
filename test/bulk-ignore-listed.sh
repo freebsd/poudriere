@@ -3,7 +3,7 @@ LISTPORTS="ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-IGNORED"
 # ports-mgmt/poudriere-devel-IGNORED depends on misc/foo but it should
 # not show up at all.
 OVERLAYS="omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 do_bulk -c -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"

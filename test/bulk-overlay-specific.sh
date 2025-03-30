@@ -1,6 +1,6 @@
 LISTPORTS="misc/foo"
 OVERLAYS="overlay"
-. common.bulk.sh
+. ./common.bulk.sh
 
 do_bulk -c -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"

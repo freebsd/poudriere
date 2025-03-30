@@ -1,6 +1,6 @@
 LISTPORTS="ports-mgmt/yyyy"
 OVERLAYS="overlay omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 set_poudriere_conf <<-EOF
 BAD_PKGNAME_DEPS_ARE_FATAL=no

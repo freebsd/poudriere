@@ -2,7 +2,7 @@
 LISTPORTS="misc/freebsd-release-manifests@default"
 LISTPORTS_MOVED="misc/freebsd-release-manifests-OLD-MOVED@optional"
 OVERLAYS="omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 do_bulk -c -n ${LISTPORTS_MOVED}
 assert 0 $? "Bulk should pass"

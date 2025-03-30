@@ -1,4 +1,4 @@
-. common.sh
+. ./common.sh
 
 case "$(type paste)" in
 *"is a shell builtin") ;;

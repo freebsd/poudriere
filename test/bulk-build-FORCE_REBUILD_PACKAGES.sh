@@ -1,6 +1,6 @@
 LISTPORTS="ports-mgmt/pkg ports-mgmt/poudriere-devel"
 OVERLAYS="omnibus"
-. common.bulk.sh
+. ./common.bulk.sh
 
 do_pkgclean -y -A
 assert 0 "$?" "Pkgclean should pass"

@@ -1,5 +1,5 @@
 set -e
-. common.sh
+. ./common.sh
 set +e
 
 assert_ret 1 hash_remove pkgname-origin "pkg-1.7" value
