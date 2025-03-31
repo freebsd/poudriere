@@ -1031,6 +1031,10 @@ FLAVORS?=
 FLAVOR?=
 OVERLAYS?=
 REWARNFILE=	${WRKDIR}/reinplace_warnings.txt
+.if empty(${PORTS_FEATURES:MAUTO_LIB_DEPENDS})
+PORTS_FEATURES=	AUTO_LIB_DEPENDS
+.endif
+
 # Disallow forced FLAVOR as make argument since we cannot change it to the
 # proper default.
 .if empty(FLAVOR) && !empty(.MAKEOVERRIDES:MFLAVOR)
@@ -1040,7 +1044,7 @@ REWARNFILE=	${WRKDIR}/reinplace_warnings.txt
 .if !defined(_FLAVOR)
 _FLAVOR:=	${FLAVOR}
 .endif
-.if !defined(PORTS_FEATURES) && empty(${PORTS_FEATURES:MFLAVORS})
+.if empty(${PORTS_FEATURES:MFLAVORS})
 PORTS_FEATURES+=	FLAVORS
 .endif
 MINIMAL_PKG_VERSION=	1.17.2
@@ -4148,7 +4152,7 @@ ALL-DEPENDS-FLAVORS-LIST=	${DEPENDS-LIST} -f -r ${_UNIFIED_DEPENDS:Q}
 DEINSTALL-DEPENDS-FLAVORS-LIST=	${DEPENDS-LIST} -f -r ${_UNIFIED_DEPENDS:N${PKG_DEPENDS}:Q}
 MISSING-DEPENDS-LIST=		${DEPENDS-LIST} -m ${_UNIFIED_DEPENDS:Q}
 BUILD-DEPENDS-LIST=			${DEPENDS-LIST} "${PKG_DEPENDS_ALL} ${EXTRACT_DEPENDS_ALL} ${PATCH_DEPENDS_ALL} ${FETCH_DEPENDS_ALL} ${BUILD_DEPENDS_ALL} ${LIB_DEPENDS_ALL}"
-RUN-DEPENDS-LIST=			${DEPENDS-LIST} "${LIB_DEPENDS_ALL} ${RUN_DEPENDS_ALL}"
+RUN-DEPENDS-LIST=			${DEPENDS-LIST} "${RUN_DEPENDS_ALL}"
 TEST-DEPENDS-LIST=			${DEPENDS-LIST} ${TEST_DEPENDS_ALL:Q}
 CLEAN-DEPENDS-LIST=			${DEPENDS-LIST} -wr ${_UNIFIED_DEPENDS:Q}
 CLEAN-DEPENDS-LIMITED-LIST=	${DEPENDS-LIST} -w ${_UNIFIED_DEPENDS:Q}
@@ -4289,7 +4293,7 @@ package-depends-list:
 	@${PACKAGE-DEPENDS-LIST}
 .    endif
 
-_LIB_RUN_DEPENDS=	${LIB_DEPENDS_ALL} ${RUN_DEPENDS_ALL}
+_LIB_RUN_DEPENDS=	${RUN_DEPENDS_ALL}
 PACKAGE-DEPENDS-LIST?= \
 	if [ "${CHILD_DEPENDS}" ]; then \
 		installed=$$(${PKG_INFO} -qO ${PKGORIGIN} 2>/dev/null || \
@@ -4347,9 +4351,6 @@ PACKAGE-DEPENDS-LIST?= \
 .    for sp in ${_PKGS}
 ACTUAL-PACKAGE-DEPENDS${_SP.${sp}}?= \
 	depfiles="" ; \
-	for lib in ${LIB_DEPENDS${_SP.${sp}}:C/\:.*//}; do \
-		depfiles="$$depfiles `${SETENV} LIB_DIRS="${LIB_DIRS}" LOCALBASE="${LOCALBASE}" ${SH} ${SCRIPTSDIR}/find-lib.sh $${lib}`" ; \
-	done ; \
 	for self in ${SELF_DEPENDS${_SP.${sp}}}; do \
 		if [ "$$self" = "main" ]; then \
 			printf "\"%s\": {origin: \"%s\", version: \"%s\"}\n" ${PKGBASE} ${PKGORIGIN} ${PKGVERSION}; \
