@@ -6998,6 +6998,8 @@ _delete_old_pkg() {
 	case "${CHECK_CHANGED_DEPS}" in
 	"no") ;;
 	*)
+		local dep_types
+
 		current_deps=""
 		# FIXME: Move into Infrastructure/scripts and
 		# 'make actual-run-depends-list' after enough testing,
