@@ -6770,10 +6770,9 @@ _delete_old_pkg() {
 	local pkg="$1"
 	local delete_unqueued="$2"
 	local mnt pkgfile pkgname new_pkgname
-	local origin v v2 compiled_options current_options current_deps
-	local td d key dpath dir found raw_deps compiled_deps
-	local pkg_origin compiled_deps_pkgnames compiled_deps_pkgbases
-	local compiled_deps_pkgname compiled_deps_origin compiled_deps_new
+	local origin v v2 compiled_options current_options
+	local d key dpath dir found compiled_deps
+	local pkg_origin compiled_deps_pkgnames
 	local pkgbase new_pkgbase flavor flavors pkg_flavor pkg_subpkg originspec
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor
 	local ignore new_originspec stale_pkg
@@ -6998,7 +6997,9 @@ _delete_old_pkg() {
 	case "${CHECK_CHANGED_DEPS}" in
 	"no") ;;
 	*)
-		local dep_types
+		local current_deps td dep_types raw_deps
+		local compiled_deps_origin compiled_deps_new
+		local compiled_deps_pkgname compiled_deps_pkgbases
 
 		current_deps=""
 		# FIXME: Move into Infrastructure/scripts and
