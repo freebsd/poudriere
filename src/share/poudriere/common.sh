@@ -7010,13 +7010,14 @@ _delete_old_pkg() {
 		dep_types=""
 		if have_ports_feature AUTO_LIB_DEPENDS; then
 			dep_types="run"
+			shash_unset "pkgname-lib_deps" "${new_pkgname}" || :
 		else
 			dep_types="lib run"
 		fi
 
 		for td in ${dep_types}; do
 			shash_remove "pkgname-${td}_deps" "${new_pkgname}" \
-			raw_deps || raw_deps=
+			    raw_deps || raw_deps=
 			for d in ${raw_deps}; do
 				key="${d%:*}"
 				found=
