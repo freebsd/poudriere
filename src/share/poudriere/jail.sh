@@ -176,7 +176,7 @@ delete_jail() {
 	case ${CLEANJAIL} in
 		all) cleandir="${POUDRIERE_DATA}" ;;
 		cache) cleandir="${POUDRIERE_DATA}/cache"; depth=1 ;;
-		logs) cleandir="${POUDRIERE_DATA}/logs"; depth=1 ;;
+		logs) cleandir="${POUDRIERE_DATA}/logs"; depth=5 ;;
 		packages) cleandir="${POUDRIERE_DATA}/packages"; depth=1 ;;
 		wrkdirs) cleandir="${POUDRIERE_DATA}/wkdirs"; depth=1 ;;
 	esac
