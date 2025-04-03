@@ -7241,6 +7241,30 @@ delete_old_pkg() {
 	esac
 }
 
+determine_base_shlibs() {
+	[ "$#" -eq 0 ] || eargs determine_base_shlibs
+	local mnt
+
+	_my_path mnt
+	{
+		find "${mnt:?}/lib" "${mnt:?}/usr/lib" \
+		    -maxdepth 1 \
+		    -type f \
+		    -name 'lib*.so*' \
+		    ! -name 'libprivate*' |
+		    awk -F/ '{print $NF}'
+
+		if [ -d "${mnt}/usr/lib32" ]; then
+			find "${mnt:?}/usr/lib32" \
+			    -maxdepth 1 \
+			    -type f \
+			    -name 'lib*.so*' \
+			    ! -name 'libprivate*' |
+			    awk -F/ '{print $NF ":32"}'
+		fi
+	} | sort | shash_write global baselibs
+}
+
 delete_old_pkgs() {
 	local delete_unqueued
 
@@ -7350,9 +7374,7 @@ package_recursive_deps() {
 __package_deps_provided_libs() {
 	[ $# -eq 1 ] || eargs __package_deps_provided_libs pkgfile
 	local pkgfile="$1"
-	local mnt
 
-	_my_path mnt
 	package_recursive_deps "${pkgfile:?}" |
 	    while mapfile_read_loop_redir dep_pkgfile; do
 		dep_pkgfile="${PACKAGES:?}/All/${dep_pkgfile:?}"
@@ -7361,22 +7383,7 @@ __package_deps_provided_libs() {
 		package_deps_provided_libs "${dep_pkgfile:?}"
 	done
 
-	# Need to consider base as providing base libs.
-	find "${mnt:?}/lib" "${mnt:?}/usr/lib" \
-	    -maxdepth 1 \
-	    -type f \
-	    -name 'lib*.so*' \
-	    ! -name 'libprivate*' |
-	    awk -F/ '{print $NF}'
-
-	if [ -d "${mnt}/usr/lib32" ]; then
-		find "${mnt:?}/usr/lib32" \
-		    -maxdepth 1 \
-		    -type f \
-		    -name 'lib*.so*' \
-		    ! -name 'libprivate*' |
-		    awk -F/ '{print $NF ":32"}'
-	fi
+	shash_read global baselibs
 }
 
 # Wrapper to handle sort -u
@@ -7388,7 +7395,7 @@ package_deps_provided_libs() {
 	[ $# -eq 1 ] || eargs package_deps_provided_libs pkgfile
 	local pkgfile="$1"
 
-	cache_call -K "${JAIL_OSVERSION:?}${pkgfile##*/}" - \
+	cache_call -K "${pkgfile##*/}" - \
 	    _package_deps_provided_libs "${pkgfile:?}"
 }
 
@@ -9863,6 +9870,7 @@ prepare_ports() {
 			P_PKG_ABI="$(injail ${PKG_BIN:?} config ABI)" || \
 			    err 1 "Failure looking up pkg ABI"
 		fi
+		determine_base_shlibs
 		delete_old_pkgs
 
 		# PKG_NO_VERSION_FOR_DEPS still uses this to trim out old
