@@ -7365,7 +7365,7 @@ __package_deps_provided_libs() {
 	find "${mnt:?}/lib" "${mnt:?}/usr/lib" \
 	    -maxdepth 1 \
 	    -type f \
-	    -name '*.so*' \
+	    -name 'lib*.so*' \
 	    ! -name 'libprivate*' |
 	    awk -F/ '{print $NF}'
 
@@ -7373,7 +7373,7 @@ __package_deps_provided_libs() {
 		find "${mnt:?}/usr/lib32" \
 		    -maxdepth 1 \
 		    -type f \
-		    -name '*.so*' \
+		    -name 'lib*.so*' \
 		    ! -name 'libprivate*' |
 		    awk -F/ '{print $NF ":32"}'
 	fi
