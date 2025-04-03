@@ -317,18 +317,17 @@ assert_metadata() {
 		assert 0 $? "${originspec} | ${pkgname} should be known in metadata${dep:+ with dep=${dep}} in ${log}/.poudriere.all_pkgs%"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
-		cat "${tmp}" | \
-		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		    -vdep="${dep}" '
 		    $2 == originspec && $1 == pkgname && $3 == dep { next }
 		    { print }
-		' > "${tmp}.new"
+		' "${tmp}" > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
 	echo "=> Asserting that nothing else is known in metadata with dep='${dep}'" >&2
 	if [ -s "${tmp}" ]; then
 		echo "=> Items remaining:" >&2
-		cat "${tmp}" | sed -e 's,^,==> ,' >&2
+		sed -e 's,^,==> ,' "${tmp}" >&2
 	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Metadata${dep:+(${dep})} should be empty"
@@ -390,18 +389,17 @@ assert_queued() {
 		assert 0 $? "${originspec} | ${pkgname} should be queued${dep:+ with dep=${dep}} in ${log}/.poudriere.ports.queued${rdep:+ with rdep ${rdep}}"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
-		cat "${tmp}" | \
-		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		    -vdep="${dep:-${rdep}}" '
 		    $1 == originspec && $2 == pkgname && (dep == "" || $3 == dep) { next }
 		    { print }
-		' > "${tmp}.new"
+		' "${tmp}" > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
 	echo "=> Asserting that nothing else is in the dep='${dep}' queue" >&2
 	if [ -s "${tmp}" ]; then
 		echo "=> Items remaining:" >&2
-		cat "${tmp}" | sed -e 's,^,==> ,' >&2
+		sed -e 's,^,==> ,' "${tmp}" >&2
 	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Queue${dep:+(${dep})} should be empty"
@@ -457,20 +455,19 @@ assert_ignored() {
 		assert 0 $? "${originspec} | ${pkgname}${ignorereason:+ with reason='${ignorereason}'} should be ignored in ${log}/.poudriere.ports.ignored"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
-		cat "${tmp}" | \
-		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		        -vignorereason="${ignorereason}" '
 		    {reason=""; for (i=3;i<=NF;i++) { reason = (reason ? reason FS : "") $i } }
 		    $1 == originspec && $2 == pkgname &&
 		    (!ignorereason || reason == ignorereason) { next }
 		    { print }
-		' > "${tmp}.new"
+		' "${tmp}" > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
 	echo "=> Asserting that nothing else is ignored" >&2
 	if [ -s "${tmp}" ]; then
 		echo "=> Items remaining:" >&2
-		cat "${tmp}" | sed -e 's,^,==> ,' >&2
+		sed -e 's,^,==> ,' "${tmp}" >&2
 	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Ignore list should be empty"
@@ -526,20 +523,19 @@ assert_inspected() {
 		assert 0 $? "${originspec} | ${pkgname}${inspectreason:+ with reason='${inspectreason}'} should be inspected in ${log}/.poudriere.ports.inspected"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
-		cat "${tmp}" | \
-		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		        -vinspectreason="${inspectreason}" '
 		    {reason=""; for (i=3;i<=NF;i++) { reason = (reason ? reason FS : "") $i } }
 		    $1 == originspec && $2 == pkgname &&
 		    (!inspectreason || reason == inspectreason) { next }
 		    { print }
-		' > "${tmp}.new"
+		' "${tmp}" > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
 	echo "=> Asserting that nothing else is inspected" >&2
 	if [ -s "${tmp}" ]; then
 		echo "=> Items remaining:" >&2
-		cat "${tmp}" | sed -e 's,^,==> ,' >&2
+		sed -e 's,^,==> ,' "${tmp}" >&2
 	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Inspect list should be empty"
@@ -594,17 +590,16 @@ assert_skipped() {
 		assert 0 $? "${originspec} | ${pkgname} should be skipped in ${log}/.poudriere.ports.skipped${skipreason:+ with reason=${skipreason}}"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
-		cat "${tmp}" | \
-		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
+		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
 		    $1 == originspec && $2 == pkgname { next }
 		    { print }
-		' > "${tmp}.new"
+		' "${tmp}" > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
 	echo "=> Asserting that nothing else is skipped" >&2
 	if [ -s "${tmp}" ]; then
 		echo "=> Items remaining:" >&2
-		cat "${tmp}" | sed -e 's,^,==> ,' >&2
+		sed -e 's,^,==> ,' "${tmp}" >&2
 	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Skipped list should be empty"
@@ -659,17 +654,16 @@ assert_tobuild() {
 		assert 0 $? "${originspec} | ${pkgname} should be tobuild in ${log}/.poudriere.ports.tobuild${rdep:+ with rdep ${rdep}}"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
-		cat "${tmp}" | \
-		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
+		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
 		    $1 == originspec && $2 == pkgname { next }
 		    { print }
-		' > "${tmp}.new"
+		' "${tmp}" > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
 	echo "=> Asserting that nothing else is tobuild" >&2
 	if [ -s "${tmp}" ]; then
 		echo "=> Items remaining:" >&2
-		cat "${tmp}" | sed -e 's,^,==> ,' >&2
+		sed -e 's,^,==> ,' "${tmp}" >&2
 	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Tobuild list should be empty"
@@ -715,17 +709,16 @@ assert_built() {
 		assert 0 $? "${originspec} | ${pkgname} should be built in ${log}/.poudriere.ports.built"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
-		cat "${tmp}" | \
-		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
+		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
 		    $1 == originspec && $2 == pkgname { next }
 		    { print }
-		' > "${tmp}.new"
+		' "${tmp}" > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
 	echo "=> Asserting that nothing else is built" >&2
 	if [ -s "${tmp}" ]; then
 		echo "=> Items remaining:" >&2
-		cat "${tmp}" | sed -e 's,^,==> ,' >&2
+		sed -e 's,^,==> ,' "${tmp}" >&2
 	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Built list should be empty"
@@ -780,17 +773,16 @@ assert_failed() {
 		assert 0 $? "${originspec} | ${pkgname} should be failed in ${log}/.poudriere.ports.failed${phase:+ in phase ${phase}}"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
-		cat "${tmp}" | \
-		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
+		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
 		    $1 == originspec && $2 == pkgname { next }
 		    { print }
-		' > "${tmp}.new"
+		' "${tmp}" > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
 	echo "=> Asserting that nothing else is failed" >&2
 	if [ -s "${tmp}" ]; then
 		echo "=> Items remaining:" >&2
-		cat "${tmp}" | sed -e 's,^,==> ,' >&2
+		sed -e 's,^,==> ,' "${tmp}" >&2
 	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Failed list should be empty"
