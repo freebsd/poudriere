@@ -996,7 +996,7 @@ jstop() {
 }
 
 eargs() {
-	[ "$#" -ge 2 ] ||
+	[ "$#" -ge 1 ] ||
 		err 1 "Usage: eargs funcname named_var1 '[named_var...]' EARGS: \"\$@\""
 	local fname="$1"
 	# First set of args are the named vars expected.
