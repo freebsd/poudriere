@@ -7324,8 +7324,8 @@ delete_old_pkgs() {
 	run_hook delete_old_pkgs stop
 }
 
-_package_recursive_deps() {
-	[ $# -eq 1 ] || eargs _package_recursive_deps pkgfile
+__package_recursive_deps() {
+	[ "$#" -eq 1 ] || eargs __package_recursive_deps pkgfile
 	local pkgfile="$1"
 	local dep_pkgname compiled_deps_pkgnames dep_pkgbase dep_pkgfile fn
 
@@ -7360,7 +7360,14 @@ _package_recursive_deps() {
 			package_recursive_deps "${dep_pkgfile:?}"
 			;;
 		esac
-	done | sort -u
+	done
+	# Add in a pseudo "BASE" package.
+	echo "BASE"
+}
+
+# wrapper to add sort -u
+_package_recursive_deps() {
+	__package_recursive_deps "$@" | sort -u
 }
 
 package_recursive_deps() {
@@ -7377,13 +7384,18 @@ __package_deps_provided_libs() {
 
 	package_recursive_deps "${pkgfile:?}" |
 	    while mapfile_read_loop_redir dep_pkgfile; do
-		dep_pkgfile="${PACKAGES:?}/All/${dep_pkgfile:?}"
-		pkg_get_shlib_provides - "${dep_pkgfile:?}" ||
-		    continue
-		package_deps_provided_libs "${dep_pkgfile:?}"
+		case "${dep_pkgfile}" in
+		"BASE")
+			shash_read global baselibs
+			;;
+		*)
+			dep_pkgfile="${PACKAGES:?}/All/${dep_pkgfile:?}"
+			pkg_get_shlib_provides - "${dep_pkgfile:?}" ||
+			    continue
+			package_deps_provided_libs "${dep_pkgfile:?}"
+			;;
+		esac
 	done
-
-	shash_read global baselibs
 }
 
 # Wrapper to handle sort -u
