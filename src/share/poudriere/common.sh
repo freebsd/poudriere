@@ -7367,7 +7367,7 @@ package_recursive_deps() {
 	[ $# -eq 1 ] || eargs package_recursive_deps pkgfile
 	local pkgfile="$1"
 
-	cache_call -K "${pkgfile##*/}" - \
+	cache_call -K "1-package_recursive_deps-${pkgfile##*/}" - \
 	    _package_recursive_deps "${pkgfile:?}"
 }
 
@@ -7395,7 +7395,7 @@ package_deps_provided_libs() {
 	[ $# -eq 1 ] || eargs package_deps_provided_libs pkgfile
 	local pkgfile="$1"
 
-	cache_call -K "${pkgfile##*/}" - \
+	cache_call -K "1-package_deps_provided_libs-${pkgfile##*/}" - \
 	    _package_deps_provided_libs "${pkgfile:?}"
 }
 
