@@ -342,7 +342,7 @@ msg() {
 }
 
 msg_verbose() {
-	_msg_fmt_n "%s" "\n" "$*"
+	msg "$*"
 }
 
 msg_error() {
@@ -381,7 +381,7 @@ msg_dev() {
 
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
 	COLOR_ARROW="${COLOR_DEV}" \
-	    _msg_fmt_n "\n" "${COLOR_DEV}Dev:${COLOR_RESET} $*" >&2
+	    msg "${COLOR_DEV}Dev:${COLOR_RESET} $*" >&2
 }
 
 msg_debug() {
@@ -390,7 +390,7 @@ msg_debug() {
 
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
 	COLOR_ARROW="${COLOR_DEBUG}" \
-	    _msg_fmt_n "\n" "${COLOR_DEBUG}Debug:${COLOR_RESET} $*" >&2
+	    msg "${COLOR_DEBUG}Debug:${COLOR_RESET} $*" >&2
 }
 
 msg_warn() {
@@ -405,7 +405,7 @@ msg_warn() {
 		unset prefix
 	fi
 	COLOR_ARROW="${COLOR_WARN}" \
-	    _msg_fmt_n "%s" "\n" "${prefix:+${COLOR_WARN}${prefix}${COLOR_RESET} }$*" >&2
+	    msg "${prefix:+${COLOR_WARN}${prefix}${COLOR_RESET} }$*" >&2
 }
 
 job_msg() {
@@ -426,7 +426,7 @@ job_msg() {
 		unset output
 		;;
 	esac
-	redirect_to_bulk _msg_fmt_n "%s" "\n" "${output:+${output} }$*"
+	redirect_to_bulk msg "${output:+${output} }$*"
 }
 
 # Stubbed until post_getopts
