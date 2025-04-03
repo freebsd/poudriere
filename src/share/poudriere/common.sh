@@ -7352,6 +7352,7 @@ __package_deps_provided_libs() {
 	local pkgfile="$1"
 	local mnt
 
+	_my_path mnt
 	package_recursive_deps "${pkgfile:?}" |
 	    while mapfile_read_loop_redir dep_pkgfile; do
 		dep_pkgfile="${PACKAGES:?}/All/${dep_pkgfile:?}"
