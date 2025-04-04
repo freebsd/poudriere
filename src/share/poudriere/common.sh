@@ -1133,6 +1133,7 @@ pkgbuild_done() {
 
 	for shash_bucket in \
 	    pkgname-check_shlibs \
+	    pkgname-shlibs_required \
 	    ; do
 		shash_unset "${shash_bucket}" "${pkgname}" || :
 	done
@@ -7229,14 +7230,41 @@ delete_old_pkg() {
 	case "${PKG_NO_VERSION_FOR_DEPS-}" in
 	"no") ;;
 	*)
-		# If the package has shlib dependencies then we need to recheck it
-		# later to ensure those dependencies are still provided by another
-		# package.
+		# If the package has shlib dependencies then we need to
+		# recheck it later to ensure those dependencies are still
+		# provided by another package.
 		pkg_get_shlib_required_count shlib_required_count "${pkg}" || return
 		case "${shlib_required_count-}" in
 		""|0) return 0 ;;
 		esac
-		shash_set pkgname-check_shlibs "${pkgname}" "1"
+		# The count includes base libraries.
+		# Base libraries are special and do not require a rebuild
+		# check as the JAIL_OSVERSION/.jailversion will rebuild
+		# everything if changed. In the longterm this may be wrong
+		# if packages start providing base libs, but
+		# determine_base_shlibs() will only include libraries that
+		# are in the jail's clean snapshot.
+		local base_libs pkg_libs cnt
+
+		base_libs="$(mktemp -u)"
+		pkg_libs="$(mktemp -u)"
+		shash_read global baselibs > "${base_libs}"
+		pkg_get_shlib_requires - "${pkg}" > "${pkg_libs}"
+		cnt="$(comm -13 "${base_libs}" "${pkg_libs}" |
+		    shash_write -T pkgname-shlibs_required "${pkgname:?}" |
+		    wc -l)"
+		# +0 to trim spaces
+		case "$((cnt + 0))" in
+		0)
+			# No packaged shlibs required. Only base.
+			shash_unset pkgname-shlibs_required "${pkgname:?}"
+			;;
+		*)
+			# Depends on packaged shlibs. Check again later.
+			shash_set pkgname-check_shlibs "${pkgname}" "1"
+			;;
+		esac
+		rm -f "${base_libs}" "${pkg_libs}"
 		;;
 	esac
 }
@@ -7439,8 +7467,9 @@ package_libdeps_satisfied() {
 		return 1
 		;;
 	esac
-	pkg_get_shlib_requires mapfile_handle "${pkgfile:?}" ||
-	    err "${EX_SOFTWARE}" "package_libdeps_satisfied: Failed to lookup shlib_requires from ${pkgfile}"
+	shash_read_mapfile pkgname-shlibs_required "${pkgname:?}" \
+	    mapfile_handle ||
+	    err "${EX_SOFTWARE}" "package_libdeps_satisfied: Failed to lookup shlib_requires from ${pkgname} ret=$?"
 	ret=0
 	unset shlibs_required
 	while mapfile_read "${mapfile_handle}" shlib; do
@@ -7525,6 +7554,7 @@ package_libdeps_satisfied() {
 		esac
 	done
 	mapfile_close "${mapfile_handle}" || :
+	shash_unset pkgname-shlibs_required "${pkgname:?}"
 	msg_debug "${COLOR_PORT}${pkgname}${COLOR_RESET}: required: ${shlibs_required}"
 	return "${ret}"
 }
