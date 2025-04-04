@@ -149,6 +149,13 @@ _err() {
 	case "${PARALLEL_CHILD:-0}" in
 	0)
 		bset ${MY_JOBID-} status "crashed:err:${MY_JOBID-}" || :
+		case "${MY_JOBID-}" in
+		"") ;;
+		*)
+			# Ensure build_queue() sees this failure.
+			echo ${MY_JOBID} >&6 || :
+			;;
+		esac
 		;;
 	esac
 	case "${exit_status}" in
