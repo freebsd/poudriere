@@ -8059,7 +8059,10 @@ get_pkgname_from_originspec() {
 	*) return 1 ;;
 	esac
 	# Yup, this was the default FLAVOR
-	shash_set originspec-pkgname "${_originspec_lookup}" "${_pkgname}" || :
+	if ! noclobber shash_set originspec-pkgname "${_originspec_lookup}" \
+	    "${_pkgname}"; then
+		err 1 "Already had originspec-pkgname ${_originspec_lookup} set to ${_pkgname}"
+	fi
 	setvar "${var_return}" "${_pkgname}"
 }
 
