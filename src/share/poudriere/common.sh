@@ -7389,8 +7389,8 @@ __package_recursive_deps() {
 			;;
 		esac
 	done
-	# Add in a pseudo "BASE" package.
-	echo "BASE"
+	# # Add in a pseudo "BASE" package.
+	# echo "BASE"
 }
 
 # wrapper to add sort -u
@@ -7412,17 +7412,17 @@ __package_deps_provided_libs() {
 
 	package_recursive_deps "${pkgfile:?}" |
 	    while mapfile_read_loop_redir dep_pkgfile; do
-		case "${dep_pkgfile}" in
-		"BASE")
-			shash_read global baselibs
-			;;
-		*)
+		# case "${dep_pkgfile}" in
+		# "BASE")
+		# 	shash_read global baselibs
+		# 	;;
+		# *)
 			dep_pkgfile="${PACKAGES:?}/All/${dep_pkgfile:?}"
 			pkg_get_shlib_provides - "${dep_pkgfile:?}" ||
 			    continue
 			package_deps_provided_libs "${dep_pkgfile:?}"
-			;;
-		esac
+			# ;;
+		# esac
 	done
 }
 
