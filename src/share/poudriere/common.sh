@@ -7549,7 +7549,9 @@ package_libdeps_satisfied() {
 		# The port should be fixed to properly track the library.
 		# It likely is failing the QA check for leaked libraries.
 		*)
-			job_msg_verbose "${COLOR_PORT}${pkgname}${COLOR_RESET} misses ${shlib} which no dependency provides. This will be ignored but should be fixed in the port."
+			ret=1
+			job_msg_warn "${COLOR_PORT}${pkgname}${COLOR_RESET} will be rebuilt as it misses ${shlib} which no dependency provides. This may be a port bug if it repeats next build."
+			break
 			;;
 		esac
 	done
