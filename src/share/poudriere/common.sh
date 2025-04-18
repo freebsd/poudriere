@@ -5420,6 +5420,7 @@ build_port() {
 				    cleanenv injail /usr/bin/env \
 				    ${PORT_FLAGS:+-S "${PORT_FLAGS}"} \
 				    PORTSDIR=${PORTSDIR} \
+				    FLAVOR="${flavor}" \
 				    UID_FILES="${P_UID_FILES}" \
 				    portdir="${portdir}" \
 				    /bin/sh \
