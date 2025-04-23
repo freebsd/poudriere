@@ -4502,7 +4502,7 @@ download_from_repo() {
 	# XXX: rquery is supposed to 'update' but it does not on first run.
 	if ! JNETNAME="n" injail env ASSUME_ALWAYS_YES=yes \
 	    PACKAGESITE="${packagesite:?}" \
-	    ${pkg_bin} update -f; then
+	    ${pkg_bin} update -f -r FreeBSD; then
 		msg "Package fetch: Not fetching as remote repository is unavailable."
 		rm -f "${missing_pkgs}"
 		return 0
