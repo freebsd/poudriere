@@ -3266,7 +3266,7 @@ check_emulation() {
 		EMULATOR=$(${BINMISC} lookup ${wanted_arch#*.} 2>/dev/null | \
 		    awk '/interpreter:/ {print $2}')
 		[ -x "${EMULATOR}" ] || \
-		    err 1 "You need to install the qemu-user-static package and run `service qemu_user_static onestart` to enable the binary image activtors for QEMU via binmisctl(8), or setup another emulator with binmiscctl(8) for ${wanted_arch#*.}"
+		    err 1 "You need to install the qemu-user-static package and run `service qemu_user_static onestart` to enable the binary image activtors for QEMU via binmiscctl(8), or setup another emulator with binmiscctl(8) for ${wanted_arch#*.}"
 		export QEMU_EMULATING=1
 	fi
 }
