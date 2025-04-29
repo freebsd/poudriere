@@ -8144,7 +8144,7 @@ check_pipe_fatal_error() {
 
 gather_port_vars() {
 	required_env gather_port_vars PWD "${MASTER_DATADIR_ABS:?}"
-	local origin qorigin log originspec flavor rdep qlist qdir
+	local origin qorigin log originspec flavor subpkg rdep qlist qdir
 	local ports
 
 	# A. Lookup all port vars/deps from the given list of ports.
@@ -8189,7 +8189,7 @@ gather_port_vars() {
 	ports="$(listed_ports show_moved)" ||
 	    err "${EX_SOFTWARE}" "gather_port_vars: listed_ports failure"
 	for originspec in ${ports}; do
-		originspec_decode "${originspec}" origin flavor ''
+		originspec_decode "${originspec}" origin flavor subpkg
 		rdep="listed"
 		# For -a we skip the initial gatherqueue
 		if [ ${ALL} -eq 1 ]; then
@@ -8262,6 +8262,10 @@ gather_port_vars() {
 		case "${rdep:+set}" in
 		set)
 			echo "${rdep}" > "${qorigin:?}/rdep"
+			if [ -n "${subpkg}" ]; then
+				mkdir -p "${qorigin:?}~${subpkg}"
+				echo "${rdep}" > "${qorigin:?}~${subpkg}/rdep"
+			fi
 			;;
 		esac
 	done
