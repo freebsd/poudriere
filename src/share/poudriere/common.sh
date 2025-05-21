@@ -6771,10 +6771,9 @@ _delete_old_pkg() {
 	local pkg="$1"
 	local delete_unqueued="$2"
 	local mnt pkgfile pkgname new_pkgname
-	local origin v v2 compiled_options current_options current_deps
-	local td d key dpath dir found raw_deps compiled_deps
-	local pkg_origin compiled_deps_pkgnames compiled_deps_pkgbases
-	local compiled_deps_pkgname compiled_deps_origin compiled_deps_new
+	local origin v v2 compiled_options current_options
+	local d key dpath dir found compiled_deps
+	local pkg_origin compiled_deps_pkgnames
 	local pkgbase new_pkgbase flavor flavors pkg_flavor pkg_subpkg originspec
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor
 	local ignore new_originspec stale_pkg
@@ -6999,15 +6998,27 @@ _delete_old_pkg() {
 	case "${CHECK_CHANGED_DEPS}" in
 	"no") ;;
 	*)
+		local current_deps td dep_types raw_deps
+		local compiled_deps_origin compiled_deps_new
+		local compiled_deps_pkgname compiled_deps_pkgbases
+
 		current_deps=""
 		# FIXME: Move into Infrastructure/scripts and
 		# 'make actual-run-depends-list' after enough testing,
 		# which will avoida all of the injail hacks
 
 		# pkgname-lib_deps pkgname-run_deps
-		for td in lib run; do
+		dep_types=""
+		if have_ports_feature AUTO_LIB_DEPENDS; then
+			dep_types="run"
+			shash_unset "pkgname-lib_deps" "${new_pkgname}" || :
+		else
+			dep_types="lib run"
+		fi
+
+		for td in ${dep_types}; do
 			shash_remove "pkgname-${td}_deps" "${new_pkgname}" \
-			raw_deps || raw_deps=
+			    raw_deps || raw_deps=
 			for d in ${raw_deps}; do
 				key="${d%:*}"
 				found=
@@ -7356,10 +7367,17 @@ delete_old_pkgs() {
 __package_recursive_deps() {
 	[ "$#" -eq 1 ] || eargs __package_recursive_deps pkgfile
 	local pkgfile="$1"
-	local dep_pkgname compiled_deps_pkgnames dep_pkgbase dep_pkgfile fn
+	local dep_pkgname dep_pkgbase dep_pkgfile fn
+	local pkgname compiled_deps_originspecs dep_originspec
 
-	pkg_get_dep_origin_pkgnames '' compiled_deps_pkgnames "${pkgfile:?}"
-	for dep_pkgname in ${compiled_deps_pkgnames?}; do
+	pkgname="${pkgfile##*/}"
+	pkgname="${pkgname%.*}"
+	shash_get pkgname-deps-run "${pkgname:?}" compiled_deps_originspecs ||
+	    err 1 "package_recursive_deps: Failed to find run deps for package ${pkgname}"
+	for dep_originspec in ${compiled_deps_originspecs}; do
+		get_pkgname_from_originspec "${dep_originspec}" \
+		    dep_pkgname ||
+		    err 1 "package_recursive_deps: Failed to lookup pkgname for originspec=${dep_originspec} processing package ${pkgname}"
 		case "${dep_pkgname:?}" in
 		*"-(null)")
 			dep_pkgbase="${dep_pkgname%-*}"
@@ -8883,7 +8901,7 @@ generate_queue_pkg() {
 	{
 		echo "run:${pkgname} build:${pkgname}"
 		for deps_type in build run; do
-			shash_remove "pkgname-deps-${deps_type}" "${pkgname}" \
+			shash_get "pkgname-deps-${deps_type}" "${pkgname}" \
 			    deps ||
 			    err 1 "generate_queue_pkg failed to find deps-${deps_type} for ${COLOR_PORT}${pkgname}${COLOR_RESET}"
 			for dep_originspec in ${deps}; do
@@ -9945,7 +9963,6 @@ prepare_ports() {
 			    pkgname-options \
 			    pkgname-deps \
 			    pkgname-deps-build \
-			    pkgname-deps-run \
 			    pkgname-run_deps \
 			    pkgname-lib_deps \
 			    pkgname-prefix \
