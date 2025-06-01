@@ -105,24 +105,15 @@ function end_type() {
           print "\"pkgname\":\"" pkgname "\","
           if (port_status_type == "built" ) {
 	    print "\"elapsed\":\"" build_reasons[3] "\","
-          } else if (port_status_type == "queued") {
-            print "\"reason\":\"" build_reasons[3] "\","
           } else if (port_status_type == "remaining") {
 	    print "\"status\":\"" build_reasons[2] "\","
           } else if (port_status_type == "failed") {
 	    print "\"phase\":\"" build_reasons[3] "\","
 	    print "\"errortype\":\"" build_reasons[4] "\","
 	    print "\"elapsed\":\"" build_reasons[5] "\","
-	  } else if (port_status_type == "inspected") {
-	    reason_length = length(build_reasons)
-	    for (n = 3; n <= reason_length; n++) {
-	      if (n == 3)
-	        reason = build_reasons[n]
-	      else
-		reason = reason " " build_reasons[n]
-	    }
-	    print "\"reason\":\"" escape(reason) "\","
-	  } else if (port_status_type == "ignored") {
+	  } else if (port_status_type == "ignored" ||
+                    port_status_type == "queued" ||
+                    port_status_type == "inspected") {
 	    reason_length = length(build_reasons)
 	    for (n = 3; n <= reason_length; n++) {
 	      if (n == 3)
