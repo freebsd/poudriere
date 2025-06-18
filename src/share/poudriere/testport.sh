@@ -469,7 +469,7 @@ msg "Cleaning up"
 injail /usr/bin/make -C "${portdir:?}" -DNOCLEANDEPENDS clean \
     ${MAKE_ARGS}
 
-if [ -z "${POUDRIERE_INTERACTIVE_NO_INSTALL-}" ]; then
+if [ ${INTERACTIVE_MODE} -gt 0 -a -z "${POUDRIERE_INTERACTIVE_NO_INSTALL-}" ]; then
 	msg "Deinstalling package"
 	ensure_pkg_installed
 	injail ${PKG_DELETE} "${PKGNAME:?}"
