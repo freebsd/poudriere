@@ -410,3 +410,10 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # The symlinks are only required for the local poudriere for resovling dependencies,
 # they do not need to be uploaded to the CDN.
 #PKG_HASH="no"
+
+# If set to "yes", generate the AppStream metadata for each package built and
+# for the whole repository. Requires ports-mgmt/appstream-generator installed on
+# the host.
+# USE_APPSTREAM="no"
+# APPSTREAM_MEDIA_BASE="https://example.com"
+# APPSTREAM_HTML_BASE="https://example.com"

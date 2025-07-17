@@ -5094,6 +5094,7 @@ build_port() {
 	port_var_fetch_originspec "${originspec}" \
 	    ${PORT_FLAGS} \
 	    PREFIX PREFIX \
+	    WRKDIR WRKDIR
 	    ${_need_root}
 
 	allownetworking=0
@@ -5471,6 +5472,22 @@ may show failures if the port does not respect PREFIX."
 			;;
 		esac
 	done
+
+	if [ ${USE_APPSTREAM} = "yes" -a ${testfailure} = 0 ]; then
+		mkdir -p ${POUDRIERE_DATA}/appstream/${MASTERNAME}
+		sed -e "s|%%APPSTREAM_ARCHIVE_ROOT%%|${POUDRIERE_DATA}/packages/|g" \
+			-e "s|%%APPSTREAM_MEDIA_BASE%%|${APPSTREAM_MEDIA_BASE}|g" \
+			-e "s|%%APPSTREAM_HTML_BASE%%|${APPSTREAM_HTML_BASE}|g" \
+			-e "s|%%APPSTREAM_SUITE%%|${MASTERNAME}|g" \
+			-e "s|%%ARCH%%|amd64|g" \
+		"${MASTERMNT?}${PORTSDIR:?}/Templates/asgen-config.json" \
+		> ${POUDRIERE_DATA}/appstream/${MASTERNAME}/asgen-config.json
+		appstream-generator -w ${POUDRIERE_DATA}/appstream/${MASTERNAME} \
+			process-file \
+			${MASTERNAME} \
+			default \
+			"${mnt:?}${WRKDIR}"
+	fi
 
 	if [ -d "${PACKAGES}/.npkg/${pkgname}" ]; then
 		# everything was fine we can copy the package to the package
@@ -10643,6 +10660,18 @@ if [ ! -d ${POUDRIERED}/jails ]; then
 	esac
 fi
 
+#Create AppStream dataset, if needed
+if [ "${USE_APPSTREAM}" = "yes" ]; then
+	case "${NO_ZFS:+set}" in
+	set) ;;
+	*)
+		if ! zfs get mountpoint ${ZPOOL}${ZROOTFS}/data/appstream >/dev/null 2>&1; then
+		    zfs create -o compression=off ${ZPOOL}${ZROOTFS}/data/appstream
+		fi
+		;;
+	esac
+fi
+
 : ${LOIP6:=::1}
 : ${LOIP4:=127.0.0.1}
 # If in a nested jail we may not even have a loopback to use.
@@ -10840,6 +10869,8 @@ case "$(mount -t fdescfs | awk '$3 == "/dev/fd" {print $3}')" in
 esac
 
 : ${OVERLAYSDIR:=/overlays}
+: ${APPSTREAM_MEDIA_BASE:=https://example.com}
+: ${APPSTREAM_HTML_BASE:=https://example.com}
 
 TIME_START=$(clock -monotonic)
 EPOCH_START=$(clock -epoch)
