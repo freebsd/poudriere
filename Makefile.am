@@ -2,6 +2,8 @@ CLEANFILES=	$(dist_rc_SCRIPTS)
 MOSTLYCLEANFILES=
 noinst_PROGRAMS=
 
+.ALLSRC	?= $^
+
 ACLOCAL_AMFLAGS=	-I m4
 AM_CFLAGS=	-Wall -pipe -O2 @AM_CFLAGS@
 if MAINTAINER_MODE
@@ -275,7 +277,7 @@ sh_CFLAGS+=		-I$(top_srcdir)/src/poudriere-sh \
 			-I$(top_builddir)/src/poudriere-sh
 src/poudriere-sh/builtins.def: external/sh/builtins.def \
     src/poudriere-sh/builtins-poudriere.def
-	$(AM_V_GEN)cat $^${.ALLSRC} > $@
+	$(AM_V_GEN)cat ${.ALLSRC} > $@
 src/poudriere-sh/shell.h:
 	@ln -fs $(abs_top_srcdir)/external/sh/shell.h $@
 src/poudriere-sh/builtins.h: src/poudriere-sh/builtins.def \
@@ -373,9 +375,9 @@ poudriere: src/bin/poudriere.in
 	    sed \
 	      -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
 	      -e "s,^\(USE_DEBUG\)=.*,\1='@USE_DEBUG@'," \
-	      $^${.ALLSRC} > $@; \
+	      ${.ALLSRC} > $@; \
 	else \
-	    cp -f $^${.ALLSRC} $@; \
+	    cp -f ${.ALLSRC} $@; \
 	fi; \
 	chmod +x $@
 

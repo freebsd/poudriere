@@ -3605,6 +3605,8 @@ uninstall-man: uninstall-man8
 
 .PRECIOUS: Makefile
 
+
+.ALLSRC	?= $^
 external/sh/nodes.c: external/sh/mknodes \
     $(abs_top_srcdir)/external/sh/nodetypes \
     $(abs_top_srcdir)/external/sh/nodes.c.pat
@@ -3626,7 +3628,7 @@ external/sh/token.h: $(abs_top_srcdir)/external/sh/mktokens
 external/sh/sh-parser.$(OBJEXT):	external/sh/token.h
 src/poudriere-sh/builtins.def: external/sh/builtins.def \
     src/poudriere-sh/builtins-poudriere.def
-	$(AM_V_GEN)cat $^${.ALLSRC} > $@
+	$(AM_V_GEN)cat ${.ALLSRC} > $@
 src/poudriere-sh/shell.h:
 	@ln -fs $(abs_top_srcdir)/external/sh/shell.h $@
 src/poudriere-sh/builtins.h: src/poudriere-sh/builtins.def \
@@ -3667,9 +3669,9 @@ poudriere: src/bin/poudriere.in
 	    sed \
 	      -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
 	      -e "s,^\(USE_DEBUG\)=.*,\1='@USE_DEBUG@'," \
-	      $^${.ALLSRC} > $@; \
+	      ${.ALLSRC} > $@; \
 	else \
-	    cp -f $^${.ALLSRC} $@; \
+	    cp -f ${.ALLSRC} $@; \
 	fi; \
 	chmod +x $@
 
