@@ -915,7 +915,7 @@ pkgqueue_unqueue_existing_packages() {
 #   run:ruby19 run:libyaml
 
 # Delete from the queue orphaned build deps. This can happen if
-# the specified-to-build ports have all their deps satisifed
+# the specified-to-build ports have all their deps satisfied
 # but one of their run deps has missing build deps packages which
 # causes the build deps to be in the queue at this point.
 pkgqueue_trim_orphaned_build_deps() {
