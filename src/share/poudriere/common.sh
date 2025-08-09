@@ -4511,11 +4511,22 @@ download_from_repo() {
 		msg "Packge fetch: bootstrapping pkg"
 		pkg_bin="pkg"
 	fi
-	cat >> "${MASTERMNT:?}/etc/pkg/poudriere.conf" <<-EOF
-	FreeBSD: {
-	        url: ${packagesite};
-	}
-	EOF
+	if echo "${packagesite}" | grep -q -i "pkg.freebsd.org"; then
+		cat >> "${MASTERMNT:?}/etc/pkg/poudriere.conf" <<-EOF
+		FreeBSD: {
+			url: ${packagesite};
+		}
+		EOF
+	else
+		cat >> "${MASTERMNT:?}/etc/pkg/poudriere.conf" <<-EOF
+		FreeBSD: {
+			url: ${packagesite},
+			mirror_type: "NONE",
+			pubkey: "NONE",
+			signature_type: "NONE";
+		}
+		EOF
+	fi
 
 	# XXX: bootstrap+rquery could be done asynchronously during deps
 	# Bootstrapping might occur here.
