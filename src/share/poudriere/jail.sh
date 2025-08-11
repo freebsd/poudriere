@@ -85,6 +85,7 @@ Options for -d:
 
 Options for -s and -k:
     -p tree       -- Specify which ports tree to start/stop the jail with.
+    -O overlays   -- Specify extra ports trees to overlay.
     -z set        -- Specify which SET the jail to start/stop with.
 EOF
 	exit ${EX_USAGE}
@@ -1232,6 +1233,7 @@ REALARCH=${ARCH}
 QUIET=0
 NAMEONLY=0
 PTNAME=default
+OVERLAYS=""
 SETNAME=""
 XDEV=1
 BUILD=0
@@ -1243,7 +1245,7 @@ set_command() {
 	COMMAND="$1"
 }
 
-while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxXC:y" FLAG; do
+while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:O:r:uU:t:z:P:S:DxXC:y" FLAG; do
 	case "${FLAG}" in
 		b)
 			BUILD=1
@@ -1316,6 +1318,11 @@ while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxXC:y" FLAG; do
 				OPTARG="${SAVED_PWD}/${OPTARG}"
 			fi
 			SRCPATCHFILE="${OPTARG}"
+			;;
+		O)
+			porttree_exists ${OPTARG} ||
+			    err 2 "No such overlay ${OPTARG}"
+			OVERLAYS="${OVERLAYS} ${OPTARG}"
 			;;
 		S)
 			[ -d ${OPTARG} ] || err 1 "No such directory ${OPTARG}"
