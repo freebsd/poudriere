@@ -6646,7 +6646,10 @@ deps_fetch_vars() {
 		;;
 	esac
 	case "${_ignore:+set}" in
-	set) shash_set pkgname-ignore "${_pkgname}" "${_ignore}" ;;
+	set)
+		shash_set pkgname-ignore "${_pkgname}" "${_ignore}"
+		shash_set originspec-ignored "${originspec}" 1
+		;;
 	esac
 	case "${_prefix:+set}" in
 	set) shash_set pkgname-prefix "${_pkgname}" "${_prefix}" ;;
@@ -8997,6 +9000,9 @@ generate_queue_pkg() {
 					set_pipe_fatal_error
 					continue
 				fi
+				if shash_exists originspec-ignored "${dpath}"; then
+					continue
+				fi
 				case "${dep_real_pkgname%-*}" in
 				"${dep_pkgname}") ;;
 				*)
@@ -9959,6 +9965,7 @@ prepare_ports() {
 			cd "${SHASH_VAR_PATH:?}"
 			for shash_bucket in \
 			    origin-flavor-all \
+			    originspec-ignored \
 			    pkgname-ignore \
 			    pkgname-options \
 			    pkgname-deps \
