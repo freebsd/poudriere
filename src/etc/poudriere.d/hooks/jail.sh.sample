@@ -1,0 +1,18 @@
+#!/bin/sh
+# /usr/local/etc/poudriere.d/hooks/jail.sh
+
+status="$1"
+
+# NOTE: mount is invoked before start: re https://github.com/freebsd/poudriere/wiki/hooks
+if [ "$status" = "mount" ] && [ -d ${POUDRIERED}/local-patches ]; then
+  mntpath="$2"
+
+  # The local-patches directory is created only if it does not already exist.
+  # If it does not already exist, it means we are doing this on the master jail
+  /bin/mkdir -p "${mntpath}/local-patches"
+
+  # mount our patches to that location
+  /sbin/mount -t nullfs -o ro ${POUDRIERED}/local-patches "${mntpath}/local-patches"
+fi
+
+exit 0
