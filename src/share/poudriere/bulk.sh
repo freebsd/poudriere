@@ -290,6 +290,18 @@ fi
 
 commit_packages
 
+if [ ${USE_APPSTREAM} = "yes" ]; then
+	appstream-generator -w ${POUDRIERE_DATA}/appstream/${MASTERNAME} \
+		publish \
+		${MASTERNAME}
+	# TODO:
+	if [ "${IT_IS_TIME_TO_CLEANUP_APPSTREAM}" = "yes" ]; then
+		appstream-generator -w ${POUDRIERE_DATA}/appstream/${MASTERNAME} \
+			cleanup \
+			${MASTERNAME}
+	fi
+fi
+
 set +e
 
 show_build_results
