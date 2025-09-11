@@ -18,6 +18,14 @@
 # root of the poudriere zfs filesystem, by default /poudriere
 # ZROOTFS=/poudriere
 
+# ZFS dataset relative to ZROOTFS that will be passed into jail using zfs-jail(8)
+# The jail will have full control over this dataset
+# The dataset is recreated from scratch on every jail start and is destroyed
+# when jail is stopped
+# Enabling this feature will set "allow.mount=1", "allow.mount.zfs=1"
+# and "enforce_statfs=1" parameters for the jail
+#JAILED_DATASET=
+
 # the host where to download sets for the jails setup
 # You can specify here a host or an IP
 # replace _PROTO_ by http or ftp
