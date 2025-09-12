@@ -27,7 +27,8 @@ $1 == "flavor" {
 }
 END {
 	while ((getline origin < pkglist) > 0) {
-		if (pkgname[origin])
+		if (origin ~ /^#/) continue
+		else if (pkgname[origin])
 			print pkgname[origin]
 		else
 			print origin
