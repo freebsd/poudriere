@@ -1286,6 +1286,7 @@ buildlog_start() {
 	local mnt var portdir
 	local make_vars date
 	local git_modified git_hash
+	local jname
 	local wanted_vars="
 	    MAINTAINER
 	    PORTVERSION
@@ -1297,6 +1298,7 @@ buildlog_start() {
 	    SUB_LIST
 	    "
 
+	_my_name jname
 	_my_path mnt
 	originspec_decode "${originspec}" port '' ''
 	_lookup_portdir portdir "${port}"
@@ -1355,6 +1357,8 @@ buildlog_start() {
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
 	echo "Jail OSVERSION: ${JAIL_OSVERSION}"
 	echo "Job Id: ${MY_JOBID}"
+	echo "Jail Id (no networking): $(jls -j ${jname} jid || :)"
+	echo "Jail Id (networking)   : $(jls -j ${jname}-n jid || :)"
 	echo
 	if [ ${JAIL_OSVERSION} -gt ${HOST_OSVERSION} ]; then
 		echo
