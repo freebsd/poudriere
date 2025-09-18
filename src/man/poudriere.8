@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd December 24, 2022
+.Dd September 17, 2025
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -71,6 +71,9 @@ must be a
 .Cm command
 from the following list:
 .Bl -tag -width 5
+.It Cm audit ( Xr poudriere-audit 8 )
+Audit packages using
+.Xr pkg-audit 8 .
 .It Cm bulk ( Xr poudriere-bulk 8 )
 This command makes a ready-to-export package tree, and fills it with
 binary packages built from a given list of ports.
