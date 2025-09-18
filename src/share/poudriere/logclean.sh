@@ -117,6 +117,10 @@ elif [ -n "${MAX_COUNT}" ] && [ $# -ne 0 -o "${ALL}" -eq 1 ]; then
 	# -a mutually exclusive with -N and <days>
 elif [ "${ALL}" -eq 1 ] && [ -n "${MAX_COUNT}" -o $# -ne 0 ]; then
 	usage
+	# Too many arguments
+elif [ "${ALL}" -eq 0 ] && [ -z "${MAX_COUNT}" ] && [ "$#" -ne 1 ]; then
+	# $1 = DAYS
+	usage
 fi
 : ${DAYS:=$1}
 unset ALL
