@@ -63,6 +63,7 @@ dist_hook_DATA=	src/etc/poudriere.d/hooks/bulk.sh.sample \
 
 dist_pkgdata_DATA=	\
 			src/share/poudriere/api.sh \
+			src/share/poudriere/audit.sh \
 			src/share/poudriere/bulk.sh \
 			src/share/poudriere/common.sh \
 			src/share/poudriere/daemon.sh \
