@@ -77,7 +77,7 @@ _mastermnt MASTERMNT
 PKG_EXT='*' package_dir_exists_and_has_packages || \
 	err 0 "No packages exist for ${MASTERNAME}"
 
-msg "Auditing for jail '${JAILNAME}'"
+msg "Auditing for jail '${MASTERNAME}'"
 if ! pkg audit -d "${PACKAGES}"; then
 	exit 1
 fi
