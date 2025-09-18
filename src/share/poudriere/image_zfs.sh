@@ -67,7 +67,7 @@ zfs_prepare()
 	zpool create \
 		-O mountpoint=/${ZFS_POOL_NAME} \
 		-O canmount=noauto \
-		-O checksum=sha512 \
+		-O checksum=on \
 		-O compression=on \
 		-O atime=off \
 		-t ${zroot} \
