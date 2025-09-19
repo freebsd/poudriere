@@ -9870,7 +9870,14 @@ prepare_ports() {
 			delete_all_pkgs "-c specified"
 		fi
 		if [ ${CLEAN_LISTED} -eq 1 ]; then
-			msg "-C specified, cleaning listed packages"
+			local reason
+
+			if was_a_testport_run; then
+				reason="testport"
+			else
+				msg "-C specified, cleaning listed packages"
+				reason="-C"
+			fi
 			delete_pkg_list=$(mktemp -t poudriere.cleanC)
 			delay_pipe_fatal_error
 			listed_pkgnames | while mapfile_read_loop_redir \
@@ -9881,7 +9888,7 @@ prepare_ports() {
 					    "${pkgname}"; then
 						continue
 					fi
-					msg "(-C) Will delete existing package: ${COLOR_PORT}${pkg##*/}${COLOR_RESET}"
+					msg "(${reason}) Will delete existing package: ${COLOR_PORT}${pkg##*/}${COLOR_RESET}"
 					delete_pkg_xargs "${delete_pkg_list:?}" \
 					    "${pkg:?}"
 					if [ -L "${pkg%.*}.txz" ]; then
@@ -9892,18 +9899,19 @@ prepare_ports() {
 				fi
 			done
 			if check_pipe_fatal_error; then
-				err 1 "Error processing -C packages"
+				err 1 "Error cleaning listed packages"
 			fi
 			case "${ATOMIC_PACKAGE_REPOSITORY}" in
 			yes) ;;
 			*)
-				if [ -s "${delete_pkg_list}" ]; then
+				if ! was_a_testport_run &&
+				    [ -s "${delete_pkg_list}" ]; then
 					confirm_if_tty "Are you sure you want to delete the listed packages?" ||
 					    err 1 "Not cleaning packages"
 				fi
 				;;
 			esac
-			msg "(-C) Flushing package deletions"
+			msg "(${reason}) Flushing package deletions"
 			cat "${delete_pkg_list:?}" | tr '\n' '\000' | \
 			    xargs -0 rm -rf
 			unlink "${delete_pkg_list:?}" || :

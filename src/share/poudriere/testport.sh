@@ -241,6 +241,7 @@ fi
 
 # deps_fetch_vars lookup for dependencies moved to prepare_ports()
 LISTPORTS="${ORIGINSPEC:?}"
+CLEAN_LISTED=1
 prepare_ports
 if check_moved "${ORIGINSPEC}" new_originspec 1; then
 	msg "MOVED: ${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET} moved to ${COLOR_PORT}${new_originspec}${COLOR_RESET}"
