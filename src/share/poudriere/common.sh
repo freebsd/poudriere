@@ -1907,10 +1907,6 @@ show_dry_run_summary() {
 	msg "Dry run mode, cleaning up and exiting"
 	_bget tobuild stats_tobuild ||
 	    err "${EX_SOFTWARE}" "Failed to lookup stats_tobuild"
-	# Subtract the 1 for the main port to test
-	if was_a_testport_run; then
-		tobuild=$((tobuild - 1))
-	fi
 	if [ ${tobuild} -gt 0 ]; then
 		if [ ${PARALLEL_JOBS} -gt ${tobuild} ]; then
 			PARALLEL_JOBS=${tobuild##* }
