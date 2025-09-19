@@ -267,9 +267,15 @@ runtest() {
 	export TEST_NUMS
 	# With truss use --foreground to prevent process reaper and ptrace deadlocking.
 	set -x
-	# Keep timeout/timestamp/truss running until the test exits.
-	# All of these will be fixed in the test.
-	trap '' INT PIPE TERM HUP
+	case "${TRUSS-}" in
+	"") ;;
+	*)
+		# Let truss finish draining when receiving a signal.
+		# Only do this for truss as otherwise some tests will not
+		# be able to modify the signals for their own purposes.
+		trap '' INT PIPE TERM HUP
+		;;
+	esac
 	{
 		TEST_START="$(clock -monotonic)"
 		echo "Test started: $(date)"
