@@ -74,10 +74,16 @@ zrawdisk_prepare()
 	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
 	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
 	zroot=${IMAGENAME}root
+	if [ -n "${ZFS_COMPATIBILITY}" ]; then
+		compatibility_opt="-o compatibility=${ZFS_COMPATIBILITY}"
+	else
+		compatibility_opt=""
+	fi
 	zpool create \
 		-O mountpoint=none \
 		-O compression=lz4 \
 		-O atime=off \
+		${compatibility_opt} \
 		-R ${WRKDIR}/world ${zroot} /dev/${md}
 	zfs create -o mountpoint=none ${zroot}/ROOT
 	zfs create -o mountpoint=/ ${zroot}/ROOT/default

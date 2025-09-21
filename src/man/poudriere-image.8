@@ -75,6 +75,10 @@ be populated by the script.
 .It Fl c Ar overlaydir
 This specifies an extra directory whose contents will be copied directly into
 the final image, starting from the root.
+.It Fl C Ar compatibility
+This specifies the ZFS pool compatibility string to use when creating ZFS pools.
+The compatibility string controls which ZFS features are enabled.
+Only applies to ZFS-based image types.
 .It Fl f Ar packagelist
 This specifies a list of packages to be pre-installed in the final image.
 .It Fl h Ar hostname
