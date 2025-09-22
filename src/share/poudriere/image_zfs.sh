@@ -64,12 +64,18 @@ zfs_prepare()
 	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
 
 	msg "Creating temporary ZFS pool"
+	if [ -n "${ZFS_COMPATIBILITY}" ]; then
+		compatibility_opt="-o compatibility=${ZFS_COMPATIBILITY}"
+	else
+		compatibility_opt=""
+	fi
 	zpool create \
 		-O mountpoint=/${ZFS_POOL_NAME} \
 		-O canmount=noauto \
 		-O checksum=on \
 		-O compression=on \
 		-O atime=off \
+		${compatibility_opt} \
 		-t ${zroot} \
 		-R ${WRKDIR}/world ${ZFS_POOL_NAME} /dev/${md} || exit
 

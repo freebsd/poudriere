@@ -60,6 +60,7 @@ Options:
     -c overlaydir   -- The content of the overlay directory will be copied into
                        the image. Owners and permissions will be overwritten if
                        an <overlaydir>.mtree file is found
+    -C compatibility -- ZFS pool compatibility string for ZFS-based image types
     -f packagelist  -- List of packages to install
     -h hostname     -- The image hostname
     -i originimage  -- Origin image name
@@ -278,7 +279,7 @@ PKG_QUIET="-q"
 : ${PRE_BUILD_SCRIPT:=""}
 : ${POST_BUILD_SCRIPT:=""}
 
-while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:R:s:S:t:vw:X:z:" FLAG; do
+while getopts "A:bB:c:C:f:h:i:j:m:n:o:p:P:R:s:S:t:vw:X:z:" FLAG; do
 	case "${FLAG}" in
 		A)
 			[ "${OPTARG#/}" = "${OPTARG}" ] && \
@@ -300,6 +301,9 @@ while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:R:s:S:t:vw:X:z:" FLAG; do
 			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			[ -d "${OPTARG}" ] || err 1 "No such extract directory: ${OPTARG}"
 			EXTRADIR=$(realpath "${OPTARG}")
+			;;
+		C)
+			ZFS_COMPATIBILITY="${OPTARG}"
 			;;
 		f)
 			# If this is a relative path, add in ${PWD} as
