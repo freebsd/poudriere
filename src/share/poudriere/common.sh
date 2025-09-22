@@ -1339,9 +1339,7 @@ buildlog_start() {
 			echo "Ports top unclean checkout: ${git_modified}"
 		fi
 		if git_get_hash_and_dirty "${mnt:?}/${portdir:?}" 1 \
-		    git_hash git_modified; then
-			echo "Port dir last git commit: ${git_hash}"
-			pkg_note_add "${pkgname}" port_git_hash "${git_hash}"
+		    "" git_modified; then
 			pkg_note_add "${pkgname}" port_checkout_unclean "${git_modified}"
 			echo "Port dir unclean checkout: ${git_modified}"
 		fi
@@ -9558,10 +9556,18 @@ git_get_hash_and_dirty() {
 	if [ ! -x "${GIT_CMD}" ]; then
 		return 1
 	fi
-	${GIT_CMD} -C "${git_dir:?}" rev-parse --show-toplevel \
-	    >/dev/null 2>&1 || return
-	gghd_git_hash=$(${GIT_CMD} -C "${git_dir:?}" log -1 \
-	    --format=%h .)
+
+	case "${gghd_git_hash_var-}" in
+	"") ;;
+	*)
+		${GIT_CMD} -C "${git_dir:?}" rev-parse --show-toplevel \
+		    >/dev/null 2>&1 || return
+		gghd_git_hash=$(${GIT_CMD} -C "${git_dir:?}" log -1 \
+		    --format=%h .)
+		setvar "${gghd_git_hash_var}" "${gghd_git_hash}"
+		;;
+	esac
+
 	gghd_git_modified=no
 	msg_n "Inspecting ${git_dir} for modifications to git checkout..."
 	case "${GIT_TREE_DIRTY_CHECK-}" in
@@ -9575,7 +9581,6 @@ git_get_hash_and_dirty() {
 		;;
 	esac
 	echo " ${gghd_git_modified}"
-	setvar "${gghd_git_hash_var}" "${gghd_git_hash}"
 	setvar "${gghd_git_modified_var}" "${gghd_git_modified}"
 }
 
