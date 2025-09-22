@@ -86,6 +86,9 @@ SHASH_VAR_PATH="${MASTERMNT}"
 
 # Simple test with 1 argument
 {
+	# Asserted lookup on unset value should fail
+	assert_ret "${EX_UNAVAILABLE-69}" catch_err cache_call -a value real_func "1"
+
 	# First lookup, will call into the real function
 	lookup=0
 	value=
@@ -110,6 +113,9 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	get_lookup_cnt lookup real_func "1"
 	assert 0 $? "lookupcnt real_func-1 2"
 	assert 1 ${lookup} "real_func 1 lookup count 2"
+
+	# Asserted lookup on set value should not fail
+	assert_ret 0 catch_err cache_call -a value real_func "1"
 }
 
 # test with nop function
@@ -216,6 +222,9 @@ SHASH_VAR_PATH="${MASTERMNT}"
 
 # Test a lookup with a function with uses setvar rather than stdout for results.
 {
+	# Asserted lookup on unset value should fail
+	assert_ret "${EX_UNAVAILABLE-69}" catch_err cache_call_sv -a value real_func_sv sv_value "1"
+
 	# First lookup, will call into the real function
 	lookup=0
 	value=
@@ -240,6 +249,10 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	get_lookup_cnt lookup real_func_sv "1"
 	assert 0 $? "lookupcnt real_func_sv-1 2"
 	assert 1 ${lookup} "real_func_sv 1 lookup count 2"
+
+	# Asserted lookup on set value should not fail
+	assert_ret 0 catch_err cache_call_sv -a value real_func_sv sv_value "1"
+
 }
 
 # Test a lookup with a function with uses setvar rather than stdout for results,

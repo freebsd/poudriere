@@ -161,13 +161,17 @@ _cache_exists() {
 # Usage: cache_call result_var function args
 cache_call() {
 	local -; set +x
-	[ "$#" -ge 2 ] || eargs cache_call [-K key] "<var_return | ->" function [params]
-	local flag Kflag
+	[ "$#" -ge 2 ] || eargs cache_call [-a -K key] "<var_return | ->" function [params]
+	local flag aflag Kflag
 	local OPTIND=1
 
+	aflag=
 	Kflag=
-	while getopts "K:" flag; do
+	while getopts "aK:" flag; do
 		case "${flag}" in
+		a)
+			aflag=1
+			;;
 		K)
 			# If key is empty just use a (.)
 			Kflag="${OPTARG:-.}"
@@ -176,7 +180,7 @@ cache_call() {
 		esac
 	done
 	shift $((OPTIND-1))
-	[ "$#" -ge 2 ] || eargs cache_call [-K key] "<var_return | ->" function [params]
+	[ "$#" -ge 2 ] || eargs cache_call [-a -K key] "<var_return | ->" function [params]
 	local var_return="$1"
 	local function="$2"
 	shift 2
@@ -185,7 +189,7 @@ cache_call() {
 
 	case "${var_return}" in
 	-)
-		_cache_call_pipe ${Kflag:+-K "${Kflag}"} "${function}" "$@"
+		_cache_call_pipe ${aflag:+-a} ${Kflag:+-K "${Kflag}"} "${function}" "$@"
 		return
 		;;
 	esac
@@ -198,6 +202,12 @@ cache_call() {
 	if [ "${USE_CACHE_CALL}" -eq 0 ] ||
 	    ! _cache_get "${cc_var}" "${cc_key}" "${var_return}"; then
 		msg_dev "cache_call: Fetching ${function}($*)"
+		case "${aflag}" in
+		1)
+			err "${EX_UNAVAILABLE-69}" "Expected cached value not found cc_var=${cc_var} cc_key=${cc_key}"
+			;;
+		esac
+
 		_cc_value=$(${function} "$@")
 		ret=$?
 		if [ "${USE_CACHE_CALL}" -eq 1 ]; then
@@ -219,13 +229,17 @@ cache_call() {
 # from the function.
 cache_call_sv() {
 	local -; set +x
-	[ "$#" -ge 2 ] || eargs cache_call_sv [-K key] var_return function [params] [sv_value for return var]
-	local flag Kflag
+	[ "$#" -ge 2 ] || eargs cache_call_sv [-a -K key] var_return function [params] [sv_value for return var]
+	local flag aflag Kflag
 	local OPTIND=1
 
+	aflag=
 	Kflag=
-	while getopts "K:" flag; do
+	while getopts "aK:" flag; do
 		case "${flag}" in
+		a)
+			aflag=1
+			;;
 		K)
 			# If key is empty just use a (.)
 			Kflag="${OPTARG:-.}"
@@ -234,7 +248,7 @@ cache_call_sv() {
 		esac
 	done
 	shift $((OPTIND-1))
-	[ "$#" -ge 2 ] || eargs cache_call_sv [-K key] var_return function [params] [sv_value for return var]
+	[ "$#" -ge 2 ] || eargs cache_call_sv [-a -K key] var_return function [params] [sv_value for return var]
 	local var_return="$1"
 	local function="$2"
 	shift 2
@@ -249,6 +263,11 @@ cache_call_sv() {
 	if [ "${USE_CACHE_CALL}" -eq 0 ] ||
 	    ! _cache_get "${cc_var}" "${cc_key}" "${var_return}"; then
 		msg_dev "cache_call_sv: Fetching ${function}($*)"
+		case "${aflag}" in
+		1)
+			err "${EX_UNAVAILABLE-69}" "Expected cached value not found cc_var=${cc_var} cc_key=${cc_key}"
+			;;
+		esac
 		sv_value=sv__null
 		${function} "$@"
 		ret=$?
@@ -277,13 +296,17 @@ cache_call_sv() {
 # Usage: cache_call function args
 _cache_call_pipe() {
 	local -; set +x
-	[ "$#" -ge 1 ] || eargs _cache_call_pipe [-K key] function [params]
-	local flag Kflag
+	[ "$#" -ge 1 ] || eargs _cache_call_pipe [-a -K key] function [params]
+	local flag aflag Kflag
 	local OPTIND=1
 
+	aflag=
 	Kflag=
-	while getopts "K:" flag; do
+	while getopts "aK:" flag; do
 		case "${flag}" in
+		a)
+			aflag=1
+			;;
 		K)
 			# If key is empty just use a (.)
 			Kflag="${OPTARG:-.}"
@@ -292,7 +315,7 @@ _cache_call_pipe() {
 		esac
 	done
 	shift $((OPTIND-1))
-	[ "$#" -ge 1 ] || eargs _cache_call_pipe [-K key] function [params]
+	[ "$#" -ge 1 ] || eargs _cache_call_pipe [-a -K key] function [params]
 	local function="$1"
 	shift 1
 	local -; set +e # Need to capture error without ||
@@ -309,6 +332,11 @@ _cache_call_pipe() {
 		return
 	elif ! _cache_exists "${ccp_var}" "${ccp_key}"; then
 		msg_dev "_cache_call_pipe: Fetching ${function}($*)"
+		case "${aflag}" in
+		1)
+			err "${EX_UNAVAILABLE-69}" "Expected cached value not found ccp_var=${ccp_var} ccp_key=${ccp_key}"
+			;;
+		esac
 		${function} "$@" | _cache_tee "${ccp_var}" "${ccp_key}"
 		ret="$?"
 	else

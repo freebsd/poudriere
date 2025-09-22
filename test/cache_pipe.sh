@@ -76,6 +76,10 @@ SHASH_VAR_PATH="${MASTERMNT}"
 
 # Simple test with 1 argument
 {
+	# Asserted lookup on unset value should fail
+	value=$(catch_err cache_call -a - real_func "1")
+	assert "${EX_UNAVAILABLE-69}" "$?"
+
 	# First lookup, will call into the real function
 	lookup=0
 	value=$(cache_call - real_func "1")
@@ -100,6 +104,10 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	get_lookup_cnt lookup real_func "1"
 	assert 0 $? "lookupcnt real_func-1 2"
 	assert 1 ${lookup} "real_func 1 lookup count 2"
+
+	# Asserted lookup on set value should not fail
+	value=$(catch_err cache_call -a - real_func "1")
+	assert "0" "$?"
 }
 
 # test with nop function. Newline shouldn't be added for null data.
