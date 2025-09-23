@@ -78,6 +78,7 @@ pkgqueue_get_next() {
 	# May need to try multiple times due to races and queued-for-order jobs
 	while :; do
 		pkgq_dir="$(find ${POOL_BUCKET_DIRS:?} \
+		    -ignore_readdir_race \
 		    -type d -depth 1 -empty -print -quit || :)"
 		# No more eligible work!
 		case "${pkgq_dir}" in
