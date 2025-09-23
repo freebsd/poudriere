@@ -111,6 +111,7 @@ dist_shinclude_DATA= \
 dist_awk_DATA= src/share/poudriere/awk/dependency_loop.awk \
 		src/share/poudriere/awk/humanize.awk \
 		src/share/poudriere/awk/file_cmp_reg.awk \
+		src/share/poudriere/awk/git_dirty.awk \
 		src/share/poudriere/awk/json.awk \
 		src/share/poudriere/awk/json_jail.awk \
 		src/share/poudriere/awk/json_top.awk \

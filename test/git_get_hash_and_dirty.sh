@@ -81,4 +81,5 @@ assert_true git_get_hash_and_dirty "${PORTSDIR}/ports-mgmt/pkg" 1 git_hash git_m
 assert "yes" "${git_modified}"
 rm -f "${PORTSDIR}/ports-mgmt/pkg/Makefile.local"
 
+shash_remove_var "git_tree_dirty"
 rm -Rf "${PORTSDIR}"

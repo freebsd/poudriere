@@ -1338,7 +1338,7 @@ buildlog_start() {
 			    "${git_modified}"
 			echo "Ports top unclean checkout: ${git_modified}"
 		fi
-		if git_get_hash_and_dirty "${mnt:?}/${portdir:?}" 1 \
+		if git_get_hash_and_dirty "${MASTERMNT:?}/${portdir:?}" 1 \
 		    "" git_modified; then
 			pkg_note_add "${pkgname}" port_checkout_unclean "${git_modified}"
 			echo "Port dir unclean checkout: ${git_modified}"
@@ -9548,7 +9548,7 @@ git_get_hash_and_dirty() {
 	[ "$#" -eq 4 ] || eargs git_get_hash_and_dirty git_dir inport \
 	    git_hash_var git_modified_var
 	local git_dir="$1"
-	local inport="$2"
+	local inport="${2:-0}"
 	local gghd_git_hash_var="$3"
 	local gghd_git_modified_var="$4"
 	local gghd_git_hash gghd_git_modified
@@ -9585,53 +9585,52 @@ git_get_hash_and_dirty() {
 }
 
 git_tree_dirty() {
-	[ $# -eq 2 ] || eargs git_tree_dirty git_dir inport
+	[ "$#" -eq 1 ] || [ "$#" -eq 2 ] ||
+	    eargs git_tree_dirty git_dir "[inport]"
 	local git_dir="$1"
-	local inport="$2"
-	local file
+	local inport="${2:-0}"
 
-	if ! ${GIT_CMD} -C "${git_dir}" \
-	    -c core.checkStat=minimal \
-	    -c core.fileMode=off \
-	    diff --quiet .; then
+	case "${inport}" in
+	0)
+		# Global: Recache.
+		git_tree_dirty_cache "${git_dir}"
+		;;
+	esac
+	if shash_exists git_tree_dirty "${git_dir}"; then
 		return 0
 	fi
+	return 1
+}
 
-	${GIT_CMD} -C "${git_dir}" ls-files --directory --others . | (
-	# Look for patches and .local files
-		while mapfile_read_loop_redir file; do
-			if [ "${inport}" -eq 0 ]; then
-				case "${file}" in
-				Makefile.local|\
-				*/Makefile.local|\
-				*/*/Makefile.local)
-					return 0
-					;;
-				*/*/files/*)
-					case "${file}" in
-					# Mk/Scripts/do-patch.sh
-					*.orig|*.rej|*~|*,v) ;;
-					*) return 0 ;;
-					esac
-					;;
-				esac
-			else
-				case "${file}" in
-				Makefile.local)
-					return 0
-					;;
-				files/*)
-					case "${file}" in
-					# Mk/Scripts/do-patch.sh
-					*.orig|*.rej|*~|*,v) ;;
-					*) return 0 ;;
-					esac
-					;;
-				esac
-			fi
-		done
-		return 1
-	)
+git_tree_dirty_cache() {
+	[ "$#" -eq 1 ] ||
+	    eargs git_tree_dirty_cache git_dir
+	local git_dir="$1"
+	local dirty modified
+	local portdir
+
+	shash_remove_var "git_tree_dirty"
+
+	${GIT_CMD} -C "${git_dir}" \
+	    -c core.checkStat=minimal \
+	    -c core.fileMode=off \
+	    -c status.renames=false \
+	    -c core.untrackedCache=true \
+	    -c advice.statusUoption=false \
+	    status \
+	    --ignored \
+	    --porcelain . |
+	    awk -f "${AWKPREFIX}/git_dirty.awk" |
+	    while mapfile_read_loop_redir portdir; do
+		case "${portdir}" in
+		".")
+			shash_set "git_tree_dirty" "${git_dir}" 1
+			;;
+		*)
+			shash_set "git_tree_dirty" "${git_dir}/${portdir}" 1
+			;;
+		esac
+	done
 }
 
 trim_ignored() {
