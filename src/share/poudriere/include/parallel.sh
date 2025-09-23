@@ -123,6 +123,13 @@ kill_job() {
 	local timeout="$1"
 	local jobid="$2"
 
+	case "${INJOB-}" in
+	"") ;;
+	1)
+		err "${EX_SOFTWARE-70}" "kill_job: Trying to kill a job from within a job."
+		;;
+	esac
+
 	# kill -TERM
 	# Wait $timeout
 	# kill -KILL
@@ -759,9 +766,10 @@ get_job_id() {
 }
 
 spawn_job() {
-	local -
+	local - INJOB
 
 	set -m
+	INJOB=1
 	spawn_jobid=
 	spawn "$@" || return
 	get_job_id "$!" spawn_jobid
