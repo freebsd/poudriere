@@ -139,9 +139,14 @@ _kill_job() {
 
 	shift 2
 	if ! jobid "${jobid}" >/dev/null; then
-		if jobid "%${jobid}" >/dev/null; then
-			err "${EX_SOFTWARE}" "${funcname}: trying to kill unknown job ${jobid}: Did you mean %${jobid}?"
-		fi
+		case "${jobid}" in
+		"%"*) ;;
+		*)
+			if jobid "%${jobid}" >/dev/null; then
+				err "${EX_SOFTWARE}" "${funcname}: trying to kill unknown job ${jobid}: Did you mean %${jobid}?"
+			fi
+			;;
+		esac
 		err "${EX_SOFTWARE}" "${funcname}: trying to kill unknown job ${jobid}"
 	fi
 	ret=0
