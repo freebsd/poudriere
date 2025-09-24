@@ -903,6 +903,22 @@ sig_handler() {
 		msg "[$(getpid)${PROC_TITLE:+:${PROC_TITLE}}] Signal ${sig} caught" >&2
 		;;
 	esac
+	# Let the handler know what status is being exited with even though
+	# we will later reraise it.
+	# Would be nice if we could (raise "${sig}") here but it does not
+	# set $? while inside of a trap.
+	local sig_ret
+
+	case "${sig}" in
+	TERM) sig_ret=$((128 + 15)) ;;
+	INT)  sig_ret=$((128 + 2)) ;;
+	HUP)  sig_ret=$((128 + 1)) ;;
+	PIPE) sig_ret=$((128 + 13)) ;;
+	*)    sig_ret= ;;
+	esac
+	case "${sig_ret:+set}" in
+	set) (exit "${sig_ret}") ;;
+	esac
 	# return ignored since we will exit on signal
 	"${exit_handler}" || :
 	trap - "${sig}"
