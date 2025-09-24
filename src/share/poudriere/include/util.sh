@@ -1731,7 +1731,7 @@ prefix_stderr_quick() {
 prefix_stderr() {
 	local extra="$1"
 	shift 1
-	local prefixpipe prefix_job ret
+	local prefixpipe prefix_job prefixpid ret
 	local prefix MSG_NESTED_STDERR
 	local - errexit
 
@@ -1758,7 +1758,8 @@ prefix_stderr() {
 		fi
 	) < "${prefixpipe}" &
 	set +m
-	get_job_id "$!" prefix_job
+	prefixpid="$!"
+	get_job_id "${prefixpid}" prefix_job
 	exec 4>&2
 	exec 2> "${prefixpipe}"
 	unlink "${prefixpipe}"
@@ -1774,7 +1775,14 @@ prefix_stderr() {
 	fi
 
 	exec 2>&4 4>&-
-	timed_wait_and_kill_job 5 "%${prefix_job}" || :
+	case "${INJOB-}" in
+	1)
+		timed_wait_and_kill 5 "${prefixpid}" || :
+		;;
+	*)
+		timed_wait_and_kill_job 5 "%${prefix_job}" || :
+		;;
+	esac
 
 	return ${ret}
 }
@@ -1782,7 +1790,7 @@ prefix_stderr() {
 prefix_stdout() {
 	local extra="$1"
 	shift 1
-	local prefixpipe prefix_job ret
+	local prefixpipe prefix_job prefixpid ret
 	local prefix MSG_NESTED
 	local - errexit
 
@@ -1807,7 +1815,8 @@ prefix_stdout() {
 		fi
 	) < "${prefixpipe}" &
 	set +m
-	get_job_id "$!" prefix_job
+	prefixpid="$!"
+	get_job_id "${prefixpid}" prefix_job
 	exec 3>&1
 	exec > "${prefixpipe}"
 	unlink "${prefixpipe}"
@@ -1823,7 +1832,14 @@ prefix_stdout() {
 	fi
 
 	exec 1>&3 3>&-
-	timed_wait_and_kill_job 5 "%${prefix_job}" || :
+	case "${INJOB-}" in
+	1)
+		timed_wait_and_kill 5 "${prefixpid}" || :
+		;;
+	*)
+		timed_wait_and_kill_job 5 "%${prefix_job}" || :
+		;;
+	esac
 
 	return ${ret}
 }
@@ -1831,7 +1847,7 @@ prefix_stdout() {
 prefix_output() {
 	local extra="$1"
 	local prefix_stdout prefix_stderr prefixpipe_stdout prefixpipe_stderr
-	local ret MSG_NESTED MSG_NESTED_STDERR prefix_job
+	local ret MSG_NESTED MSG_NESTED_STDERR prefix_job prefixpid
 	local - errexit
 	shift 1
 
@@ -1857,6 +1873,7 @@ prefix_output() {
 	    -1 "${prefix_stdout}" -o "${prefixpipe_stdout}" \
 	    -2 "${prefix_stderr}" -e "${prefixpipe_stderr}" \
 	    -P "poudriere: ${PROC_TITLE} (prefix_output)"
+	prefixpid="$!"
 	prefix_job="${spawn_jobid}"
 	exec 3>&1
 	exec > "${prefixpipe_stdout}"
@@ -1878,7 +1895,14 @@ prefix_output() {
 	fi
 
 	exec 1>&3 3>&- 2>&4 4>&-
-	timed_wait_and_kill_job 5 "%${prefix_job}" || :
+	case "${INJOB-}" in
+	1)
+		timed_wait_and_kill 5 "${prefixpid}" || :
+		;;
+	*)
+		timed_wait_and_kill_job 5 "%${prefix_job}" || :
+		;;
+	esac
 
 	return ${ret}
 }
