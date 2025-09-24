@@ -51,6 +51,31 @@ _wait() {
 	return "${ret}"
 }
 
+timed_wait_and_kill() {
+	[ $# -eq 2 ] || eargs timed_wait_and_kill time pids
+	local time="$1"
+	local pids="$2"
+	local status ret
+	local -
+
+	ret=0
+	# Give children $time seconds to exit and then force kill
+	set -f
+	pwait -t "${time}" ${pids} || ret="$?"
+	case "${ret}" in
+	124)
+		# Something still running, be more dramatic.
+		kill_and_wait 1 "${pids}" || ret=$?
+		;;
+	*)
+		# Nothing running, collect their status.
+		_wait ${pids} 2>/dev/null || ret=$?
+		;;
+	esac
+
+	return ${ret}
+}
+
 case "$(type pwait)" in
 "pwait is a shell builtin")
 	PWAIT_BUILTIN=1
