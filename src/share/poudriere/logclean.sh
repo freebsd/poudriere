@@ -198,7 +198,7 @@ elif [ ${DAYS} -eq 0 ]; then
 else
 	reason="builds older than ${DAYS} days in ${log_top} (filtered)"
 fi
-msg_n "Grabging logclean lock..."
+msg_n "Acquiring logclean lock..."
 if slock_acquire -q "logclean_all" "${LOGCLEAN_LOCK_WAIT}"; then
 	echo " done"
 else
