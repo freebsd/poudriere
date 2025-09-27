@@ -923,8 +923,7 @@ _mapfile_write(/*XXX const*/ struct mapped_data *md, const char *handle,
 			ret = EX_IOERR;
 		errno = serrno;
 		INTON;
-		err(ret, "failed to write to handle '%s' mapped to %s",
-		    handle, md->file);
+		err(ret, "failed to write to handle '%s'", handle);
 	}
 	if (Tflag) {
 		outbin(data, datalen, out1);
