@@ -31,7 +31,9 @@ EX_DATAERR=65
 EX_SOFTWARE=70
 EX_IOERR=74
 
-alias redirect_to_real_tty='>&${OUTPUT_REDIRECTED_STDOUT:-1} 2>&${OUTPUT_REDIRECTED_STDERR:-2} '
+alias redirect_to_real_stdout='>&${OUTPUT_REDIRECTED_STDOUT:-1} '
+alias redirect_to_real_stderr='2>&${OUTPUT_REDIRECTED_STDERR:-2} '
+alias redirect_to_real_tty='redirect_to_real_stdout redirect_to_real_stderr '
 alias redirect_to_bulk='redirect_to_real_tty '
 
 case "$%$+${FUNCNAME}" in
