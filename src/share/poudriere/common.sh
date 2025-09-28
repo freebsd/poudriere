@@ -5708,7 +5708,7 @@ build_queue() {
 	# jobid is analgous to MY_JOBID: builder number
 	# jobno is from $(jobs)
 	local j jobid jobno job_name builders_active queue_empty
-	local job_type builders_idle job_status job_finished timeout
+	local job_type queue_idle job_status job_finished timeout
 
 	run_hook build_queue start
 
@@ -5722,7 +5722,7 @@ build_queue() {
 	job_finished=0
 	while :; do
 		builders_active=0
-		builders_idle=0
+		queue_idle=0
 		# Timeout indicates how often we check for dead jobs or
 		# a stuck queue.
 		timeout=30
@@ -5750,7 +5750,7 @@ build_queue() {
 				# builders to toss a job at since the queue
 				# may now be unblocked.
 				if [ "${queue_empty:?}" -eq 0 -a \
-				    "${builders_idle:?}" -eq 1 ]; then
+				    "${queue_idle:?}" -eq 1 ]; then
 					timeout=0
 				fi
 			fi
@@ -5769,7 +5769,7 @@ build_queue() {
 				if pkgqueue_empty; then
 					queue_empty=1
 				fi
-				builders_idle=1
+				queue_idle=1
 				continue
 				;;
 			esac
