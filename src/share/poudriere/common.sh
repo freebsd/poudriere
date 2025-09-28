@@ -5311,7 +5311,8 @@ build_pkg() {
 	fi
 
 	if [ -f "${mnt}/.tmpfs_blacklist_dir" ]; then
-		umount "${mnt}/wrkdirs"
+		umount -n "${mnt:?}/wrkdirs" ||
+		    umount -f "${mnt:?}/wrkdirs"
 		rm -rf $(cat "${mnt}/.tmpfs_blacklist_dir")
 	fi
 	[ -f ${mnt}/.need_rollback ] && rollbackfs prepkg ${mnt}
@@ -5420,7 +5421,8 @@ build_pkg() {
 	rm -rfx ${mnt}/wrkdirs/* || :
 
 	if [ -n "${tmpfs_blacklist_dir}" ]; then
-		umount "${mnt}/wrkdirs"
+		umount -n "${mnt:?}/wrkdirs" |
+		    umount -f "${mnt:?}/wrkdirs"
 		rm -f "${mnt}/.tmpfs_blacklist_dir"
 		rm -rf "${tmpfs_blacklist_dir}"
 	fi
