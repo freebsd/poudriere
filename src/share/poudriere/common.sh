@@ -10012,7 +10012,7 @@ build_thin_repo() {
 
 	# Try to be as atomic as possible in recreating the new thin repo
 	mkdir -p "${THIN_PACKAGES:?}/All.new"
-	listed_pkgnames | while mapfile_read_loop pkgname; do
+	listed_pkgnames | while mapfile_read_loop_redir pkgname; do
 		add_pkg_to_repo "${pkgname}" "${THIN_PACKAGES:?}/All.new"
 	done
 	if [ "${SMALL_REPO:-0}" -eq 1 ]; then
