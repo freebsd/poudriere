@@ -967,6 +967,11 @@ jstart() {
 }
 
 jail_has_processes() {
+	case "${PROFILING:-no}" in
+	yes)
+		return 1
+		;;
+	esac
 	local pscnt
 
 	# 2 = HEADER+ps itself
@@ -5935,6 +5940,12 @@ parallel_build() {
 
 	bset builders "${JOBS}"
 	bset status "parallel_build:"
+
+	case "${PROFILING:-no}" in
+	yes)
+		start_builders "${jname}" "${ptname}" "${setname}"
+		;;
+	esac
 
 	if [ ! -d "${MASTER_DATADIR:?}/pool" ]; then
 		err 1 "Build pool is missing"
