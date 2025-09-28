@@ -5731,10 +5731,12 @@ build_queue() {
 			if hash_get builder_jobs "${j}" jobno; then
 				# If a job just finished we skip checking status of
 				# other jobs. We focus on filling empty slots.
-				if [ ${job_finished} -eq 1 ]; then
+				case "${job_finished}" in
+				1)
 					builders_active=1
 					continue
-				fi
+					;;
+				esac
 				dev_assert_true kill -0 "${jobno}"
 				get_job_status "${jobno}" job_status ||
 				    err "${EX_SOFTWARE:-70}" "build_queue: get_job_status ${jobno}"
@@ -5749,17 +5751,21 @@ build_queue() {
 				# Set a 0 timeout to quickly rescan for idle
 				# builders to toss a job at since the queue
 				# may now be unblocked.
-				if [ "${queue_empty:?}" -eq 0 -a \
-				    "${queue_idle:?}" -eq 1 ]; then
+				case "${queue_empty:?}.${queue_idle:?}" in
+				"0.1")
 					timeout=0
-				fi
+					;;
+				esac
 			fi
 
 			# This builder is idle and needs work.
 
-			[ ${queue_empty} -eq 0 ] || continue
+			case "${queue_empty:?}" in
+			# Continue until we collect all jobs.
+			1) continue ;;
+			esac
 
-			pkgqueue_get_next job_type job_name || \
+			pkgqueue_get_next job_type job_name ||
 			    err 1 "Failed to find a package from the queue."
 
 			case "${job_name}" in
@@ -5792,20 +5798,27 @@ build_queue() {
 			list_add BUILDER_JOBNOS "${jobno}"
 		done
 
-		if [ ${queue_empty} -eq 1 ]; then
-			if [ ${builders_active} -eq 1 ]; then
+		case "${queue_empty:?}" in
+		1)
+			case "${builders_active:?}" in
+			1)
 				# The queue is empty, but builds are still
 				# going. Wait on them below.
 				:
-			else
+				;;
+			*)
 				# All work is done
 				pkgqueue_sanity_check 0
 				break
-			fi
-		fi
+				;;
+			esac
+			;;
+		esac
 
 		# If builders are idle then there is a problem.
-		[ ${builders_active} -eq 1 ] || pkgqueue_sanity_check
+		case "${builders_active:?}" in
+		0) pkgqueue_sanity_check 1 ;;
+		esac
 
 		update_remaining
 
