@@ -5708,7 +5708,7 @@ build_queue() {
 	# jobid is analgous to MY_JOBID: builder number
 	# jobno is from $(jobs)
 	local j jobid jobno job_name builders_active queue_empty
-	local job_type builders_idle job_finished timeout
+	local job_type builders_idle job_status job_finished timeout
 
 	run_hook build_queue start
 
@@ -5731,11 +5731,20 @@ build_queue() {
 			if hash_get builder_jobs "${j}" jobno; then
 				# If a job just finished we skip checking status of
 				# other jobs. We focus on filling empty slots.
-				if [ ${job_finished} -eq 1 ] ||
-				    kill -0 "${jobno}" 2>/dev/null; then
+				if [ ${job_finished} -eq 1 ]; then
 					builders_active=1
 					continue
 				fi
+				dev_assert_true kill -0 "${jobno}"
+				get_job_status "${jobno}" job_status ||
+				    err "${EX_SOFTWARE:-70}" "build_queue: get_job_status ${jobno}"
+				case "${job_status}" in
+				"Running")
+					builders_active=1
+					continue
+					;;
+				esac
+				# The job is Done or Terminated.
 				job_done "${j}"
 				# Set a 0 timeout to quickly rescan for idle
 				# builders to toss a job at since the queue
@@ -6332,6 +6341,26 @@ build_pkg() {
 		    umount -f "${mnt:?}/wrkdirs"
 		rm -f "${mnt:?}/.tmpfs_blacklist_dir"
 		rm -rf "${tmpfs_blacklist_dir:?}"
+		;;
+	esac
+
+	case "${FP_BUILD_PKG_EXIT_PKGNAMES:+set}" in
+	set)
+		local fp_pkg_glob
+
+		set -o noglob
+		for fp_pkg_glob in ${FP_BUILD_PKG_EXIT_PKGNAMES}; do
+			# shellcheck disable=SC2254
+			case "${pkgbase}" in
+			${fp_pkg_glob})
+				msg_error "FP_BUILD_PKG_EXIT_PKGNAMES failpoint match pkgname='${pkgname}' fp_pkg_glob='${fp_pkg_glob}'"
+				# exit immediately rather than go through
+				# err() cleanup.
+				exit 1
+				;;
+			esac
+		done
+		set +o noglob
 		;;
 	esac
 

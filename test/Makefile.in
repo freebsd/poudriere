@@ -541,6 +541,7 @@ JAIL_TESTS = \
 	bulk-build-self-immutable-base-yes.sh \
 	bulk-build-self-inc-build_as_non_root-no.sh \
 	bulk-build-self-inc-build_as_non_root-yes.sh \
+	bulk-build-skips-crashed-builder.sh \
 	bulk-build-skips.sh \
 	bulk-build-specific-bad-flavor.sh \
 	bulk-flavor-FLAVORS-misordered.sh \
@@ -1624,6 +1625,13 @@ bulk-build-self-inc-build_as_non_root-no.sh.log: bulk-build-self-inc-build_as_no
 bulk-build-self-inc-build_as_non_root-yes.sh.log: bulk-build-self-inc-build_as_non_root-yes.sh
 	@p='bulk-build-self-inc-build_as_non_root-yes.sh'; \
 	b='bulk-build-self-inc-build_as_non_root-yes.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-skips-crashed-builder.sh.log: bulk-build-skips-crashed-builder.sh
+	@p='bulk-build-skips-crashed-builder.sh'; \
+	b='bulk-build-skips-crashed-builder.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
