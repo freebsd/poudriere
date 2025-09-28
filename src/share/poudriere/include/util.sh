@@ -1074,6 +1074,8 @@ _pipe_hold_child() {
 }
 
 # This keeps the given fifos open to avoid EOF in writers.
+# If the watch_pid exits then the holder will exit automatically.
+# Use watch_pid==1 to keep the pipe open until explicitly killing the holder.
 pipe_hold() {
 	[ $# -ge 3 ] || eargs pipe_hold var_return_jobid watch_pid fifos...
 	local var_return_jobid="$1"
