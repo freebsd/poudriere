@@ -6182,7 +6182,8 @@ build_pkg() {
 	fi
 
 	if [ -f "${mnt:?}/.tmpfs_blacklist_dir" ]; then
-		umount "${mnt:?}/wrkdirs"
+		umount -n "${mnt:?}/wrkdirs" ||
+		    umount -f "${mnt:?}/wrkdirs"
 		rm -rf "$(cat "${mnt:?}/.tmpfs_blacklist_dir")"
 	fi
 	if [ -f "${mnt:?}/.need_rollback" ]; then
@@ -6315,7 +6316,8 @@ build_pkg() {
 
 	case "${tmpfs_blacklist_dir:+set}" in
 	set)
-		umount "${mnt:?}/wrkdirs"
+		umount -n "${mnt:?}/wrkdirs" |
+		    umount -f "${mnt:?}/wrkdirs"
 		rm -f "${mnt:?}/.tmpfs_blacklist_dir"
 		rm -rf "${tmpfs_blacklist_dir:?}"
 		;;
