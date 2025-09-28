@@ -5708,7 +5708,7 @@ build_queue() {
 	# jobid is analgous to MY_JOBID: builder number
 	# jobno is from $(jobs)
 	local j jobid jobno job_name builders_active queue_empty
-	local job_type builders_idle idle_only timeout
+	local job_type builders_idle job_finished timeout
 
 	run_hook build_queue start
 
@@ -5719,19 +5719,20 @@ build_queue() {
 
 	msg "Hit CTRL+t at any time to see build progress and stats"
 
-	idle_only=0
+	job_finished=0
 	while :; do
 		builders_active=0
 		builders_idle=0
+		# Timeout indicates how often we check for dead jobs or
+		# a stuck queue.
 		timeout=30
 		for j in ${JOBS}; do
-			# Check if job is alive. A job will have no PID if it
-			# is idle. idle_only=1 is a quick check for giving
-			# new work only to idle workers.
+			# Collect dead jobs
 			if hash_get builder_jobs "${j}" jobno; then
-				if [ ${idle_only} -eq 1 ] ||
+				# If a job just finished we skip checking status of
+				# other jobs. We focus on filling empty slots.
+				if [ ${job_finished} -eq 1 ] ||
 				    kill -0 "${jobno}" 2>/dev/null; then
-					# Job still active or skipping busy.
 					builders_active=1
 					continue
 				fi
@@ -5808,7 +5809,7 @@ build_queue() {
 			if job_done "${jobid}"; then
 				# Do a quick scan to try dispatching
 				# ready-to-build to idle builders.
-				idle_only=1
+				job_finished=1
 			else
 				# The job is already done. It was found to be
 				# done by a kill -0 check in a scan.
@@ -5819,7 +5820,7 @@ build_queue() {
 			# No event found. The next scan will check for
 			# crashed builders and deadlocks by validating
 			# every builder is really non-idle.
-			idle_only=0
+			job_finished=0
 			;;
 		esac
 	done
