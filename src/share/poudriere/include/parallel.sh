@@ -144,7 +144,7 @@ timed_wait_and_kill_job() {
 }
 
 kill_job() {
-	[ "$#" -eq 2 ] || eargs kill_job timeout jobid
+	[ "$#" -eq 2 ] || eargs kill_job timeout '%job|pid'
 	local timeout="$1"
 	local jobid="$2"
 
@@ -164,7 +164,7 @@ kill_job() {
 
 # _kill_job funcname jobid :${wait-timeout} SIG :${wait-timeout} SIG
 _kill_job() {
-	[ "$#" -ge 3 ] || eargs _kill_job funcname jobid 'killspec'
+	[ "$#" -ge 3 ] || eargs _kill_job funcname '%job|pid' 'killspec'
 	local funcname="$1"
 	local jobid="$2"
 	local timeout ret pgid status action
@@ -696,7 +696,7 @@ jobs_with_statuses() {
 }
 
 get_job_status() {
-	[ "$#" -eq 2 ] || eargs get_job_status pid var_return
+	[ "$#" -eq 2 ] || eargs get_job_status '%job|pid' var_return
 	local gjs_pid="$1"
 	local gjs_var_return="$2"
 	local gjs_output ret
