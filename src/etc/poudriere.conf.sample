@@ -413,5 +413,5 @@ DISTFILES_CACHE=/usr/ports/distfiles
 
 # Use an immutable base in the jail.
 # Options: no, yes
-# Default: schg
+# Default: yes
 #IMMUTABLE_BASE=yes
