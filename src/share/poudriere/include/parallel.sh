@@ -26,6 +26,7 @@
 # shellcheck shell=ksh
 
 _wait() {
+	[ "$#" -ge 0 ] || eargs _wait '[%job|pid...]'
 	local wret ret pid
 
 	if [ "$#" -eq 0 ]; then
@@ -124,7 +125,7 @@ pwait() {
 }
 
 timed_wait_and_kill_job() {
-	[ "$#" -eq 2 ] || eargs timed_wait_and_kill_job time jobid
+	[ "$#" -eq 2 ] || eargs timed_wait_and_kill_job time '%job'
 	local timeout="$1"
 	local jobid="$2"
 
