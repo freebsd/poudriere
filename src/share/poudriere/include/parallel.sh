@@ -940,21 +940,28 @@ exit_return() {
 		redirect_to_real_tty exec
 	} 2>/dev/null
 
-	# Ensure the real handler sees the real status
-	(exit "${ret}")
-	"$@" || ret="$?"
+	case "$#" in
+	0)
+		;;
+	*)
+		# Ensure the real handler sees the real status
+		(exit "${ret}")
+		"$@" || ret="$?"
+		;;
+	esac
 	exit "${ret}"
 }
 
 setup_traps() {
-	[ "$#" -eq 1 ] || eargs setup_traps exit_handler
+	[ "$#" -eq 0 ] || [ "$#" -eq 1 ] ||
+	    eargs setup_traps '[exit_handler]'
 	local exit_handler="$1"
 	local sig
 
 	for sig in INT HUP PIPE TERM; do
 		# shellcheck disable=SC2064
-		trap "sig_handler ${sig} ${exit_handler}" "${sig}"
+		trap "sig_handler ${sig}${exit_handler:+ ${exit_handler}}" "${sig}"
 	done
 	# shellcheck disable=SC2064
-	trap "exit_return ${exit_handler}" EXIT
+	trap "exit_return${exit_handler:+ ${exit_handler}}" EXIT
 }
