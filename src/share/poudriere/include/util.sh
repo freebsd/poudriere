@@ -1048,7 +1048,7 @@ _pipe_hold_exit() {
 }
 
 _pipe_hold_child() {
-	[ $# -ge 3 ] || eargs _pipe_hold_child watch_pid sync_fifo fifos...
+	[ $# -ge 3 ] || eargs _pipe_hold_child sync_fifo watch_pid fifos...
 	local sync_fifo="$1"
 	local watch_pid="$2"
 	shift 2
