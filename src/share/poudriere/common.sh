@@ -7640,6 +7640,7 @@ package_libdeps_satisfied() {
 }
 
 _lock_acquire() {
+	local -; set +x
 	[ $# -eq 3 -o $# -eq 4 ] ||
 	    eargs _lock_acquire quiet lockpath lockname [waittime]
 	local have_lock mypid lock_pid real_lock_pid
@@ -7701,6 +7702,7 @@ _lock_acquire() {
 
 # Acquire local build lock
 lock_acquire() {
+	local -; set +x
 	[ $# -eq 1 -o $# -eq 2 -o $# -eq 3 ] ||
 	    eargs lock_acquire [-q] lockname [waittime]
 	local lockname waittime lockpath
@@ -7723,6 +7725,7 @@ lock_acquire() {
 
 # while locked tmp NAME timeout; do <locked code>; done
 locked() {
+	local -; set +x
 	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] || eargs locked tmp_var lockname \
 	    '[waittime]'
 	local l_tmp_var="$1"
@@ -7742,6 +7745,7 @@ locked() {
 
 # Acquire system wide lock
 slock_acquire() {
+	local -; set +x
 	[ $# -eq 1 -o $# -eq 2 -o $# -eq 3 ] ||
 	    eargs slock_acquire [-q] lockname [waittime]
 	local lockname waittime lockpath quiet
@@ -7768,6 +7772,7 @@ slock_acquire() {
 
 # while slocked tmp NAME timeout; do <locked code>; done
 slocked() {
+	local -; set +x
 	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] || eargs slocked tmp_var lockname \
 	    '[waittime]'
 	local s_tmp_var="$1"
@@ -7786,6 +7791,7 @@ slocked() {
 }
 
 _lock_release() {
+	local -; set +x
 	[ $# -eq 2 ] || eargs _lock_release lockname lockpath
 	local lockname="$1"
 	local lockpath="$2"
@@ -7831,6 +7837,7 @@ _lock_release() {
 
 # Release local build lock
 lock_release() {
+	local -; set +x
 	[ $# -eq 1 ] || eargs lock_release lockname
 	local lockname="$1"
 	local lockpath
@@ -7841,6 +7848,7 @@ lock_release() {
 
 # Release system wide lock
 slock_release() {
+	local -; set +x
 	[ $# -eq 1 ] || eargs slock_release lockname
 	local lockname="$1"
 	local lockpath
@@ -7851,6 +7859,7 @@ slock_release() {
 }
 
 slock_release_all() {
+	local -; set +x
 	[ $# -eq 0 ] || eargs slock_release_all
 	local lockname
 
@@ -7863,6 +7872,7 @@ slock_release_all() {
 }
 
 lock_have() {
+	local -; set +x
 	[ $# -eq 1 ] || eargs lock_have lockname
 	local lockname="$1"
 	local mypid lock_pid
