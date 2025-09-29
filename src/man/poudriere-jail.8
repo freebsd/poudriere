@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 19, 2024
+.Dd August 11, 2025
 .Dt POUDRIERE-JAIL 8
 .Os
 .Sh NAME
@@ -47,6 +47,7 @@
 .Op Fl m Ar method
 .Op Fl P Ar patch
 .Op Fl p Ar portstree
+.Op Fl O Ar overlay Op Fl O Ar overlay2 Ar ...
 .Op Fl S Ar srcpath
 .Op Fl z Ar set
 .Nm
@@ -336,6 +337,13 @@ to the source tree before building the jail.
 .It Fl p Ar portstree
 Specify the ports tree to start/stop the jail with.
 .Pq Default: Dq Li default
+.It Fl O Ar overlay
+Specify an extra
+.Xr poudriere-ports 8
+tree to use as an overlay.
+Multiple
+.Fl O Ar overlay
+arguments may be specified to stack them.
 .It Fl q
 Remove the header when
 .Fl l
