@@ -5708,7 +5708,7 @@ build_queue() {
 	# jobid is analgous to MY_JOBID: builder number
 	# jobno is from $(jobs)
 	local j jobid jobno job_name builders_active queue_empty
-	local job_type queue_idle job_status job_finished timeout
+	local job_type job_status job_finished timeout
 
 	run_hook build_queue start
 
@@ -5722,7 +5722,6 @@ build_queue() {
 	job_finished=0
 	while :; do
 		builders_active=0
-		queue_idle=0
 		# Timeout indicates how often we check for dead jobs or
 		# a stuck queue.
 		timeout=30
@@ -5748,14 +5747,6 @@ build_queue() {
 				esac
 				# The job is Done or Terminated.
 				job_done "${j}"
-				# Set a 0 timeout to quickly rescan for idle
-				# builders to toss a job at since the queue
-				# may now be unblocked.
-				case "${queue_empty:?}.${queue_idle:?}" in
-				"0.1")
-					timeout=0
-					;;
-				esac
 			fi
 
 			# This builder is idle and needs work.
@@ -5775,7 +5766,6 @@ build_queue() {
 				if pkgqueue_empty; then
 					queue_empty=1
 				fi
-				queue_idle=1
 				continue
 				;;
 			esac
