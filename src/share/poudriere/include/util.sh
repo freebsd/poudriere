@@ -901,10 +901,38 @@ read_blocking() {
 	local -; set +x
 	[ $# -ge 1 ] || eargs read_blocking read_args
 	local rb_ret
+	local OPTIND=1 flag tflag timeout time_start now
 
+	tflag=
+	while getopts "t:" flag; do
+		case "${flag}" in
+		t) tflag="${OPTARG:?}" ;;
+		*) err 1 "read_blocking: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift "$((OPTIND-1))"
+	case "${tflag}" in
+	"") ;;
+	*.*) timeout="${tflag}" ;;
+	*) time_start="$(clock -monotonic)" ;;
+	esac
 	while :; do
 		rb_ret=0
-		read -r "$@" || rb_ret="$?"
+		# Adjust timeout
+		case "${tflag}" in
+		""|*.*) ;;
+		*)
+			now="$(clock -monotonic)"
+			timeout="$((tflag - (now - time_start)))"
+			case "${timeout}" in
+			"-"*) timeout=0 ;;
+			esac
+			;;
+		esac
+		set -o noglob
+		# shellcheck disable=SC2086
+		read -r ${tflag:+-t "${timeout}"} "$@" || rb_ret="$?"
+		set +o noglob
 		case ${rb_ret} in
 			# Read again on SIGINFO interrupts
 			157) continue ;;
@@ -926,11 +954,39 @@ read_blocking_line() {
 	local -; set +x
 	[ $# -ge 1 ] || eargs read_blocking_line read_args
 	local rbl_ret IFS
+	local OPTIND=1 flag tflag timeout time_start now
 
+	tflag=
+	while getopts "t:" flag; do
+		case "${flag}" in
+		t) tflag="${OPTARG:?}" ;;
+		*) err 1 "read_blocking_line: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift "$((OPTIND-1))"
+	case "${tflag}" in
+	"") ;;
+	*.*) timeout="${tflag}" ;;
+	*) time_start="$(clock -monotonic)" ;;
+	esac
 	while :; do
 		rbl_ret=0
-		IFS= read -r "$@" || rbl_ret="$?"
-		case ${rbl_ret} in
+		# Adjust timeout
+		case "${tflag}" in
+		""|*.*) ;;
+		*)
+			now="$(clock -monotonic)"
+			timeout="$((tflag - (now - time_start)))"
+			case "${timeout}" in
+			"-"*) timeout=0 ;;
+			esac
+			;;
+		esac
+		set -o noglob
+		# shellcheck disable=SC2086
+		IFS= read -r ${tflag:+-t "${timeout}"} "$@" || rbl_ret="$?"
+		set +o noglob
+		case "${rbl_ret}" in
 			# Read again on SIGINFO interrupts
 			157) continue ;;
 			# Valid EOF
@@ -951,9 +1007,23 @@ read_pipe() {
 	[ $# -ge 2 ] || eargs read_pipe fifo read_args
 	local fifo="$1"
 	local rp_ret resread resopen
+	local OPTIND=1 flag tflag timeout time_start now
 	shift
 
 	rp_ret=0
+	tflag=
+	while getopts "t:" flag; do
+		case "${flag}" in
+		t) tflag="${OPTARG:?}" ;;
+		*) err 1 "read_pipe: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift "$((OPTIND-1))"
+	case "${tflag}" in
+	"") ;;
+	*.*) timeout="${tflag}" ;;
+	*) time_start="$(clock -monotonic)" ;;
+	esac
 	while :; do
 		if ! [ -p "${fifo}" ]; then
 			rp_ret=32
@@ -963,8 +1033,23 @@ read_pipe() {
 		# since opening the pipe blocks and may be interrupted.
 		resread=0
 		resopen=0
-		{ { read -r "$@" || resread=$?; } < "${fifo}" || resopen=$?; } \
+		# Adjust timeout
+		case "${tflag}" in
+		""|*.*) ;;
+		*)
+			now="$(clock -monotonic)"
+			timeout="$((tflag - (now - time_start)))"
+			case "${timeout}" in
+			"-"*) timeout=0 ;;
+			esac
+			;;
+		esac
+		set -o noglob
+		# shellcheck disable=SC2086
+		{ { read -r ${tflag:+-t "${timeout}"} "$@" || resread=$?; } \
+		    < "${fifo}" || resopen=$?; } \
 		    2>/dev/null
+		set +o noglob
 		msg_dev "read_pipe ${fifo}: resread=${resread} resopen=${resopen}"
 		# First check the open errors
 		case ${resopen} in
@@ -998,15 +1083,41 @@ read_pipe_noeof() {
 	local fifo="$1"
 	local rpn_ret
 	shift
+	local OPTIND=1 flag tflag timeout time_start now
 
+	tflag=
+	while getopts "t:" flag; do
+		case "${flag}" in
+		t) tflag="${OPTARG:?}" ;;
+		*) err 1 "read_pipe_noeof: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift "$((OPTIND-1))"
+	case "${tflag}" in
+	"") ;;
+	*.*) timeout="${tflag}" ;;
+	*) time_start="$(clock -monotonic)" ;;
+	esac
 	while :; do
 		rpn_ret=0
-		read_pipe "${fifo}" "$@" || rpn_ret="$?"
+		# Adjust timeout
+		case "${tflag}" in
+		""|*.*) ;;
+		*)
+			now="$(clock -monotonic)"
+			timeout="$((tflag - (now - time_start)))"
+			case "${timeout}" in
+			"-"*) timeout=0 ;;
+			esac
+			;;
+		esac
+		set -o noglob
+		# shellcheck disable=SC2086
+		read_pipe "${fifo}" ${tflag:+-t "${timeout}"} "$@" || rpn_ret="$?"
+		set +o noglob
 		case "${rpn_ret}" in
 		1) ;;
-		*)
-			break
-			;;
+		*) break ;;
 		esac
 	done
 	return "${rpn_ret}"

@@ -33,6 +33,7 @@ set +e
 		kill -INFO $$
 	) &
 	read_blocking -t 5 in < "${TMP}"
+	assert 142 "$?"
 	assert 1 "${gotinfo}" "should have received SIGINFO"
 	now=$(clock -monotonic)
 	diff=$((now - start))
