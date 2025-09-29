@@ -930,6 +930,7 @@ safe_builtin(int idx, int argc, char **argv)
  * Note: This may or may not return if (flags & EV_EXIT).
  */
 
+int in_trap(void);
 static void
 evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 {
@@ -1166,22 +1167,25 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 		funcnest++;
 		mklocal("FUNCNAME");
 		setvar("FUNCNAME", argv[0], 0);
-		mklocal("FUNCNAMESTACK");
-		char *funcstack;
-		int exitstatus_save = exitstatus, oexitstatus_save = oexitstatus;
-		asprintf(&funcstack,
-		    "FUNCNAMESTACK=\"${FUNCNAMESTACK:-${0}:%d:}${FUNCNAMESTACK:+:}${FUNCNAME}\"", plinno);
-		evalstring(funcstack, 0);
-		if (!is_int_on()) {
-			/*
-			 * evalstring may have FORCEINTON
-			 */
-			INTOFF;
+		/* This can stay only if we ignore EPIPE. */
+		if (!in_trap()) {
+			char *funcstack;
+			int exitstatus_save = exitstatus, oexitstatus_save = oexitstatus;
+			mklocal("FUNCNAMESTACK");
+			asprintf(&funcstack,
+			    "FUNCNAMESTACK=\"${FUNCNAMESTACK:-${0}:%d:}${FUNCNAMESTACK:+:}${FUNCNAME}\"", plinno);
+			evalstring(funcstack, 0);
+			if (!is_int_on()) {
+				/*
+				 * evalstring may have FORCEINTON
+				 */
+				INTOFF;
+			}
+			assert(is_int_on());
+			exitstatus = exitstatus_save;
+			oexitstatus = oexitstatus_save;
+			free(funcstack);
 		}
-		assert(is_int_on());
-		exitstatus = exitstatus_save;
-		oexitstatus = oexitstatus_save;
-		free(funcstack);
 		redirect(cmd->ncmd.redirect, REDIR_PUSH);
 		INTON;
 		for (i = 0; i < varlist.count; i++)

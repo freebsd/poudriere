@@ -463,6 +463,7 @@ dotrap(void)
 	in_dotrap--;
 }
 
+int in_trap(void) { return in_dotrap; }
 
 void
 trap_init(void)
