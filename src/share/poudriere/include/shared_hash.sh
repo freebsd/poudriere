@@ -160,6 +160,8 @@ shash_write() {
 	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
+
+	set -o noglob
 	write_atomic ${Tflag:+-T} "${_shash_varkey_file}"
 }
 
