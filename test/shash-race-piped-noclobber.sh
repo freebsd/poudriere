@@ -1,0 +1,49 @@
+set -e
+. ./common.sh
+set +e
+
+MASTERMNT=$(mktemp -d)
+
+writer() {
+	while :; do
+		{
+			noclobber shash_write bucket key || :
+		} <<-EOF
+		value
+		EOF
+	done
+}
+
+echo "Working on ${MASTERMNT}"
+SHASH_VAR_PATH="${MASTERMNT}"
+
+{
+	writer &
+	writerpid=$!
+	assert_true kill -0 "${writerpid}"
+	assert_true kill "${writerpid}"
+	assert_ret 143 _wait "${writerpid}"
+}
+
+{
+	writer &
+	writerpid=$!
+	assert_true kill -0 "${writerpid}"
+	attempts=1000
+	# attempts=1
+	n=0
+	sleep 1
+	until [ "${n}" -eq "${attempts}" ]; do
+		unset var
+		if var="$(shash_read bucket key)"; then
+			# If shash_get succeeds we must have a value.
+			assert "value" "${var-__null}" "n=${n}"
+		fi
+		n="$((n + 1))"
+	done
+	assert_true kill "${writerpid}"
+	assert_ret 143 _wait "${writerpid}"
+}
+
+rm -rf "${MASTERMNT}"
+exit 0

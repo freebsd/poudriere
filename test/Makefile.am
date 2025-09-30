@@ -15,7 +15,8 @@ XFAIL_TESTS= \
 	distclean-overlays.sh \
 	err.sh \
 	options-overlays.sh \
-	shash-noclobber-piped.sh
+	shash-noclobber-piped.sh \
+	shash-race.sh
 
 TESTS=\
 	array.sh \
@@ -88,6 +89,10 @@ TESTS=\
 	shash-basic.sh \
 	shash-noclobber.sh \
 	shash-noclobber-piped.sh \
+	shash-race.sh \
+	shash-race-noclobber.sh \
+	shash-race-piped.sh \
+	shash-race-piped-noclobber.sh \
 	shellcheck.sh \
 	stack.sh \
 	stripansi.sh \
