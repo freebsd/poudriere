@@ -1844,7 +1844,7 @@ prefix_stderr_quick() {
 prefix_stderr() {
 	local extra="$1"
 	shift 1
-	local prefixpipe prefix_job prefixpid ret
+	local prefixpipe prefixpid ret
 	local prefix MSG_NESTED_STDERR
 	local - errexit
 
@@ -1872,7 +1872,6 @@ prefix_stderr() {
 	) < "${prefixpipe}" &
 	set +m
 	prefixpid="$!"
-	get_job_id "${prefixpid}" prefix_job
 	exec 4>&2
 	exec 2> "${prefixpipe}"
 	unlink "${prefixpipe}"
@@ -1893,6 +1892,9 @@ prefix_stderr() {
 		timed_wait_and_kill 5 "${prefixpid}" || :
 		;;
 	*)
+		local prefix_job
+
+		get_job_id "${prefixpid}" prefix_job
 		timed_wait_and_kill_job 5 "%${prefix_job}" || :
 		;;
 	esac
@@ -1903,7 +1905,7 @@ prefix_stderr() {
 prefix_stdout() {
 	local extra="$1"
 	shift 1
-	local prefixpipe prefix_job prefixpid ret
+	local prefixpipe prefixpid ret
 	local prefix MSG_NESTED
 	local - errexit
 
@@ -1929,7 +1931,6 @@ prefix_stdout() {
 	) < "${prefixpipe}" &
 	set +m
 	prefixpid="$!"
-	get_job_id "${prefixpid}" prefix_job
 	exec 3>&1
 	exec > "${prefixpipe}"
 	unlink "${prefixpipe}"
@@ -1950,6 +1951,9 @@ prefix_stdout() {
 		timed_wait_and_kill 5 "${prefixpid}" || :
 		;;
 	*)
+		local prefix_job
+
+		get_job_id "${prefixpid}" prefix_job
 		timed_wait_and_kill_job 5 "%${prefix_job}" || :
 		;;
 	esac
