@@ -61,8 +61,10 @@ timed_wait_and_kill() {
 
 	ret=0
 	# Give children $time seconds to exit and then force kill
-	set -f
+	set -o noglob
+	# shellcheck disable=SC2086
 	pwait -t "${time}" ${pids} || ret="$?"
+	set +o noglob
 	case "${ret}" in
 	124)
 		# Something still running, be more dramatic.
@@ -70,11 +72,13 @@ timed_wait_and_kill() {
 		;;
 	*)
 		# Nothing running, collect their status.
+		set -o noglob
+		# shellcheck disable=SC2086
 		_wait ${pids} 2>/dev/null || ret=$?
+		set +o noglob
 		;;
 	esac
-
-	return ${ret}
+	return "${ret}"
 }
 
 case "$(type pwait)" in
