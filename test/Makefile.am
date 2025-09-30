@@ -14,7 +14,8 @@ EXTRA_DIST= $(TESTS) \
 XFAIL_TESTS= \
 	distclean-overlays.sh \
 	err.sh \
-	options-overlays.sh
+	options-overlays.sh \
+	shash-noclobber-piped.sh
 
 TESTS=\
 	array.sh \
@@ -85,6 +86,8 @@ TESTS=\
 	required_env.sh \
 	setvar.sh \
 	shash-basic.sh \
+	shash-noclobber.sh \
+	shash-noclobber-piped.sh \
 	shellcheck.sh \
 	stack.sh \
 	stripansi.sh \
