@@ -334,7 +334,7 @@ collectpids() {
 			getvar "pid_num_${pid}" pid_test_context_num
 			pret=0
 			wait "${pid}" || pret="$?"
-			ret="$((ret + pret))"
+			MAIN_RET="$((MAIN_RET + pret))"
 			case "${pret}" in
 			0)
 				result="OK"
@@ -521,7 +521,7 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 		;;
 	esac
 	JOBS=0
-	ret=0
+	MAIN_RET=0
 	case "${TEST_CONTEXTS_TOTAL}" in
 	[0-9]) num_width="01" ;;
 	[0-9][0-9]) num_width="02" ;;
@@ -578,7 +578,7 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 		echo "Test suite ended: $(date) -- duration: $((TEST_SUITE_END - TEST_SUITE_START))s"
 		# hide set -x
 	} >&2 2>/dev/null
-	exit "${ret}"
+	exit "${MAIN_RET}"
 fi
 
 runtest
