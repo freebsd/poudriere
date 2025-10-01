@@ -130,6 +130,13 @@ _err() {
 	local msg="${3-}"
 
 	if [ -n "${CRASHED:-}" ]; then
+		case "$#" in
+		[012]) ;;
+		*)
+			shift 2
+			msg="$*"
+			;;
+		esac
 		echo "err: Recursive error detected: ${msg}" >&2 || :
 		exit "${exit_status}"
 	fi
@@ -140,10 +147,13 @@ _err() {
 	trap '' INFO
 	export CRASHED=1
 	case "$#" in
-	3) ;;
-	*)
+	[012])
 		msg_error "err expects 3 arguments: exit_number \"message\": actual: '$#': $*"
 		exit ${EX_SOFTWARE}
+		;;
+	*)
+		shift 2
+		msg="$*"
 		;;
 	esac
 	# Try to set status so other processes know this crashed
