@@ -62,6 +62,9 @@
 #include "trap.h"
 #include "var.h"
 
+/* external/sh/options.h */
+#define Cflag optval[11]
+
 extern int loopnest;
 extern int funcnest;
 
@@ -282,8 +285,8 @@ mapfilecmd(int argc, char **argv)
 	static const char usage[] = "Usage: mapfile [-q] <handle_name> "
 	    "<file> [modes]";
 	struct mapped_data *md;
-	const char *file, *var_return, *modes;
-	char handle[32];
+	const char *file, *var_return, *modesp;
+	char handle[32], modes[10];
 	int ch, qflag, Fflag, ret;
 
 	ret = 0;
@@ -311,12 +314,15 @@ mapfilecmd(int argc, char **argv)
 	var_return = argv[0];
 	file = argv[1];
 
-	if (argc == 3)
-		modes = argv[2];
-	else
-		modes = "re";
+	if (argc == 3) {
+		strlcpy(modes, argv[2], sizeof(modes));
+		if (Cflag && strchr(modes, 'w'))
+			strlcat(modes, "x", sizeof(modes));
+		modesp = modes;
+	} else
+		modesp = "re";
 
-	md = _mapfile_open(file, modes, Fflag, qflag);
+	md = _mapfile_open(file, modesp, Fflag, qflag);
 	if (qflag) {
 		assert(is_int_on());
 	}
@@ -332,8 +338,8 @@ mapfilecmd(int argc, char **argv)
 		ret = 1;
 		goto done;
 	}
-	debug("%d: Mapped %s to handle '%s' modes '%s'\n", getpid(),
-	    md->file, handle, modes);
+	debug("%d: Mapped %s to handle '%s' modesp '%s'\n", getpid(),
+	    md->file, handle, modesp);
 done:
 	INTON;
 

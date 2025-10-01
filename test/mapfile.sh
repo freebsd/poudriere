@@ -213,6 +213,50 @@ if mapfile_builtin; then
 	mapfile_close "${file}"
 }
 
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -ut mapfile)
+	assert_true mapfile file "${TMP}" "w+x"
+	assert_not "" "${file}" "mapfile file should return handle"
+	assert_true mapfile_write "${file}" "test 1 2 3"
+	assert_true mapfile_close "${file}"
+
+	assert_true mapfile file "${TMP}" "w+"
+	assert_not "" "${file}" "mapfile file should return handle"
+	assert_true mapfile_write "${file}" "test 3 2 1"
+	assert_true mapfile_close "${file}"
+	assert_file - "${TMP}" <<-EOF
+	test 3 2 1
+	EOF
+}
+
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -ut mapfile)
+	assert_true mapfile file "${TMP}" "w+x"
+	assert_not "" "${file}" "mapfile file should return handle"
+	assert_true mapfile_write "${file}" "test 1 2 3"
+	assert_true mapfile_close "${file}"
+
+	assert_false mapfile file "${TMP}" "wx"
+
+	assert_file - "${TMP}" <<-EOF
+	test 1 2 3
+	EOF
+}
+
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -ut mapfile)
+	assert_true mapfile file "${TMP}" "w+x"
+	assert_not "" "${file}" "mapfile file should return handle"
+	assert_true mapfile_write "${file}" "test 1 2 3"
+	assert_true mapfile_close "${file}"
+
+	noclobber mapfile file "${TMP}" "w+"
+	assert_not 0 $?
+}
+
 # Now test read setting vars properly.
 {
 	rm -f "${TMP}"
