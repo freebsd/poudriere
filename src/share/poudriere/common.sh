@@ -7937,7 +7937,13 @@ port_var_fetch() {
 	set +o noglob
 	varcnt="$#"
 	shiftcnt=0
-	while herepipe_read pvf_ret pvf_line; do
+	local data
+
+	data="$({
+		IFS="${sep}"
+		${MASTERNAME+injail} /usr/bin/make ${_make_origin} ${_makeflags-}
+	})" || pvf_ret=$?
+	while mapfile_read_loop_redir pvf_line; do
 		# Skip assignment vars.
 		# This var was just an assignment, no actual value to read from
 		# stdout.  Shift until we find an actual -V var.
@@ -7960,21 +7966,16 @@ port_var_fetch() {
 			shift
 			shiftcnt="$((shiftcnt + 1))"
 		fi
-	done <<-EOF
-	$({
-		herepipe_trap
-		IFS="${sep}"; ${MASTERNAME+injail} /usr/bin/make ${_make_origin} ${_makeflags-}
-	})
+	done <<-EOF || return $?
+	${data}
 	EOF
 	case "${pvf_ret}" in
 	0) ;;
-	*)
-		# Cleanup already-set vars of 'make: stopped in'
-		# stuff in case the caller is ignoring our non-0
-		# return status.  The shiftcnt handler can deal with
-		# this all itself.
-		shiftcnt=0
-		;;
+	# Cleanup already-set vars of 'make: stopped in'
+	# stuff in case the caller is ignoring our non-0
+	# return status.  The shiftcnt handler can deal with
+	# this all itself.
+	*) shiftcnt=0 ;;
 	esac
 
 	# If the entire output was blank, then $() ate all of the excess
