@@ -1364,16 +1364,16 @@ mapfile() {
 		"${_hkey}")
 			case " ${_modes} " in
 			*r*w*|*w*r*|*+*)
-				exec 8<> "${_file}" || ret="$?"
+				exec 7<> "${_file}" || ret="$?"
 				;;
 			*r*)
-				exec 8< "${_file}" || ret="$?"
+				exec 7< "${_file}" || ret="$?"
 				;;
 			*w*|*a*)
-				exec 8> "${_file}" || ret="$?"
+				exec 7> "${_file}" || ret="$?"
 				;;
 			esac
-			hash_set mapfile_fd "${_hkey}" "8"
+			hash_set mapfile_fd "${_hkey}" "7"
 			;;
 		*)
 			case "${_modes}" in
@@ -1468,8 +1468,8 @@ mapfile_close() {
 	# Only close fd that we opened.
 	if hash_remove mapfile_fd "${handle}" fd; then
 		case "${fd}" in
-		8)
-			exec 8>&-
+		7)
+			exec 7>&-
 			case "${handle}" in
 			"${_MAPFILE_HANDLE-}")
 				unset _MAPFILE_HANDLE

@@ -397,7 +397,7 @@ _parallel_exec() {
 		"$@"
 	)
 	ret=$?
-	echo . >&9 || :
+	echo . >&8 || :
 	exit ${ret}
 	# set -e will be restored by 'local -'
 }
@@ -413,7 +413,7 @@ parallel_start() {
 	esac
 	fifo="$(mktemp -ut parallel.pipe)"
 	mkfifo "${fifo}"
-	exec 9<> "${fifo}"
+	exec 8<> "${fifo}"
 	unlink "${fifo}" || :
 	NBPARALLEL=0
 	PARALLEL_JOBNOS=""
@@ -465,7 +465,7 @@ parallel_stop() {
 		set +o noglob
 	fi
 
-	exec 9>&-
+	exec 8>&-
 	unset PARALLEL_JOBNOS
 	unset NBPARALLEL
 
@@ -525,7 +525,7 @@ parallel_run() {
 	"${PARALLEL_JOBS}")
 		local a
 
-		if read_blocking a <&9; then
+		if read_blocking a <&8; then
 			case "${a}" in
 			".") ;;
 			*) err 1 "parallel_run: Invalid token: ${a}" ;;
