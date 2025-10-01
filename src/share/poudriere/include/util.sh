@@ -1526,28 +1526,51 @@ mapfile_read_loop() {
 
 # Pipe to STDOUT from handle.
 mapfile_cat() {
-	[ $# -ge 1 ] || eargs mapfile_cat handle...
+	[ $# -ge 1 ] || eargs mapfile_cat '[-T fd]' handle...
+	local OPTIND=1 Tflag flag ret
+
+	Tflag=
+	while getopts "T:" flag; do
+		case "${flag}" in
+		T) Tflag="${OPTARG:?}" ;;
+		*) err 1 "mapfile_cat: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ $# -ge 1 ] || eargs mapfile_cat '[-T fd]' handle...
 	local IFS handle line
 
+	ret=0
 	for handle in "$@"; do
 		while IFS= mapfile_read "${handle}" line; do
-			echo "${line}"
+			# shellcheck disable=SC2320
+			echo "${line}" || ret=$?
+			case "${Tflag}" in
+			"") ;;
+			*)
+				# shellcheck disable=SC2320
+				echo "${line}" > "/dev/fd/${Tflag}" || ret=$?
+			;;
+			esac
 		done
 	done
+	return "${ret}"
 }
 
 # Pipe to STDOUT from a file.
 # Basically an optimized loop of mapfile_read_loop_redir, or read_file
 mapfile_cat_file() {
 	local -; set +x
-	[ $# -ge 0 ] || eargs mapfile_cat_file '[-q]' file...
+	[ $# -ge 0 ] || eargs mapfile_cat_file '[-q] [-T fd]' file...
 	local  _handle ret _file
-	local OPTIND=1 qflag flag
+	local OPTIND=1 Tflag qflag flag
 
 	qflag=
-	while getopts "q" flag; do
+	Tflag=
+	while getopts "qT:" flag; do
 		case "${flag}" in
 		q) qflag=1 ;;
+		T) Tflag="${OPTARG:?}" ;;
 		*) err 1 "mapfile_cat_file: Invalid flag ${flag}" ;;
 		esac
 	done
@@ -1564,7 +1587,8 @@ mapfile_cat_file() {
 		esac
 		# shellcheck disable=SC2034
 		if mapfile ${qflag:+-q} -F _handle "${_file}" "r"; then
-			mapfile_cat "${_handle}" || ret="$?"
+			mapfile_cat ${Tflag:+-T "${Tflag}"} "${_handle}" ||
+			    ret="$?"
 			mapfile_close "${_handle}" || ret="$?"
 		else
 			ret="$?"

@@ -655,20 +655,38 @@ mapfile_read_loopcmd(int argc, char **argv)
 }
 
 static int
-_mapfile_cat(struct mapped_data *md)
+_mapfile_cat(struct mapped_data *md, int tee_fd)
 {
 	char *line;
 	ssize_t linelen;
 	int rret, ret;
+	FILE *tee_fp;
 
 	assert(is_int_on());
 	ret = 0;
+	if (tee_fd != -1) {
+		if ((tee_fp = fdopen(tee_fd, "w")) == NULL) {
+			err(EXIT_FAILURE, "%s", "fdopen");
+		}
+	}
 	while ((rret = _mapfile_read(md, &line, &linelen, NULL)) == 0) {
 		INTON;
 		outbin(line, linelen, out1);
 		out1c('\n');
+		if (tee_fd != -1) {
+			(void)fwrite(line, sizeof(*line), linelen, tee_fp);
+			fputc('\n', tee_fp);
+			if (ferror(tee_fp)) {
+				rret = 1;
+				break;
+			}
+		}
 		INTOFF;
 	}
+	if (tee_fd != -1) {
+		fclose(tee_fp);
+	}
+
 	/* 1 == EOF */
 	if (rret != 1) {
 		ret = rret;
@@ -679,21 +697,36 @@ _mapfile_cat(struct mapped_data *md)
 int
 mapfile_catcmd(int argc, char **argv)
 {
-	static const char usage[] = "Usage: mapfile_cat <handle> ...";
+	static const char usage[] = "Usage: mapfile_cat [-T fd] <handle> ...";
 	struct mapped_data *md;
 	const char *handle;
-	int i, error, ret;
+	char *end;
+	int i, ch, Tflag, error, ret;
 
-	if (argc < 2)
+	Tflag = -1;
+	while ((ch = getopt(argc, argv, "T:")) != -1) {
+		switch (ch) {
+		case 'T':
+			Tflag = strtod(optarg, &end);
+			if (end == optarg || errno == ERANGE || Tflag < 0)
+				errx(EX_DATAERR, "Invalid T fd '%s'", optarg);
+			break;
+		default:
+			errx(EX_USAGE, "%s", usage);
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (argc < 1)
 		errx(EX_USAGE, "%s", usage);
 
 	error = 0;
 	ret = 0;
-	for (i = 1; i < argc; i++) {
+	for (i = 0; i < argc; i++) {
 		handle = argv[i];
 		INTOFF;
 		md = md_find(handle);
-		if ((error = _mapfile_cat(md)) != 0) {
+		if ((error = _mapfile_cat(md, Tflag)) != 0) {
 			ret = error;
 		}
 		assert(is_int_on());
@@ -706,17 +739,24 @@ mapfile_catcmd(int argc, char **argv)
 int
 mapfile_cat_filecmd(int argc, char **argv)
 {
-	static const char usage[] = "Usage: mapfile_cat_file [-q] <file> ...";
+	static const char usage[] = "Usage: mapfile_cat_file [-q] [-T fd] <file> ...";
 	struct mapped_data *md;
 	const char *file;
+	char *end;
 	int error, ret;
-	int i, ch, qflag;
+	int i, ch, Tflag, qflag;
 
+	Tflag = -1;
 	qflag = 0;
-	while ((ch = getopt(argc, argv, "q")) != -1) {
+	while ((ch = getopt(argc, argv, "qT:")) != -1) {
 		switch (ch) {
 		case 'q':
 			qflag = 1;
+			break;
+		case 'T':
+			Tflag = strtod(optarg, &end);
+			if (end == optarg || errno == ERANGE || Tflag < 0)
+				errx(EX_DATAERR, "Invalid T fd '%s'", optarg);
 			break;
 		default:
 			errx(EX_USAGE, "%s", usage);
@@ -740,7 +780,7 @@ mapfile_cat_filecmd(int argc, char **argv)
 			continue;
 		}
 		assert(md != NULL);
-		if ((error = _mapfile_cat(md)) != 0) {
+		if ((error = _mapfile_cat(md, Tflag)) != 0) {
 			ret = error;
 		}
 		assert(is_int_on());
