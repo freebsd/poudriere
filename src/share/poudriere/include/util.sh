@@ -2113,6 +2113,13 @@ _write_atomic() {
 	local dest="$3"
 	local tmpfile_handle tmpfile ret
 
+	case "$-${tee-}" in
+	C1)
+		err "${EX_USAGE:-64}" "_write_atomic: Teeing with noclobber" \
+			              "cannot work"
+		;;
+	esac
+
 	mapfile_mktemp tmpfile_handle tmpfile \
 	    -p "${dest%/*}" -ut ".write_atomic-${dest##*/}" ||
 	    err "$?" "write_atomic unable to create tmpfile in ${dest%/*}"
@@ -2132,25 +2139,53 @@ _write_atomic() {
 		unlink "${tmpfile}" || :
 		return "${ret}"
 	fi
-	if [ "${cmp}" -eq 1 ] && cmp -s "${dest}" "${tmpfile}"; then
-		unlink "${tmpfile}" || :
-		return 0
-	fi
 	ret=0
-	rename "${tmpfile}" "${dest}" || ret="$?"
-	if [ "${ret}" -ne 0 ]; then
+	case "$-" in
+	*C*) # noclobber
+		# If comparing, we can only succeed if there is no file
+		# so no need to compare.
+		ln "${tmpfile}" "${dest}" 2>/dev/null || ret="$?"
 		unlink "${tmpfile}" || :
 		return "${ret}"
-	fi
+		;;
+	esac
+	case "${cmp}" in
+	1)
+		if cmp -s "${dest}" "${tmpfile}"; then
+			unlink "${tmpfile}" || :
+			return 0
+		fi
+		;;
+	esac
+	rename "${tmpfile}" "${dest}" || ret="$?"
+	case "${ret}" in
+	0) ;;
+	*) unlink "${tmpfile}" || : ;;
+	esac
+	return "${ret}"
 }
 
-
+# -T is for teeing
 write_atomic_cmp() {
 	local -; set +x
+	[ $# -ge 1 ] || eargs write_atomic_cmp '[-T]' destfile "< content"
+	local flag Tflag
+	local OPTIND=1
+
+	Tflag=0
+	while getopts "T" flag; do
+		case "${flag}" in
+		T)
+			Tflag=1
+			;;
+		*) err "${EX_USAGE}" "write_atomic_cmp: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift $((OPTIND-1))
 	[ $# -eq 1 ] || eargs write_atomic_cmp destfile "< content"
 	local dest="$1"
 
-	_write_atomic 1 0 "${dest}" || return
+	_write_atomic 1 "${Tflag}" "${dest}" || return
 }
 
 # -T is for teeing

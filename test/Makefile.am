@@ -102,6 +102,8 @@ TESTS=\
 	trap_ignore_block.sh \
 	trap_save.sh \
 	trap_save_block.sh \
+	write_atomic.sh \
+	write_atomic_cmp.sh \
 	$(JAIL_TESTS)
 
 JAIL_TESTS= \
