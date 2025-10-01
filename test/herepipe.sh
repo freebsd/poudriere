@@ -4,6 +4,53 @@ set +e
 
 {
 	TMP="$(mktemp -u)"
+	ret=0
+	data="$({
+		echo "1 2"
+		echo "3 4"
+		echo "5"
+	})" || ret="$?"
+	assert 0 "$?"
+	while read line; do
+		echo "${line}"
+	done > "${TMP}" <<-EOF
+	$data
+	EOF
+	# Return status is in $it
+	assert_file - "${TMP}" <<-EOF
+	1 2
+	3 4
+	5
+	EOF
+	rm -f "${TMP}"
+}
+
+{
+	TMP="$(mktemp -u)"
+	ret=0
+	data="$({
+		echo "1 2"
+		echo "3 4"
+		echo "5"
+		exit 55
+	})" || ret="$?"
+	assert 55 "${ret}"
+	while read line; do
+		echo "${line}"
+	done > "${TMP}" <<-EOF
+	$data
+	EOF
+	# Return status is in $it
+	assert_file - "${TMP}" <<-EOF
+	1 2
+	3 4
+	5
+	EOF
+	rm -f "${TMP}"
+}
+
+{
+	TMP="$(mktemp -u)"
 	while herepipe_read it line; do
 		echo "${line}"
 	done > "${TMP}" <<-EOF
