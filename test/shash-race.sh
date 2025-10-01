@@ -18,7 +18,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	writerpid=$!
 	assert_true kill -0 "${writerpid}"
 	assert_true kill "${writerpid}"
-	assert_ret 143 _wait "${writerpid}"
+	assert_ret 143 timed_wait_and_kill 10 "${writerpid}"
 }
 
 {
@@ -38,7 +38,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 		n="$((n + 1))"
 	done
 	assert_true kill "${writerpid}"
-	assert_ret 143 _wait "${writerpid}"
+	assert_ret 143 timed_wait_and_kill 10 "${writerpid}"
 }
 
 rm -rf "${MASTERMNT}"

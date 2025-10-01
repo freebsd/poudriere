@@ -41,13 +41,13 @@ _shash_varkey_file() {
 	local _svf_varkey="${1}%${2}"
 	local _shash_var_name
 
-	_shash_var_name "${_svf_varkey}"
-	_shash_varkey_file="${SHASH_VAR_PATH}/${SHASH_VAR_PREFIX}${_shash_var_name}"
+	_shash_var_name "${_svf_varkey:?}"
+	_shash_varkey_file="${SHASH_VAR_PATH}/${SHASH_VAR_PREFIX}${_shash_var_name:?}"
 }
 
 shash_get() {
 	local -; set +x
-	[ $# -ne 3 ] && eargs shash_get var key var_return
+	[ $# -eq 3 ] || eargs shash_get var key var_return
 	local sg_var="$1"
 	local sg_key="$2"
 	local sg_var_return="$3"
@@ -58,7 +58,7 @@ shash_get() {
 	_sh_values=
 	_shash_varkey_file "${sg_var}" "${sg_key}"
 	# This assumes globbing works
-	for _f in ${_shash_varkey_file}; do
+	for _f in ${_shash_varkey_file:?}; do
 		case "${_f}" in
 		# no file found
 		*"*"*)
@@ -83,14 +83,14 @@ shash_get() {
 
 shash_exists() {
 	local -; set +x
-	[ $# -ne 2 ] && eargs shash_exists var key
+	[ $# -eq 2 ] || eargs shash_exists var key
 	local var="$1"
 	local key="$2"
 	local _shash_varkey_file _f
 
 	_shash_varkey_file "${var}" "${key}"
 	# This assumes globbing works
-	for _f in ${_shash_varkey_file}; do
+	for _f in ${_shash_varkey_file:?}; do
 		case "${_f}" in
 		*"*"*) break ;; # no file found
 		esac
@@ -110,8 +110,16 @@ shash_set() {
 
 	_shash_varkey_file "${var}" "${key}"
 	case "${value+set}" in
-	set) echo "${value}" ;;
-	esac > "${_shash_varkey_file}"
+	set)
+		# XXX: write_atomic has no non-piped support yet.
+		write_atomic "${_shash_varkey_file:?}" <<-EOF || return
+		${value}
+		EOF
+		;;
+	*)
+		: > "${_shash_varkey_file:?}" || return
+		;;
+	esac
 }
 
 shash_read() {
@@ -140,7 +148,7 @@ shash_read_mapfile() {
 
 shash_write() {
 	local -; set +x
-	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] || eargs shash_write [-T] var key
+	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] || eargs shash_write '[-T]' var key
 	local flag Tflag
 	local OPTIND=1
 
@@ -154,15 +162,13 @@ shash_write() {
 		esac
 	done
 	shift $((OPTIND-1))
-	[ "$#" -eq 2 ] || eargs shash_write [-T] var key
+	[ "$#" -eq 2 ] || eargs shash_write '[-T]' var key
 	local var="$1"
 	local key="$2"
 	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
-
-	set -o noglob
-	write_atomic ${Tflag:+-T} "${_shash_varkey_file}"
+	write_atomic ${Tflag:+-T} "${_shash_varkey_file:?}"
 }
 
 shash_remove_var() {
@@ -180,7 +186,7 @@ shash_remove_var() {
 
 shash_remove() {
 	local -; set +x
-	[ $# -ne 3 ] && eargs shash_remove var key var_return
+	[ $# -eq 3 ] || eargs shash_remove var key var_return
 	local sr_var="$1"
 	local sr_key="$2"
 	local sr_ret
