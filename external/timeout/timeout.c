@@ -199,6 +199,10 @@ send_sig(pid_t pid, int signo, bool foreground)
 				    sys_signame[signo]);
 		}
 	} else {
+#if defined(SHELL) || !defined(SHELL)
+		if (signo == SIGINFO)
+			return;
+#endif
 		memset(&rk, 0, sizeof(rk));
 		rk.rk_sig = signo;
 		error = procctl(P_PID, getpid(), PROC_REAP_KILL, &rk);

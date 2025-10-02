@@ -1,4 +1,4 @@
-: "${TIMEOUT_BIN:=/usr/bin/timeout}"
+: "${TIMEOUT_BIN:=timeout}"
 
 THIS_JOB=0
 make_returnjob() {
