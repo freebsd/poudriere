@@ -430,7 +430,7 @@ fi
 
 getvar() {
 	local _getvar_var="$1"
-	local _getvar_var_return="$2"
+	local _getvar_var_return="${2-}"
 	local ret _getvar_value
 
 	eval "_getvar_value=\${${_getvar_var}-gv__null}"
@@ -445,7 +445,7 @@ getvar() {
 		;;
 	esac
 
-	case "${_getvar_var_return}" in
+	case "${_getvar_var_return-}" in
 	""|-)
 		echo "${_getvar_value}"
 		;;
