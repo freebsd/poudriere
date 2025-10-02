@@ -2,31 +2,7 @@ diff --git external/sh/eval.c external/sh/eval.c
 index c60716111..4785edb09 100644
 --- external/sh/eval.c
 +++ external/sh/eval.c
-@@ -459,6 +459,7 @@ evalredir(union node *n, int flags)
- 	volatile int in_redirect = 1;
- 
- 	oexitstatus = exitstatus;
-+	xtracestr("%s", "{");
- 	expredir(n->nredir.redirect);
- 	savehandler = handler;
- 	if (setjmp(jmploc.loc)) {
-@@ -466,6 +467,7 @@ evalredir(union node *n, int flags)
- 
- 		handler = savehandler;
- 		e = exception;
-+		xtracestr("%s", "}!");
- 		popredir();
- 		if (e == EXERROR && in_redirect) {
- 			FORCEINTON;
-@@ -483,6 +485,7 @@ evalredir(union node *n, int flags)
- 	INTOFF;
- 	handler = savehandler;
- 	popredir();
-+	xtracestr("%s", "}");
- 	INTON;
- }
- 
-@@ -754,8 +757,121 @@ isdeclarationcmd(struct narg *arg)
+@@ -754,8 +754,121 @@ isdeclarationcmd(struct narg *arg)
  		(have_command || !isfunc("local"))));
  }
  
@@ -149,7 +125,7 @@ index c60716111..4785edb09 100644
  {
  	char sep = 0;
  	const char *text, *p, *ps4;
-@@ -783,6 +899,9 @@ xtracecommand(struct arglist *varlist, int argc, char **argv)
+@@ -783,6 +896,9 @@ xtracecommand(struct arglist *varlist, int argc, char **argv)
  		out2qstr(text);
  		sep = ' ';
  	}
@@ -159,7 +135,7 @@ index c60716111..4785edb09 100644
  	out2c('\n');
  	flushout(&errout);
  }
-@@ -877,7 +996,7 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
+@@ -877,7 +993,7 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
  
  	/* Print the command if xflag is set. */
  	if (xflag)

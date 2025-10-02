@@ -455,7 +455,6 @@ evalredir(union node *n, int flags)
 	volatile int in_redirect = 1;
 
 	oexitstatus = exitstatus;
-	xtracestr("%s", "{");
 	expredir(n->nredir.redirect);
 	savehandler = handler;
 	if (setjmp(jmploc.loc)) {
@@ -463,7 +462,6 @@ evalredir(union node *n, int flags)
 
 		handler = savehandler;
 		e = exception;
-		xtracestr("%s", "}!");
 		popredir();
 		if (e == EXERROR && in_redirect) {
 			FORCEINTON;
@@ -481,7 +479,6 @@ evalredir(union node *n, int flags)
 	INTOFF;
 	handler = savehandler;
 	popredir();
-	xtracestr("%s", "}");
 	INTON;
 }
 
