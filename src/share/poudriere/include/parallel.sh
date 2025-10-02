@@ -760,6 +760,7 @@ get_job_status() {
 	# But without an external fork+exec, or jobs(1) call, the job status
 	# does not update.
 	jobs >/dev/null || :
+	ret=0
 	gjs_output="$(jobs -l "${gjs_pid}")" || ret="$?"
 	case "${gjs_pid}" in
 	"%"*)
@@ -823,6 +824,7 @@ get_job_id() {
 	local gji_var_return="$2"
 	local gji_jobid gji_output ret
 
+	ret=0
 	gji_output="$(jobs -l "${gji_pid}")" || ret="$?"
 	case "${gji_output}" in
 	# First cases cover piped jobs.
