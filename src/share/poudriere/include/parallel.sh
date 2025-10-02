@@ -135,32 +135,39 @@ kill_and_wait() {
 	local ret=0
 	local -
 
-	set -f
 	case "${pids}" in
 	"") return 0 ;;
 	esac
 
 	{
+		set -o noglob
+		# shellcheck disable=SC2086
 		kill -STOP ${pids} || :
+		# shellcheck disable=SC2086
 		kill ${pids} || :
+		# shellcheck disable=SC2086
 		kill -CONT ${pids} || :
 
 		# Wait for the pids. Non-zero status means something is still running.
+		# shellcheck disable=SC2086
 		pwait -t "${time}" ${pids} || ret="$?"
 		case "${ret}" in
 		124)
 			# Kill remaining children instead of waiting on them
+			# shellcheck disable=SC2086
 			kill -9 ${pids} || :
+			# shellcheck disable=SC2086
 			_wait ${pids} || ret=$?
 			;;
 		*)
 			# Nothing running, collect status directly.
+			# shellcheck disable=SC2086
 			_wait ${pids} || ret=$?
 			;;
 		esac
+		set +o noglob
 	}
-
-	return ${ret}
+	return "${ret}"
 }
 
 timed_wait_and_kill_job() {
