@@ -463,6 +463,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 MOSTLYCLEANFILES = $(TEST_LOGS:.log=.log.truss) \
 	$(TEST_LOGS:.log=*.log) prep.sh.trs prep.sh.log
+AM_TESTS_FD_REDIRECT = 4>&2
 EXTRA_DIST = $(TESTS) \
 	    $(JAIL_TESTS) \
 	    common.bulk.sh \

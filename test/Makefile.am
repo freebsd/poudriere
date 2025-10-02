@@ -3,6 +3,8 @@ MOSTLYCLEANFILES+=	$(TEST_LOGS:.log=.log.truss)
 MOSTLYCLEANFILES+=	$(TEST_LOGS:.log=*.log)
 MOSTLYCLEANFILES+=	prep.sh.trs prep.sh.log
 
+AM_TESTS_FD_REDIRECT= 4>&2
+
 EXTRA_DIST= $(TESTS) \
 	    $(JAIL_TESTS) \
 	    common.bulk.sh \
