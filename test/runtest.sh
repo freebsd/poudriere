@@ -164,6 +164,7 @@ while read var; do
 	HTML_JSON_UPDATE_INTERVAL|\
 	TESTS_SKIP_BUILD|\
 	TESTS_SKIP_LONG|\
+	TESTS_SKIP_BULK|\
 	TMPDIR|\
 	SH) ;;
 	*)
@@ -238,6 +239,13 @@ fi
 if [ -n "${TESTS_SKIP_LONG-}" ]; then
 	case "${1##*/}" in
 	jobs.sh)
+		exit 77
+		;;
+	esac
+fi
+if [ -n "${TESTS_SKIP_BULK-}" ]; then
+	case "${1##*/}" in
+	testport-*.sh|bulk-*.sh)
 		exit 77
 		;;
 	esac

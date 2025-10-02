@@ -387,9 +387,17 @@ poudriere: src/bin/poudriere.in
 SUBDIRS= . test
 
 checkquick:
-	$(MAKE) $(AM_MAKEFLAGS) check TESTS_SKIP_BUILD=1 TESTS_SKIP_LONG=1
+	$(MAKE) $(AM_MAKEFLAGS) check TESTS_SKIP_BUILD=1 TESTS_SKIP_LONG=1 \
+	    TESTS_SKIP_BULK=1
 
 distcheckquick:
+	$(MAKE) $(AM_MAKEFLAGS) distcheck TESTS_SKIP_BUILD=1 TESTS_SKIP_LONG=1 \
+	    TESTS_SKIP_BULK=1
+
+checkdryrun:
+	$(MAKE) $(AM_MAKEFLAGS) check TESTS_SKIP_BUILD=1 TESTS_SKIP_LONG=1
+
+distcheckdryrun:
 	$(MAKE) $(AM_MAKEFLAGS) distcheck TESTS_SKIP_BUILD=1 TESTS_SKIP_LONG=1
 
 installcheck-local:
