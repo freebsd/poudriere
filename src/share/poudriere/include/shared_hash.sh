@@ -57,8 +57,9 @@ shash_get() {
 	sg_ret=0
 	_sh_values=
 	_shash_varkey_file "${sg_var}" "${sg_key}"
-	# This assumes globbing works
+	set +o noglob
 	for _f in ${_shash_varkey_file:?}; do
+		set -o noglob
 		case "${_f}" in
 		# no file found
 		*"*"*)
@@ -76,6 +77,7 @@ shash_get() {
 		fi
 		mapfile_close "${sg_handle}" || :
 	done
+	set -o noglob
 
 	setvar "${sg_var_return}" "${_sh_values}" || return
 	return "${sg_ret}"
@@ -89,8 +91,9 @@ shash_exists() {
 	local _shash_varkey_file _f
 
 	_shash_varkey_file "${var}" "${key}"
-	# This assumes globbing works
+	set +o noglob
 	for _f in ${_shash_varkey_file:?}; do
+		set -o noglob
 		case "${_f}" in
 		*"*"*) break ;; # no file found
 		esac
@@ -177,7 +180,8 @@ shash_remove_var() {
 	local srv_var="$1"
 	local _shash_var_name
 
-	# This assumes globbing works
+	# This assumes globbing works for shash, which it does for now
+	# due to using find.
 	_shash_var_name "${srv_var}%*"
 	find -x "${SHASH_VAR_PATH:?}" \
 	    -name "${SHASH_VAR_PREFIX}${_shash_var_name}" \
@@ -209,7 +213,7 @@ shash_unset() {
 	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
-	# Unquoted for globbing
+	set +o noglob
 	# shellcheck disable=SC2086
 	rm -f ${_shash_varkey_file}
 }
