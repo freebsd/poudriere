@@ -291,7 +291,7 @@ runtest() {
 		echo "Test started: $(date)"
 		# hide set -x
 	} >&2 2>/dev/null
-	${TIMEOUT_BIN:?} ${TRUSS:+--foreground} ${TIMEOUT} \
+	${TIMEOUT_BIN:?} -v ${TRUSS:+--foreground} ${TIMEOUT} \
 	    ${TIMESTAMP} \
 	    env \
 	    ${SH_DISABLE_VFORK:+SH_DISABLE_VFORK=1} \
