@@ -284,9 +284,6 @@ _kill_job() {
 	done
 	msg_dev "Collecting ${status} job=${jobid} pgid=${pgid}"
 	_wait "${jobid}" || ret="$?"
-	case "${ret}" in
-	143) ret=0 ;;
-	esac
 	msg_dev "Job ${jobid} pgid=${pgid} exited ${ret}"
 	return "${ret}"
 }
@@ -360,7 +357,7 @@ kill_jobs() {
 	[ "$#" -ge 1 ] || eargs kill_jobs '[timeout]' '%job...'
 	local timeout="${1:-5}"
 	shift
-	local ret jobno
+	local ret kret jobno
 
 	case "$#" in
 	0) return 0 ;;
@@ -371,7 +368,19 @@ kill_jobs() {
 		"%"*) ;;
 		*) err "${EX_SOFTWARE}" "kill_jobs: invalid job spec: ${jobno}" ;;
 		esac
-		kill_job "${timeout}" "${jobno}" || ret="$?"
+		kret=0
+		kill_job "${timeout}" "${jobno}" || kret="$?"
+		# Don't truncate a non-TERM ret with a TERM ret.
+		case "${kret}" in
+		143)
+			case "${ret}" in
+			0) ret="${kret}" ;;
+			esac
+			;;
+		*)
+			ret="${kret}"
+			;;
+		esac
 	done
 	return "${ret}"
 }
@@ -412,9 +421,6 @@ kill_all_jobs() {
 	# shellcheck disable=SC2086
 	kill_jobs "${timeout}" ${alljobs} || ret="$?"
 	set +o noglob
-	case "${ret}" in
-	143) ret=0 ;;
-	esac
 	return "${ret}"
 }
 

@@ -86,7 +86,7 @@ assert 1 ${main_siginfo} "INFO should be trapped"
 
 	sleep 2
 	kill_job 10 "%${bgjob}"
-	assert 0 "$?" "kill bgpid - it should exit on TERM rather than wait"
+	assert 143 "$?" "kill bgpid - it should exit on TERM rather than wait"
 
 	lock_release TEST
 	assert 0 "$?" "lock_release"

@@ -538,7 +538,7 @@ multiple_children() {
 	assert_file - "${TMP}" <<-EOF
 	[3] + ${sleep3_pid} Running
 	EOF
-	assert_ret 0 kill_jobs 1 %3
+	assert_ret 143 kill_jobs 1 %3
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	EOF
@@ -575,7 +575,7 @@ multiple_children() {
 	assert_file - "${TMP}" <<-EOF
 	[3] + ${sleep3_pid} Running
 	EOF
-	assert_ret 0 kill_jobs 1 %3
+	assert_ret 143 kill_jobs 1 %3
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	EOF
@@ -704,7 +704,7 @@ multiple_children() {
 	[1] - ${sleep1_pid} Running
 	[2] + ${sleep2_pid} Running
 	EOF
-	assert_true kill_all_jobs
+	assert_ret 143 kill_all_jobs
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	EOF
@@ -781,7 +781,7 @@ multiple_children() {
 	\[4\] \+ ${sleep4_pid} Running
 	EOF
 
-	assert_ret 0 kill_job 1 "${sleep1_pid}"
+	assert_ret 143 kill_job 1 "${sleep1_pid}"
 	assert_false kill -0 %"${sleep1_jobid}" 2>/dev/null
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
@@ -800,7 +800,7 @@ multiple_children() {
 	EOF
 
 	# Check %job compat
-	assert_ret 0 kill_job 1 %"${sleep3_jobid}"
+	assert_ret 143 kill_job 1 %"${sleep3_jobid}"
 	assert_false kill -0 %"${sleep3_jobid}" 2>/dev/null
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
@@ -829,7 +829,7 @@ multiple_children() {
 	[1]   ${sleep1_pid} Terminated
 	EOF
 	# Should not kill but only collect status. See Dev log.
-	assert_ret 0 kill_job 1 %"${sleep1_jobid}"
+	assert_ret 143 kill_job 1 %"${sleep1_jobid}"
 	assert_false kill -0 %"${sleep1_jobid}" 2>/dev/null
 }
 
@@ -866,7 +866,7 @@ multiple_children() {
 	[1] + ${sleep1_pid} Running
 	EOF
 
-	assert_ret 0 timed_wait_and_kill_job 1 %1
+	assert_ret 143 timed_wait_and_kill_job 1 %1
 
 	assert_true spawn_job noterm eval "sleep 5"
 	sleep1_pid="$!"
