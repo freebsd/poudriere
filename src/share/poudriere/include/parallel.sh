@@ -964,9 +964,12 @@ setup_traps() {
 	local sig
 
 	for sig in INT HUP PIPE TERM; do
+		# Do set +x hidden in case stderr is gone to avoid EPIPE.
 		# shellcheck disable=SC2064
-		trap "sig_handler ${sig}${exit_handler:+ ${exit_handler}}" "${sig}"
+		trap "{ set +x; } 2>/dev/null; sig_handler ${sig}${exit_handler:+ ${exit_handler}}" "${sig}"
 	done
-	# shellcheck disable=SC2064
-	trap "exit_return${exit_handler:+ ${exit_handler}}" EXIT
+	# Do set +x hidden in case stderr is gone to avoid EPIPE.
+	# Do dance of exit status to the real handler.
+	# shellcheck disable=SC2064,SC2154
+	trap "{ _eret=\$?; unset IFS; set +eux; } 2>/dev/null; (exit \${_eret}); exit_return${exit_handler:+ ${exit_handler}}" EXIT
 }

@@ -627,7 +627,7 @@ critical_start() {
 			setvar "_crit_caught_${sig}" 0 || return
 		fi
 		# shellcheck disable=SC2064
-		trap "_crit_caught_${sig}=1" "${sig}"
+		trap "{ _crit_caught_${sig}=1; } 2>/dev/null" "${sig}"
 		hash_set crit_saved_trap "${sig}-${_CRITSNEST}" "${saved_trap}"
 	done
 }
