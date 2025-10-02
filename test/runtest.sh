@@ -1,3 +1,5 @@
+: "${TIMEOUT_BIN:=/usr/bin/timeout}"
+
 THIS_JOB=0
 make_returnjob() {
 	local mr_job="$1"
@@ -91,7 +93,7 @@ make_getjob() {
 			setvar "${job_outvar}" "${mg_job}"
 			return 0
 		elif [ "${THIS_JOB}" -ne 0 ]; then
-			timeout="timeout --preserve-status -s SIGALRM 2"
+			timeout="${TIMEOUT_BIN:?} --preserve-status -s SIGALRM 2"
 		fi
 		# There is a race with checking for "this" job above and waiting
 		# on the job server for a job. 142 below will recheck for "this"
@@ -160,7 +162,7 @@ while read var; do
 	TEST_NUMS|ASSERT_CONTINUE|TEST_CONTEXTS_PARALLEL|\
 	URL_BASE|\
 	PVERBOSE|VERBOSE|\
-	SH_DISABLE_VFORK|TIMESTAMP|TRUSS|\
+	SH_DISABLE_VFORK|TIMESTAMP|TRUSS|TIMEOUT_BIN|\
 	HTML_JSON_UPDATE_INTERVAL|\
 	TESTS_SKIP_BUILD|\
 	TESTS_SKIP_LONG|\
@@ -289,7 +291,7 @@ runtest() {
 		echo "Test started: $(date)"
 		# hide set -x
 	} >&2 2>/dev/null
-	/usr/bin/timeout ${TRUSS:+--foreground} ${TIMEOUT} \
+	${TIMEOUT_BIN:?} ${TRUSS:+--foreground} ${TIMEOUT} \
 	    ${TIMESTAMP} \
 	    env \
 	    ${SH_DISABLE_VFORK:+SH_DISABLE_VFORK=1} \
