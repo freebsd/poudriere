@@ -18,16 +18,18 @@ echo "Working on ${MASTERMNT}"
 SHASH_VAR_PATH="${MASTERMNT}"
 
 {
-	writer &
-	writerpid=$!
+	spawn_job writer
+	writerjob="${spawn_jobid}"
+	writerpid="$!"
 	assert_true kill -0 "${writerpid}"
-	assert_true kill "${writerpid}"
-	assert_ret 143 timed_wait_and_kill 10 "${writerpid}"
+	assert_true kill "%${writerjob}"
+	assert_ret 143 timed_wait_and_kill_job 10 "%${writerjob}"
 }
 
 {
-	writer &
-	writerpid=$!
+	spawn_job writer
+	writerjob="${spawn_jobid}"
+	writerpid="$!"
 	assert_true kill -0 "${writerpid}"
 	attempts=1000
 	# attempts=1
@@ -41,8 +43,8 @@ SHASH_VAR_PATH="${MASTERMNT}"
 		fi
 		n="$((n + 1))"
 	done
-	assert_true kill "${writerpid}"
-	assert_ret 143 timed_wait_and_kill 10 "${writerpid}"
+	assert_true kill "%${writerjob}"
+	assert_ret 143 timed_wait_and_kill_job 10 "%${writerjob}"
 }
 
 rm -rf "${MASTERMNT}"
