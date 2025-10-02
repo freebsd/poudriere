@@ -497,6 +497,17 @@ cd() {
 	return ${ret}
 }
 
+case "$(type unlink 2>/dev/null)" in
+"unlink is a shell builtin") ;;
+*)
+unlink() {
+	[ $# -eq 2 ] || [ $# -eq 1 ] || eargs unlink '[--]' file
+
+	command unlink "$@" 2>/dev/null || :
+}
+;;
+esac
+
 case "$(type randint 2>/dev/null)" in
 "randint is a shell builtin") ;;
 *)
