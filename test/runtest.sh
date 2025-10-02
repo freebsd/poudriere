@@ -478,6 +478,43 @@ setup_traps() {
 		trap "sig_handler ${sig} ${exit_handler}" "${sig}"
 	done
 	trap "${exit_handler}" EXIT
+	# hide set -x
+	trap '{ siginfo_handler; } 2>/dev/null' INFO
+}
+
+format_siginfo() {
+	local make_job="$1"
+	local test_name="$2"
+	local test_num="$3"
+	local total_tests="$4"
+	local log="$5"
+
+	case "${make_job}" in
+	this) ;;
+	*)
+		make_job="make"
+		;;
+	esac
+
+	printf "%4s %02d/%02d %s %s\n" "${make_job}" "${test_num}" \
+	    "${total_tests}" "${test_name}" "${log}"
+}
+
+siginfo_handler() {
+	case "${pids-}" in
+	"") return ;;
+	esac
+	local pid duration start now test_data
+
+	now="$(clock -monotonic)"
+	# Note sorting this nicely won't do much as runtest.sh (this file)
+	# is ran in separate jobs by make.
+	for pid in ${pids}; do
+		getvar "pid_test_start_${pid}" start
+		duration="$((now - start))"
+		getvar "pid_test_${pid}" test_data
+		printf "pid %05d %3ds %s\n" "${pid}" "${duration}" "${test_data}"
+	done >&4
 }
 
 sig_handler() {
@@ -576,6 +613,10 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 				#echo "THIS_JOB=$!"
 				;;
 			esac
+			setvar "pid_test_$!" "$(format_siginfo "${make_job}" \
+			    "${TEST}" "${TEST_CONTEXT_NUM}" \
+			    "${TEST_CONTEXTS_TOTAL}" "${logname}")"
+			setvar "pid_test_start_$!" "$(clock -monotonic)"
 			pids="${pids:+${pids} }$!"
 			JOBS="$((JOBS + 1))"
 			setvar "pid_num_$!" "${TEST_CONTEXT_NUM}"
@@ -591,4 +632,10 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 	exit "${MAIN_RET}"
 fi
 
+# hide set -x
+trap '{ siginfo_handler; } 2>/dev/null' INFO
+pids="$$"
+setvar "pid_test_start_$$" "$(clock -monotonic)"
+setvar "pid_test_$$" "$(format_siginfo "this" "${TEST}" "1" "1" "$(get_log_name)")"
+set -T
 runtest
