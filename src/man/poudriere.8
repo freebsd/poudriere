@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd September 17, 2025
+.Dd October 3, 2025
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -378,6 +378,7 @@ You can also specify an optional poudriere.conf that is pulled in
 depending on the build.
 Any of the following are allowed and will all be used in the order shown:
 .Pp
+.Dl Pa /usr/local/etc/poudriere.conf
 .Dl Pa /usr/local/etc/poudriere.d/poudriere.conf
 .Dl Pa /usr/local/etc/poudriere.d/<setname>-poudriere.conf
 .Dl Pa /usr/local/etc/poudriere.d/<tree>-poudriere.conf
@@ -386,6 +387,12 @@ Any of the following are allowed and will all be used in the order shown:
 .Dl Pa /usr/local/etc/poudriere.d/<jailname>-<tree>-poudriere.conf
 .Dl Pa /usr/local/etc/poudriere.d/<jailname>-<setname>-poudriere.conf
 .Dl Pa /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-poudriere.conf
+.Pp
+Running
+.Nm
+with flag
+.Fl v
+will show which files are included.
 .Ss Create optional make.conf
 You can also specify a global make.conf which will be used for all the
 jails.
