@@ -3403,7 +3403,7 @@ setup_makeconf() {
 
 include_poudriere_confs() {
 	local files file flag debug
-	local jail ptname setname
+	local jail ptname setname loaded_conf
 	local OPTIND=1
 
 	# msg_debug is not properly setup this early for VERBOSE to be set
@@ -3446,19 +3446,31 @@ include_poudriere_confs() {
 		done
 	fi
 
-	if [ -r "${POUDRIERE_ETC}/poudriere.conf" ]; then
-		. "${POUDRIERE_ETC}/poudriere.conf"
-		if [ ${debug} -gt 1 ]; then
-			msg_debug "Reading ${POUDRIERE_ETC}/poudriere.conf"
+	loaded_conf=0
+	if [ -r "${POUDRIERE_ETC:?}/poudriere.conf" ]; then
+		if [ "${debug}" -gt 1 ]; then
+			msg "Reading ${POUDRIERE_ETC}/poudriere.conf"
 		fi
-	elif [ -r "${POUDRIERED}/poudriere.conf" ]; then
-		. "${POUDRIERED}/poudriere.conf"
-		if [ ${debug} -gt 1 ]; then
-			msg_debug "Reading ${POUDRIERED}/poudriere.conf"
-		fi
-	else
-		err 1 "Unable to find a readable poudriere.conf in ${POUDRIERE_ETC} or ${POUDRIERED}"
+		. "${POUDRIERE_ETC:?}/poudriere.conf"
+		loaded_conf=1
 	fi
+	if [ -r "${POUDRIERED:?}/poudriere.conf" ]; then
+		case "$(realpath -q "${POUDRIERED:?}/poudriere.conf")" in
+		$(realpath -q "${POUDRIERE_ETC:?}/poudriere.conf")) ;;
+		*)
+			if [ "${debug}" -gt 1 ]; then
+				msg "Reading ${POUDRIERED}/poudriere.conf"
+			fi
+			. "${POUDRIERED:?}/poudriere.conf"
+			loaded_conf=1
+			;;
+		esac
+	fi
+	case "${loaded_conf}" in
+	0)
+		err 1 "Unable to find a readable poudriere.conf in ${POUDRIERE_ETC} or ${POUDRIERED}"
+		;;
+	esac
 
 	files="${setname} ${ptname} ${jail}"
 	if [ -n "${ptname}" -a -n "${setname}" ]; then
@@ -3476,8 +3488,8 @@ include_poudriere_confs() {
 	for file in ${files}; do
 		file="${POUDRIERED}/${file}-poudriere.conf"
 		if [ -r "${file}" ]; then
-			if [ ${debug} -gt 1 ]; then
-				msg_debug "Reading ${file}"
+			if [ "${debug}" -gt 1 ]; then
+				msg "Reading ${file}"
 			fi
 			. "${file}"
 		fi
