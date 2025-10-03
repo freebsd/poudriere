@@ -572,7 +572,9 @@ trap_ignore_block() {
 }
 
 case "$(type trap_push 2>/dev/null)" in
-"trap_push is a shell builtin") ;;
+"trap_push is a shell builtin")
+critical_inherit() { :; }
+	;;
 *)
 trap_push() {
 	local -; set +x
@@ -643,6 +645,17 @@ critical_start() {
 	done
 }
 
+critical_inherit() {
+	case "${_CRITSNEST:-0}" in
+	0) return 0 ;;
+	esac
+	local sig
+
+	for sig in ${CRITICAL_START_BLOCK_SIGS}; do
+		trap '' "${sig}"
+	done
+}
+
 critical_end() {
 	local -; set +x
 	local sig saved_trap caught_sig oldnest
@@ -708,9 +721,12 @@ read_file() {
 			rf_data="$(cat "${rf_file}")" || rf_ret="$?"
 			;;
 		esac
-		count_lines "${rf_file}" _read_file_lines_read ||
-		    _read_file_lines_read=0
-
+		case "${rf_ret}" in
+		0)
+			count_lines "${rf_file}" _read_file_lines_read ||
+			    _read_file_lines_read=0
+			;;
+		esac
 		case "${var_return}" in
 		"") ;;
 		-) echo "${rf_data}" ;;
@@ -2448,7 +2464,9 @@ count_lines() {
 	esac
 	case "${cl_ret}" in
 	0)
-		cl_count="$(wc -l "${cl_file}")"
+		# Avoid blank value on signal (see critical_inherit).
+		until cl_count=0; [ ! -r "${cl_file}" ] ||
+		    cl_count="$(wc -l "${cl_file}")"; do :; done
 		cl_count="${cl_count% *}"
 		cl_count="${cl_count##* }"
 		;;

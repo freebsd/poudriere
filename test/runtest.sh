@@ -228,6 +228,7 @@ prep.sh) : ${TIMEOUT:=1800} ;;
 bulk*build*.sh|testport*build*.sh) : ${TIMEOUT:=1800} ;;
 # Bump anything touching logclean
 bulk*.sh|testport*.sh|distclean*.sh|options*.sh) : ${TIMEOUT:=500} ;;
+critical_section_inherit.sh) : ${TIMEOUT:=20} ;;
 locked_mkdir.sh) : ${TIMEOUT:=120} ;;
 jobs.sh) : ${TIMEOUT:=300} ;;
 esac

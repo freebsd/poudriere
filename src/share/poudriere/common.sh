@@ -1640,7 +1640,8 @@ update_stats() {
 	done
 
 	# Skipped may have duplicates in it
-	bset stats_skipped $(bget ports.skipped | awk '{print $1}' | \
+	bset stats_skipped $(critical_inherit; \
+		bget ports.skipped | awk '{print $1}' | \
 		sort -u | wc -l)
 
 	lock_release update_stats
@@ -7639,6 +7640,22 @@ package_libdeps_satisfied() {
 	return "${ret}"
 }
 
+_lock_read_pid() {
+	[ $# -eq 2 ] || eargs _lock_read_pid pidfile pid_var_return
+	local _lrp_pidfile="$1"
+	local _lrp_var_return="$2"
+	local _lrp_pid
+
+	# The pidfile has no newline, so read until we have a value
+	# regardless of the read error. The rereads are to avoid
+	# racing with signals.
+	_lrp_pid=
+	until [ "${_lrp_pid:+set}" == "set" ]; do
+		read _lrp_pid < "${_lrp_pidfile:?}" || :
+	done
+	setvar "${_lrp_var_return:?}" "${_lrp_pid:?}" || return
+}
+
 _lock_acquire() {
 	local -; set +x
 	[ $# -eq 3 -o $# -eq 4 ] ||
@@ -7649,7 +7666,8 @@ _lock_acquire() {
 	local lockpath="$3"
 	local waittime="${4:-30}"
 
-	mypid="$(getpid)"
+	# Avoid blank value on signal (see critical_inherit).
+	until mypid="$(getpid)"; do :; done
 	hash_get have_lock "${lockname}" have_lock || have_lock=0
 	# lock_pid is in case a subshell tries to reacquire/relase my lock
 	hash_get lock_pid "${lockname}" lock_pid || lock_pid=
@@ -7680,8 +7698,7 @@ _lock_acquire() {
 			fi
 			return 1
 		fi
-		# Must use cat due to no EOL
-		real_lock_pid="$(cat "${lockpath}.pid")" || :
+		_lock_read_pid "${lockpath:?}.pid" real_lock_pid
 		case "${real_lock_pid}" in
 		"${mypid}") ;;
 		*)
@@ -7804,7 +7821,8 @@ _lock_release() {
 	fi
 	hash_get lock_pid "${lockname}" lock_pid ||
 		err 1 "Lock had no pid ${lockname}"
-	mypid="$(getpid)"
+	# Avoid blank value on signal (see critical_inherit).
+	until mypid="$(getpid)"; do :; done
 	case "${mypid}" in
 	"${lock_pid}") ;;
 	*)
@@ -7817,8 +7835,7 @@ _lock_release() {
 		hash_unset have_lock "${lockname}"
 		[ -f "${lockpath:?}.pid" ] ||
 			err 1 "No pidfile found for ${lockpath}"
-		# Pidfile has no trailing newline so will return 1
-		read pid < "${lockpath:?}.pid" || :
+		_lock_read_pid "${lockpath:?}.pid" pid
 		case "${pid}" in
 		"")
 			err 1 "Pidfile is empty for ${lockpath}"
@@ -7880,7 +7897,8 @@ lock_have() {
 	if hash_isset have_lock "${lockname}"; then
 		hash_get lock_pid "${lockname}" lock_pid ||
 			err 1 "have_lock: Lock had no pid ${lockname}"
-		mypid="$(getpid)"
+		# Avoid blank value on signal (see critical_inherit).
+		until mypid="$(getpid)"; do :; done
 		case "${lock_pid}" in
 		"${mypid}") return 0 ;;
 		esac

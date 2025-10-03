@@ -28,6 +28,7 @@ TESTS=\
 	cache_pipe.sh \
 	calculate_duration.sh \
 	count_lines.sh \
+	critical_section_inherit.sh \
 	display.sh \
 	distclean-badorigin.sh \
 	distclean-overlays.sh \
