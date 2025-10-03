@@ -968,8 +968,10 @@ sig_handler() {
 	*) set +x ;;
 	esac
 
+	[ $# -eq 1 ] || eargs sig_handler sig
+
 	local sig="$1"
-	local exit_handler="$2"
+	local exit_handler
 
 	trap - EXIT
 	# shellcheck disable=SC2034
@@ -992,11 +994,19 @@ sig_handler() {
 	PIPE) sig_ret=$((128 + 13)) ;;
 	*)    sig_ret= ;;
 	esac
-	case "${sig_ret:+set}" in
-	set) (exit "${sig_ret}") ;;
-	esac
 	# return ignored since we will exit on signal
-	"${exit_handler}" || :
+	local TRAPSVAR
+	# shellcheck disable=SC2034
+	local tmp
+
+	TRAPSVAR="TRAPS$(getpid)"
+	unset tmp
+	while stack_foreach "${TRAPSVAR}" exit_handler tmp; do
+		case "${sig_ret:+set}" in
+		set) (exit "${sig_ret}") ;;
+		esac
+		"${exit_handler}" || :
+	done
 	trap - "${sig}"
 	raise "${sig}"
 }
@@ -1014,15 +1024,19 @@ exit_return() {
 	*) set +x ;;
 	esac
 
-	case "$#" in
-	0)
-		;;
-	*)
+	[ $# -eq 0 ] || eargs exit_return
+
+	local exit_handler TRAPSVAR
+	# shellcheck disable=SC2034
+	local tmp
+
+	TRAPSVAR="TRAPS$(getpid)"
+	unset tmp
+	while stack_foreach "${TRAPSVAR}" exit_handler tmp; do
 		# Ensure the real handler sees the real status
 		(exit "${ret}")
-		"$@" || ret="$?"
-		;;
-	esac
+		"${exit_handler}" || ret="$?"
+	done
 	exit "${ret}"
 }
 
@@ -1030,12 +1044,15 @@ setup_traps() {
 	[ "$#" -eq 0 ] || [ "$#" -eq 1 ] ||
 	    eargs setup_traps '[exit_handler]'
 	local exit_handler="$1"
-	local sig
+	local sig TRAPSVAR
 
-	for sig in INT HUP PIPE TERM; do
-		# shellcheck disable=SC2064
-		trap "trap_pre_handler; sig_handler ${sig}${exit_handler:+ ${exit_handler}}" "${sig}"
-	done
-	# shellcheck disable=SC2064
-	trap "trap_pre_handler; exit_return${exit_handler:+ ${exit_handler}}" EXIT
+	TRAPSVAR="TRAPS$(getpid)"
+	if ! stack_isset "${TRAPSVAR}"; then
+		for sig in INT HUP PIPE TERM; do
+			# shellcheck disable=SC2064
+			trap "trap_pre_handler; sig_handler ${sig}" "${sig}"
+		done
+		trap "trap_pre_handler; exit_return" EXIT
+	fi
+	stack_push_front "${TRAPSVAR}" "${exit_handler}"
 }
