@@ -936,18 +936,28 @@ raise() {
 	kill -"${sig}" "$(getpid)"
 }
 
+# Need to cleanup some stuff before calling traps.
+_trap_pre_handler() {
+	_ERET="$?"
+	unset IFS
+	set +e +u
+	trap '' PIPE INT INFO HUP TERM
+	redirect_to_real_tty exec
+	case "$-" in
+	*x*) _trap_x=x ;;
+	esac
+	set +x
+}
+# {} is used to avoid set -x EPIPE
+alias trap_pre_handler='{ _trap_pre_handler; } 2>/dev/null; (exit "${_ERET}")'
+
 sig_handler() {
-	# Avoid set -x output until we ensure proper stderr.
-	{
-		unset IFS
-		set +e +u
-		trap '' PIPE INT INFO HUP TERM
-		case "${SHFLAGS-$-}${SETX_EXIT:-0}" in
-		*x*1) ;;
-		*) local -; set +x ;;
-		esac
-		redirect_to_real_tty exec
-	} 2>/dev/null
+	local -
+
+	case "${SHFLAGS-$-}${_trap_x-}${SETX_EXIT:-0}" in
+	*x*1) set -x ;;
+	*) set +x ;;
+	esac
 
 	local sig="$1"
 	local exit_handler="$2"
@@ -982,18 +992,13 @@ sig_handler() {
 
 # Take "return" value from real exit handler and exit with it.
 exit_return() {
-	# Avoid set -x output until we ensure proper stderr.
-	{
-		local ret="$?"
-		unset IFS
-		set +e +u
-		trap '' PIPE INT INFO HUP TERM
-		case "${SHFLAGS-$-}${SETX_EXIT:-0}" in
-		*x*1) ;;
-		*) local -; set +x ;;
-		esac
-		redirect_to_real_tty exec
-	} 2>/dev/null
+	local ret="$?"
+	local -
+
+	case "${SHFLAGS-$-}${_trap_x-}${SETX_EXIT:-0}" in
+	*x*1) set -x ;;
+	*) set +x ;;
+	esac
 
 	case "$#" in
 	0)
@@ -1014,12 +1019,9 @@ setup_traps() {
 	local sig
 
 	for sig in INT HUP PIPE TERM; do
-		# Do set +x hidden in case stderr is gone to avoid EPIPE.
 		# shellcheck disable=SC2064
-		trap "{ set +x; } 2>/dev/null; sig_handler ${sig}${exit_handler:+ ${exit_handler}}" "${sig}"
+		trap "trap_pre_handler; sig_handler ${sig}${exit_handler:+ ${exit_handler}}" "${sig}"
 	done
-	# Do set +x hidden in case stderr is gone to avoid EPIPE.
-	# Do dance of exit status to the real handler.
-	# shellcheck disable=SC2064,SC2154
-	trap "{ _eret=\$?; unset IFS; set +eux; } 2>/dev/null; (exit \${_eret}); exit_return${exit_handler:+ ${exit_handler}}" EXIT
+	# shellcheck disable=SC2064
+	trap "trap_pre_handler; exit_return${exit_handler:+ ${exit_handler}}" EXIT
 }
