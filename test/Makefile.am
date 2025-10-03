@@ -85,6 +85,7 @@ TESTS=\
 	relpath.sh \
 	relpath_common.sh \
 	required_env.sh \
+	setup_traps.sh \
 	setvar.sh \
 	shash-basic.sh \
 	shash-noclobber.sh \
