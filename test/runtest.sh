@@ -231,6 +231,7 @@ bulk*.sh|testport*.sh|distclean*.sh|options*.sh) : ${TIMEOUT:=500} ;;
 locked_mkdir.sh) : ${TIMEOUT:=120} ;;
 jobs.sh) : ${TIMEOUT:=300} ;;
 esac
+TIMEOUT_KILL="-k 30"
 if [ -n "${TESTS_SKIP_BUILD-}" ]; then
 	case "${1##*/}" in
 	*-build*)
@@ -291,7 +292,7 @@ runtest() {
 		echo "Test started: $(date)"
 		# hide set -x
 	} >&2 2>/dev/null
-	${TIMEOUT_BIN:?} -v ${TRUSS:+--foreground} ${TIMEOUT} \
+	${TIMEOUT_BIN:?} -v ${TRUSS:+--foreground} ${TIMEOUT_KILL} ${TIMEOUT} \
 	    ${TIMESTAMP} \
 	    env \
 	    ${SH_DISABLE_VFORK:+SH_DISABLE_VFORK=1} \
