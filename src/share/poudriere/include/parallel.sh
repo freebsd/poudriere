@@ -940,8 +940,17 @@ raise() {
 _trap_pre_handler() {
 	_ERET="$?"
 	unset IFS
-	set +e +u
+	set +u
+	case "$-" in
+	*e*) ;;
+	*)
+		# shellcheck disable=SC2034
+		ERROR_VERBOSE=0
+		;;
+	esac
+	set +e
 	trap '' PIPE INT INFO HUP TERM
+	SUPPRESS_INT=1
 	redirect_to_real_tty exec
 	case "$-" in
 	*x*) _trap_x=x ;;
@@ -963,6 +972,8 @@ sig_handler() {
 	local exit_handler="$2"
 
 	trap - EXIT
+	# shellcheck disable=SC2034
+	EXIT_BSTATUS="SIG${sig:?}:"
 	case "${USE_DEBUG:-no}.$$" in
 	yes.*|"no.$(getpid)")
 		msg "[$(getpid)${PROC_TITLE:+:${PROC_TITLE}}] Signal ${sig} caught" >&2
@@ -994,6 +1005,9 @@ sig_handler() {
 exit_return() {
 	local ret="$?"
 	local -
+
+	# shellcheck disable=SC2034
+	IN_EXIT_HANDLER=1
 
 	case "${SHFLAGS-$-}${_trap_x-}${SETX_EXIT:-0}" in
 	*x*1) set -x ;;

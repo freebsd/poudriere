@@ -1703,48 +1703,8 @@ update_remaining() {
 	    write_atomic "${log:?}/.poudriere.ports.remaining"
 }
 
-sigpipe_handler() {
-	EXIT_BSTATUS="sigpipe:"
-	sig_handler PIPE exit_handler
-}
-
-sigint_handler() {
-	EXIT_BSTATUS="sigint:"
-	sig_handler INT exit_handler
-}
-
-sighup_handler() {
-	EXIT_BSTATUS="sighup:"
-	sig_handler HUP exit_handler
-}
-
-sigterm_handler() {
-	EXIT_BSTATUS="sigterm:"
-	sig_handler TERM exit_handler
-}
-
 exit_handler() {
-	# Avoid set -x output until we ensure proper stderr.
-	{
-		: ${EXIT_STATUS:="$?"}
-		unset IFS
-		set +u
-		trap - EXIT
-		trap '' PIPE INT INFO HUP TERM
-		case "${SHFLAGS-$-}${SETX_EXIT:-0}" in
-		*x*1) ;;
-		*) local -; set +x ;;
-		esac
-		# Don't spam errors with 'set +e; exit >0'.
-		case "$-" in
-		*e*) ;;
-		*) ERROR_VERBOSE=0 ;;
-		esac
-		set +e
-		IN_EXIT_HANDLER=1
-		SUPPRESS_INT=1
-		redirect_to_real_tty exec
-	} 2>/dev/null
+	: ${EXIT_STATUS:="$?"}
 
 	post_getopts
 
@@ -10977,10 +10937,6 @@ if [ -e /nonexistent ]; then
 fi
 
 if [ "${IN_TEST:-0}" -eq 0 ]; then
-	trap sigpipe_handler PIPE
-	trap sigint_handler INT
-	trap sighup_handler HUP
-	trap sigterm_handler TERM
-	trap "exit_return exit_handler" EXIT
+	setup_traps exit_handler
 	enable_siginfo_handler
 fi
