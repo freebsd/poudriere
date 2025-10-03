@@ -232,6 +232,11 @@ critical_section_inherit.sh) : ${TIMEOUT:=20} ;;
 locked_mkdir.sh) : ${TIMEOUT:=120} ;;
 jobs.sh) : ${TIMEOUT:=300} ;;
 esac
+: ${TIMEOUT:=90}
+case "${TRUSS-}" in
+"") ;;
+*) TIMEOUT=$((TIMEOUT * 3)) ;;
+esac
 TIMEOUT_KILL="-k 30"
 if [ -n "${TESTS_SKIP_BUILD-}" ]; then
 	case "${1##*/}" in
@@ -254,7 +259,6 @@ if [ -n "${TESTS_SKIP_BULK-}" ]; then
 		;;
 	esac
 fi
-: ${TIMEOUT:=90}
 : ${TIMESTAMP="${LIBEXECPREFIX}/timestamp" -t -1stdout: -2stderr:}
 
 [ "${am_check}" -eq 0 ] && [ -t 0 ] && export FORCE_COLORS=1
