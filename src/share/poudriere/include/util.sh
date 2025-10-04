@@ -2243,7 +2243,7 @@ write_atomic_cmp() {
 		esac
 	done
 	shift $((OPTIND-1))
-	[ $# -eq 1 ] || eargs write_atomic_cmp destfile "< content"
+	[ $# -eq 1 ] || eargs write_atomic_cmp '[-T]' destfile "< content"
 	local dest="$1"
 
 	_write_atomic 1 "${Tflag}" "${dest}" || return
