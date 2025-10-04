@@ -1470,12 +1470,8 @@ attr_set() {
 
 	dstfile="${POUDRIERED}/${type}/${name}/${property}"
 	mkdir -p "${dstfile%/*}"
-	{
-		write_atomic_cmp "${dstfile}" || \
-		    err $? "attr_set failed to write to ${dstfile}"
-	} <<-EOF
-	$@
-	EOF
+	write_atomic_cmp "${dstfile}" "$@" ||
+	    err $? "attr_set failed to write to ${dstfile}"
 }
 
 jset() { attr_set jails "$@" ; }
@@ -1586,9 +1582,7 @@ bset() {
 		echo "$(clock -epoch):$*" >> "${log:?}/${file:?}.journal%" || :
 		;;
 	esac
-	write_atomic "${log:?}/${file:?}" <<-EOF
-	$@
-	EOF
+	write_atomic "${log:?}/${file:?}" "$@"
 }
 
 job_build_status() {

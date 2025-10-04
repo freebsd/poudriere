@@ -33,16 +33,10 @@ cond_signal() {
 
 	case "${reason:+set}" in
 	set)
-		set -o pipefail
-		{
-			echo "${reason:?}" || return
-		} | {
-			# Likely noclobber failure if this fails.
-			# Using 'noclobber' to make log clearer.
-			assert_true noclobber \
-			    write_atomic "${READY_FILE:?}.${which:?}"
-			;;
-		}
+		# Likely noclobber failure if this fails.
+		# Using 'noclobber' to make log clearer.
+		assert_true noclobber \
+		    write_atomic "${READY_FILE:?}.${which:?}" "${reason}"
 		;;
 	*)
 		local -

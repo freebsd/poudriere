@@ -114,10 +114,7 @@ shash_set() {
 	_shash_varkey_file "${var}" "${key}"
 	case "${value+set}" in
 	set)
-		# XXX: write_atomic has no non-piped support yet.
-		write_atomic "${_shash_varkey_file:?}" <<-EOF || return
-		${value}
-		EOF
+		write_atomic "${_shash_varkey_file:?}" "${value}" || return
 		;;
 	*)
 		: > "${_shash_varkey_file:?}" || return
