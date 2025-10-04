@@ -2194,6 +2194,7 @@ _write_atomic() {
 	case "${ret}" in
 	0) ;;
 	*)
+		msg_error "write_atomic: mapfile_write file=${tmpfile} dest=${dest} ret=${ret}"
 		unlink "${tmpfile}" || :
 		return "${ret}"
 		;;
@@ -2203,6 +2204,7 @@ _write_atomic() {
 	case "${ret}" in
 	0) ;;
 	*)
+		msg_dev "write_atomic: mapfile_close file=${tmpfile} dest=${dest} ret=${ret}"
 		unlink "${tmpfile}" || :
 		return "${ret}"
 		;;
@@ -2213,6 +2215,12 @@ _write_atomic() {
 		# If comparing, we can only succeed if there is no file
 		# so no need to compare.
 		ln "${tmpfile}" "${dest}" 2>/dev/null || ret="$?"
+		case "${ret}" in
+		0) ;;
+		*)
+			msg_dev "write_atomic: ln file=${tmpfile} dest=${dest} ret=${ret}"
+			;;
+		esac
 		unlink "${tmpfile}" || :
 		return "${ret}"
 		;;
@@ -2228,7 +2236,10 @@ _write_atomic() {
 	rename "${tmpfile}" "${dest}" || ret="$?"
 	case "${ret}" in
 	0) ;;
-	*) unlink "${tmpfile}" || : ;;
+	*)
+		msg_dev "write_atomic: rename file=${tmpfile} dest=${dest} ret=${ret}"
+		unlink "${tmpfile}" || :
+		;;
 	esac
 	return "${ret}"
 }
