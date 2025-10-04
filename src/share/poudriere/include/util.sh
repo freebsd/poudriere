@@ -2162,7 +2162,7 @@ _write_atomic() {
 	local cmp="$1"
 	local tee="$2"
 	local dest="$3"
-	local tmpfile_handle tmpfile ret tmpdir
+	local tmpfile_handle tmpfile ret tmpdir Tflag
 
 	case "$-${tee-}" in
 	C1)
@@ -2178,21 +2178,28 @@ _write_atomic() {
 	    -p "${tmpdir}" -ut ".write_atomic-${dest##*/}" ||
 	    err "$?" "write_atomic unable to create tmpfile in ${tmpdir}"
 	ret=0
-	if [ "${tee}" -eq 1 ]; then
-		mapfile_write "${tmpfile_handle}" -T || ret="$?"
-	else
-		mapfile_write "${tmpfile_handle}" || ret="$?"
-	fi
-	if [ "${ret}" -ne 0 ]; then
+	case "${tee}" in
+	1) Tflag=1 ;;
+	*) Tflag= ;;
+	esac
+	mapfile_write "${tmpfile_handle}" ${Tflag:+-T} ||
+	    ret="$?"
+	case "${ret}" in
+	0) ;;
+	*)
 		unlink "${tmpfile}" || :
 		return "${ret}"
-	fi
+		;;
+	esac
 	ret=0
 	mapfile_close "${tmpfile_handle}" || ret="$?"
-	if [ "${ret}" -ne 0 ]; then
+	case "${ret}" in
+	0) ;;
+	*)
 		unlink "${tmpfile}" || :
 		return "${ret}"
-	fi
+		;;
+	esac
 	ret=0
 	case "$-" in
 	*C*) # noclobber
