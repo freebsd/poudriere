@@ -52,7 +52,7 @@ shash_get() {
 	local sg_key="$2"
 	local sg_var_return="$3"
 	local _shash_varkey_file _f _sh_value _sh_values
-	local sg_ret sg_handle IFS
+	local sg_ret sg_rret
 
 	sg_ret=0
 	_sh_values=
@@ -60,22 +60,29 @@ shash_get() {
 	set +o noglob
 	for _f in ${_shash_varkey_file:?}; do
 		set -o noglob
-		case "${_f}" in
-		# no file found
-		*"*"*)
-			sg_ret=1
-			break
+		case "${_shash_varkey_file:?}" in
+		*"*"*|*"["*|*"?"*)
+			case "${_f:?}" in
+			"${_shash_varkey_file:?}")
+				# No file found
+				sg_ret=1
+				break
+			esac
+			;;
+		*)
 			;;
 		esac
-		# shellcheck disable=SC2034
-		if ! mapfile -qF sg_handle "${_f}" "r"; then
-			sg_ret=1
-			continue
-		fi
-		if IFS= mapfile_read "${sg_handle}" _sh_value; then
+		sg_rret=0
+		readlines_file "${_f:?}" _sh_value || sg_rret=$?
+		case "${sg_rret}" in
+		0)
 			_sh_values="${_sh_values:+${_sh_values} }${_sh_value}"
-		fi
-		mapfile_close "${sg_handle}" || :
+			;;
+		*)
+			sg_ret="${sg_rret}"
+			continue
+			;;
+		esac
 	done
 	set -o noglob
 

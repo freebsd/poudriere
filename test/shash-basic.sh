@@ -15,9 +15,9 @@ value=
 assert_ret 0 shash_set blank key $'\n'
 assert_ret 0 shash_get blank key value
 assert "" "${value}"
-assert_ret 1 shash_remove pkgname-origin "pkg-1.7" value
+assert_ret_not 0 shash_remove pkgname-origin "pkg-1.7" value
 assert_ret 0 shash_unset pkgname-origin "pkg-1.7"
-assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
+assert_ret_not 0 shash_get pkgname-origin "pkg-1.7" value
 assert_ret 0 shash_set pkgname-origin "pkg-1.7" "ports-mgmt/pkg"
 assert_ret 0 shash_get pkgname-origin "pkg-1.7" value
 assert_ret 0 shash_exists pkgname-origin "pkg-1.7"
@@ -27,11 +27,11 @@ value=
 assert_ret 0 shash_remove pkgname-origin "pkg-1.7" value
 assert "ports-mgmt/pkg" "${value}" "Removed value should match"
 value=
-assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
+assert_ret_not 0 shash_get pkgname-origin "pkg-1.7" value
 
 # Test globbing
 {
-	assert_ret 1 shash_get pkgname-origin "pkg-*" value
+	assert_ret_not 0 shash_get pkgname-origin "pkg-*" value
 	assert_ret 0 shash_set pkgname-origin "pkg-1.7" "ports-mgmt/pkg"
 	assert_ret 0 shash_get pkgname-origin "pkg-1.7" value
 	value=
@@ -42,14 +42,14 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	assert_ret 0 shash_get pkgname-origin "pkg-*" value
 	assert "ports-mgmt/pkg ports-mgmt/pkg2" "${value}" "Globbing shash_get should match"
 	assert_ret 0 shash_unset pkgname-origin "pkg-*"
-	assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
-	assert_ret 1 shash_get pkgname-origin "pkg-2.0" value
-	assert_ret 1 shash_get pkgname-origin "pkg-*" value
+	assert_ret_not 0 shash_get pkgname-origin "pkg-1.7" value
+	assert_ret_not 0 shash_get pkgname-origin "pkg-2.0" value
+	assert_ret_not 0 shash_get pkgname-origin "pkg-*" value
 
-	assert_ret 1 shash_get pkgname-origin "notfound-*" value
+	assert_ret_not 0 shash_get pkgname-origin "notfound-*" value
 	assert "" "${value}" "globbed missing value"
 
-	assert_ret 1 shash_get pkgname-origin "*-notfound" value
+	assert_ret_not 0 shash_get pkgname-origin "*-notfound" value
 	assert "" "${value}" "globbed missing value"
 }
 
@@ -69,12 +69,12 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	assert "D" "${value}" "D value should match"
 
 	assert_ret 0 shash_remove_var foo-origin
-	assert_ret 1 shash_get foo-origin "a" value
-	assert_ret 1 shash_get foo-origin "b" value
-	assert_ret 1 shash_get foo-origin "c" value
-	assert_ret 1 shash_get foo-origin "d" value
+	assert_ret_not 0 shash_get foo-origin "a" value
+	assert_ret_not 0 shash_get foo-origin "b" value
+	assert_ret_not 0 shash_get foo-origin "c" value
+	assert_ret_not 0 shash_get foo-origin "d" value
 
-	assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
+	assert_ret_not 0 shash_get pkgname-origin "pkg-1.7" value
 	assert_ret 0 shash_set pkgname-origin "pkg-1.7" "ports-mgmt/pkg"
 	assert_ret 0 shash_get pkgname-origin "pkg-1.7" value
 	assert "ports-mgmt/pkg" "${value}" "pkg should match afer shash_remove_var"
