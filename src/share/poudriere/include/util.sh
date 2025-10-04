@@ -2511,8 +2511,8 @@ _lock_read_pid() {
 
 _lock_acquire() {
 	local -; set +x
-	[ $# -eq 3 -o $# -eq 4 ] ||
-	    eargs _lock_acquire quiet lockpath lockname [waittime]
+	[ $# -eq 3 ] || [ $# -eq 4 ] ||
+	    eargs _lock_acquire quiet lockpath lockname '[waittime]'
 	local have_lock mypid lock_pid real_lock_pid
 	local quiet="$1"
 	local lockname="$2"
@@ -2573,8 +2573,8 @@ _lock_acquire() {
 # Acquire local build lock
 lock_acquire() {
 	local -; set +x
-	[ $# -eq 1 -o $# -eq 2 -o $# -eq 3 ] ||
-	    eargs lock_acquire [-q] lockname [waittime]
+	[ $# -eq 1 ] || [ $# -eq 2 ] || [ $# -eq 3 ] ||
+	    eargs lock_acquire '[-q]' lockname '[waittime]'
 	local lockname waittime lockpath
 
 	case "$1" in
@@ -2616,8 +2616,8 @@ locked() {
 # Acquire system wide lock
 slock_acquire() {
 	local -; set +x
-	[ $# -eq 1 -o $# -eq 2 -o $# -eq 3 ] ||
-	    eargs slock_acquire [-q] lockname [waittime]
+	[ $# -eq 1 ] || [ $# -eq 2 ] || [ $# -eq 3 ] ||
+	    eargs slock_acquire '[-q]' lockname '[waittime]'
 	local lockname waittime lockpath quiet
 
 	case "$1" in
