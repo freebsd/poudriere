@@ -2492,3 +2492,269 @@ sleep() {
 }
 ;;
 esac
+
+_lock_read_pid() {
+	[ $# -eq 2 ] || eargs _lock_read_pid pidfile pid_var_return
+	local _lrp_pidfile="$1"
+	local _lrp_var_return="$2"
+	local _lrp_pid
+
+	# The pidfile has no newline, so read until we have a value
+	# regardless of the read error. The rereads are to avoid
+	# racing with signals.
+	_lrp_pid=
+	until [ "${_lrp_pid:+set}" == "set" ]; do
+		read -r _lrp_pid < "${_lrp_pidfile:?}" || :
+	done
+	setvar "${_lrp_var_return:?}" "${_lrp_pid:?}" || return
+}
+
+_lock_acquire() {
+	local -; set +x
+	[ $# -eq 3 -o $# -eq 4 ] ||
+	    eargs _lock_acquire quiet lockpath lockname [waittime]
+	local have_lock mypid lock_pid real_lock_pid
+	local quiet="$1"
+	local lockname="$2"
+	local lockpath="$3"
+	local waittime="${4:-30}"
+
+	# Avoid blank value on signal (see critical_inherit).
+	until mypid="$(getpid)"; do :; done
+	hash_get have_lock "${lockname}" have_lock || have_lock=0
+	# lock_pid is in case a subshell tries to reacquire/relase my lock
+	hash_get lock_pid "${lockname}" lock_pid || lock_pid=
+	# If the pid is set and does not match I'm a subshell and should wait
+	case "${lock_pid}" in
+	"${mypid}"|"") ;;
+	*)
+		hash_unset have_lock "${lockname}"
+		hash_unset lock_pid "${lockname}"
+		lock_pid=
+		have_lock=0
+		;;
+	esac
+	if [ "${have_lock}" -eq 0 ] &&
+		! locked_mkdir "${waittime}" "${lockpath}" "${mypid}"; then
+		if [ "${quiet}" -eq 0 ]; then
+			msg_warn "Failed to acquire ${lockname} lock"
+		fi
+		return 1
+	fi
+	# XXX: Remove this block with locked_mkdir [EINTR] fixes.
+	{
+		# locked_mkdir is quite racy. We may have gotten a false-success
+		# and need to consider it a failure.
+		if [ ! -d "${lockpath}" ]; then
+			if [ "${quiet}" -eq 0 ]; then
+				msg_warn "Lost race grabbing ${lockname} lock: no dir"
+			fi
+			return 1
+		fi
+		_lock_read_pid "${lockpath:?}.pid" real_lock_pid
+		case "${real_lock_pid}" in
+		"${mypid}") ;;
+		*)
+			if [ "${quiet}" -eq 0 ]; then
+				msg_warn "Lost race grabbing ${lockname} lock: wrong pid: mypid=${mypid} lock_pid=${real_lock_pid}"
+			fi
+			return 1
+			;;
+		esac
+	}
+	hash_set have_lock "${lockname}" $((have_lock + 1))
+	case "${lock_pid}" in
+	"")
+		hash_set lock_pid "${lockname}" "${mypid}"
+		;;
+	esac
+}
+
+# Acquire local build lock
+lock_acquire() {
+	local -; set +x
+	[ $# -eq 1 -o $# -eq 2 -o $# -eq 3 ] ||
+	    eargs lock_acquire [-q] lockname [waittime]
+	local lockname waittime lockpath
+
+	case "$1" in
+	"-q")
+		quiet=1
+		shift
+		;;
+	*)
+		quiet=0
+		;;
+	esac
+	lockname="$1"
+	waittime="$2"
+
+	lockpath="${POUDRIERE_TMPDIR:?}/lock-${MASTERNAME}-${lockname:?}"
+	_lock_acquire "${quiet}" "${lockname}" "${lockpath}" "${waittime}"
+}
+
+# while locked tmp NAME timeout; do <locked code>; done
+locked() {
+	local -; set +x
+	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] || eargs locked tmp_var lockname \
+	    '[waittime]'
+	local l_tmp_var="$1"
+	local lockname="$2"
+	local waittime="${3-}"
+
+	if isset "${l_tmp_var}"; then
+		lock_release "${lockname}"
+		unset "${l_tmp_var}"
+		return 1
+	fi
+	setvar "${l_tmp_var}" "1"
+	until lock_acquire "${lockname}" "${waittime}"; do
+		sleep 1
+	done
+}
+
+# Acquire system wide lock
+slock_acquire() {
+	local -; set +x
+	[ $# -eq 1 -o $# -eq 2 -o $# -eq 3 ] ||
+	    eargs slock_acquire [-q] lockname [waittime]
+	local lockname waittime lockpath quiet
+
+	case "$1" in
+	"-q")
+		quiet=1
+		shift
+		;;
+	*)
+		quiet=0
+		;;
+	esac
+	lockname="$1"
+	waittime="$2"
+
+	mkdir -p "${SHARED_LOCK_DIR:?}" 2>/dev/null || :
+	lockpath="${SHARED_LOCK_DIR:?}/lock-poudriere-shared-${lockname:?}"
+	_lock_acquire "${quiet}" "${lockname}" "${lockpath}" "${waittime}" ||
+	    return
+	# This assumes SHARED_LOCK_DIR isn't overridden by caller
+	SLOCKS="${SLOCKS:+${SLOCKS} }${lockname}"
+}
+
+# while slocked tmp NAME timeout; do <locked code>; done
+slocked() {
+	local -; set +x
+	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] || eargs slocked tmp_var lockname \
+	    '[waittime]'
+	local s_tmp_var="$1"
+	local lockname="$2"
+	local waittime="${3-}"
+
+	if isset "${s_tmp_var}"; then
+		slock_release "${lockname}"
+		unset "${s_tmp_var}"
+		return 1
+	fi
+	setvar "${s_tmp_var}" "1"
+	until slock_acquire "${lockname}" "${waittime}"; do
+		sleep 1
+	done
+}
+
+_lock_release() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs _lock_release lockname lockpath
+	local lockname="$1"
+	local lockpath="$2"
+	local have_lock lock_pid mypid pid
+
+	hash_get have_lock "${lockname}" have_lock ||
+		err 1 "Releasing unheld lock ${lockname}"
+	if [ "${have_lock}" -eq 0 ]; then
+		err 1 "Release unheld lock (have_lock=0) ${lockname}"
+	fi
+	hash_get lock_pid "${lockname}" lock_pid ||
+		err 1 "Lock had no pid ${lockname}"
+	# Avoid blank value on signal (see critical_inherit).
+	until mypid="$(getpid)"; do :; done
+	case "${mypid}" in
+	"${lock_pid}") ;;
+	*)
+		err 1 "Releasing lock pid ${lock_pid} owns ${lockname}"
+		;;
+	esac
+	if [ "${have_lock}" -gt 1 ]; then
+		hash_set have_lock "${lockname}" $((have_lock - 1))
+	else
+		hash_unset have_lock "${lockname}"
+		[ -f "${lockpath:?}.pid" ] ||
+			err 1 "No pidfile found for ${lockpath}"
+		_lock_read_pid "${lockpath:?}.pid" pid
+		case "${pid}" in
+		"")
+			err 1 "Pidfile is empty for ${lockpath}"
+			;;
+		esac
+		case "${pid}" in
+		"${mypid}") ;;
+		*)
+			err 1 "Releasing lock pid ${lock_pid} owns ${lockname}"
+			;;
+		esac
+		rmdir "${lockpath:?}" ||
+			err 1 "Held lock dir not found: ${lockpath}"
+	fi
+}
+
+# Release local build lock
+lock_release() {
+	local -; set +x
+	[ $# -eq 1 ] || eargs lock_release lockname
+	local lockname="$1"
+	local lockpath
+
+	lockpath="${POUDRIERE_TMPDIR:?}/lock-${MASTERNAME}-${lockname:?}"
+	_lock_release "${lockname}" "${lockpath}"
+}
+
+# Release system wide lock
+slock_release() {
+	local -; set +x
+	[ $# -eq 1 ] || eargs slock_release lockname
+	local lockname="$1"
+	local lockpath
+
+	lockpath="${SHARED_LOCK_DIR:?}/lock-poudriere-shared-${lockname:?}"
+	_lock_release "${lockname}" "${lockpath}" || return
+	list_remove SLOCKS "${lockname}"
+}
+
+slock_release_all() {
+	local -; set +x
+	[ $# -eq 0 ] || eargs slock_release_all
+	local lockname
+
+	case "${SLOCKS-}" in
+	"") return 0 ;;
+	esac
+	for lockname in ${SLOCKS:?}; do
+		slock_release "${lockname}"
+	done
+}
+
+lock_have() {
+	local -; set +x
+	[ $# -eq 1 ] || eargs lock_have lockname
+	local lockname="$1"
+	local mypid lock_pid
+
+	if hash_isset have_lock "${lockname}"; then
+		hash_get lock_pid "${lockname}" lock_pid ||
+			err 1 "have_lock: Lock had no pid ${lockname}"
+		# Avoid blank value on signal (see critical_inherit).
+		until mypid="$(getpid)"; do :; done
+		case "${lock_pid}" in
+		"${mypid}") return 0 ;;
+		esac
+	fi
+	return 1
+}
