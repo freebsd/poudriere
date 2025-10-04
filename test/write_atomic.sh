@@ -23,7 +23,7 @@ set_pipefail
 
 	# This pattern is testing that the file is not written until close.
 	# And that teeing does not happen.
-	( cat "${TMP}"; rm -f "${TMP2}"; ) | write_atomic "${TMP2}" > "${TMP3}"
+	write_atomic "${TMP2}" "$(cat "${TMP}"; rm -rf "${TMP2}")" > "${TMP3}"
 	assert 0 "$?" "pipe exit status"
 	assert_ret 0 diff -u "${TMP}" "${TMP2}"
 	assert_ret 1 [ -s "${TMP3}" ]
@@ -31,9 +31,7 @@ set_pipefail
 
 	# Test that a new write happens with a new inode
 	tmp2_ino=$(stat -f %i "${TMP2}")
-	assert_ret 0 write_atomic "${TMP2}" <<-EOF
-	$(cat "${TMP}")
-	EOF
+	assert_ret 0 write_atomic "${TMP2}" "$(cat "${TMP}")"
 	assert_ret 0 diff -u "${TMP}" "${TMP2}"
 	assert_not "${tmp2_ino}" "$(stat -f %i "${TMP2}")"
 
@@ -50,7 +48,7 @@ set_pipefail
 	echo "noclobber" > "${TMP2}"
 
 	# With noclobber we should get no modification to TMP2.
-	( cat "${TMP}"; ) | noclobber write_atomic "${TMP2}"
+	noclobber write_atomic "${TMP2}" "$(cat "${TMP}")"
 	assert 1 "$?" "pipe exit status"
 	assert_file - "${TMP2}" <<-EOF
 	noclobber
@@ -68,7 +66,7 @@ set_pipefail
 
 	# This pattern is testing that the file is not written until close.
 	# And that teeing does happen.
-	( cat "${TMP}"; rm -f "${TMP2}"; ) | write_atomic -T "${TMP2}" > "${TMP3}"
+	write_atomic -T "${TMP2}" "$(cat "${TMP}"; rm -rf "${TMP2}")" > "${TMP3}"
 	assert 0 "$?" "pipe exit status"
 	assert_ret 0 diff -u "${TMP}" "${TMP2}"
 	assert_ret 0 diff -u "${TMP}" "${TMP3}"

@@ -2158,12 +2158,19 @@ calculate_duration() {
 
 _write_atomic() {
 	local -; set +x
-	[ $# -eq 3 ] || eargs _write_atomic cmp tee destfile "< content"
+	[ $# -eq 3 ] || [ $# -eq 4 ] ||
+	    eargs _write_atomic cmp tee destfile '< data | data'
 	local cmp="$1"
 	local tee="$2"
 	local dest="$3"
+	local data
 	local tmpfile_handle tmpfile ret tmpdir Tflag
 
+	shift 3
+	unset data
+	case "$#" in
+	1) data=1 ;;
+	esac
 	case "$-${tee-}" in
 	C1)
 		err "${EX_USAGE:-64}" "_write_atomic: Teeing with noclobber" \
@@ -2182,7 +2189,7 @@ _write_atomic() {
 	1) Tflag=1 ;;
 	*) Tflag= ;;
 	esac
-	mapfile_write "${tmpfile_handle}" ${Tflag:+-T} ||
+	mapfile_write "${tmpfile_handle}" ${Tflag:+-T} -- ${data+"$@"} ||
 	    ret="$?"
 	case "${ret}" in
 	0) ;;
@@ -2229,7 +2236,7 @@ _write_atomic() {
 # -T is for teeing
 write_atomic_cmp() {
 	local -; set +x
-	[ $# -ge 1 ] || eargs write_atomic_cmp '[-T]' destfile "< content"
+	[ $# -ge 1 ] || eargs write_atomic_cmp '[-T]' destfile '< data | data'
 	local flag Tflag
 	local OPTIND=1
 
@@ -2243,16 +2250,16 @@ write_atomic_cmp() {
 		esac
 	done
 	shift $((OPTIND-1))
-	[ $# -eq 1 ] || eargs write_atomic_cmp '[-T]' destfile "< content"
-	local dest="$1"
+	[ $# -eq 1 ] || [ $# -eq 2 ] ||
+	    eargs write_atomic_cmp '[-T]' destfile '< data | data'
 
-	_write_atomic 1 "${Tflag}" "${dest}" || return
+	_write_atomic 1 "${Tflag}" "$@" || return
 }
 
 # -T is for teeing
 write_atomic() {
 	local -; set +x
-	[ $# -ge 1 ] || eargs write_atomic '[-T]' destfile "< content"
+	[ $# -ge 1 ] || eargs write_atomic '[-T]' destfile '< data | data'
 	local flag Tflag
 	local OPTIND=1
 
@@ -2266,10 +2273,10 @@ write_atomic() {
 		esac
 	done
 	shift $((OPTIND-1))
-	[ $# -eq 1 ] || eargs write_atomic '[-T]' destfile "< content"
-	local dest="$1"
+	[ $# -eq 1 ] || [ $# -eq 2 ] ||
+	    eargs write_atomic '[-T]' destfile '< data | data'
 
-	_write_atomic 0 "${Tflag}" "${dest}" || return
+	_write_atomic 0 "${Tflag}" "$@" || return
 }
 
 # Place environment requirements on entering a function

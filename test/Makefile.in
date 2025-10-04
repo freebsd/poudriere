@@ -507,8 +507,9 @@ TESTS = array.sh builtins.sh builtins-cut.sh builtins-paste.sh \
 	shash-race-piped-noclobber.sh shellcheck.sh stack.sh \
 	stripansi.sh test_contexts.sh test_contexts_expand.sh \
 	timespec.sh timestamp.sh trap_ignore_block.sh trap_save.sh \
-	trap_save_block.sh write_atomic.sh write_atomic_cmp.sh \
-	$(JAIL_TESTS) prep.sh
+	trap_save_block.sh write_atomic.sh write_atomic-piped.sh \
+	write_atomic_cmp.sh write_atomic_cmp-piped.sh $(JAIL_TESTS) \
+	prep.sh
 JAIL_TESTS = \
 	bulk-MOVED-default.sh \
 	bulk-MOVED-flavor-all.sh \
@@ -1438,9 +1439,23 @@ write_atomic.sh.log: write_atomic.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+write_atomic-piped.sh.log: write_atomic-piped.sh
+	@p='write_atomic-piped.sh'; \
+	b='write_atomic-piped.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 write_atomic_cmp.sh.log: write_atomic_cmp.sh
 	@p='write_atomic_cmp.sh'; \
 	b='write_atomic_cmp.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+write_atomic_cmp-piped.sh.log: write_atomic_cmp-piped.sh
+	@p='write_atomic_cmp-piped.sh'; \
+	b='write_atomic_cmp-piped.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
