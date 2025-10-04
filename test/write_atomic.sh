@@ -5,6 +5,16 @@ set +e
 set_pipefail
 
 {
+	TMP=localfile
+	assert_false [ -e "${TMP}" ]
+	assert_true write_atomic "${TMP}" "1"
+	assert_file - "${TMP}" <<-EOF
+	1
+	EOF
+	rm -f "${TMP}"
+}
+
+{
 	TMP=$(mktemp -t mapfile)
 	TMP2=$(mktemp -t mapfile)
 	TMP3=$(mktemp -ut mapfile)

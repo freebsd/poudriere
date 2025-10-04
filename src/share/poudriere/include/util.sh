@@ -2162,7 +2162,7 @@ _write_atomic() {
 	local cmp="$1"
 	local tee="$2"
 	local dest="$3"
-	local tmpfile_handle tmpfile ret
+	local tmpfile_handle tmpfile ret tmpdir
 
 	case "$-${tee-}" in
 	C1)
@@ -2170,10 +2170,13 @@ _write_atomic() {
 			              "cannot work"
 		;;
 	esac
-
+	case "${dest}" in
+	*/*) tmpdir="${dest%/*}" ;;
+	*)   tmpdir="." ;;
+	esac
 	mapfile_mktemp tmpfile_handle tmpfile \
-	    -p "${dest%/*}" -ut ".write_atomic-${dest##*/}" ||
-	    err "$?" "write_atomic unable to create tmpfile in ${dest%/*}"
+	    -p "${tmpdir}" -ut ".write_atomic-${dest##*/}" ||
+	    err "$?" "write_atomic unable to create tmpfile in ${tmpdir}"
 	ret=0
 	if [ "${tee}" -eq 1 ]; then
 		mapfile_write "${tmpfile_handle}" -T || ret="$?"
