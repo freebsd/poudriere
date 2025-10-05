@@ -125,6 +125,7 @@ not_for_os() {
 }
 
 _err() {
+	local -; set +e +u
 	local lineinfo="${1-}"
 	local exit_status="${2-}"
 	local msg="${3-}"
@@ -439,7 +440,7 @@ job_msg() {
 			now=$(clock -monotonic)
 			calculate_duration elapsed "$((now - ${TIME_START_JOB:-${TIME_START:-0}}))"
 		fi
-		output="[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}]${elapsed:+ [${elapsed}]}"
+		output="[${COLOR_JOBID-}${MY_JOBID}${COLOR_RESET}]${elapsed:+ [${elapsed}]}"
 		;;
 	*)
 		unset output
