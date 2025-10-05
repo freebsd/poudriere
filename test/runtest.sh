@@ -565,6 +565,7 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 	    TEST_CONTEXTS_NUM_CHECK=yes \
 	    THISDIR="${THISDIR}" \
 	    SH="${SH}" \
+	    VERBOSE=0 \
 	    "${SH}" "${TEST}" 2>/dev/null)"
 	case "${TEST_CONTEXTS_TOTAL}" in
 	[0-9]|[0-9][0-9]|[0-9][0-9][0-9]|[0-9][0-9][0-9][0-9]) ;;
