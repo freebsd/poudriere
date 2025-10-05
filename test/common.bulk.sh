@@ -1499,7 +1499,10 @@ fi
 SCRIPTNAME="${SCRIPTNAME##*/}"
 POUDRIERE="env VERBOSE=0 ${POUDRIEREPATH} -e ${POUDRIERE_ETC}"
 ARCH=$(uname -p)
-JAILNAME="poudriere-test-${ARCH}"
+# Need to keep JAILNAME unique but not full of spam as it gets into every path
+# and makes debugging multiple worktrees difficult. Just hash the srcdir
+# into the name.
+JAILNAME="poudriere-test-${ARCH}-$(realpath "${am_abs_top_srcdir:?}" | sha256 | cut -c1-6)"
 JAIL_VERSION="13.5-RELEASE"
 JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt || echo" || echo)
 export UNAME_r=$(freebsd-version)
@@ -1547,11 +1550,12 @@ if [ ${BOOTSTRAP_ONLY:-0} -eq 1 ]; then
 	exit 0
 fi
 
-: ${PORTSDIR:=${THISDIR%/*}/test-ports/default}
+: "${TEST_PORTSDIR:=default}"
+: "${PORTSDIR:="${am_abs_top_srcdir:?}/test-ports/${TEST_PORTSDIR:?}"}"
 export PORTSDIR
 PTMNT="${PORTSDIR}"
 #: ${PTNAME:=${PTMNT##*/}}
-: ${PTNAME:=$(echo "${PORTSDIR}" | tr '[./]' '_')}
+: ${PTNAME:=$(echo "${TEST_PORTSDIR}" | tr '[./]' '_')}
 : ${SETNAME:="${SCRIPTNAME%.sh}${TEST_NUMS:+$(echo "${TEST_NUMS}" | tr ' ' '_')}"}
 export PORT_DBDIR=/dev/null
 export __MAKE_CONF="${POUDRIERE_ETC}/poudriere.d/make.conf"
