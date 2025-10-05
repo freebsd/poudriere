@@ -378,7 +378,7 @@ poudriere: src/bin/poudriere.in
 	    sed \
 	      -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
 	      -e "s,^\(USE_DEBUG\)=.*,\1='@USE_DEBUG@'," \
-	      ${.ALLSRC} > $@; \
+	      ${.ALLSRC} > $@.tmp && mv -f $@.tmp $@; \
 	else \
 	    cp -f ${.ALLSRC} $@; \
 	fi; \
