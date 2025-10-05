@@ -401,7 +401,7 @@ msg_dev() {
 
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
 	COLOR_ARROW="${COLOR_DEV}" \
-	    msg "${COLOR_DEV}Dev:${COLOR_RESET} $*" >&2
+	    msg "${COLOR_DEV}[$(getpid)] Dev:${COLOR_RESET} $*" >&2
 }
 
 msg_debug() {
