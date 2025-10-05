@@ -282,7 +282,7 @@ _kill_job() {
 			;;
 		esac
 	done
-	msg_dev "Collecting ${status} job=${jobid} pgid=${pgid}"
+	msg_dev "Collecting status='${status}' job=${jobid} pgid=${pgid}"
 	_wait "${jobid}" || ret="$?"
 	msg_dev "Job ${jobid} pgid=${pgid} exited ${ret}"
 	return "${ret}"
@@ -797,7 +797,11 @@ get_job_status() {
 	# shellcheck disable=SC2086
 	set -- ${gjs_output}
 	set +o noglob
+	local gjs_n
+	gjs_n=0
+	# shellcheck disable=SC2167
 	for gjs_arg in "$@"; do
+		gjs_n="$((gjs_n + 1))"
 		case "${gjs_arg}" in
 		"["*"]") continue ;;
 		"+"|"-") continue ;;
@@ -809,7 +813,22 @@ get_job_status() {
 		[0-9][0-9][0-9][0-9][0-9][0-9][0-9]|\
 		[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]) continue ;;
 		*)
-			setvar "${gjs_var_return}" "${gjs_arg}" || return
+			local gjs_reason
+
+			unset gjs_reason
+			shift "$((gjs_n - 1))"
+			# shellcheck disable=SC2165
+			for gjs_arg in "$@"; do
+				case "${gjs_arg}" in
+				[0-9]*)
+					break
+					;;
+				*)
+					gjs_reason="${gjs_reason:+${gjs_reason} }${gjs_arg}"
+					;;
+				esac
+			done
+			setvar "${gjs_var_return}" "${gjs_reason}" || return
 			return 0
 		esac
 	done
