@@ -1501,12 +1501,12 @@ POUDRIERE="${POUDRIEREPATH} -e ${POUDRIERE_ETC}"
 ARCH=$(uname -p)
 JAILNAME="poudriere-test-${ARCH}"
 JAIL_VERSION="13.5-RELEASE"
-JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" || echo)
+JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt || echo" || echo)
 export UNAME_r=$(freebsd-version)
 export UNAME_v="FreeBSD ${UNAME_r}"
 if [ -n "${JAILMNT}" ]; then
 	# Ensure it is up-to-date otherwise delete it so it can be updated.
-	JAIL_VERSION_CUR=$(${POUDRIERE} api "jget ${JAILNAME} version" || echo)
+	JAIL_VERSION_CUR=$(${POUDRIERE} api "jget ${JAILNAME} version || echo" || echo)
 	case "${JAIL_VERSION_CUR}" in
 	"${JAIL_VERSION}") ;;
 	*)
@@ -1535,7 +1535,7 @@ if [ -z "${JAILMNT}" ]; then
 		echo "SKIP: Cannot setup jail with Poudriere" >&2
 		exit 77
 	fi
-	JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" || echo)
+	JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt || echo" || echo)
 	if [ -z "${JAILMNT}" ]; then
 		echo "SKIP: Failed fetching mnt for new jail in Poudriere" >&2
 		exit 77
