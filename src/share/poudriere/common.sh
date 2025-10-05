@@ -6327,7 +6327,7 @@ build_pkg() {
 
 	case "${tmpfs_blacklist_dir:+set}" in
 	set)
-		umount -n "${mnt:?}/wrkdirs" |
+		umount -n "${mnt:?}/wrkdirs" ||
 		    umount -f "${mnt:?}/wrkdirs"
 		rm -f "${mnt:?}/.tmpfs_blacklist_dir"
 		rm -rf "${tmpfs_blacklist_dir:?}"
