@@ -376,7 +376,8 @@ msg_error() {
 	set)
 		# Send colored msg to bulk log...
 		COLOR_ARROW="${COLOR_ERROR}" \
-		    job_msg "${COLOR_ERROR}${prefix}${COLOR_RESET}" "$@"
+		    redirect_to_bulk \
+		    job_msg "${COLOR_ERROR}${prefix}${COLOR_RESET}" "$@" >&2
 		# Needed hack for test output ordering
 		if [ "${IN_TEST:-0}" -eq 1 -a -n "${TEE_SLEEP_TIME-}" ]; then
 			sleep "${TEE_SLEEP_TIME}"
@@ -388,8 +389,7 @@ msg_error() {
 		# Send to true stderr
 		COLOR_ARROW="${COLOR_ERROR}" \
 		    redirect_to_bulk \
-		    msg "${COLOR_ERROR}${prefix}${COLOR_RESET}" "$@" \
-		    >&2
+		    msg "${COLOR_ERROR}${prefix}${COLOR_RESET}" "$@" >&2
 		;;
 	esac
 	return 0
