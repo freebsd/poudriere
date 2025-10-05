@@ -5421,7 +5421,7 @@ build_pkg() {
 	rm -rfx ${mnt}/wrkdirs/* || :
 
 	if [ -n "${tmpfs_blacklist_dir}" ]; then
-		umount -n "${mnt:?}/wrkdirs" |
+		umount -n "${mnt:?}/wrkdirs" ||
 		    umount -f "${mnt:?}/wrkdirs"
 		rm -f "${mnt}/.tmpfs_blacklist_dir"
 		rm -rf "${tmpfs_blacklist_dir}"
