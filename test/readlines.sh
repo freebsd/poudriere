@@ -13,6 +13,62 @@ set +e
 	  six
 	EOF
 
+	assert_true readlines one < "${TMP}"
+	expected="$({
+	cat <<-EOF
+	1 one
+	2 two
+	3 thre\e
+	4 
+	5 five
+	  six
+	EOF
+	})"
+	assert "${expected}" "${one}"
+	assert 6 "${_readlines_lines_read:?}"
+
+	rm -f "${TMP}"
+}
+
+{
+	TMP="$(mktemp -ut readlines)"
+	cat > "${TMP}" <<-EOF
+	1 one
+	2 two
+	3 thre\e
+	4 
+	5 five
+	  six
+	EOF
+
+	assert_true readlines one two < "${TMP}"
+	assert "1 one" "${one}"
+	expected="$({
+	cat <<-EOF
+	2 two
+	3 thre\e
+	4 
+	5 five
+	  six
+	EOF
+	})"
+	assert "${expected}" "${two}"
+	assert 6 "${_readlines_lines_read:?}"
+
+	rm -f "${TMP}"
+}
+
+{
+	TMP="$(mktemp -ut readlines)"
+	cat > "${TMP}" <<-EOF
+	1 one
+	2 two
+	3 thre\e
+	4 
+	5 five
+	  six
+	EOF
+
 	assert_true readlines one two three four five six < "${TMP}"
 	assert "1 one" "${one}"
 	assert "2 two" "${two}"
