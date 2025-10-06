@@ -32,9 +32,6 @@ check_task:
                 - name: "Check"
                   env:
                           SH: "sh"
-                - name: "Check (/bin/sh)"
-                  env:
-                          SH: "/bin/sh"
         check_script: make -s ${MAKEJOBS} check SH=${SH} VERBOSE=1 TESTS_SKIP_BUILD=1 || { cat test/test-suite.log; exit 1; }
         distcheck_script: make -s ${MAKEJOBS} distcheck SH=${SH} VERBOSE=1 TESTS_SKIP_BUILD=1 || { find . -name test-suite.log -exec cat {} +; exit 1; }
         always:
