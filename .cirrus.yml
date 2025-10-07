@@ -48,7 +48,7 @@ check_task:
                 cpu: 8
                 memory: 8G
                 matrix:
-                        - image: freebsd-14-2-release-amd64
-                        - image: freebsd-13-5-release-amd64
-                        - image_family: freebsd-14-0-snap
+                        - image_family: freebsd-13-5-snap
+                        - image_family: freebsd-14-3-snap
+                        - image_family: freebsd-15-0-snap
 # vim: sw=8 et:
