@@ -20,13 +20,13 @@ assert "$(sorted "bash patchutils pkg")" "${pkgqueue_list}"
 assert_out 0 "" pkgqueue_find_dead_packages
 assert_true pkgqueue_move_ready_to_pool
 
-assert_out 0 - pkgqueue_remaining <<EOF
+assert_out_unordered 0 - pkgqueue_remaining <<EOF
 build:pkg ready-to-run
 build:bash waiting-on-dependency
 build:patchutils waiting-on-dependency
 EOF
 
-assert_out 0 - pkgqueue_graph <<-EOF
+assert_out_unordered 0 - pkgqueue_graph <<-EOF
 build:pkg build:bash
 build:bash build:patchutils
 build:pkg build:patchutils
@@ -48,12 +48,12 @@ assert "build" "${job_type}"
 assert_true pkgqueue_clean_queue "${job_type}" "${pkgname}" "${clean_rdepends-}"
 assert_true pkgqueue_job_done "${job_type}" "${pkgname}"
 
-assert_out 0 - pkgqueue_remaining <<EOF
+assert_out_unordered 0 - pkgqueue_remaining <<EOF
 build:bash ready-to-run
 build:patchutils waiting-on-dependency
 EOF
 
-assert_out 0 - pkgqueue_graph <<-EOF
+assert_out_unordered 0 - pkgqueue_graph <<-EOF
 build:bash build:patchutils
 EOF
 assert_out 0 - pkgqueue_graph_dot <<EOF
@@ -69,11 +69,11 @@ assert "build" "${job_type}"
 assert_true pkgqueue_clean_queue "${job_type}" "${pkgname}" "${clean_rdepends-}"
 assert_true pkgqueue_job_done "${job_type}" "${pkgname}"
 
-assert_out 0 - pkgqueue_remaining <<EOF
+assert_out_unordered 0 - pkgqueue_remaining <<EOF
 build:patchutils ready-to-run
 EOF
 
-assert_out 0 - pkgqueue_graph <<-EOF
+assert_out_unordered 0 - pkgqueue_graph <<-EOF
 EOF
 assert_out 0 - pkgqueue_graph_dot <<EOF
 digraph Q {

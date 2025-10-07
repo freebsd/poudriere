@@ -11,6 +11,8 @@ check_task:
                 CCACHE_NOSTATS: 1
                 CCACHE_TEMPDIR: "/tmp"
                 BASEFS: ${CIRRUS_WORKING_DIR}/test_bulk
+        fdescfs_setup_script:
+                - mount -t fdescfs fdescfs /dev/fd
         ccache_cache:
                 folder: ${CCACHE_DIR}
         distfiles_cache:
@@ -29,11 +31,11 @@ check_task:
         test_jail_prep_script:
                 - make -C test prep
         matrix:
-                - name: "Check"
+                - name: "Checkquick"
                   env:
                           SH: "sh"
-        check_script: make -s ${MAKEJOBS} checkquick SH=${SH} VERBOSE=1 || { cat test/test-suite.log; exit 1; }
-        distcheck_script: make -s ${MAKEJOBS} distcheckquick SH=${SH} VERBOSE=1 || { find . -name test-suite.log -exec cat {} +; exit 1; }
+        checkquick_script: make -s ${MAKEJOBS} checkquick SH=${SH} VERBOSE=1 || { cat test/test-suite.log; exit 1; }
+        distcheckquick_script: make -s ${MAKEJOBS} distcheckquick SH=${SH} VERBOSE=1 || { find . -name test-suite.log -exec cat {} +; exit 1; }
         always:
                 bulk_logs_cleanup_script:
                         - ( find -x test_bulk/data/logs/bulk ! -name '*.log' ! -name '.poudriere.*' ! -name '*.json' -delete; ) || true
@@ -46,7 +48,7 @@ check_task:
                 cpu: 8
                 memory: 8G
                 matrix:
-                        - image: freebsd-14-2-release-amd64
-                        - image: freebsd-13-5-release-amd64
-                        - image_family: freebsd-14-0-snap
+                        - image_family: freebsd-13-5-snap
+                        - image_family: freebsd-14-3-snap
+                        - image_family: freebsd-15-0-snap
 # vim: sw=8 et:

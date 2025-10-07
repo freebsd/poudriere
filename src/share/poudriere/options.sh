@@ -63,6 +63,7 @@ DO_RECURSE=y
 DEFAULT_COMMAND=config-conditional
 RECURSE_COMMAND=config-recursive
 OFLAG=0
+NEED_D4P=1
 
 [ $# -eq 0 ] && usage
 
@@ -122,6 +123,7 @@ while getopts "a:cCj:f:o:p:nrsz:" FLAG; do
 			COMMAND=rmconfig
 			COMMAND_FLAG="${FLAG}"
 			RECURSE_COMMAND=rmconfig-recursive
+			NEED_D4P=0
 			;;
 		s)
 			if [ -n "${COMMAND}" ]; then
@@ -131,6 +133,7 @@ while getopts "a:cCj:f:o:p:nrsz:" FLAG; do
 			COMMAND=showconfig
 			COMMAND_FLAG="${FLAG}"
 			RECURSE_COMMAND=showconfig-recursive
+			NEED_D4P=0
 			;;
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"
@@ -158,12 +161,14 @@ fi
 export PORTSDIR=`pget ${PTNAME} mnt`
 [ -d "${PORTSDIR:?}/ports" ] && PORTSDIR="${PORTSDIR:?}/ports"
 [ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"
-if command -v portconfig >/dev/null 2>&1; then
-	d4p=portconfig
-elif command -v dialog4ports >/dev/null 2>&1; then
-	d4p=dialog4ports
-else
-	err 1 "You must have ports-mgmt/dialog4ports or ports-mgmt/portconfig installed on the host to use this command."
+if [ "${NEED_D4P}" -eq 1 ]; then
+	if command -v portconfig >/dev/null 2>&1; then
+		d4p=portconfig
+	elif command -v dialog4ports >/dev/null 2>&1; then
+		d4p=dialog4ports
+	else
+		err 1 "You must have ports-mgmt/dialog4ports or ports-mgmt/portconfig installed on the host to use this command."
+	fi
 fi
 
 read_packages_from_params "$@"
