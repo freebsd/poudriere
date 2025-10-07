@@ -31,11 +31,11 @@ check_task:
         test_jail_prep_script:
                 - make -C test prep
         matrix:
-                - name: "Check"
+                - name: "Checkquick"
                   env:
                           SH: "sh"
-        check_script: make -s ${MAKEJOBS} checkquick SH=${SH} VERBOSE=1 || { cat test/test-suite.log; exit 1; }
-        distcheck_script: make -s ${MAKEJOBS} distcheckquick SH=${SH} VERBOSE=1 || { find . -name test-suite.log -exec cat {} +; exit 1; }
+        checkquick_script: make -s ${MAKEJOBS} checkquick SH=${SH} VERBOSE=1 || { cat test/test-suite.log; exit 1; }
+        distcheckquick_script: make -s ${MAKEJOBS} distcheckquick SH=${SH} VERBOSE=1 || { find . -name test-suite.log -exec cat {} +; exit 1; }
         always:
                 bulk_logs_cleanup_script:
                         - ( find -x test_bulk/data/logs/bulk ! -name '*.log' ! -name '.poudriere.*' ! -name '*.json' -delete; ) || true
