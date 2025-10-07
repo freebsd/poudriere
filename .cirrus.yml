@@ -11,6 +11,8 @@ check_task:
                 CCACHE_NOSTATS: 1
                 CCACHE_TEMPDIR: "/tmp"
                 BASEFS: ${CIRRUS_WORKING_DIR}/test_bulk
+        fdescfs_setup_script:
+                - mount -t fdescfs fdescfs /dev/fd
         ccache_cache:
                 folder: ${CCACHE_DIR}
         distfiles_cache:
