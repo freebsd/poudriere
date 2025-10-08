@@ -927,7 +927,7 @@ injail() {
 
 injail_direct() {
 	local name
-	local MAX_MEMORY_BYTES
+	local MAX_MEMORY_BYTES MAX_FILES
 	case "${DISALLOW_NETWORKING}" in
 	"yes") local JNETNAME= ;;
 	esac
@@ -936,29 +936,26 @@ injail_direct() {
 	case "${name}" in
 	"") err 1 "No jail setup" ;;
 	esac
+	unset MAX_MEMORY_BYTES
 	case "${JEXEC_LIMITS:-0}" in
 	1)
-		unset MAX_MEMORY_BYTES
 		case "${MAX_MEMORY:+set}" in
 		set)
 			MAX_MEMORY_BYTES="$((MAX_MEMORY * 1024 * 1024 * 1024))"
 			;;
 		esac
-		${JEXEC_SETSID-} jexec \
-			-U "${JUSER:-root}" \
-			"${name:?}${JNETNAME:+-${JNETNAME}}" \
-			${JEXEC_LIMITS+/usr/bin/limits} \
-			${MAX_MEMORY_BYTES:+-v "${MAX_MEMORY_BYTES}"} \
-			${MAX_FILES:+-n "${MAX_FILES}"} \
-			"$@"
 		;;
 	0)
-		${JEXEC_SETSID-} jexec \
-			-U "${JUSER:-root}" \
-			"${name:?}${JNETNAME:+-${JNETNAME}}" \
-			"$@"
+		unset MAX_FILES
 		;;
 	esac
+	${JEXEC_SETSID-} jexec \
+		-U "${JUSER:-root}" \
+		"${name:?}${JNETNAME:+-${JNETNAME}}" \
+		${JEXEC_LIMITS+/usr/bin/limits} \
+		${MAX_MEMORY_BYTES:+-v "${MAX_MEMORY_BYTES}"} \
+		${MAX_FILES:+-n "${MAX_FILES}"} \
+		"$@"
 }
 
 injail_tty() {
