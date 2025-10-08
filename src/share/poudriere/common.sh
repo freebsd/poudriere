@@ -917,12 +917,14 @@ injail() {
 	"yes") local JNETNAME= ;;
 	esac
 
-	if [ ${INJAIL_HOST:-0} -eq 1 ]; then
+	case "${INJAIL_HOST:-0}" in
+	1)
 		# For test/
-		"$@"
-	else
-		injail_direct "$@"
-	fi
+		"$@" || return
+		return
+		;;
+	esac
+	injail_direct "$@"
 }
 
 injail_direct() {
