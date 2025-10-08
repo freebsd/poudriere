@@ -367,13 +367,7 @@ if ! [ -t 1 ]; then
 	export DEV_WARNING_WAIT=0
 fi
 sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' "${MASTERMNT:?}/etc/make.conf"
-_gsub_var_name "${PKGNAME%-*}" PKGNAME_VARNAME
-eval "MAX_FILES=\${MAX_FILES_${PKGNAME_VARNAME}:-${DEFAULT_MAX_FILES}}"
-eval "MAX_MEMORY=\${MAX_MEMORY_${PKGNAME_VARNAME}:-${MAX_MEMORY:-}}"
-if [ -n "${MAX_MEMORY}" -o -n "${MAX_FILES}" ]; then
-	JEXEC_LIMITS=1
-fi
-unset PKGNAME_VARNAME
+setup_jexec_limits "${PKGNAME%-*}"
 log_start "${PKGNAME}" 1
 buildlog_start "${PKGNAME}" "${ORIGINSPEC}"
 ret=0

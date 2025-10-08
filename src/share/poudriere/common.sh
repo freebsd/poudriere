@@ -892,6 +892,25 @@ do_confirm_delete() {
 	return ${ret}
 }
 
+setup_jexec_limits()  {
+	[ $# -eq 1 ] || eargs setup_jexec_limits pkgbase
+	local pkgbase="$1"
+	local pkgbase_varname limit_var
+
+	_gsub_var_name "${pkgbase:?}" pkgbase_varname
+	for limit_var in EXECUTION_TIME FILES MEMORY; do
+		if isset "MAX_${limit_var:?}_${pkgbase_varname:?}"; then
+			getvar "MAX_${limit_var:?}_${pkgbase_varname:?}" \
+			    MAX_${limit_var:?}
+		fi
+	done
+	case "${MAX_MEMORY:+set}${MAX_FILES:+set}" in
+	*set*)
+		JEXEC_LIMITS=1
+		;;
+	esac
+}
+
 injail() {
 	local -; set +x
 	case "${DISALLOW_NETWORKING}" in
@@ -6098,8 +6117,8 @@ build_pkg() {
 	local log
 	local errortype="???"
 	local ret=0
-	local tmpfs_blacklist_dir
-	local elapsed now pkgname_varname jpkg_glob originspec status
+	local tmpfs_blacklist_dir JEXEC_LIMITS
+	local elapsed now jpkg_glob originspec status
 	local PORTTESTING
 	local -
 
@@ -6160,14 +6179,7 @@ build_pkg() {
 	_lookup_portdir portdir "${port}"
 
 	pkgbase="${pkgname%-*}"
-	_gsub_var_name "${pkgbase}" pkgname_varname
-	eval "MAX_EXECUTION_TIME=\${MAX_EXECUTION_TIME_${pkgname_varname}:-${MAX_EXECUTION_TIME:-}}"
-	eval "MAX_FILES=\${MAX_FILES_${pkgname_varname}:-${DEFAULT_MAX_FILES}}"
-	eval "MAX_MEMORY=\${MAX_MEMORY_${pkgname_varname}:-${MAX_MEMORY:-}}"
-	if [ -n "${MAX_MEMORY}" -o -n "${MAX_FILES}" ]; then
-		JEXEC_LIMITS=1
-	fi
-	unset pkgname_varname
+	setup_jexec_limits "${pkgbase:?}"
 	MNT_DATADIR="${mnt:?}/${DATADIR_NAME:?}"
 	add_relpath_var MNT_DATADIR
 	cd "${MNT_DATADIR:?}"
@@ -10637,7 +10649,6 @@ esac
 export LC_COLLATE
 
 : ${MAX_FILES:=8192}
-: ${DEFAULT_MAX_FILES:=${MAX_FILES}}
 : ${PIPE_FATAL_ERROR_FILE:="${POUDRIERE_TMPDIR:?}/pipe_fatal_error-$$"}
 HAVE_FDESCFS=0
 case "$(mount -t fdescfs | awk '$3 == "/dev/fd" {print $3}')" in
