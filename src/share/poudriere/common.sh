@@ -10375,7 +10375,7 @@ POUDRIERE_DATA="$(get_data_dir)"
 if [ -e "${POUDRIERE_DATA}" ]; then
 	POUDRIERE_DATA=$(realpath "${POUDRIERE_DATA}")
 fi
-: ${WRKDIR_ARCHIVE_FORMAT="tbz"}
+: ${WRKDIR_ARCHIVE_FORMAT="txz"}
 case "${WRKDIR_ARCHIVE_FORMAT}" in
 	tar|tgz|tbz|txz|tzst);;
 	*) err 1 "invalid format for WRKDIR_ARCHIVE_FORMAT: ${WRKDIR_ARCHIVE_FORMAT}" ;;
