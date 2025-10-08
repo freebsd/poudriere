@@ -1022,10 +1022,14 @@ do_bulk() {
 	_setup_build
 	case "$@" in
 	*-n*)
-		DRY_RUN_PACKAGES_LIST="$(mktemp -ut packages_for_dry_run)"
-		if [ -d "${PACKAGES:?}/All/" ]; then
-			list_package_files
-		fi > "${DRY_RUN_PACKAGES_LIST:?}"
+		case "$@" in
+		*-c*) ;;
+		*)
+			DRY_RUN_PACKAGES_LIST="$(mktemp -ut packages_for_dry_run)"
+			if [ -d "${PACKAGES:?}/All/" ]; then
+				list_package_files
+			fi > "${DRY_RUN_PACKAGES_LIST:?}"
+		esac
 		;;
 	esac
 	do_poudriere bulk \
@@ -1066,9 +1070,14 @@ do_options() {
 
 do_pkgclean() {
 	_setup_overlays
-	# pkg is needed for pkgclean
-	do_bulk ports-mgmt/pkg
-	assert 0 "$?" "bulk for pkg should pass"
+	case "$@" in
+	*-A*) ;;
+	*)
+		# pkg is needed for pkgclean if not removing all.
+		do_bulk ports-mgmt/pkg
+		assert 0 "$?" "bulk for pkg should pass"
+		;;
+	esac
 	do_poudriere pkgclean \
 	    ${REAL_OVERLAYS:+$(echo "${REAL_OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
 	    ${JFLAG:+-J ${JFLAG}} \
@@ -1193,11 +1202,15 @@ _assert_bulk_dry_run() {
 	    "Logdir '${log:?}/logs/ignored' should be empty"
 
 	# Packages should be untouched.
-	tmp="$(mktemp -u)"
-	if [ -d "${PACKAGES:?}/All/" ]; then
-		list_package_files
-	fi > "${tmp:?}"
-	stack_lineinfo assert_file "${tmp}" "${DRY_RUN_PACKAGES_LIST:?}"
+	case "${DRY_RUN_PACKAGES_LIST:+set}" in
+	set)
+		tmp="$(mktemp -u)"
+		if [ -d "${PACKAGES:?}/All/" ]; then
+			list_package_files
+		fi > "${tmp:?}"
+		stack_lineinfo assert_file "${tmp}" "${DRY_RUN_PACKAGES_LIST:?}"
+		;;
+	esac
 	# No .building dir should be left behind
 	assert_false [ -d "${PACKAGES:?}/.building" ]
 }

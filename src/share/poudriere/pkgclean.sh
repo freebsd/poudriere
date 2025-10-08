@@ -191,9 +191,13 @@ else
 fi
 jail_start "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 prepare_ports
-if ! ensure_pkg_installed; then
-	err 1 "pkg must be built before this command can be used"
-fi
+case "${LISTPORTS+set}" in
+set)
+	if ! ensure_pkg_installed; then
+		err 1 "pkg must be built before this command can be used"
+	fi
+	;;
+esac
 msg "Looking for unneeded packages"
 bset status "pkgclean:"
 

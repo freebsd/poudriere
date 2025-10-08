@@ -141,6 +141,7 @@ JAIL_TESTS= \
 	bulk-build-multiple-eligible-in-queue.sh \
 	bulk-build-origin_has_pkgbase.sh \
 	bulk-build-porttesting.sh \
+	bulk-build-quick-pkg.sh \
 	bulk-build-self-immutable-base-no.sh \
 	bulk-build-self-immutable-base-nullfs.sh \
 	bulk-build-self-immutable-base-schg.sh \
@@ -210,6 +211,8 @@ JAIL_TESTS= \
 	testport-build-default-flavor.sh \
 	testport-build-no-deps.sh \
 	testport-build-porttesting.sh \
+	testport-build-quick-pkg.sh \
+	testport-build-quick-1-dep.sh \
 	testport-build-specific-flavor.sh \
 	testport-build-specific-port.sh \
 	testport-default-all-flavors-failure.sh \

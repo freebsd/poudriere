@@ -541,6 +541,7 @@ JAIL_TESTS = \
 	bulk-build-multiple-eligible-in-queue.sh \
 	bulk-build-origin_has_pkgbase.sh \
 	bulk-build-porttesting.sh \
+	bulk-build-quick-pkg.sh \
 	bulk-build-self-immutable-base-no.sh \
 	bulk-build-self-immutable-base-nullfs.sh \
 	bulk-build-self-immutable-base-schg.sh \
@@ -610,6 +611,8 @@ JAIL_TESTS = \
 	testport-build-default-flavor.sh \
 	testport-build-no-deps.sh \
 	testport-build-porttesting.sh \
+	testport-build-quick-pkg.sh \
+	testport-build-quick-1-dep.sh \
 	testport-build-specific-flavor.sh \
 	testport-build-specific-port.sh \
 	testport-default-all-flavors-failure.sh \
@@ -1670,6 +1673,13 @@ bulk-build-porttesting.sh.log: bulk-build-porttesting.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-quick-pkg.sh.log: bulk-build-quick-pkg.sh
+	@p='bulk-build-quick-pkg.sh'; \
+	b='bulk-build-quick-pkg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 bulk-build-self-immutable-base-no.sh.log: bulk-build-self-immutable-base-no.sh
 	@p='bulk-build-self-immutable-base-no.sh'; \
 	b='bulk-build-self-immutable-base-no.sh'; \
@@ -2107,6 +2117,20 @@ testport-build-no-deps.sh.log: testport-build-no-deps.sh
 testport-build-porttesting.sh.log: testport-build-porttesting.sh
 	@p='testport-build-porttesting.sh'; \
 	b='testport-build-porttesting.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-build-quick-pkg.sh.log: testport-build-quick-pkg.sh
+	@p='testport-build-quick-pkg.sh'; \
+	b='testport-build-quick-pkg.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-build-quick-1-dep.sh.log: testport-build-quick-1-dep.sh
+	@p='testport-build-quick-1-dep.sh'; \
+	b='testport-build-quick-1-dep.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
