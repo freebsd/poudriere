@@ -465,7 +465,7 @@ parallel_start() {
 	unlink "${fifo}" || :
 	NBPARALLEL=0
 	PARALLEL_JOBNOS=""
-	: "${PARALLEL_JOBS:="$(sysctl -n hw.ncpu)"}"
+	: "${PARALLEL_JOBS:="$(nproc)"}"
 	_SHOULD_REAP=0
 	delay_pipe_fatal_error
 }

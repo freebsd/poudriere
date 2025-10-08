@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 19, 2024
+.Dd October 8, 2025
 .Dt POUDRIERE-JAIL 8
 .Os
 .Sh NAME
@@ -167,8 +167,8 @@ Run
 of
 .Xr make 1
 jobs in parallel for buildworld.
-Defaults to the number of CPUs reported by:
-.Dq Li sysctl hw.ncpu .
+Defaults to the number of CPUs reported by
+.Xr nproc 1 .
 .It Fl j Ar name
 Specify the
 .Ar name

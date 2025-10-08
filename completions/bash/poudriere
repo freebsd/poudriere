@@ -124,7 +124,7 @@ _poudriere_jails_list() {
 
 # TODO: Support the second argument.
 _poudriere_jobs_number() {
-    COMPREPLY=($(compgen -W "$(seq 1 $(sysctl -n hw.ncpu))" -- "$cur"))
+    COMPREPLY=($(compgen -W "$(seq 1 $(nproc))" -- "$cur"))
 }
 
 _poudriere_ports_list() {

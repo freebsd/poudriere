@@ -10496,7 +10496,7 @@ case "${IPS:?}" in
 	;;
 esac
 
-NCPU="$(sysctl -n hw.ncpu)"
+NCPU="$(nproc)"
 
 case ${PARALLEL_JOBS} in
 ''|*[!0-9]*)

@@ -185,7 +185,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 
 # parallel build support.
 #
-# By default poudriere uses hw.ncpu to determine the number of builders.
+# By default poudriere uses nproc(1) to determine the number of builders.
 # You can override this default by changing PARALLEL_JOBS here, or
 # by specifying the -J flag to bulk/testport.
 #
