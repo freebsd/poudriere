@@ -936,22 +936,29 @@ injail_direct() {
 	case "${name}" in
 	"") err 1 "No jail setup" ;;
 	esac
-	if [ ${JEXEC_LIMITS:-0} -eq 1 ]; then
+	case "${JEXEC_LIMITS:-0}" in
+	1)
 		unset MAX_MEMORY_BYTES
 		case "${MAX_MEMORY:+set}" in
 		set)
 			MAX_MEMORY_BYTES="$((MAX_MEMORY * 1024 * 1024 * 1024))"
 			;;
 		esac
-		${JEXEC_SETSID-} jexec -U ${JUSER:-root} ${name:?}${JNETNAME:+-${JNETNAME}} \
+		${JEXEC_SETSID-} jexec \
+			-U "${JUSER:-root}" \
+			"${name:?}${JNETNAME:+-${JNETNAME}}" \
 			${JEXEC_LIMITS+/usr/bin/limits} \
-			${MAX_MEMORY_BYTES:+-v ${MAX_MEMORY_BYTES}} \
-			${MAX_FILES:+-n ${MAX_FILES}} \
+			${MAX_MEMORY_BYTES:+-v "${MAX_MEMORY_BYTES}"} \
+			${MAX_FILES:+-n "${MAX_FILES}"} \
 			"$@"
-	else
-		${JEXEC_SETSID-} jexec -U ${JUSER:-root} ${name:?}${JNETNAME:+-${JNETNAME}} \
+		;;
+	0)
+		${JEXEC_SETSID-} jexec \
+			-U "${JUSER:-root}" \
+			"${name:?}${JNETNAME:+-${JNETNAME}}" \
 			"$@"
-	fi
+		;;
+	esac
 }
 
 injail_tty() {
@@ -968,31 +975,31 @@ jstart() {
 		MAX_MEMORY_BYTES="$((MAX_MEMORY * 1024 * 1024 * 1024))"
 		;;
 	esac
-	network="${LOCALIPARGS}"
+	network="${LOCALIPARGS:?}"
 
 	case "${RESTRICT_NETWORKING-}" in
 	"yes") ;;
 	*)
-		network="${IPARGS} ${JAIL_NET_PARAMS}"
+		network="${IPARGS:?} ${JAIL_NET_PARAMS-}"
 		;;
 	esac
 
 	_my_name name
 
-	mpath=${MASTERMNT:?}${MY_JOBID:+/../${MY_JOBID}}
+	mpath="${MASTERMNT:?}${MY_JOBID:+/../${MY_JOBID}}"
 	echo "::1 ${name:?}" >> "${mpath:?}/etc/hosts"
 	echo "127.0.0.1 ${name:?}" >> "${mpath:?}/etc/hosts"
 
 	# Restrict to no networking (if RESTRICT_NETWORKING==yes)
-	jail -c persist name=${name:?} \
-		path=${mpath:?} \
-		host.hostname=${BUILDER_HOSTNAME-${name}} \
-		${network} ${JAIL_PARAMS}
+	jail -c persist "name=${name:?}" \
+		"path=${mpath:?}" \
+		"host.hostname=${BUILDER_HOSTNAME-${name}}" \
+		"${network}" ${JAIL_PARAMS-}
 	# Allow networking in -n jail
-	jail -c persist name=${name}-n \
-		path=${mpath:?} \
-		host.hostname=${BUILDER_HOSTNAME-${name}} \
-		${IPARGS} ${JAIL_PARAMS} ${JAIL_NET_PARAMS}
+	jail -c persist "name=${name}-n" \
+		"path=${mpath:?}" \
+		"host.hostname=${BUILDER_HOSTNAME-${name}}" \
+		${IPARGS:?} ${JAIL_PARAMS-} ${JAIL_NET_PARAMS-}
 	return 0
 }
 
@@ -1035,8 +1042,8 @@ jstop() {
 	local name
 
 	_my_name name
-	jail -r ${name:?} 2>/dev/null || :
-	jail -r ${name:?}-n 2>/dev/null || :
+	jail -r "${name:?}" 2>/dev/null || :
+	jail -r "${name:?}-n" 2>/dev/null || :
 }
 
 eargs() {
