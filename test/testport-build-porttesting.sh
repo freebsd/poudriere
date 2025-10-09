@@ -22,7 +22,7 @@ echo "-----" | tee /dev/stderr
 EXPECTED_BUILT="ports-mgmt/pkg"
 EXPECTED_FAILED="ports-mgmt/poudriere-devel-porttesting"
 do_testport ${TESTPORT}
-rssert 1 "$?" "testport should fail"
+assert 1 "$?" "testport should fail"
 assert_bulk_queue_and_stats
 assert_bulk_build_results
 echo "-----" | tee /dev/stderr
