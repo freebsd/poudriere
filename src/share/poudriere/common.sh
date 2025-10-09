@@ -5902,6 +5902,12 @@ parallel_build() {
 		done
 	)
 
+	# The port-to-test is "queued" but won't build in here. Avoid
+	# starting a builder for it.
+	if was_a_testport_run; then
+		nremaining="$((nremaining - 1))"
+	fi
+
 	# If pool is empty, just return
 	if [ "${nremaining:?}" -eq 0 ]; then
 		return 0
