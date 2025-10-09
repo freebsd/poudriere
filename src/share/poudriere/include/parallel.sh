@@ -625,7 +625,7 @@ nohang() {
 
 	# Run the actual command in a child subshell
 	(
-		trap - INT
+		trap 'exit 130' INT
 		local ret=0
 		if [ "${OUTPUT_REDIRECTED:-0}" -eq 1 ]; then
 			exec 3>&- 4>&-
@@ -633,7 +633,7 @@ nohang() {
 			    OUTPUT_REDIRECTED_STDOUT
 		fi
 		setproctitle "nohang (${logfile})" || :
-		_spawn_wrapper "$@" || ret=1
+		SUPPRESS_INT=1 _spawn_wrapper "$@" || ret=$?
 		# Notify the pipe the command is done
 		echo "done" >&8 2>/dev/null || :
 		exit "${ret}"
