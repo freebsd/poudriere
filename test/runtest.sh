@@ -307,6 +307,13 @@ runtest() {
 	{
 		TEST_END="$(clock -monotonic)"
 		echo "Test ended: $(date) -- duration: $((TEST_END - TEST_START))s"
+		echo "Log: $(get_log_name)"
+		echo "Test: ${TEST}"
+		case "${TRUSS:+set}" in
+		set)
+			echo "Truss: $(get_log_name).truss"
+			;;
+		esac
 		times
 		# hide set -x
 	} >&2 2>/dev/null
