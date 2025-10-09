@@ -4568,7 +4568,9 @@ download_from_repo() {
 		    "${remote_all_abi}" "${remote_all_prefix}" \
 		    "${remote_all_cats}" "${wantedpkgs}"
 	done
-	parallel_stop
+	if ! parallel_stop; then
+		err 1 "Package fetch: Errors detected downloading packages"
+	fi
 	rm -f "${missing_pkgs}" \
 	    "${remote_all_pkgs}" "${remote_all_options}" "${remote_all_deps}" \
 	    "${remote_all_annotations}" "${remote_all_abi}" \
@@ -4705,7 +4707,9 @@ download_from_repo_post_delete() {
 		parallel_run \
 		    download_from_repo_make_log "${fpkgname}" "${packagesite}"
 	done | write_atomic "${log:?}/.poudriere.pkg_fetch%"
-	parallel_stop
+	if ! parallel_stop; then
+		err 1 "Errors creating fetched package logs"
+	fi
 	mv -f "${MASTER_DATADIR:?}/pkg_fetch_url" \
 	    "${log:?}/.poudriere.pkg_fetch_url%"
 	# update_stats
@@ -5609,7 +5613,9 @@ start_builders() {
 		parallel_run start_builder "${j}" \
 		    "${jname}" "${ptname}" "${setname}"
 	done
-	parallel_stop
+	if ! parallel_stop; then
+		err 1 "Errors starting builders"
+	fi
 
 	run_hook start_builders stop
 }
@@ -5655,7 +5661,9 @@ stop_builders() {
 		for j in ${JOBS-$(jot -w %02d ${real_parallel_jobs})}; do
 			parallel_run stop_builder "${j}"
 		done
-		parallel_stop
+		if ! parallel_stop; then
+			err 1 "Errors stopping builders"
+		fi
 
 		case "${TMPFS_BLACKLIST_TMPDIR:+set}" in
 		set)
@@ -7411,7 +7419,9 @@ delete_old_pkgs() {
 		esac
 		parallel_run delete_old_pkg "${pkg}" "${delete_unqueued}"
 	done
-	parallel_stop
+	if ! parallel_stop; then
+		err 1 "Errors deleting packages"
+	fi
 
 	run_hook delete_old_pkgs stop
 }
