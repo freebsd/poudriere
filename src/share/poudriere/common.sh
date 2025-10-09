@@ -4474,30 +4474,46 @@ download_from_repo() {
 		msg "Packge fetch: bootstrapping pkg"
 		pkg_bin="pkg"
 	fi
-	cat >> "${MASTERMNT:?}/etc/pkg/poudriere.conf" <<-EOF
-	FreeBSD: {
-	        url: ${packagesite};
-	}
-	EOF
+	if echo "${packagesite}" | grep -q -i "pkg.freebsd.org"; then
+		repo_name=FreeBSD
+
+		cat >> "${MASTERMNT:?}/etc/pkg/poudriere.conf" <<-EOF
+		FreeBSD: {
+			url: ${packagesite};
+		}
+		EOF
+	else
+		repo_name=custom
+
+		cat >> "${MASTERMNT:?}/etc/pkg/poudriere.conf" <<-EOF
+		FreeBSD: {
+			enabled: false;
+		}
+
+		custom: {
+			url: ${packagesite};
+		}
+		EOF
+	fi
 
 	# XXX: bootstrap+rquery could be done asynchronously during deps
 	# Bootstrapping might occur here.
 	# XXX: rquery is supposed to 'update' but it does not on first run.
 	if ! JNETNAME="n" injail env ASSUME_ALWAYS_YES=yes \
 	    PACKAGESITE="${packagesite:?}" \
-	    ${pkg_bin} update -f -r FreeBSD; then
+	    ${pkg_bin} update -f -r ${repo_name}; then
 		msg "Package fetch: Not fetching as remote repository is unavailable."
 		rm -f "${missing_pkgs}"
 		return 0
 	fi
 	# Don't trust pkg-update to return its error
-	if ! injail ${pkg_bin} rquery -U %n pkg >/dev/null; then
+	if ! injail ${pkg_bin} rquery -U -r ${repo_name} %n pkg >/dev/null; then
 		msg "Package fetch: Failed to fetch package repository."
 		rm -f "${missing_pkgs}"
 		return 0
 	fi
 
-	remote_pkg_ver="$(injail ${pkg_bin} rquery -U %v "${P_PKG_PKGBASE:?}")"
+	remote_pkg_ver="$(injail ${pkg_bin} rquery -U -r ${repo_name} %v "${P_PKG_PKGBASE:?}")"
 	local_pkg_name="${P_PKG_PKGNAME:?}"
 	local_pkg_ver="${local_pkg_name##*-}"
 	case "$(pkg_version -t "${remote_pkg_ver}" "${local_pkg_ver}")" in
@@ -4512,25 +4528,25 @@ download_from_repo() {
 	# (like pkg rquery -U), and it uses various locking that isn't needed
 	# here. Grab all the options for comparison.
 	remote_all_options=$(mktemp -t remote_all_options)
-	injail ${pkg_bin} rquery -U '%n %Ok %Ov' > "${remote_all_options}"
+	injail ${pkg_bin} rquery -U -r ${repo_name} '%n %Ok %Ov' > "${remote_all_options}"
 	remote_all_pkgs=$(mktemp -t remote_all_pkgs)
-	injail ${pkg_bin} rquery -U '%n %n-%v %?O' > "${remote_all_pkgs}"
+	injail ${pkg_bin} rquery -U -r ${repo_name} '%n %n-%v %?O' > "${remote_all_pkgs}"
 	remote_all_deps=$(mktemp -t remote_all_deps)
-	injail ${pkg_bin} rquery -U '%n %dn-%dv' > "${remote_all_deps}"
+	injail ${pkg_bin} rquery -U -r ${repo_name} '%n %dn-%dv' > "${remote_all_deps}"
 	remote_all_annotations=$(mktemp -t remote_all_annotations)
 	remote_all_cats=$(mktemp -t remote_all_cats)
 	case "${IGNORE_OSVERSION-}" in
 	"yes") ;;
 	*)
-		injail ${pkg_bin} rquery -U '%n %At %Av' > "${remote_all_annotations}"
-		injail ${pkg_bin} rquery -U '%n %C' > "${remote_all_cats}"
+		injail ${pkg_bin} rquery -U -r ${repo_name} '%n %At %Av' > "${remote_all_annotations}"
+		injail ${pkg_bin} rquery -U -r ${repo_name} '%n %C' > "${remote_all_cats}"
 		;;
 	esac
 	abi="$(injail "${pkg_bin}" config ABI)"
 	remote_all_abi=$(mktemp -t remote_all_abi)
-	injail ${pkg_bin} rquery -U '%n %q' > "${remote_all_abi}"
+	injail ${pkg_bin} rquery -U -r ${repo_name} '%n %q' > "${remote_all_abi}"
 	remote_all_prefix=$(mktemp -t remote_all_prefix)
-	injail ${pkg_bin} rquery -U '%n %p' > "${remote_all_prefix}"
+	injail ${pkg_bin} rquery -U -r ${repo_name} '%n %p' > "${remote_all_prefix}"
 
 	parallel_start
 	wantedpkgs=$(mktemp -t wantedpkgs)
@@ -4572,7 +4588,7 @@ download_from_repo() {
 	    err 1 "null mount failed for pkg cache"
 	if ! JNETNAME="n" injail xargs \
 	    env ASSUME_ALWAYS_YES=yes \
-	    ${pkg_bin} fetch -U < "${wantedpkgs}"; then
+	    ${pkg_bin} fetch -U -r ${repo_name} < "${wantedpkgs}"; then
 		msg "Package fetch: Error fetching packages"
 		umountfs "${MASTERMNT:?}/var/cache/pkg"
 		rm -f "${wantedpkgs}"
