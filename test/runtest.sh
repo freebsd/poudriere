@@ -230,7 +230,7 @@ bulk*build*.sh|testport*build*.sh) : ${TIMEOUT:=1800} ;;
 bulk*.sh|testport*.sh|distclean*.sh|options*.sh) : ${TIMEOUT:=500} ;;
 critical_section_inherit.sh) : ${TIMEOUT:=20} ;;
 locked_mkdir.sh) : ${TIMEOUT:=120} ;;
-jobs.sh) : ${TIMEOUT:=300} ;;
+jobs.sh) : ${TIMEOUT:=80} ;;
 esac
 : ${TIMEOUT:=90}
 case "${TRUSS-}" in
@@ -247,11 +247,7 @@ if [ -n "${TESTS_SKIP_BUILD-}" ]; then
 	esac
 fi
 if [ -n "${TESTS_SKIP_LONG-}" ]; then
-	case "${1##*/}" in
-	jobs.sh)
-		exit 77
-		;;
-	esac
+	:
 fi
 if [ -n "${TESTS_SKIP_BULK-}" ]; then
 	case "${1##*/}" in

@@ -60,7 +60,7 @@ multiple_children() {
 }
 
 # spawn_job and get_job_id and get_job_status
-{
+test_jobs_1() {
 	assert_true spawn_job sleep 50
 	assert "1" "${spawn_jobid}"
 	sleep1_pid="$!"
@@ -275,7 +275,7 @@ multiple_children() {
 }
 
 # spawn_job and get_job_id and get_job_status, with piped jobs
-{
+test_jobs_2() {
 	assert_true sleep 50 | sleep 50 | sleep 50 &
 	assert_true get_job_id "$!" spawn_jobid
 	assert "1" "${spawn_jobid}"
@@ -512,7 +512,7 @@ multiple_children() {
 }
 
 # kill_jobs
-{
+test_jobs_3() {
 	assert_true sleep 30 | sleep 30 &
 	assert_true get_job_id "$!" spawn_jobid
 	sleep1_pid="$!"
@@ -551,7 +551,7 @@ multiple_children() {
 }
 
 # kill_jobs (different ordering)
-{
+test_jobs_4() {
 	assert_true spawn_job sleep 30
 	sleep1_pid="$!"
 	sleep1_jobid="${spawn_jobid}"
@@ -588,7 +588,7 @@ multiple_children() {
 }
 
 # pwait_jobs on single-proc jobs
-{
+test_jobs_5() {
 	assert_true spawn_job sleep 10
 	sleep1_pid="$!"
 	sleep1_jobid="${spawn_jobid}"
@@ -637,7 +637,7 @@ multiple_children() {
 }
 
 # pwait_jobs on multi-proc jobs
-{
+test_jobs_6() {
 	assert_true sleep 10 | sleep 10 &
 	assert_true get_job_id "$!" spawn_jobid
 	sleep1_pid="$!"
@@ -690,7 +690,7 @@ multiple_children() {
 }
 
 # kill_all_jobs
-{
+test_jobs_7() {
 	assert_true spawn_job sleep 30
 	sleep1_pid="$!"
 	sleep1_jobid="${spawn_jobid}"
@@ -715,7 +715,7 @@ multiple_children() {
 }
 
 # kill_all_jobs
-{
+test_jobs_8() {
 	assert_true sleep 30 | sleep 30 &
 	assert_true get_job_id "$!" spawn_jobid
 	sleep1_pid="$!"
@@ -750,7 +750,7 @@ multiple_children() {
 }
 
 # kill_job
-{
+test_jobs_9() {
 	assert_true sleep 30 | sleep 40 &
 	assert_true get_job_id "$!" spawn_jobid
 	sleep1_pid="$!"
@@ -834,7 +834,7 @@ multiple_children() {
 }
 
 # timed_wait_and_kill_job
-{
+test_jobs_10() {
 	assert_true spawn_job eval "sleep 5; exit 7"
 	sleep1_pid="$!"
 	echo "sleep1_pid= $!"
@@ -890,3 +890,21 @@ multiple_children() {
 
 	assert_ret 0 timed_wait_and_kill_job 10 %1
 }
+
+list_tests() {
+	local first="$1"
+	local last="$2"
+	local n
+
+	for n in $(seq "${first}" "${last}"); do
+		echo -n "test_jobs_${n} "
+	done
+	echo
+}
+
+set_test_contexts - '' '' <<-EOF
+TESTFUNC $(list_tests 1 10)
+EOF
+while get_test_context; do
+	assert_true "${TESTFUNC}"
+done
