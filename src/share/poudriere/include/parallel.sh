@@ -632,6 +632,7 @@ nohang() {
 			unset OUTPUT_REDIRECTED OUTPUT_REDIRECTED_STDERR \
 			    OUTPUT_REDIRECTED_STDOUT
 		fi
+		setproctitle "nohang (${logfile})" || :
 		_spawn_wrapper "$@" || ret=1
 		# Notify the pipe the command is done
 		echo "done" >&8 2>/dev/null || :
