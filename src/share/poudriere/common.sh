@@ -1752,7 +1752,7 @@ exit_handler() {
 	fi
 
 	case "${EXIT_STATUS}" in
-	0|"${EX_USAGE}")
+	0|130|"${EX_USAGE}")
 		: ${ERROR_VERBOSE:=0} ;;
 	*)	: ${ERROR_VERBOSE:=1} ;;
 	esac
@@ -1818,7 +1818,7 @@ exit_handler() {
 	ret=0
 	kill_all_jobs || ret="$?"
 	case "${ret}" in
-	0|143) ;;
+	0|143|130) ;;
 	*)
 		msg_error "Job failures detected ret=${ret}"
 		EXIT_STATUS=$((EXIT_STATUS + 1))
