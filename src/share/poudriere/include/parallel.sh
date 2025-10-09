@@ -45,6 +45,7 @@ _wait() {
 			0) ;;
 			*) ret="${wret}" ;;
 			esac
+			msg_dev "Job ${pid} collected ret=${wret}"
 			break
 		done
 	done
@@ -637,6 +638,7 @@ nohang() {
 		exit "${ret}"
 	) &
 	childpid=$!
+	msg_dev "nohang spawned pid=${childpid} cmd: $*"
 	echo "${childpid}" > "${pidfile}"
 
 	# Now wait on the cmd with a timeout on the log's mtime
@@ -871,7 +873,8 @@ spawn_job() {
 	INJOB=1
 	spawn_jobid=
 	spawn "$@" || return
-	get_job_id "$!" spawn_jobid
+	get_job_id "$!" spawn_jobid || return
+	msg_dev "spawn_job: Spawned job %${spawn_jobid:?} pid=$! cmd=$*"
 }
 
 spawn_job_protected() {

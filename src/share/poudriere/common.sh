@@ -1291,6 +1291,7 @@ log_start() {
 			    timestamp > ${logfile} < ${logfile}.pipe &
 		fi
 		get_job_id "$!" log_start_job
+		msg_dev "log_start: spawned job %${log_start_job} pid=$!"
 		exec > ${logfile}.pipe 2>&1
 
 		# Remove fifo pipe file right away to avoid orphaning it.
