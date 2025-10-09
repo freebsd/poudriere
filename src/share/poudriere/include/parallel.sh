@@ -125,7 +125,7 @@ pwait() {
 	case "${ret}" in
 	124|0) return "${ret}" ;;
 	esac
-	err "${EX_SOFTWARE}" "pwait: timeout=${timeout} pids=${pids}"
+	err "${EX_SOFTWARE}" "pwait: timeout=${timeout} pids=${pids} ret=${ret}"
 }
 
 kill_and_wait() {
