@@ -56,7 +56,7 @@ noterm() {
 }
 
 multiple_children() {
-	sleep 30
+	sleep 20
 }
 
 # spawn_job and get_job_id and get_job_status
@@ -97,7 +97,7 @@ test_jobs_1() {
 	assert "Running" "${status}"
 
 	assert_ret 0 kill %1
-	assert_true pwait_racy "${sleep1_pid}"
+	assert_runs_shorter_than 5 assert_true pwait_racy "${sleep1_pid}"
 
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
@@ -119,7 +119,7 @@ test_jobs_1() {
 	assert_true get_job_status "${sleep3_pid}" status
 	assert "Running" "${status}"
 
-	assert_ret 143 wait %1
+	assert_runs_shorter_than 3 assert_ret 143 wait %1
 
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
@@ -147,7 +147,7 @@ test_jobs_1() {
 	assert_true get_job_id "${sleep1_pid}" sleep1_jobid
 	assert 1 "${sleep1_jobid}"
 
-	assert_true pwait_racy "${sleep1_pid}"
+	assert_runs_shorter_than 5 assert_true pwait_racy "${sleep1_pid}"
 
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
@@ -186,7 +186,7 @@ test_jobs_1() {
 
 	assert_true get_job_id "${sleep1_pid}" sleep1_jobid
 	assert 1 "${sleep1_jobid}"
-	assert_ret 0 wait %1
+	assert_runs_shorter_than 3 assert_ret 0 wait %1
 
 	assert_false get_job_id "${sleep1_pid}" sleep1_jobid 2>/dev/null
 
@@ -215,7 +215,7 @@ test_jobs_1() {
 	assert_true get_job_id "${sleep3_pid}" sleep3_jobid
 	assert 3 "${sleep3_jobid}"
 	assert_ret 0 kill "%${sleep3_jobid}"
-	assert_true pwait_racy "${sleep3_pid}"
+	assert_runs_shorter_than 5 assert_true pwait_racy "${sleep3_pid}"
 
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
@@ -239,7 +239,7 @@ test_jobs_1() {
 	assert_true get_job_id "${sleep2_pid}" sleep2_jobid
 	assert 2 "${sleep2_jobid}"
 	assert_true kill -9 "%${sleep2_jobid}"
-	assert_true pwait_racy "${sleep2_pid}"
+	assert_runs_shorter_than 5 assert_true pwait_racy "${sleep2_pid}"
 
 	assert_false get_job_status "%1" status 2>/dev/null
 	assert "" "${status}"
@@ -253,7 +253,7 @@ test_jobs_1() {
 	assert "Terminated" "${status}"
 	assert_true get_job_status "${sleep3_pid}" status
 	assert "Terminated" "${status}"
-	assert_ret 137 wait "%${sleep2_jobid}"
+	assert_runs_shorter_than 3 assert_ret 137 wait "%${sleep2_jobid}"
 
 	assert_false get_job_status "%1" status 2>/dev/null
 	assert "" "${status}"
@@ -268,7 +268,7 @@ test_jobs_1() {
 	assert_true get_job_status "${sleep3_pid}" status
 	assert "Terminated" "${status}"
 
-	assert_ret 143 wait %"${sleep3_jobid}"
+	assert_runs_shorter_than 3 assert_ret 143 wait %"${sleep3_jobid}"
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	EOF
@@ -593,7 +593,7 @@ test_jobs_5() {
 	sleep1_pid="$!"
 	sleep1_jobid="${spawn_jobid}"
 	echo "sleep1_pid= $!"
-	assert_true spawn_job sleep 50
+	assert_true spawn_job sleep 15
 	sleep2_pid="$!"
 	sleep2_jobid="${spawn_jobid}"
 	echo "sleep2_pid= $!"
@@ -607,8 +607,9 @@ test_jobs_5() {
 	[2] - ${sleep2_pid} Running
 	[3] + ${sleep3_pid} Running
 	EOF
-	assert_ret 124 pwait_jobs -t 1 %1 %2 %3
-	assert_ret 0 pwait_jobs -t 15 %1 %3
+	assert_runs_shorter_than 3 assert_ret 124 pwait_jobs -t 1 %1 %2 %3
+	# Ideally we'd have 9-15 but give a +/-2 for races.
+	assert_runs_between 7 17 assert_ret 0 pwait_jobs -t 15 %1 %3
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	[1]   ${sleep1_pid} Done
@@ -617,7 +618,7 @@ test_jobs_5() {
 	EOF
 	# Done jobs should return immediately from pwait without errors.
 	capture_output_simple stdout stderr
-	assert_ret 0 pwait_jobs %1 %3
+	assert_runs_within 7 assert_ret 0 pwait_jobs %1 %3
 	capture_output_simple_stop
 	assert_file - "${stdout}" <<-EOF
 	EOF
@@ -625,7 +626,7 @@ test_jobs_5() {
 	EOF
 	assert_ret 0 wait %1
 	assert_ret 0 wait %3
-	assert_ret 0 pwait_jobs %2
+	assert_runs_shorter_than 7 assert_ret 0 pwait_jobs %2
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	[2]   ${sleep2_pid} Done
@@ -669,7 +670,7 @@ test_jobs_6() {
 	EOF
 	# Done jobs should return immediately from pwait without errors.
 	capture_output_simple stdout stderr
-	assert_ret 0 pwait_jobs %1 %3
+	assert_runs_shorter_than 3 assert_ret 0 pwait_jobs %1 %3
 	capture_output_simple_stop
 	assert_file - "${stdout}" <<-EOF
 	EOF
@@ -677,7 +678,7 @@ test_jobs_6() {
 	EOF
 	assert_ret 0 wait %1
 	assert_ret 0 wait %3
-	assert_ret 0 pwait_jobs %2
+	assert_runs_longer_than 8 assert_ret 0 pwait_jobs %2
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	[2]   ${sleep2_pid} Done
@@ -736,7 +737,7 @@ test_jobs_8() {
 	\[2\] - ${sleep2_pid} Running
 	\[3\] \+ ${sleep3_pid} Running
 	EOF
-	assert_ret 137 kill_all_jobs
+	assert_runs_shorter_than 7 assert_ret 137 kill_all_jobs 5
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	EOF
@@ -781,7 +782,7 @@ test_jobs_9() {
 	\[4\] \+ ${sleep4_pid} Running
 	EOF
 
-	assert_ret 143 kill_job 1 "${sleep1_pid}"
+	assert_runs_between 0 3 assert_ret 143 kill_job 1 "${sleep1_pid}"
 	assert_false kill -0 %"${sleep1_jobid}" 2>/dev/null
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
@@ -791,7 +792,7 @@ test_jobs_9() {
 	EOF
 
 	# Because SIGINT is blocked we should fall back to SIGKILL.
-	assert_ret 137 kill_job 1 "${sleep2_pid}"
+	assert_runs_between 0 3 assert_ret 137 kill_job 1 "${sleep2_pid}"
 	assert_false kill -0 %"${sleep2_jobid}" 2>/dev/null
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
@@ -800,14 +801,14 @@ test_jobs_9() {
 	EOF
 
 	# Check %job compat
-	assert_ret 143 kill_job 1 %"${sleep3_jobid}"
+	assert_runs_between 0 3 assert_ret 143 kill_job 1 %"${sleep3_jobid}"
 	assert_false kill -0 %"${sleep3_jobid}" 2>/dev/null
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	[4] + ${sleep4_pid} Running
 	EOF
 
-	assert_ret 137 kill_job 1 %"${sleep4_jobid}"
+	assert_runs_between 0 3 assert_ret 137 kill_job 1 %"${sleep4_jobid}"
 	assert_false kill -0 %"${sleep4_jobid}" 2>/dev/null
 	assert_false pgrep -l -g "${sleep4_pid}" >&2
 	assert_true get_jobs "${TMP}"
@@ -823,13 +824,13 @@ test_jobs_9() {
 	[1] + ${sleep1_pid} Running
 	EOF
 	assert_true kill %1
-	assert_true pwait_racy "${sleep1_pid}"
+	assert_runs_shorter_than 5 assert_true pwait_racy "${sleep1_pid}"
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	[1]   ${sleep1_pid} Terminated
 	EOF
 	# Should not kill but only collect status. See Dev log.
-	assert_ret 143 kill_job 1 %"${sleep1_jobid}"
+	assert_runs_between 0 3 assert_ret 143 kill_job 1 %"${sleep1_jobid}"
 	assert_false kill -0 %"${sleep1_jobid}" 2>/dev/null
 }
 
@@ -844,7 +845,7 @@ test_jobs_10() {
 	[1] + ${sleep1_pid} Running
 	EOF
 
-	assert_ret 7 timed_wait_and_kill_job 10 %1
+	assert_runs_shorter_than 12 assert_ret 7 timed_wait_and_kill_job 10 %1
 
 	assert_true spawn_job eval "sleep 5"
 	sleep1_pid="$!"
@@ -855,7 +856,7 @@ test_jobs_10() {
 	[1] + ${sleep1_pid} Running
 	EOF
 
-	assert_ret 0 timed_wait_and_kill_job 10 %1
+	assert_runs_shorter_than 12 assert_ret 0 timed_wait_and_kill_job 10 %1
 
 	assert_true spawn_job eval "sleep 5"
 	sleep1_pid="$!"
@@ -866,7 +867,7 @@ test_jobs_10() {
 	[1] + ${sleep1_pid} Running
 	EOF
 
-	assert_ret 143 timed_wait_and_kill_job 1 %1
+	assert_runs_shorter_than 3 assert_ret 143 timed_wait_and_kill_job 1 %1
 
 	assert_true spawn_job noterm eval "sleep 5"
 	sleep1_pid="$!"
@@ -877,7 +878,7 @@ test_jobs_10() {
 	[1] + ${sleep1_pid} Running
 	EOF
 
-	assert_ret 137 timed_wait_and_kill_job 1 %1
+	assert_runs_shorter_than 3 assert_ret 137 timed_wait_and_kill_job 1 %1
 
 	assert_true spawn_job noterm eval "sleep 5"
 	sleep1_pid="$!"
@@ -888,7 +889,7 @@ test_jobs_10() {
 	[1] + ${sleep1_pid} Running
 	EOF
 
-	assert_ret 0 timed_wait_and_kill_job 10 %1
+	assert_runs_shorter_than 12 assert_ret 0 timed_wait_and_kill_job 10 %1
 }
 
 list_tests() {
