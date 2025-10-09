@@ -337,8 +337,11 @@ collectpids() {
 	*) max="${timeout}" ;;
 	esac
 	tries=0
-	echo "Waiting on pids: ${pids} timeout: ${timeout}" >&2
 	until [ -z "${pids:+set}" ] || [ "${tries}" -eq "${max}" ]; do
+		if [ "${gotinfo}" -eq 1 ]; then
+			echo "+ Waiting on pids: ${pids} timeout: ${timeout}" >&2
+			gotinfo=0
+		fi
 		pwait -o -t "${timeout}" ${pids} >/dev/null 2>&1 || :
 		pids_copy="${pids}"
 		pids=
@@ -487,6 +490,7 @@ setup_traps() {
 		trap "sig_handler ${sig} ${exit_handler}" "${sig}"
 	done
 	trap "${exit_handler}" EXIT
+	gotinfo=0
 	# hide set -x
 	trap '{ siginfo_handler; } 2>/dev/null' INFO
 }
@@ -524,6 +528,7 @@ siginfo_handler() {
 		getvar "pid_test_${pid}" test_data
 		printf "pid %05d %3ds %s\n" "${pid}" "${duration}" "${test_data}"
 	done >&4
+	gotinfo=1
 }
 
 sig_handler() {
