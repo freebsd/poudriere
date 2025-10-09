@@ -316,13 +316,13 @@ _assert_ret() {
 	local lineinfo="$1"
 	local expected="$2"
 	shift 2
-	local ret
+	local ret reason
 
 	aecho TEST "${lineinfo}" "\$? == ${expected} cmd:" "$*"
 	ret=0
 	"$@" || ret=$?
 	reason="Bad exit status: ${ret} cmd: $*"
-	_assert "${lineinfo}" "${expected}" "${ret}" "Bad exit status: ${ret} cmd: $*${REASON:+ "$'\n'" ${REASON}}"
+	_assert "${lineinfo}" "${expected}" "${ret}" "${reason}${REASON:+ "$'\n'" ${REASON}}"
 }
 # This function may be called in "$@" contexts that do not use eval.
 assert_ret() { _assert_ret "" "$@"; }
