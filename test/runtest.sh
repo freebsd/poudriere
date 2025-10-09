@@ -311,6 +311,7 @@ runtest() {
 	{
 		TEST_END="$(clock -monotonic)"
 		echo "Test ended: $(date) -- duration: $((TEST_END - TEST_START))s"
+		times
 		# hide set -x
 	} >&2 2>/dev/null
 	case "${make_job:+set}" in
@@ -324,6 +325,7 @@ runtest() {
 collectpids() {
 	local timeout="$1"
 	local pids_copy tries max
+	local now start
 
 	case "${pids:+set}" in
 	set) ;;
@@ -344,6 +346,7 @@ collectpids() {
 		pwait -o -t "${timeout}" ${pids} >/dev/null 2>&1 || :
 		pids_copy="${pids}"
 		pids=
+		now="$(clock -monotonic)"
 		for pid in ${pids_copy}; do
 			if kill -0 "${pid}" 2>/dev/null; then
 				pids="${pids:+${pids} }${pid}"
@@ -366,11 +369,13 @@ collectpids() {
 			0) exit_type="PASS" ;;
 			*) exit_type="FAIL" ;;
 			esac
+			getvar "pid_test_start_${pid}" start
 			printf \
-			    "%s TEST_CONTEXT_NUM=%d pid=%-5d exited %-3d - %s: %s\n" \
+			    "%s TEST_NUM=%2d pid=%-5d %4ds exited %-3d - %s: %s\n" \
 			    "${exit_type}" \
 			    "${pid_test_context_num}" \
 			    "${pid}" \
+			    "$((now - start))" \
 			    "${pret}" \
 			    "$(TEST_CONTEXT_NUM="${pid_test_context_num}" get_log_name)" \
 			    "${result}"
@@ -608,7 +613,7 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 				;;
 			esac
 			logname="$(get_log_name)"
-			printf "Logging %s with TEST_CONTEXT_NUM=%${num_width}d/%${num_width}d to %s\n" \
+			printf "Logging %s with TEST_NUM=%${num_width}d/%${num_width}d to %s\n" \
 			    "${TEST}" \
 			    "${TEST_CONTEXT_NUM}" \
 			    "${TEST_CONTEXTS_TOTAL}" \
