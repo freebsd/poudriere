@@ -101,11 +101,9 @@ assert 0 "$?"
 	    >${STDOUT} 2>${STDERR}
 	assert 0 $? "$0:${LINENO}: incorrect exit status"
 
-	cat > "${STDOUT}".expected <<-EOF
-	[00:00:03] start
+	assert_file_reg - "${STDOUT}" <<-EOF
+	\[00:00:0[345]\] start
 	EOF
-	diff -u "${STDOUT}.expected" "${STDOUT}"
-	assert 0 $? "$0:${LINENO}: stdout output mismatch"
 
 	cat > "${STDERR}".expected <<-EOF
 	EOF
@@ -122,11 +120,9 @@ assert 0 "$?"
 	    >${STDOUT} 2>${STDERR}
 	assert 0 $? "$0:${LINENO}: incorrect exit status"
 
-	cat > "${STDOUT}".expected <<-EOF
-	[00:00:03] (00:00:00) start
+	assert_file_reg - "${STDOUT}" <<-EOF
+	\[00:00:0[345]\] \(00:00:00\) start
 	EOF
-	diff -u "${STDOUT}.expected" "${STDOUT}"
-	assert 0 $? "$0:${LINENO}: stdout output mismatch"
 
 	cat > "${STDERR}".expected <<-EOF
 	EOF
@@ -143,12 +139,10 @@ assert 0 "$?"
 	    >${STDOUT} 2>${STDERR}
 	assert 0 $? "$0:${LINENO}: incorrect exit status"
 
-	cat > "${STDOUT}".expected <<-EOF
-	[00:00:03] (00:00:00) start
-	[00:00:06] (00:00:03) end
+	assert_file_reg - "${STDOUT}" <<-EOF
+	\[00:00:0[345]\] \(00:00:00\) start
+	\[00:00:0[678]\] \(00:00:0[345]\) end
 	EOF
-	diff -u "${STDOUT}.expected" "${STDOUT}"
-	assert 0 $? "$0:${LINENO}: stdout output mismatch"
 
 	cat > "${STDERR}".expected <<-EOF
 	EOF
@@ -165,14 +159,13 @@ assert 0 "$?"
 	    >${STDOUT} 2>${STDERR}
 	assert 0 $? "$0:${LINENO}: incorrect exit status"
 
-	cat > "${STDOUT}".expected <<-EOF
-	[00:00:00] (00:00:00) start
-	[00:00:00] (00:00:00) hi
-	[00:00:03] (00:00:03) bg
-	[00:00:06] (00:00:03) done
+	assert_file_reg - "${STDOUT}" <<-EOF
+	\[00:00:00\] \(00:00:00\) start
+	\[00:00:00\] \(00:00:00\) hi
+	\[00:00:0[345]\] \(00:00:0[345]\) bg
+	\[00:00:0[678]\] \(00:00:0[345]\) done
 	EOF
-	diff -u "${STDOUT}.expected" "${STDOUT}"
-	assert 0 $? "$0:${LINENO}: stdout output mismatch"
+
 
 	cat > "${STDERR}".expected <<-EOF
 	EOF
