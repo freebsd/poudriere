@@ -788,7 +788,9 @@ get_job_status() {
 	# appear that this is useless since it execs ps and forces a check.
 	# But without an external fork+exec, or jobs(1) call, the job status
 	# does not update.
-	jobs >/dev/null || :
+	# The $(jobs -l $pid) does not lead to checkzombies() as it runs
+	# through showjob() rather than showjobs()->checkzombies().
+	jobs >/dev/null || err 1 "get_job_status: jobs failed $?"
 	ret=0
 	gjs_output="$(jobs -l "${gjs_pid}")" || ret="$?"
 	case "${gjs_pid}" in
