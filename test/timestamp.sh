@@ -5,7 +5,8 @@ trap '' SIGINFO
 STDOUT=$(mktemp -ut poudriere)
 STDERR=$(mktemp -ut poudriere)
 
-(
+add_test_function test_timestamp_1
+test_timestamp_1() {
 	timestamp -T -1 stdout -2 stderr \
 	    sh -c "echo stuff; echo errors>&2; echo more; echo 'more errors' >&2" \
 	    >${STDOUT} 2>${STDERR}
@@ -22,11 +23,11 @@ STDERR=$(mktemp -ut poudriere)
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-)
-assert 0 "$?"
+}
 
 # Prefix changing
-(
+add_test_function test_timestamp_2
+test_timestamp_2() {
 	timestamp -T -1 stdout -2 stderr \
 	    sh -c "\
 	    echo stuff; \
@@ -57,11 +58,11 @@ assert 0 "$?"
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-)
-assert 0 "$?"
+}
 
 # Prefix changing
-(
+add_test_function test_timestamp_3
+test_timestamp_3() {
 	timestamp -D -T -1 stdout -2 stderr \
 	    sh -c "\
 	    echo stuff; \
@@ -90,10 +91,10 @@ assert 0 "$?"
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-)
-assert 0 "$?"
+}
 
-(
+add_test_function test_timestamp_4
+test_timestamp_4() {
 	TIME_START=$(clock -monotonic -nsec)
 	sleep 3.1 >/dev/null 2>&1
 	TIME_START=${TIME_START} timestamp \
@@ -109,10 +110,10 @@ assert 0 "$?"
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-)
-assert 0 "$?"
+}
 
-(
+add_test_function test_timestamp_5
+test_timestamp_5() {
 	TIME_START=$(clock -monotonic -nsec)
 	sleep 3.1 >/dev/null 2>&1
 	TIME_START=${TIME_START} timestamp -t \
@@ -128,10 +129,10 @@ assert 0 "$?"
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-)
-assert 0 "$?"
+}
 
-(
+add_test_function test_timestamp_6
+test_timestamp_6() {
 	TIME_START=$(clock -monotonic -nsec)
 	sleep 3.1 >/dev/null 2>&1
 	TIME_START=${TIME_START} timestamp -t \
@@ -148,11 +149,11 @@ assert 0 "$?"
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-)
-assert 0 "$?"
+}
 
 # durations
-(
+add_test_function test_timestamp_7
+test_timestamp_7() {
 	TIME_START=$(clock -monotonic -nsec)
 	TIME_START=${TIME_START} timestamp -t \
 	    sh -c 'echo start;(sleep 3.1 >/dev/null 2>&1; echo bg; sleep 3.1 >/dev/null 2>&1; echo done) & echo hi' \
@@ -171,7 +172,13 @@ assert 0 "$?"
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-)
-assert 0 "$?"
+}
+
+set_test_contexts - '' '' <<-EOF
+TESTFUNC $(list_test_functions)
+EOF
+while get_test_context; do
+	assert_true "${TESTFUNC}"
+done
 
 rm -f ${STDOUT}* ${STDERR}*
