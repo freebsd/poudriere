@@ -128,13 +128,13 @@ _assert_compare() {
 	aecho OK "${lineinfo}" #"${msg}: expected: '${expected}', actual: '${actual}'"
 }
 # This function may be called in "$@" contexts that do not use eval.
-assert_le() { _assert_compare "" "-le" "$@"; }
+assert_le() { _assert_compare "${lineinfo-}" "-le" "$@"; }
 alias assert_le="_assert_compare \"${_LINEINFO_DATA:?}\" \"-le\" "
-assert_lt() { _assert_compare "" "-lt" "$@"; }
+assert_lt() { _assert_compare "${lineinfo-}" "-lt" "$@"; }
 alias assert_lt="_assert_compare \"${_LINEINFO_DATA:?}\" \"-lt\" "
-assert_ge() { _assert_compare "" "-ge" "$@"; }
+assert_ge() { _assert_compare "${lineinfo-}" "-ge" "$@"; }
 alias assert_ge="_assert_compare \"${_LINEINFO_DATA:?}\" \"-ge\" "
-assert_gt() { _assert_compare "" "-gt" "$@"; }
+assert_gt() { _assert_compare "${lineinfo-}" "-gt" "$@"; }
 alias assert_gt="_assert_compare \"${_LINEINFO_DATA:?}\" \"-gt\" "
 
 
@@ -157,7 +157,7 @@ _assert() {
 	aecho OK "${lineinfo}" #"${msg}: expected: '${expected}', actual: '${actual}'"
 }
 # This function may be called in "$@" contexts that do not use eval.
-assert() { _assert "" "$@"; }
+assert() { _assert "${lineinfo-}" "$@"; }
 alias assert="_assert \"${_LINEINFO_DATA:?}\" "
 
 _assert_case() {
@@ -183,7 +183,7 @@ _assert_case() {
 	aecho OK "${lineinfo}" #"${msg}: expected: '${expected}', actual: '${actual}'"
 }
 # This function may be called in "$@" contexts that do not use eval.
-assert_case() { _assert_case "" "$@"; }
+assert_case() { _assert_case "${lineinfo-}" "$@"; }
 alias assert_case="_assert_case \"${_LINEINFO_DATA:?}\" "
 
 _assert_not() {
@@ -204,7 +204,7 @@ _assert_not() {
 	aecho OK "${lineinfo}" # "${msg}: notexpected: '${notexpected}', actual: '${actual}'"
 }
 # This function may be called in "$@" contexts that do not use eval.
-assert_not() { _assert_not "" "$@"; }
+assert_not() { _assert_not "${lineinfo-}" "$@"; }
 alias assert_not="_assert_not \"${_LINEINFO_DATA:?}\" "
 
 _assert_list() {
@@ -241,7 +241,7 @@ _assert_list() {
 	aecho OK "${lineinfo}" #"${msg}: expected: '${expected}', actual: '${actual}'"
 }
 # This function may be called in "$@" contexts that do not use eval.
-assert_list() { _assert_list "" "$@"; }
+assert_list() { _assert_list "${lineinfo-}" "$@"; }
 alias assert_list="_assert_list \"${_LINEINFO_DATA:?}\" "
 
 _assert_file_reg() {
@@ -283,7 +283,7 @@ $(cat -nvet "${expected}")"
 	fi
 }
 # This function may be called in "$@" contexts that do not use eval.
-assert_file_reg() { _assert_file_reg "" "$@"; }
+assert_file_reg() { _assert_file_reg "${lineinfo-}" "$@"; }
 alias assert_file_reg="_assert_file_reg \"${_LINEINFO_DATA:?}\" "
 
 _assert_file() {
@@ -367,7 +367,7 @@ _assert_ret() {
 	_assert "${lineinfo}" "${expected}" "${ret}" "${reason}${REASON:+ "$'\n'" ${REASON}}"
 }
 # This function may be called in "$@" contexts that do not use eval.
-assert_ret() { _assert_ret "" "$@"; }
+assert_ret() { _assert_ret "${lineinfo-}" "$@"; }
 assert_true() { assert_ret 0 "$@"; }
 alias assert_ret="_assert_ret \"${_LINEINFO_DATA:?}\" "
 alias assert_true='assert_ret 0'
@@ -394,7 +394,7 @@ _assert_ret_not() {
 	_assert_not "${lineinfo}" "${expected}" "${ret}" "Bad exit status: ${ret} cmd: $*"
 }
 # This function may be called in "$@" contexts that do not use eval.
-assert_ret_not() { _assert_ret_not "" "$@"; }
+assert_ret_not() { _assert_ret_not "${lineinfo-}" "$@"; }
 assert_false() { assert_ret_not 0 "$@"; }
 alias assert_ret_not="_assert_ret_not \"${_LINEINFO_DATA:?}\" "
 alias assert_false='assert_ret_not 0'
@@ -473,7 +473,7 @@ _assert_stack() {
 		"${reason} -"$'\n'"Have:     '${val}'"$'\n'"Expected: '${expected}'"
 }
 # This function may be called in "$@" contexts that do not use eval.
-assert_stack() { _assert_stack "" "$@"; }
+assert_stack() { _assert_stack "${lineinfo-}" "$@"; }
 alias assert_stack='stack_lineinfo _assert_stack '
 
 _assert_runs_le() {
@@ -497,7 +497,7 @@ _assert_runs_le() {
 	_assert_compare "${lineinfo}" "-le" "${within}" "${duration}" "${reason}${REASON:+ "$'\n'" ${REASON}}"
 }
 # This function may be called in "$@" contexts that do not use eval.
-assert_runs_le() { _assert_runs_le "" "$@"; }
+assert_runs_le() { _assert_runs_le "${lineinfo-}" "$@"; }
 alias assert_runs_le="_assert_runs_le \"${_LINEINFO_DATA:?}\" "
 alias assert_runs_shorter_than='assert_runs_le '
 alias assert_runs_within='assert_runs_shorter_than '
@@ -523,7 +523,7 @@ _assert_runs_ge() {
 	_assert_compare "${lineinfo}" "-ge" "${within_ge}" "${duration}" "${reason}${REASON:+ "$'\n'" ${REASON}}"
 }
 # This function may be called in "$@" contexts that do not use eval.
-assert_runs_ge() { _assert_runs_ge "" "$@"; }
+assert_runs_ge() { _assert_runs_ge "${lineinfo-}" "$@"; }
 alias assert_runs_ge="_assert_runs_ge \"${_LINEINFO_DATA:?}\" "
 alias assert_runs_longer_than='assert_runs_ge '
 
@@ -549,7 +549,7 @@ _assert_runs_between() {
 	_assert_compare "${lineinfo}" "-le" "${secs_end}" "${duration}" "${reason}${REASON:+ "$'\n'" ${REASON}}"
 }
 # This function may be called in "$@" contexts that do not use eval.
-assert_runs_between() { _assert_runs_between "" "$@"; }
+assert_runs_between() { _assert_runs_between "${lineinfo-}" "$@"; }
 alias assert_runs_between="_assert_runs_between \"${_LINEINFO_DATA:?}\" "
 
 setup_runtime_asserts() {
