@@ -359,12 +359,12 @@ pwait_jobs() {
 			pids="$(jobid "${jobno}")" ||
 			    err "${EX_SOFTWARE}" "kill_jobs: jobid"
 			for pid in ${pids}; do
-				if ! kill -0 "${pid}" 2>/dev/null; then
+				if ! kill -0 "${pid}" 2>&5; then
 					continue
 				fi
 				allpids="${allpids:+${allpids} }${pid}"
 			done
-		done
+		done 5>/dev/null
 	done <<-EOF
 	$(jobs_with_statuses "$(jobs)")
 	EOF
