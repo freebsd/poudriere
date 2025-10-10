@@ -169,6 +169,9 @@ sorted() {
 }
 
 catch_err() {
+	expect_error_on_stderr _catch_err "$@"
+}
+_catch_err() {
 	#local ERRORS_ARE_FATAL CRASHED
 	local TEST_HARD_ERROR
 	local ret -
@@ -539,6 +542,22 @@ cleanup() {
 		esac
 		echo "${res} ${SCRIPTNAME} TEST_NUMS=${TEST_NUMS} (exit status: ${ret})" >&2
 	esac
+	return "${ret}"
+}
+
+expect_error_on_stderr() {
+	local tmpfile ret
+
+	tmpfile="$(mktemp -ut expect_error_on_stderr)"
+	ret=0
+	"$@" 2>"${tmpfile}" || ret="$?"
+	# We can't _assert_ that there is an error as some calls won't actually
+	# get 'Error:' with SH=/bin/sh. It's not that important to ensure
+	# stderr has stuff, it's more about causing a FAIL if 'Error:' is
+	# unexpectedly seen in a log.
+	sed -i '' -e 's,Error:,ExpectedError:,' "${tmpfile}"
+	cat "${tmpfile}" >&2
+	rm -f "${tmpfile}"
 	return "${ret}"
 }
 

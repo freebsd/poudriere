@@ -307,6 +307,12 @@ runtest() {
 	    ${TRUSS:+truss -ae -f -s512 -o "$(get_log_name).truss"} \
 	    "${SH}" "${TEST}" || ret="$?"
 	{
+		if [ "${ret}" -eq 0 ] &&
+		    grep -v 'sleep:.*about.*second' "$(get_log_name)" |
+		    grep -q ' Error: ([0-9]\+) [a-zA-Z0-9]*'; then
+			ret=99
+			echo "UNHANDLED ERROR DETECTED"
+		fi
 		TEST_END="$(clock -monotonic)"
 		echo "Test ended: $(date) -- duration: $((TEST_END - TEST_START))s"
 		echo "Log: $(get_log_name)"

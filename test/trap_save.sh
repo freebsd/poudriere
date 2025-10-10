@@ -163,7 +163,7 @@ assert_traps "${CRITICAL}" "critical traps should match"
 # Restore 0 trap and ensure the rest match
 echo "Restore 0 - bad INFO"
 cp "${CRITICAL}" "${EXPECTED_0}"
-trap_pop INFO ""
+expect_error_on_stderr trap_pop INFO ""
 assert_not 0 $? "trap_pop INFO blank"
 trap
 assert_traps "${EXPECTED_0}" "restore 0 traps should match"

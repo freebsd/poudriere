@@ -45,7 +45,7 @@ writer() {
 {
 	TMP=$(mktemp -u)
 	assert_ret_not 0 [ -e "${TMP}" ]
-	assert_ret_not 0 mapfile handle "${TMP}" "re"
+	assert_ret_not 0 expect_error_on_stderr mapfile handle "${TMP}" "re"
 	rm -f "${TMP}"
 }
 
@@ -53,7 +53,7 @@ writer() {
 	TMP=$(mktemp -u)
 	TMP2=$(mktemp -u)
 	TMP3=$(mktemp -u)
-	assert_false mapfile file_read "${TMP}" "re"
+	assert_false expect_error_on_stderr mapfile file_read "${TMP}" "re"
 	:> "${TMP}"
 	assert_true mapfile file_read "${TMP}" "re"
 	assert_false test -r "${TMP2}"
@@ -238,7 +238,7 @@ if mapfile_builtin; then
 	assert_true mapfile_write "${file}" "test 1 2 3"
 	assert_true mapfile_close "${file}"
 
-	assert_false mapfile file "${TMP}" "wx"
+	assert_false expect_error_on_stderr mapfile file "${TMP}" "wx"
 
 	assert_file - "${TMP}" <<-EOF
 	test 1 2 3
@@ -253,8 +253,7 @@ if mapfile_builtin; then
 	assert_true mapfile_write "${file}" "test 1 2 3"
 	assert_true mapfile_close "${file}"
 
-	noclobber mapfile file "${TMP}" "w+"
-	assert_not 0 $?
+	assert_false expect_error_on_stderr noclobber mapfile file "${TMP}" "w+"
 }
 
 # Now test read setting vars properly.
@@ -482,7 +481,7 @@ fi
 		touch "${TDIR:?}/${n}"
 		i=$((i + 1))
 	done
-	assert_false rmdir "${TDIR:?}"
+	assert_false expect_error_on_stderr rmdir "${TDIR:?}"
 	n=5
 	until [ $n -eq $((max + 5)) ]; do
 		assert_true [ -e "${TDIR:?}/${n}" ]
@@ -736,7 +735,7 @@ fi
 }
 
 {
-	assert_ret_not 0 mapfile_cat_file /nonexistent
+	assert_ret_not 0 expect_error_on_stderr mapfile_cat_file /nonexistent
 	assert_ret_not 0 mapfile_cat_file -q /nonexistent
 }
 

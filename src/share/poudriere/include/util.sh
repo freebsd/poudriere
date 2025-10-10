@@ -616,7 +616,10 @@ trap_pop() {
 
 	case "${_trap:+set}" in
 	set) eval trap -- "${_trap}" "${signal}" || : ;;
-	"") return 1 ;;
+	"")
+		msg_error "Invalid saved_trap"
+		return 1
+		;;
 	esac
 }
 
@@ -2782,4 +2785,9 @@ lock_have() {
 		esac
 	fi
 	return 1
+}
+
+# This is mostly for tests to assert without having the assert hidden.
+hide_stderr() {
+	"$@" 2>/dev/null
 }
