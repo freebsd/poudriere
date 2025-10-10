@@ -119,7 +119,7 @@ test_jobs_1() {
 	assert_true get_job_status "${sleep3_pid}" status
 	assert "Running" "${status}"
 
-	assert_runs_shorter_than 3 assert_ret 143 wait %1
+	assert_runs_shorter_than 1 assert_ret 143 wait %1
 
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
@@ -186,7 +186,7 @@ test_jobs_1() {
 
 	assert_true get_job_id "${sleep1_pid}" sleep1_jobid
 	assert 1 "${sleep1_jobid}"
-	assert_runs_shorter_than 3 assert_ret 0 wait %1
+	assert_runs_shorter_than 1 assert_ret 0 wait %1
 
 	assert_false get_job_id "${sleep1_pid}" sleep1_jobid 2>/dev/null
 
@@ -892,6 +892,254 @@ test_jobs_10() {
 	assert_runs_shorter_than 12 assert_ret 0 timed_wait_and_kill_job 10 %1
 }
 
+# timed_wait_and_kill_job with piped job.
+test_jobs_11() {
+	local -
+	set -m
+	assert_true sleep 15 | sleep 5 &
+	set +m
+	assert_true get_job_id "$!" spawn_jobid
+	assert "1" "${spawn_jobid}"
+	sleep1_pid="$!"
+	echo "sleep1_pid= $!"
+	sleep1_pgid="$(jobs -p "%1")"
+	assert_not "${sleep1_pid}" "${sleep1_pgid}"
+
+	assert_true get_jobs "${TMP}"
+	assert_file_reg - "${TMP}" <<-EOF
+	\[1\] \+ ${sleep1_pgid} Running
+	      ${sleep1_pid}
+	EOF
+	assert_true get_job_status "%1" status
+	assert "Running" "${status}"
+	capture_output_simple stdout stderr
+	assert_runs_shorter_than 19 assert_ret 0 \
+	    timed_wait_and_kill_job 17 "%1"
+	capture_output_simple_stop
+	assert_file - "${stdout}" <<-EOF
+	EOF
+	assert_file - "${stderr}" <<-EOF
+	EOF
+	assert_runs_shorter_than 3 assert_ret 127 wait %1
+}
+
+
+# timed_wait_and_kill_job with piped job. Based on checking last pid in pipe
+# This test is mostly validating the expected behavior before testing
+# timed_wait_and_kill_job.
+test_jobs_12() {
+	local use_timed_wait="${1:-0}"
+	local -
+	set -m
+	assert_true sleep 15 | sleep 5 &
+	set +m
+	assert_true get_job_id "$!" spawn_jobid
+	assert "1" "${spawn_jobid}"
+	sleep1_pid="$!"
+	echo "sleep1_pid= $!"
+	sleep1_pgid="$(jobs -p "%1")"
+	assert_not "${sleep1_pid}" "${sleep1_pgid}"
+
+	assert_true get_jobs "${TMP}"
+	assert_file_reg - "${TMP}" <<-EOF
+	\[1\] \+ ${sleep1_pgid} Running
+	      ${sleep1_pid}
+	EOF
+	assert_true get_job_status "%1" status
+	assert "Running" "${status}"
+	# Because $! is the last pid it will return...
+	assert_runs_between 3 7 assert_true pwait -t 7 "${sleep1_pid}"
+	# But because there's still procs running in the job it should be
+	# "Running"
+	assert_true get_job_status "%1" status
+	assert "Running" "${status}"
+	if [ "${use_timed_wait}" -eq 1 ]; then
+		# Wait without kill
+		assert_true kill -0 "${sleep1_pgid}"
+		assert_false kill -0 "${sleep1_pid}"
+		capture_output_simple stdout stderr
+		assert_runs_shorter_than 14 assert_ret 0 \
+		    timed_wait_and_kill_job 12 "%1"
+		capture_output_simple_stop
+		assert_file - "${stdout}" <<-EOF
+		EOF
+		assert_file - "${stderr}" <<-EOF
+		EOF
+		assert_runs_shorter_than 3 assert_ret 127 wait %1
+	elif [ "${use_timed_wait}" -eq 2 ]; then
+		# Wait with kill
+		assert_true kill -0 "${sleep1_pgid}"
+		assert_false kill -0 "${sleep1_pid}"
+		capture_output_simple stdout stderr
+		# This is killing the 'sleep 15' and should result in a TERM
+		# after timeout.
+		if set -o | grep -q "pipefail.*on"; then
+			# With pipefail we get the proper TERM due to
+			# 'sleep 15' timing out.
+			assert_runs_shorter_than 5 assert_ret 143 \
+			    timed_wait_and_kill_job 3 "%1"
+		else
+			# Without pipefail we get the exit status of 'sleep 5'
+			# which is 0.
+			assert_runs_shorter_than 5 assert_ret 0 \
+			    timed_wait_and_kill_job 3 "%1"
+		fi
+		capture_output_simple_stop
+		assert_file - "${stdout}" <<-EOF
+		EOF
+		assert_file - "${stderr}" <<-EOF
+		EOF
+		assert_runs_shorter_than 3 assert_ret 127 wait %1
+	else
+		kill -TERM -- -${sleep1_pgid}
+		# Wait a moment, but don't collect
+		assert_runs_shorter_than 3 assert_true pwait_racy "${sleep1_pid}"
+		# Now let checkzombies() run
+		assert_true get_job_status "%1" status
+		assert "Done" "${status}"
+		assert_runs_shorter_than 3 assert_ret 0 wait %1
+	fi
+}
+
+# Same as test_jobs_11() but with timed_wait_and_kill_job _waiting_
+test_jobs_13() {
+	test_jobs_12 1
+}
+
+# Same as test_jobs_11() but with timed_wait_and_kill_job _killing_
+test_jobs_14() {
+	test_jobs_12 2
+}
+
+# Same as test_jobs_11() but with timed_wait_and_kill_job _killing_ and pipefail
+test_jobs_15() {
+	local -
+	set_pipefail
+	test_jobs_12 2
+}
+
+# Mostly same as test_jobs_11().
+# timed_wait_and_kill_job with piped job. Based on checking leader pid in pipe
+# This test is mostly validating the expected behavior before testing
+# timed_wait_and_kill_job.
+test_jobs_16() {
+	local use_timed_wait="${1:-0}"
+	local -
+	set -m
+	assert_true sleep 5 | sleep 15 &
+	set +m
+	assert_true get_job_id "$!" spawn_jobid
+	assert "1" "${spawn_jobid}"
+	sleep1_pid="$!"
+	echo "sleep1_pid= $!"
+	sleep1_pgid="$(jobs -p "%1")"
+	assert_not "${sleep1_pid}" "${sleep1_pgid}"
+
+	assert_true get_jobs "${TMP}"
+	assert_file_reg - "${TMP}" <<-EOF
+	\[1\] \+ ${sleep1_pgid} Running
+	      ${sleep1_pid}
+	EOF
+	assert_true get_job_status "%1" status
+	assert "Running" "${status}"
+	# Wait on the first pid
+	assert_runs_between 3 7 assert_true pwait -t 7 "${sleep1_pgid}"
+	# But because there's still procs running in the job it should be
+	# "Running"
+	assert_true get_job_status "%1" status
+	assert "Running" "${status}"
+	if [ "${use_timed_wait}" -eq 1 ]; then
+		# Wait without kill
+		assert_false kill -0 "${sleep1_pgid}"
+		assert_true kill -0 "${sleep1_pid}"
+		capture_output_simple stdout stderr
+		assert_runs_shorter_than 12 assert_ret 0 \
+		    timed_wait_and_kill_job 10 "%1"
+		capture_output_simple_stop
+		assert_file - "${stdout}" <<-EOF
+		EOF
+		assert_file - "${stderr}" <<-EOF
+		EOF
+	elif [ "${use_timed_wait}" -eq 2 ]; then
+		# Wait with kill
+		assert_false kill -0 "${sleep1_pgid}"
+		assert_true kill -0 "${sleep1_pid}"
+		capture_output_simple stdout stderr
+		# This is killing the 'sleep 15' and should result in a TERM.
+		# after timeout.
+		assert_runs_shorter_than 5 assert_ret 143 \
+		    timed_wait_and_kill_job 3 "%1"
+		capture_output_simple_stop
+		assert_file - "${stdout}" <<-EOF
+		EOF
+		assert_file - "${stderr}" <<-EOF
+		EOF
+		assert_runs_shorter_than 1 assert_ret 127 wait %1
+	else
+		# kill -TERM ${sleep1_pid}
+		# Wait a moment, but don't collect
+		assert_runs_shorter_than 12 assert_true pwait_racy "${sleep1_pid}"
+		# Now let checkzombies() run
+		assert_true get_job_status "%1" status
+		assert "Done" "${status}"
+		assert_runs_shorter_than 1 assert_ret 0 wait %1
+	fi
+}
+
+# Same as test_jobs_16() but with timed_wait_and_kill_job _waiting_
+test_jobs_17() {
+	test_jobs_16 1
+}
+
+# Same as test_jobs_15() but with timed_wait_and_kill_job _killing_
+test_jobs_18() {
+	test_jobs_16 2
+}
+
+# Same as test_jobs_16() but with timed_wait_and_kill_job _killing_ and pipefail
+test_jobs_19() {
+	local -
+	set_pipefail
+	test_jobs_16 2
+}
+
+# Same as test_jobs_11() but kill's the last pid at the end and gets a
+# Terminated.
+# This test is mostly validating the expected behavior before testing
+test_jobs_20() {
+	local -
+	set -m
+	assert_true sleep 5 | sleep 15 &
+	set +m
+	assert_true get_job_id "$!" spawn_jobid
+	assert "1" "${spawn_jobid}"
+	sleep1_pid="$!"
+	echo "sleep1_pid= $!"
+	sleep1_pgid="$(jobs -p "%1")"
+	assert_not "${sleep1_pid}" "${sleep1_pgid}"
+
+	assert_true get_jobs "${TMP}"
+	assert_file_reg - "${TMP}" <<-EOF
+	\[1\] \+ ${sleep1_pgid} Running
+	      ${sleep1_pid}
+	EOF
+	assert_true get_job_status "%1" status
+	assert "Running" "${status}"
+	# Wait on the first pid
+	assert_runs_between 3 7 assert_true pwait -t 7 "${sleep1_pgid}"
+	# But because there's still procs running in the job it should be
+	# "Running"
+	assert_true get_job_status "%1" status
+	assert "Running" "${status}"
+	kill -TERM ${sleep1_pid}
+	# Wait a moment, but don't collect
+	assert_runs_shorter_than 12 assert_true pwait_racy "${sleep1_pid}"
+	# Now let checkzombies() run
+	assert_true get_job_status "%1" status
+	assert "Terminated" "${status}"
+	assert_runs_shorter_than 1 assert_ret 143 wait %1
+}
+
 list_tests() {
 	local first="$1"
 	local last="$2"
@@ -904,7 +1152,7 @@ list_tests() {
 }
 
 set_test_contexts - '' '' <<-EOF
-TESTFUNC $(list_tests 1 10)
+TESTFUNC $(list_tests 1 20)
 EOF
 while get_test_context; do
 	assert_true "${TESTFUNC}"

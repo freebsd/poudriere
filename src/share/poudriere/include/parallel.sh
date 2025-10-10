@@ -113,6 +113,9 @@ pwait() {
 	# status==0 but may write to stderr.
 	case "${PWAIT_BUILTIN:-0}" in
 	1)
+		# This not returning error assumes that the pid being waited on
+		# is the only pid in the job. Multi-pid jobs may return
+		# ESRCH on stderr.
 		command pwait \
 		    ${timeout:+-t "${timeout}"} ${vflag:+-v} ${oflag:+-o} \
 		    "$@" || ret="$?"
@@ -232,7 +235,12 @@ _kill_job() {
 	ret=0
 	case "${jobid}" in
 	"%"*)
-		pgid="$(jobs -p "${jobid}")"
+		if [ "${VERBOSE:-0}" -gt 2 ]; then
+			# pgid only used in msg_dev calls
+			pgid="$(jobs -p "${jobid}")"
+		else
+			unset pgid
+		fi
 		;;
 	*)
 		pgid="${jobid}"
@@ -254,7 +262,15 @@ _kill_job() {
 			case "${timeout:+set}" in
 			set)
 				msg_dev "Pwait -t ${timeout} on ${status} job=${jobid} pgid=${pgid}"
-				pwait -t "${timeout}" "${pgid}" || ret="$?"
+				case "${jobid}" in
+				"%"*)
+					pwait_jobs -t "${timeout}" "${jobid}" ||
+					    ret="$?"
+					;;
+				*)
+					pwait -t "${timeout}" "${pgid}" || ret="$?"
+					;;
+				esac
 				case "${ret}" in
 				124)
 					# Timeout. Keep going on the
@@ -284,6 +300,11 @@ _kill_job() {
 		esac
 	done
 	msg_dev "Collecting status='${status}' job=${jobid} pgid=${pgid}"
+	# Truncate away pwait timeout for whatever the process exited with
+	# from the spec.
+	case "${ret}" in
+	124) ret=0 ;;
+	esac
 	_wait "${jobid}" || ret="$?"
 	msg_dev "Job ${jobid} pgid=${pgid} exited ${ret}"
 	return "${ret}"
@@ -291,7 +312,7 @@ _kill_job() {
 
 pwait_jobs() {
 	[ "$#" -ge 0 ] || eargs pwait_jobs '[pwait flags]' '%job...'
-	local jobno pids allpids job_status
+	local jobno pid pids allpids job_status
 	local OPTIND=1 flag
 	local oflag timeout vflag
 	local jobs_jobid
@@ -337,7 +358,12 @@ pwait_jobs() {
 			esac
 			pids="$(jobid "${jobno}")" ||
 			    err "${EX_SOFTWARE}" "kill_jobs: jobid"
-			allpids="${allpids:+${allpids} }${pids}"
+			for pid in ${pids}; do
+				if ! kill -0 "${pid}" 2>/dev/null; then
+					continue
+				fi
+				allpids="${allpids:+${allpids} }${pid}"
+			done
 		done
 	done <<-EOF
 	$(jobs_with_statuses "$(jobs)")
