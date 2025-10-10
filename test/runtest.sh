@@ -81,6 +81,8 @@ make_getjob() {
 	dd_stderr="$(mktemp -ut runtest)"
 	while :; do
 		timeout=
+		# checkzombies() needed for poudriere sh
+		jobs >/dev/null
 		if [ "${THIS_JOB}" -eq 0 ] ||
 		    ! kill -0 "${THIS_JOB}" 2>/dev/null ||
 		    pwait -o -t "0.1" "${THIS_JOB}" >/dev/null 2>&1; then
@@ -354,6 +356,8 @@ collectpids() {
 		pids=
 		now="$(clock -monotonic)"
 		for pid in ${pids_copy}; do
+			# checkzombies() needed for poudriere sh
+			jobs >/dev/null
 			if kill -0 "${pid}" 2>/dev/null; then
 				pids="${pids:+${pids} }${pid}"
 				continue
@@ -449,6 +453,7 @@ setvar() {
 }
 fi
 
+if ! type getvar >/dev/null 2>&1; then
 getvar() {
 	local _getvar_var="$1"
 	local _getvar_var_return="${2-}"
@@ -477,10 +482,13 @@ getvar() {
 
 	return ${ret}
 }
+fi
 
+if ! type getpid >/dev/null 2>&1; then
 getpid() {
 	sh -c 'echo $PPID'
 }
+fi
 
 raise() {
 	local sig="$1"

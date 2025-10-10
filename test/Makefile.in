@@ -627,7 +627,7 @@ run_env = env \
 	 am_VPATH="$(VPATH)" \
 	 am_check=1
 
-LOG_COMPILER = $(run_env) $(SHELL) $(srcdir)/runtest.sh
+LOG_COMPILER = $(run_env) $(RUNTEST_SH) $(srcdir)/runtest.sh
 all: all-am
 
 .SUFFIXES:
@@ -2340,6 +2340,7 @@ uninstall-am:
 .PRECIOUS: Makefile
 
 $(JAIL_TESTS:.sh=.sh.log): prep.sh.log
+RUNTEST_SH ?= $(abs_top_builddir)/sh
 
 .PHONY: prep
 prep:

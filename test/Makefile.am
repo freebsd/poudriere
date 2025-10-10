@@ -230,7 +230,8 @@ run_env= env \
 	 am_pkgdatadir="$(pkgdatadir)" \
 	 am_VPATH="$(VPATH)" \
 	 am_check=1
-LOG_COMPILER=	$(run_env) $(SHELL) $(srcdir)/runtest.sh
+RUNTEST_SH ?= $(abs_top_builddir)/sh
+LOG_COMPILER=	$(run_env) $(RUNTEST_SH) $(srcdir)/runtest.sh
 
 .PHONY: prep
 prep:
