@@ -1,4 +1,5 @@
 : "${TIMEOUT_BIN:=timeout}"
+: "${TIMEOUT_FOREGROUND=--foreground}"
 
 THIS_JOB=0
 make_returnjob() {
@@ -95,13 +96,15 @@ make_getjob() {
 			setvar "${job_outvar}" "${mg_job}"
 			return 0
 		elif [ "${THIS_JOB}" -ne 0 ]; then
-			timeout="${TIMEOUT_BIN:?} --preserve-status -s SIGALRM 2"
+			timeout="${TIMEOUT_BIN:?} --foreground --preserve-status -s SIGALRM 2"
 		fi
 		# There is a race with checking for "this" job above and waiting
 		# on the job server for a job. 142 below will recheck for "this"
 		# job on timeout.
-		mg_job="$(${timeout} \
-			  dd if="${JOB_PIPE_R}" bs=1 count=1 2>"${dd_stderr}")"
+		mg_job="$({
+			${timeout} \
+			    dd if="${JOB_PIPE_R}" bs=1 count=1 2>"${dd_stderr}"
+		})"
 		ret="$?"
 		read dd_err < "${dd_stderr}" || dd_err=
 		rm -f "${dd_stderr}"
@@ -281,11 +284,14 @@ runtest() {
 
 	unset MAKEFLAGS
 	export TEST_NUMS
-	# With truss use --foreground to prevent process reaper and ptrace deadlocking.
 	set -x
 	case "${TRUSS-}" in
 	"") ;;
 	*)
+		# With truss use --foreground to prevent process reaper and
+		# ptrace deadlocking.
+		TIMEOUT_FOREGROUND="--foreground"
+
 		# Let truss finish draining when receiving a signal.
 		# Only do this for truss as otherwise some tests will not
 		# be able to modify the signals for their own purposes.
@@ -297,7 +303,7 @@ runtest() {
 		echo "Test started: $(date)"
 		# hide set -x
 	} >&2 2>/dev/null
-	${TIMEOUT_BIN:?} -v ${TRUSS:+--foreground} ${TIMEOUT_KILL} ${TIMEOUT} \
+	${TIMEOUT_BIN:?} -v ${TIMEOUT_FOREGROUND} ${TIMEOUT_KILL} ${TIMEOUT} \
 	    ${TIMESTAMP} \
 	    env \
 	    ${SH_DISABLE_VFORK:+SH_DISABLE_VFORK=1} \
