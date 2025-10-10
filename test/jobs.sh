@@ -60,6 +60,7 @@ multiple_children() {
 }
 
 # spawn_job and get_job_id and get_job_status
+add_test_function test_jobs_1
 test_jobs_1() {
 	assert_true spawn_job sleep 50
 	assert "1" "${spawn_jobid}"
@@ -275,6 +276,7 @@ test_jobs_1() {
 }
 
 # spawn_job and get_job_id and get_job_status, with piped jobs
+add_test_function test_jobs_2
 test_jobs_2() {
 	assert_true sleep 50 | sleep 50 | sleep 50 &
 	assert_true get_job_id "$!" spawn_jobid
@@ -512,6 +514,7 @@ test_jobs_2() {
 }
 
 # kill_jobs
+add_test_function test_jobs_3
 test_jobs_3() {
 	assert_true sleep 30 | sleep 30 &
 	assert_true get_job_id "$!" spawn_jobid
@@ -551,6 +554,7 @@ test_jobs_3() {
 }
 
 # kill_jobs (different ordering)
+add_test_function test_jobs_4
 test_jobs_4() {
 	assert_true spawn_job sleep 30
 	sleep1_pid="$!"
@@ -588,6 +592,7 @@ test_jobs_4() {
 }
 
 # pwait_jobs on single-proc jobs
+add_test_function test_jobs_5
 test_jobs_5() {
 	assert_true spawn_job sleep 10
 	sleep1_pid="$!"
@@ -638,6 +643,7 @@ test_jobs_5() {
 }
 
 # pwait_jobs on multi-proc jobs
+add_test_function test_jobs_6
 test_jobs_6() {
 	assert_true sleep 10 | sleep 10 &
 	assert_true get_job_id "$!" spawn_jobid
@@ -691,6 +697,7 @@ test_jobs_6() {
 }
 
 # kill_all_jobs
+add_test_function test_jobs_7
 test_jobs_7() {
 	assert_true spawn_job sleep 30
 	sleep1_pid="$!"
@@ -716,6 +723,7 @@ test_jobs_7() {
 }
 
 # kill_all_jobs
+add_test_function test_jobs_8
 test_jobs_8() {
 	assert_true sleep 30 | sleep 30 &
 	assert_true get_job_id "$!" spawn_jobid
@@ -751,6 +759,7 @@ test_jobs_8() {
 }
 
 # kill_job
+add_test_function test_jobs_9
 test_jobs_9() {
 	assert_true sleep 30 | sleep 40 &
 	assert_true get_job_id "$!" spawn_jobid
@@ -835,6 +844,7 @@ test_jobs_9() {
 }
 
 # timed_wait_and_kill_job
+add_test_function test_jobs_10
 test_jobs_10() {
 	assert_true spawn_job eval "sleep 5; exit 7"
 	sleep1_pid="$!"
@@ -893,6 +903,7 @@ test_jobs_10() {
 }
 
 # timed_wait_and_kill_job with piped job.
+add_test_function test_jobs_11
 test_jobs_11() {
 	local -
 	set -m
@@ -927,6 +938,7 @@ test_jobs_11() {
 # timed_wait_and_kill_job with piped job. Based on checking last pid in pipe
 # This test is mostly validating the expected behavior before testing
 # timed_wait_and_kill_job.
+add_test_function test_jobs_12
 test_jobs_12() {
 	local use_timed_wait="${1:-0}"
 	local -
@@ -1003,16 +1015,19 @@ test_jobs_12() {
 }
 
 # Same as test_jobs_11() but with timed_wait_and_kill_job _waiting_
+add_test_function test_jobs_13
 test_jobs_13() {
 	test_jobs_12 1
 }
 
 # Same as test_jobs_11() but with timed_wait_and_kill_job _killing_
+add_test_function test_jobs_14
 test_jobs_14() {
 	test_jobs_12 2
 }
 
 # Same as test_jobs_11() but with timed_wait_and_kill_job _killing_ and pipefail
+add_test_function test_jobs_15
 test_jobs_15() {
 	local -
 	set_pipefail
@@ -1023,6 +1038,7 @@ test_jobs_15() {
 # timed_wait_and_kill_job with piped job. Based on checking leader pid in pipe
 # This test is mostly validating the expected behavior before testing
 # timed_wait_and_kill_job.
+add_test_function test_jobs_16
 test_jobs_16() {
 	local use_timed_wait="${1:-0}"
 	local -
@@ -1088,16 +1104,19 @@ test_jobs_16() {
 }
 
 # Same as test_jobs_16() but with timed_wait_and_kill_job _waiting_
+add_test_function test_jobs_17
 test_jobs_17() {
 	test_jobs_16 1
 }
 
 # Same as test_jobs_15() but with timed_wait_and_kill_job _killing_
+add_test_function test_jobs_18
 test_jobs_18() {
 	test_jobs_16 2
 }
 
 # Same as test_jobs_16() but with timed_wait_and_kill_job _killing_ and pipefail
+add_test_function test_jobs_19
 test_jobs_19() {
 	local -
 	set_pipefail
@@ -1107,6 +1126,7 @@ test_jobs_19() {
 # Same as test_jobs_11() but kill's the last pid at the end and gets a
 # Terminated.
 # This test is mostly validating the expected behavior before testing
+add_test_function test_jobs_20
 test_jobs_20() {
 	local -
 	set -m
@@ -1141,19 +1161,8 @@ test_jobs_20() {
 	assert_runs_shorter_than 1 assert_ret 143 wait %1
 }
 
-list_tests() {
-	local first="$1"
-	local last="$2"
-	local n
-
-	for n in $(seq "${first}" "${last}"); do
-		echo -n "test_jobs_${n} "
-	done
-	echo
-}
-
 set_test_contexts - '' '' <<-EOF
-TESTFUNC $(list_tests 1 20)
+TESTFUNC $(list_test_functions)
 EOF
 while get_test_context; do
 	assert_true "${TESTFUNC}"

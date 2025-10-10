@@ -339,6 +339,26 @@ expand_test_contexts() {
 	'
 }
 
+add_test_function() {
+	[ $# -eq 1 ] || eargs add_test_context function
+
+	TESTFUNCS="${TESTFUNCS:+${TESTFUNCS} }$1"
+}
+
+list_test_functions() {
+	local func
+
+	case "${TESTFUNCS+set}" in
+	set) ;;
+	*) return 0 ;;
+	esac
+
+	for func in ${TESTFUNCS}; do
+		echo -n "${func} "
+	done
+	echo
+}
+
 # set_test_contexts setup_str teardown_str <<env matrix
 set_test_contexts() {
 	[ "$#" -eq 3 ] || eargs set_test_contexts env_file setup_str teardown_str
