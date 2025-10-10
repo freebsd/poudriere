@@ -2,6 +2,7 @@
 set +e
 . ./common.sh
 set -e
+set -m
 
 TMP="$(mktemp -ut jobs)"
 
@@ -278,6 +279,9 @@ test_jobs_1() {
 # spawn_job and get_job_id and get_job_status, with piped jobs
 add_test_function test_jobs_2
 test_jobs_2() {
+	assert_runs_shorter_than 10 _test_jobs_2
+}
+_test_jobs_2() {
 	assert_true sleep 50 | sleep 50 | sleep 50 &
 	assert_true get_job_id "$!" spawn_jobid
 	assert "1" "${spawn_jobid}"
@@ -905,10 +909,7 @@ test_jobs_10() {
 # timed_wait_and_kill_job with piped job.
 add_test_function test_jobs_11
 test_jobs_11() {
-	local -
-	set -m
 	assert_true sleep 15 | sleep 5 &
-	set +m
 	assert_true get_job_id "$!" spawn_jobid
 	assert "1" "${spawn_jobid}"
 	sleep1_pid="$!"
@@ -941,10 +942,8 @@ test_jobs_11() {
 add_test_function test_jobs_12
 test_jobs_12() {
 	local use_timed_wait="${1:-0}"
-	local -
-	set -m
+
 	assert_true sleep 15 | sleep 5 &
-	set +m
 	assert_true get_job_id "$!" spawn_jobid
 	assert "1" "${spawn_jobid}"
 	sleep1_pid="$!"
@@ -1041,10 +1040,8 @@ test_jobs_15() {
 add_test_function test_jobs_16
 test_jobs_16() {
 	local use_timed_wait="${1:-0}"
-	local -
-	set -m
+
 	assert_true sleep 5 | sleep 15 &
-	set +m
 	assert_true get_job_id "$!" spawn_jobid
 	assert "1" "${spawn_jobid}"
 	sleep1_pid="$!"
@@ -1128,10 +1125,7 @@ test_jobs_19() {
 # This test is mostly validating the expected behavior before testing
 add_test_function test_jobs_20
 test_jobs_20() {
-	local -
-	set -m
 	assert_true sleep 5 | sleep 15 &
-	set +m
 	assert_true get_job_id "$!" spawn_jobid
 	assert "1" "${spawn_jobid}"
 	sleep1_pid="$!"
