@@ -657,7 +657,7 @@ am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
 INSTALL
-SH
+BUILD_SH
 USE_RM
 LT_SYS_LIBRARY_PATH
 OTOOL64
@@ -13680,13 +13680,13 @@ esac
 fi
 
 
-SH=sh
+BUILD_SH=sh
 if [ $ac_have_f_dupfd_cloexec -eq 0 ]; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Not using bundled /bin/sh. Some runtime behavior may be wrong." >&5
 printf "%s\n" "$as_me: WARNING: Not using bundled /bin/sh. Some runtime behavior may be wrong." >&2;}
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: It is advised to upgrade your base system to a newer release." >&5
 printf "%s\n" "$as_me: WARNING: It is advised to upgrade your base system to a newer release." >&2;}
-  SH=
+  BUILD_SH=
 fi
 
 

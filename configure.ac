@@ -76,13 +76,13 @@ AC_SUBST([USE_RM])
 AC_CHECK_DECLS([F_DUPFD_CLOEXEC], [ac_have_f_dupfd_cloexec=1],
     [ac_have_f_dupfd_cloexec=0], [[#include <fcntl.h>]])
 
-SH=sh
+BUILD_SH=sh
 if [[ $ac_have_f_dupfd_cloexec -eq 0 ]]; then
   AC_MSG_WARN([Not using bundled /bin/sh. Some runtime behavior may be wrong.])
   AC_MSG_WARN([It is advised to upgrade your base system to a newer release.])
-  SH=
+  BUILD_SH=
 fi
-AC_SUBST([SH])
+AC_SUBST([BUILD_SH])
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([test/Makefile])

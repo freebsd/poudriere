@@ -344,6 +344,7 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BUILD_SH = @BUILD_SH@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -400,7 +401,6 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
-SH = @SH@
 SHELL = @SHELL@
 STRIP = @STRIP@
 USE_DEBUG = @USE_DEBUG@
@@ -2348,6 +2348,8 @@ prep:
 	@$(LOG_COMPILER) $(srcdir)/prep.sh
 #TEST_EXTENSIONS=.sh
 #SH_LOG_COMPILER=$(run_env) $(SHELL) runtest.sh
+
+SH ?= @BUILD_SH@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

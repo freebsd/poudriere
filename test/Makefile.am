@@ -239,3 +239,5 @@ prep:
 	@$(LOG_COMPILER) $(srcdir)/prep.sh
 #TEST_EXTENSIONS=.sh
 #SH_LOG_COMPILER=$(run_env) $(SHELL) runtest.sh
+
+SH ?= @BUILD_SH@

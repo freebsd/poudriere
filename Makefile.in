@@ -102,7 +102,7 @@ pkglibexec_PROGRAMS = clock$(EXEEXT) cpdup$(EXEEXT) dirempty$(EXEEXT) \
 	dirwatch$(EXEEXT) locked_mkdir$(EXEEXT) nc$(EXEEXT) \
 	poudriered$(EXEEXT) ptsort$(EXEEXT) pwait$(EXEEXT) \
 	rename$(EXEEXT) @USE_RM@ setsid$(EXEEXT) timeout$(EXEEXT) \
-	timestamp$(EXEEXT) @SH@
+	timestamp$(EXEEXT) @BUILD_SH@
 EXTRA_PROGRAMS = rm$(EXEEXT) sh$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -552,6 +552,7 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BUILD_SH = @BUILD_SH@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@ $(am__append_3)
@@ -608,7 +609,6 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
-SH = @SH@
 SHELL = @SHELL@
 STRIP = @STRIP@
 USE_DEBUG = @USE_DEBUG@
@@ -3697,6 +3697,8 @@ installcheck-local:
 
 # Rebuild if configure options change
 $(SOURCES):		src/config.h
+
+SH ?= $(BUILD_SH)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

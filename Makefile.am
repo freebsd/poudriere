@@ -161,7 +161,7 @@ pkglibexec_PROGRAMS= \
 		     setsid \
 		     timeout \
 		     timestamp \
-		     @SH@
+		     @BUILD_SH@
 EXTRA_PROGRAMS= \
 		rm \
 		sh
@@ -405,3 +405,5 @@ installcheck-local:
 
 # Rebuild if configure options change
 $(SOURCES):		src/config.h
+
+SH ?= $(BUILD_SH)
