@@ -31,9 +31,9 @@ assert_true git_get_hash_and_dirty "${PORTSDIR}" 0 git_hash git_modified
 assert "yes" "${git_modified}"
 assert_true git_get_hash_and_dirty "${PORTSDIR}/ports-mgmt/pkg" 1 git_hash git_modified
 assert "no" "${git_modified}"
-git -C "${PORTSDIR}" checkout Mk/bsd.port.mk
+assert_true git -C "${PORTSDIR}" checkout Mk/bsd.port.mk
 
-touch "${PORTSDIR}/ports-mgmt/Makefile.local"
+assert_true touch "${PORTSDIR}/ports-mgmt/Makefile.local"
 assert_true git_get_hash_and_dirty "${PORTSDIR}" 0 git_hash git_modified
 assert "yes" "${git_modified}"
 GIT_TREE_DIRTY_CHECK=no assert_true git_get_hash_and_dirty "${PORTSDIR}" 0 git_hash git_modified
@@ -44,26 +44,26 @@ GIT_TREE_DIRTY_CHECK=no assert_true git_get_hash_and_dirty "${PORTSDIR}/ports-mg
 assert "unknown" "${git_modified}"
 rm -f "${PORTSDIR}/ports-mgmt/Makefile.local"
 
-touch "${PORTSDIR}/Makefile.local"
+assert_true touch "${PORTSDIR}/Makefile.local"
 assert_true git_get_hash_and_dirty "${PORTSDIR}" 0 git_hash git_modified
 assert "yes" "${git_modified}"
 assert_true git_get_hash_and_dirty "${PORTSDIR}/ports-mgmt/pkg" 1 git_hash git_modified
 assert "no" "${git_modified}"
 rm -f "${PORTSDIR}/Makefile.local"
 
-mkdir "${PORTSDIR}/ports-mgmt/pkg/files"
+assert_true mkdir -p "${PORTSDIR}/ports-mgmt/pkg/files"
 assert_true git_get_hash_and_dirty "${PORTSDIR}" 0 git_hash git_modified
 assert "no" "${git_modified}"
 assert_true git_get_hash_and_dirty "${PORTSDIR}/ports-mgmt/pkg" 1 git_hash git_modified
 assert "no" "${git_modified}"
 
-touch "${PORTSDIR}/ports-mgmt/pkg/files/patch-foo.orig"
+assert_true touch "${PORTSDIR}/ports-mgmt/pkg/files/patch-foo.orig"
 assert_true git_get_hash_and_dirty "${PORTSDIR}" 0 git_hash git_modified
 assert "no" "${git_modified}"
 assert_true git_get_hash_and_dirty "${PORTSDIR}/ports-mgmt/pkg" 1 git_hash git_modified
 assert "no" "${git_modified}"
 
-touch "${PORTSDIR}/ports-mgmt/pkg/files/patch-foo"
+assert_true touch "${PORTSDIR}/ports-mgmt/pkg/files/patch-foo"
 assert_true git_get_hash_and_dirty "${PORTSDIR}" 0 git_hash git_modified
 assert "yes" "${git_modified}"
 GIT_TREE_DIRTY_CHECK=no assert_true git_get_hash_and_dirty "${PORTSDIR}" 0 git_hash git_modified
@@ -74,7 +74,7 @@ GIT_TREE_DIRTY_CHECK=no assert_true git_get_hash_and_dirty "${PORTSDIR}/ports-mg
 assert "unknown" "${git_modified}"
 rm -f "${PORTSDIR}/ports-mgmt/pkg/files/patch-foo"
 
-touch "${PORTSDIR}/ports-mgmt/pkg/Makefile.local"
+assert_true touch "${PORTSDIR}/ports-mgmt/pkg/Makefile.local"
 assert_true git_get_hash_and_dirty "${PORTSDIR}" 0 git_hash git_modified
 assert "yes" "${git_modified}"
 assert_true git_get_hash_and_dirty "${PORTSDIR}/ports-mgmt/pkg" 1 git_hash git_modified
