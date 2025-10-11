@@ -2669,7 +2669,7 @@ slock_acquire() {
 	lockname="$1"
 	waittime="$2"
 
-	mkdir -p "${SHARED_LOCK_DIR:?}" 2>/dev/null || :
+	mkdir -p "${SHARED_LOCK_DIR:?}" || return
 	lockpath="${SHARED_LOCK_DIR:?}/lock-poudriere-shared-${lockname:?}"
 	_lock_acquire "${quiet}" "${lockname}" "${lockpath}" "${waittime}" ||
 	    return
