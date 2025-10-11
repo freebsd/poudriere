@@ -18,7 +18,7 @@ assert 0 $? "Unlocked dir should not wait to lock"
 # Wait on and fail to take owned lock
 time=$(clock -monotonic)
 locked_mkdir 2 ${LOCK1} $$
-assert 75 $? "Locked dir should timeout"
+assert 124 $? "Locked dir should timeout"
 nowtime=$(clock -monotonic)
 elapsed=$((${nowtime} - ${time}))
 [ "${elapsed}" -le 3 ]
@@ -102,7 +102,7 @@ echo -n 1 > "${LOCK1}.pid"
 assert 0 $? "Writing to pid should succeed"
 assert_pid "$0:$LINENO" "${LOCK1}" "1"
 locked_mkdir 5 ${LOCK1} $$
-assert 75 $? "Lock should not succeed"
+assert 124 $? "Lock should not succeed"
 assert_pid "$0:$LINENO" "${LOCK1}" "1"
 nowtime=$(clock -monotonic)
 elapsed=$((${nowtime} - ${time}))

@@ -121,7 +121,7 @@ until [ "${n}" -eq "${max}" ]; do
 
 	nowtime=$(clock -monotonic)
 
-	assert $((75 * 4)) $((status_unlock1 + status_unlock2 + status_unlock3 + \
+	assert $((124 * 4)) $((status_unlock1 + status_unlock2 + status_unlock3 + \
 		status_unlock4)) "4 waiters should timeout on lock ${n}"
 	[ -d "${LOCK1}" ]
 	assert 0 $? "Lock dir should exist ${n}"

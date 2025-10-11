@@ -350,7 +350,10 @@ main(int argc, char **argv)
 		cleanup();
 		INTON;
 #endif
-		return (EX_TEMPFAIL);
+		if (timed_out)
+			return (124);
+		else
+			return (EX_TEMPFAIL);
 	}
 
 	/* At this point, we own the lock. */
@@ -452,7 +455,7 @@ retry_kevent:
 		cleanup();
 		INTON;
 #endif
-		return (EX_TEMPFAIL);
+		return (124);
 		/* NOTREACHED */
 	    default:
 		break;

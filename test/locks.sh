@@ -158,9 +158,9 @@ false &&
 
 	# Try to acquire the child's lock - should not work
 	lock_acquire TEST 1
-	assert 1 "$?" "lock_acquire on child's lock should fail"
+	assert_not 0 "$?" "lock_acquire on child's lock should fail"
 	(lock_acquire TEST 1)
-	assert 1 "$?" "lock_acquire on child's lock should fail"
+	assert_not 0 "$?" "lock_acquire on child's lock should fail"
 	# Try to drop the lock - should not work
 	catch_err lock_release TEST
 	assert_not 0 "$?" "Can't release lock not owned"
@@ -186,7 +186,7 @@ false &&
 		lock_have TEST
 		assert 1 $? "Should not have lock in child from parent"
 		lock_acquire TEST 5
-		assert 1 "$?" "Should not get lock"
+		assert_not 0 "$?" "Should not get lock"
 		lock_have TEST
 		assert 1 $? "Should not have lock in child from parent"
 		catch_err lock_release TEST

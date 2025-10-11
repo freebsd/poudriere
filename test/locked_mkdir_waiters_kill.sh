@@ -164,7 +164,7 @@ until [ "${n}" -eq "${max}" ]; do
 
 	# Now a child should own the lock but only *1* should own it (one will
 	# exit success though since it had it). Failed
-	# waiters return 75 (EX_TEMPFAIL). Any other non-zero is fatal.
+	# waiters return 124 on timeout. Any other non-zero is fatal.
 	if [ -z "${status_unlock1}" ]; then
 		_wait "${pid_unlock1}"
 		status_unlock1=$?
@@ -184,7 +184,7 @@ until [ "${n}" -eq "${max}" ]; do
 
 	nowtime=$(clock -monotonic)
 
-	assert $(((75 * 2))) $((status_unlock1 + status_unlock2 + status_unlock3 + \
+	assert $((124 * 2)) $((status_unlock1 + status_unlock2 + status_unlock3 + \
 		status_unlock4)) "2 waiters should timeout on lock, 1 should win, 1 should be OK after TERMed after winning ${n}"
 	[ -d "${LOCK1}" ]
 	assert 0 $? "Lock dir should exist ${n}"
