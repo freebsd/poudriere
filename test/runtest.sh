@@ -729,12 +729,18 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 		exit "${ret}"
 	}
 	setup_traps cleanup
-	TEST_CONTEXTS_TOTAL="$(env \
-	    TEST_CONTEXTS_NUM_CHECK=yes \
-	    THISDIR="${THISDIR}" \
-	    SH="${SH}" \
-	    VERBOSE=0 \
-	    "${SH}" "${TEST}" 2>/dev/null)"
+	exec 9>/dev/null
+	for fd in 9 2; do
+		if TEST_CONTEXTS_TOTAL="$(env \
+		    TEST_CONTEXTS_NUM_CHECK=yes \
+		    THISDIR="${THISDIR}" \
+		    SH="${SH}" \
+		    VERBOSE=0 \
+		    "${SH}" "${TEST}" 2>&"${fd}")"; then
+			break
+		fi
+	done
+	exec 9>&-
 	case "${TEST_CONTEXTS_TOTAL}" in
 	[0-9]|[0-9][0-9]|[0-9][0-9][0-9]|[0-9][0-9][0-9][0-9]) ;;
 	*)
