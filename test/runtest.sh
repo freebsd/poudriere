@@ -86,7 +86,7 @@ make_getjob() {
 		jobs >/dev/null
 		if [ "${THIS_JOB}" -eq 0 ] ||
 		    ! kill -0 "${THIS_JOB}" 2>/dev/null ||
-		    pwait -o -t "0.1" "${THIS_JOB}" >/dev/null 2>&1; then
+		    command pwait -o -t "0.1" "${THIS_JOB}" >/dev/null 2>&1; then
 			# This runtest.sh runner itself was given a job.
 			# Use it before asking the jobserver for more.
 			collectpids "0.1" || :
@@ -393,7 +393,7 @@ collectpids() {
 			echo "+ Waiting on pids: ${pids} timeout: ${timeout}" >&2
 			gotinfo=0
 		fi
-		pwait -o -t "${timeout}" ${pids} >/dev/null 2>&1 || :
+		command pwait -o -t "${timeout}" ${pids} >/dev/null 2>&1 || :
 		pids_copy="${pids}"
 		pids=
 		now="$(clock -monotonic)"

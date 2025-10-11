@@ -50,6 +50,7 @@
 #define main pwaitcmd
 #include "bltin/bltin.h"
 #include "helpers.h"
+#include "trap.h"
 #endif
 
 static void
@@ -84,6 +85,7 @@ main(int argc, char *argv[])
 	memset(&itv, 0, sizeof(itv));
 
 #ifdef SHELL
+	int serrno, sig, ret;
 	pushed_alarm = 0;
 #endif
 	while ((opt = getopt(argc, argv, "ot:v")) != -1) {
@@ -248,6 +250,15 @@ main(int argc, char *argv[])
 		n = kevent(kq, NULL, 0, e, nleft + tflag, NULL);
 		if (n == -1) {
 #ifdef SHELL
+			serrno = errno;
+			if (tflag && serrno == EINTR) {
+				sig = pendingsig;
+				if (sig == 0)
+					continue;
+				ret = 128 + sig;
+			} else {
+				ret = EX_OSERR;
+			}
 			close(kq);
 			free(e);
 			trap_pop(SIGINFO, &info_oact);
@@ -256,8 +267,15 @@ main(int argc, char *argv[])
 				trap_pop(SIGALRM, &alrm_oact);
 			}
 			INTON;
-#endif
+			errno = serrno;
+			if (errno == EINTR) {
+				exit(ret);
+			} else {
+				err(ret, "kevent");
+			}
+#else
 			err(EX_OSERR, "kevent");
+#endif
 		}
 		for (i = 0; i < n; i++) {
 			if (e[i].filter == EVFILT_SIGNAL) {
