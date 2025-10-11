@@ -65,6 +65,7 @@ add_test_function test_jobs_1
 test_jobs_1() {
 	assert_true spawn_job sleep 50
 	assert "1" "${spawn_jobid}"
+	assert "%1" "${spawn_job}"
 	sleep1_pid="$!"
 	echo "sleep1_pid= $!"
 

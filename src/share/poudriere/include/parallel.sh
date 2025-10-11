@@ -931,7 +931,10 @@ spawn_job() {
 	spawn_jobid=
 	spawn "$@" || return
 	get_job_id "$!" spawn_jobid || return
-	msg_dev "spawn_job: Spawned job %${spawn_jobid:?} pid=$! cmd=$*"
+	spawn_job="%${spawn_jobid}"
+	spawn_pgid="$(jobs -p "${spawn_job:?}")"
+	spawn_pid="$!"
+	msg_dev "spawn_job: Spawned job ${spawn_job:?} pgid=${spawn_pgid:?} pid=${spawn_pid:?} cmd=$*"
 }
 
 spawn_job_protected() {
