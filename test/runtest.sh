@@ -169,6 +169,7 @@ while read var; do
 	URL_BASE|\
 	PVERBOSE|VERBOSE|\
 	SH_DISABLE_VFORK|TIMESTAMP|TRUSS|TIMEOUT_BIN|\
+	TIMEOUT_SH_MULTIPLIER|\
 	HTML_JSON_UPDATE_INTERVAL|\
 	TESTS_SKIP_BUILD|\
 	TESTS_SKIP_LONG|\
@@ -231,23 +232,28 @@ cd "${THISDIR}"
 : "${LOGCLEAN_WAIT:=30}"
 export LOGCLEAN_WAIT
 
-case "${1##*/}" in
-prep.sh) : ${TIMEOUT:=1800} ;;
-bulk*build*.sh|testport*build*.sh) : ${TIMEOUT:=1800} ;;
-critical_section_inherit.sh) : ${TIMEOUT:=20} ;;
-locked_mkdir.sh) : ${TIMEOUT:=120} ;;
-jobs.sh) : ${TIMEOUT:=80} ;;
+case "${TEST##*/}" in
+prep.sh) : "${TIMEOUT:=250}" ;;
+bulk*build*.sh|testport*build*.sh) : "${TIMEOUT:=400}" ;;
+critical_section_inherit.sh) : "${TIMEOUT:=20}" ;;
 esac
-: ${TIMEOUT:=90}
+: "${TIMEOUT:=60}"
 case "${TEST##*/}" in
 # Bump anything touching logclean
 bulk*.sh|testport*.sh|distclean*.sh|options*.sh) : "${TIMEOUT:=$((TIMEOUT + (LOGCLEAN_WAIT * 1)))}" ;;
 esac
 case "${TRUSS-}" in
 "") ;;
-*) TIMEOUT=$((TIMEOUT * 3)) ;;
+*) TIMEOUT="$((TIMEOUT * 4))" ;;
 esac
 TIMEOUT_KILL="-k 30"
+case "${SH}" in
+/bin/sh)
+	# 3 was too low for at least bulk builds.
+	: "${TIMEOUT_SH_MULTIPLIER:=4}"
+	TIMEOUT="$((TIMEOUT * TIMEOUT_SH_MULTIPLIER))"
+	;;
+esac
 if [ -n "${TESTS_SKIP_BUILD-}" ]; then
 	case "${1##*/}" in
 	*-build-quick*.sh) ;;
