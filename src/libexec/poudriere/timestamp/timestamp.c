@@ -58,6 +58,7 @@
 static const char *const typefmt[] = {"[]", "()"};
 static int Dflag;
 static struct timespec start;
+pid_t child_pid = -1;
 
 struct kdata {
 	FILE *fp_in;
@@ -257,6 +258,19 @@ usage(void)
 	exit(EX_USAGE);
 }
 
+static void
+gotterm(int sig __unused)
+{
+	if (child_pid == -1)
+		return;
+	warnx("killing child pid %d with SIGTERM", child_pid);
+	kill(child_pid, SIGTERM);
+	/*
+	 * We could reraise SIGTERM but let's ensure we flush everything
+	 * out that the child sends on its own SIGTERM.
+	 */
+}
+
 /**
  * Timestamp stdout
  */
@@ -268,11 +282,9 @@ main(int argc, char **argv)
 	struct kdata kdata_stdout, kdata_stderr;
 	char *prefix_stdout, *prefix_stderr, *time_start;
 	char *end;
-	pid_t child_pid;
 	int child_stdout[2], child_stderr[2];
 	int ch, status, ret, dflag, uflag, tflag, Tflag;
 
-	child_pid = -1;
 	ret = 0;
 	dflag = tflag = Tflag = uflag = 0;
 	thr_stdout = thr_stderr = NULL;
@@ -363,6 +375,7 @@ main(int argc, char **argv)
 		setlinebuf(stderr);
 	}
 
+	signal(SIGTERM, gotterm);
 	if (argc > 0) {
 		if (fp_in_stdout != NULL)
 			errx(EX_DATAERR, "Cannot use -o with command");

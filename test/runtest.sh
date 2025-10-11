@@ -324,7 +324,7 @@ runtest() {
 	    ${SH_DISABLE_VFORK:+SH_DISABLE_VFORK=1} \
 	    THISDIR="${THISDIR}" \
 	    SH="${SH}" \
-	    lockf -k "$(get_log_name).lock" \
+	    lockf ${TIMEOUT_FOREGROUND:+-T} -k "$(get_log_name).lock" \
 	    ${TRUSS:+truss -ae -f -s256 -o "$(get_log_name).truss"} \
 	    "${SH}" "${TEST}" || ret="$?"
 	{

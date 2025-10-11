@@ -2,8 +2,8 @@
 
 trap '' SIGINFO
 
-STDOUT=$(mktemp -ut poudriere)
-STDERR=$(mktemp -ut poudriere)
+STDOUT=$(mktemp -ut stdout)
+STDERR=$(mktemp -ut stderr)
 
 add_test_function test_timestamp_1
 test_timestamp_1() {
@@ -172,6 +172,35 @@ test_timestamp_7() {
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
+}
+
+add_test_function test_timestamp_forwards_sigterm
+test_timestamp_forwards_sigterm() {
+	TMP="$(mktemp -ut timestamp_sigterm)"
+	doit() {
+		local TMP="$1"
+		timestamp \
+		    sh -c "echo \"${TMP}\"; trap 'echo 143>\"${TMP}\"' TERM; :>${READY_FILE:?}; sleep 20" \
+		    >${STDOUT} 2>${STDERR}
+	}
+	assert_true spawn_job doit "${TMP}"
+	assert_not '' "${spawn_pgid}"
+	assert_true cond_timedwait 3
+	# Must not use kill_job here as that would send SIGTERM to the
+	# sh process as well. We are explicitly testing that timestamp
+	# forwards the SIGTERM, and that it allows the child to finish
+	# and exits cleanly.
+	assert_runs_shorter_than 5 assert_ret 0 \
+	    kill_and_wait 3 "${spawn_pgid}"
+	assert_file_reg - "${STDERR}" <<-EOF
+	timestamp: killing child pid [0-9]+ with SIGTERM
+	EOF
+	assert_file - "${STDOUT}" <<-EOF
+	[00:00:00] ${TMP}
+	EOF
+	assert_file - "${TMP}" <<-EOF
+	143
+	EOF
 }
 
 run_test_functions
