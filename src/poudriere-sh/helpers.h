@@ -27,6 +27,7 @@
 #include <assert.h>
 #include <signal.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 struct sigdata {
 	struct sigaction oact;
@@ -97,13 +98,49 @@ static inline char mygetchar(void) {
 
 #include "shell.h"
 
-void * ckmalloc(size_t);
-void * ckrealloc(void *, int);
-void ckfree(void *);
+/*
+ * Avoiding sh's version of these as explained in FreeBSD add265c6b.
+ */
+static void
+badalloc(const char *message)
+{
+	write(2, message, strlen(message));
+	abort();
+}
 
-#define malloc ckmalloc
-#define realloc ckrealloc
-#define free ckfree
+static inline void*
+ckmalloc(size_t nbytes)
+{
+	void *p;
+
+	if (!is_int_on())
+		badalloc("Unsafe ckmalloc() call\n");
+	p = malloc(nbytes);
+	return p;
+}
+
+
+/*
+ * Same for realloc.
+ */
+
+static inline void*
+ckrealloc(void *p, int nbytes)
+{
+	if (!is_int_on())
+		badalloc("Unsafe ckrealloc() call\n");
+	p = realloc(p, nbytes);
+	return p;
+}
+
+static inline void
+ckfree(void *p)
+{
+	if (!is_int_on())
+		badalloc("Unsafe ckfree() call\n");
+	free(p);
+}
+
 
 /* This kinda works but does not free memory, close fd, or INTON. */
 #undef exit
