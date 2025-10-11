@@ -463,7 +463,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 MOSTLYCLEANFILES = $(TEST_LOGS:.log=.log.truss) \
 	$(TEST_LOGS:.log=*.log) prep.sh.trs prep.sh.log
-AM_TESTS_FD_REDIRECT = 4>&2
+AM_TESTS_FD_STDERR = 4
+AM_TESTS_FD_REDIRECT = $(AM_TESTS_FD_STDERR)>&2
 EXTRA_DIST = $(TESTS) \
 	    $(JAIL_TESTS) \
 	    common.bulk.sh \
@@ -625,7 +626,8 @@ run_env = env \
 	 am_pkglibexecdir="$(pkglibexecdir)" \
 	 am_pkgdatadir="$(pkgdatadir)" \
 	 am_VPATH="$(VPATH)" \
-	 am_check=1
+	 am_check=1 \
+	 AM_TESTS_FD_STDERR=$(AM_TESTS_FD_STDERR)
 
 LOG_COMPILER = $(run_env) $(RUNTEST_SH) $(srcdir)/runtest.sh
 all: all-am

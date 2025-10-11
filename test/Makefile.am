@@ -3,7 +3,8 @@ MOSTLYCLEANFILES+=	$(TEST_LOGS:.log=.log.truss)
 MOSTLYCLEANFILES+=	$(TEST_LOGS:.log=*.log)
 MOSTLYCLEANFILES+=	prep.sh.trs prep.sh.log
 
-AM_TESTS_FD_REDIRECT= 4>&2
+AM_TESTS_FD_STDERR=   4
+AM_TESTS_FD_REDIRECT= $(AM_TESTS_FD_STDERR)>&2
 
 EXTRA_DIST= $(TESTS) \
 	    $(JAIL_TESTS) \
@@ -229,7 +230,8 @@ run_env= env \
 	 am_pkglibexecdir="$(pkglibexecdir)" \
 	 am_pkgdatadir="$(pkgdatadir)" \
 	 am_VPATH="$(VPATH)" \
-	 am_check=1
+	 am_check=1 \
+	 AM_TESTS_FD_STDERR=$(AM_TESTS_FD_STDERR)
 RUNTEST_SH ?= $(abs_top_builddir)/sh
 LOG_COMPILER=	$(run_env) $(RUNTEST_SH) $(srcdir)/runtest.sh
 

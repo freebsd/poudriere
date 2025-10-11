@@ -157,6 +157,7 @@ while read var; do
 	am_pkgdatadir|\
 	am_VPATH|\
 	am_check|am_installcheck|\
+	AM_TESTS_FD_STDERR|\
 	MAKEFLAGS|\
 	CCACHE*|\
 	PATH|\
@@ -606,7 +607,7 @@ siginfo_handler() {
 		duration="$((now - start))"
 		getvar "pid_test_${pid}" test_data
 		printf "pid %05d %3ds %s\n" "${pid}" "${duration}" "${test_data}"
-	done >&4
+	done >&${AM_TESTS_FD_STDERR:-2}
 	gotinfo=1
 }
 
