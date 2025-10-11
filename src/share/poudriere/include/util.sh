@@ -2562,12 +2562,21 @@ _lock_acquire() {
 		have_lock=0
 		;;
 	esac
-	if [ "${have_lock}" -eq 0 ] &&
-		! locked_mkdir "${waittime}" "${lockpath}" "${mypid}"; then
-		if [ "${quiet}" -eq 0 ]; then
-			msg_warn "Failed to acquire ${lockname} lock"
-		fi
-		return 1
+	if [ "${have_lock}" -eq 0 ]; then
+		local lm_ret
+
+		lm_ret=0
+		locked_mkdir "${waittime}" "${lockpath}" "${mypid}" ||
+		    lm_ret="$?"
+		case "${lm_ret}" in
+		0) ;;
+		*)
+			if [ "${quiet}" -eq 0 ]; then
+				msg_warn "Failed to acquire ${lockname} lock ret=${lm_ret}"
+			fi
+			return "${lm_ret}"
+			;;
+		esac
 	fi
 	# XXX: Remove this block with locked_mkdir [EINTR] fixes.
 	{
