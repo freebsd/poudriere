@@ -263,7 +263,7 @@ case "${SH}" in
 	;;
 esac
 if [ -n "${TESTS_SKIP_BUILD-}" ]; then
-	case "${1##*/}" in
+	case "${TEST##*/}" in
 	*-build-quick*.sh) ;;
 	*-build*)
 		exit 77
@@ -274,7 +274,7 @@ if [ -n "${TESTS_SKIP_LONG-}" ]; then
 	:
 fi
 if [ -n "${TESTS_SKIP_BULK-}" ]; then
-	case "${1##*/}" in
+	case "${TEST##*/}" in
 	*-build-quick*.sh) ;;
 	testport-*.sh|bulk-*.sh)
 		exit 77
