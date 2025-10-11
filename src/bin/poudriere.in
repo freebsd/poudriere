@@ -199,7 +199,7 @@ esac
 # Special-case environment passthroughs.
 while read envvar; do
 	case "${envvar}" in
-	ASSERT_CONTINUE)
+	ASSERT_CONTINUE|FP_*)
 		;;
 	FETCH_BIND_ADDRESS|FTP_*|ftp_*|HTTP_*|http_*|SSH_*|SSL_|NO_PROXY|no_proxy)
 		case "${CMD}" in

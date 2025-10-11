@@ -6367,7 +6367,7 @@ build_pkg() {
 			# shellcheck disable=SC2254
 			case "${pkgbase}" in
 			${fp_pkg_glob})
-				msg_error "FP_BUILD_PKG_EXIT_PKGNAMES failpoint match pkgname='${pkgname}' fp_pkg_glob='${fp_pkg_glob}'"
+				msg_error "FP_BUILD_PKG_EXIT_PKGNAMES failpoint match pkgbase='${pkgbase}' fp_pkg_glob='${fp_pkg_glob}'"
 				# exit immediately rather than go through
 				# err() cleanup.
 				exit 1
