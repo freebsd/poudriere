@@ -317,7 +317,7 @@ runtest() {
 	    THISDIR="${THISDIR}" \
 	    SH="${SH}" \
 	    lockf -k "$(get_log_name).lock" \
-	    ${TRUSS:+truss -ae -f -s512 -o "$(get_log_name).truss"} \
+	    ${TRUSS:+truss -ae -f -s256 -o "$(get_log_name).truss"} \
 	    "${SH}" "${TEST}" || ret="$?"
 	{
 		if [ "${ret}" -eq 0 ] &&
