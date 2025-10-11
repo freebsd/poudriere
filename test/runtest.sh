@@ -627,7 +627,7 @@ _trap_pre_handler() {
 	set +e
 	trap '' PIPE INT INFO HUP TERM
 }
-# {} is used to avoid set -x EPIPE
+# {} is used to avoid set -x SIGPIPE
 alias trap_pre_handler='{ _trap_pre_handler; } 2>/dev/null; (exit "${_ERET}")'
 
 setup_traps() {

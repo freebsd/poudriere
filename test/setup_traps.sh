@@ -125,12 +125,12 @@ EXIT_FILE="exit_file"
 	EOF
 }
 
-# Should NOT exit EPIPE from handler
+# Should NOT exit SIGPIPE from handler
 {
 	worker_cleanup() {
 		local ret=$?
-		assert 0 "${ret}" "worker had error before entering worker_cleanup; should not EPIPE until here" 2>&4
-		# Cause an EPIPE here to ensure it does not recurse
+		assert 0 "${ret}" "worker had error before entering worker_cleanup; should not SIGPIPE until here" 2>&4
+		# Cause an SIGPIPE here to ensure it does not recurse
 		pipe_ret=0
 		echo "in here $ret" >&2 || pipe_ret=$?
 		assert 2 "${pipe_ret}" "stderr should cause write error" 2>&4
@@ -148,8 +148,8 @@ EXIT_FILE="exit_file"
 		ret=0
 		echo "FIFO should work" >&2 || ret=$?
 		assert 0 "$ret" "echo to stderr" 2>&4
-		# We should now EPIPE if writing to stderr.
-		# The process will only EPIPE in worker_cleanup()
+		# We should now SIGPIPE if writing to stderr.
+		# The process will only SIGPIPE in worker_cleanup()
 		{
 			assert_true cond_signal child "piped stderr"
 			assert_true cond_timedwait 5 parent
@@ -183,12 +183,12 @@ EXIT_FILE="exit_file"
 	# Nuke stderr reader
 	assert_ret 0 timed_wait_and_kill_job 5 "%${stderr_jobid}"
 	# This serializes some of the test to ensure proper setup of set -x
-	# for the EPIPE test.
+	# for the SIGPIPE test.
 	assert_true cond_signal parent
 	assert_true cond_timedwait 5 child "worker end"
 	assert_true cond_signal parent
 	assert_true cond_timedwait 5 child "exiting"
-	# No EPIPE should come through from exit handler
+	# No SIGPIPE should come through from exit handler
 	assert_ret 0 kill_job 2 "%${writer_jobid}"
 	exec 4>&-
 	assert_file - "${EXIT_FILE}" <<-EOF

@@ -1164,7 +1164,7 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 		funcnest++;
 		mklocal("FUNCNAME");
 		setvar("FUNCNAME", argv[0], 0);
-		/* This can stay only if we ignore EPIPE. */
+		/* This can stay only if we ignore SIGPIPE. */
 		if (!in_trap()) {
 			char *funcstack;
 			int exitstatus_save = exitstatus, oexitstatus_save = oexitstatus;

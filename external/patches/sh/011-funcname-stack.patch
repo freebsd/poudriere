@@ -20,7 +20,7 @@ index cd044c408..db9827166 100644
  		funcnest++;
  		mklocal("FUNCNAME");
  		setvar("FUNCNAME", argv[0], 0);
-+		/* This can stay only if we ignore EPIPE. */
++		/* This can stay only if we ignore SIGPIPE. */
 +		if (!in_trap()) {
 +			char *funcstack;
 +			int exitstatus_save = exitstatus, oexitstatus_save = oexitstatus;
