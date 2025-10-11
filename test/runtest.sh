@@ -298,6 +298,7 @@ runtest() {
 		trap '' INT PIPE TERM HUP
 		;;
 	esac
+	setproctitle "poudriere runtest: $(get_log_name)"
 	{
 		TEST_START="$(clock -monotonic)"
 		echo "Test started: $(date)"
@@ -402,6 +403,8 @@ collectpids() {
 			    "$(TEST_CONTEXT_NUM="${pid_test_context_num}" get_log_name)" \
 			    "${result}"
 			JOBS="$((JOBS - 1))"
+			TEST_CONTEXTS_FINISHED="$((TEST_CONTEXTS_FINISHED + 1))"
+			set_job_title
 			case "${VERBOSE:+set}.${exit_type}" in
 			set.FAIL)
 				cat "$(TEST_CONTEXT_NUM="${pid_test_context_num}" get_log_name)"
@@ -462,6 +465,12 @@ setvar() {
 	read -r "${_setvar_var?}" <<-EOF
 	${_setvar_value}
 	EOF
+}
+fi
+
+if ! type setproctitle >/dev/null 2>&1; then
+setproctitle() {
+	:
 }
 fi
 
@@ -571,12 +580,17 @@ sig_handler() {
 	raise "${sig}"
 }
 
+set_job_title() {
+	setproctitle "poudriere runtest jobd tests=${TEST_CONTEXTS_FINISHED}/${TEST_CONTEXTS_TOTAL} jobs=${JOBS} elapsed=$(($(clock -monotonic) - TEST_SUITE_START)): $(TEST_CONTEXT_NUM= get_log_name)"
+}
+
 : ${TEST_CONTEXTS_PARALLEL:=4}
+TEST_CONTEXTS_FINISHED=0
+TEST_SUITE_START="$(clock -monotonic)"
 
 if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
     grep -q get_test_context "${TEST}"; then
 	{
-		TEST_SUITE_START="$(clock -monotonic)"
 		echo "Test suite started: $(date)"
 		# hide set -x
 	} >&2 2>/dev/null
@@ -610,6 +624,7 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 		;;
 	esac
 	JOBS=0
+	set_job_title
 	MAIN_RET=0
 	case "${TEST_CONTEXTS_TOTAL}" in
 	[0-9]) num_width="01" ;;
@@ -661,6 +676,7 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 			setvar "pid_test_start_$!" "$(clock -monotonic)"
 			pids="${pids:+${pids} }$!"
 			JOBS="$((JOBS + 1))"
+			set_job_title
 			setvar "pid_num_$!" "${TEST_CONTEXT_NUM}"
 			continue
 		fi
