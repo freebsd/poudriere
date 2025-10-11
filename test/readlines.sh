@@ -94,7 +94,7 @@ set +e
 	EOF
 
 	two=unset
-	assert_true readlines one '' three four five six < "${TMP}"
+	assert_true readlines one '' three four five six < "${TMP}" > "${TMP}.stdout"
 	assert "1 one" "${one}"
 	assert "unset" "${two}"
 	assert "3 thre\e" "${three}"
@@ -102,6 +102,8 @@ set +e
 	assert "5 five" "${five}"
 	assert "  six"$'\n'"7 seven" "${six}"
 	assert 7 "${_readlines_lines_read:?}"
+	assert_file - "${TMP}.stdout" <<-EOF
+	EOF
 
 	rm -f "${TMP}"
 }
@@ -136,6 +138,33 @@ set +e
 	assert "" "${two}"
 	assert "NULL" "${two-NULL}"
 	assert 0 "${_readlines_lines_read:?}"
+}
+
+{
+	TMP="$(mktemp -ut readlines.data)"
+	TMP2="$(mktemp -ut readlines.stdout)"
+	cat > "${TMP}" <<-EOF
+	1
+	2
+	3
+	EOF
+	assert_true readlines_file "${TMP}" > "${TMP2}"
+	assert_file "${TMP}" "${TMP}"
+	rm -f "${TMP}" "${TMP2}"
+}
+
+{
+	TMP="$(mktemp -ut readlines.data)"
+	TMP2="$(mktemp -ut readlines.stdout)"
+	cat > "${TMP}" <<-EOF
+	1
+	2
+	3
+	EOF
+	assert_true readlines_file "${TMP}" - > "${TMP2}"
+	assert_file "${TMP}" "${TMP}"
+	assert 3 "${_readlines_lines_read}"
+	rm -f "${TMP}" "${TMP2}"
 }
 
 # Teeing

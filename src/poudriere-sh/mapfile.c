@@ -655,7 +655,7 @@ mapfile_read_loopcmd(int argc, char **argv)
 }
 
 static int
-_mapfile_cat(struct mapped_data *md, int tee_fd)
+_mapfile_cat(struct mapped_data *md, int tee_fd, size_t *lines)
 {
 	char *line;
 	ssize_t linelen;
@@ -669,7 +669,9 @@ _mapfile_cat(struct mapped_data *md, int tee_fd)
 			err(EXIT_FAILURE, "%s", "fdopen");
 		}
 	}
+	*lines = 0;
 	while ((rret = _mapfile_read(md, &line, &linelen, NULL)) == 0) {
+		(*lines)++;
 		INTON;
 		outbin(line, linelen, out1);
 		out1c('\n');
@@ -702,6 +704,8 @@ mapfile_catcmd(int argc, char **argv)
 	const char *handle;
 	char *end;
 	int i, ch, Tflag, error, ret;
+	size_t lines;
+	char liness[10];
 
 	Tflag = -1;
 	while ((ch = getopt(argc, argv, "T:")) != -1) {
@@ -722,16 +726,21 @@ mapfile_catcmd(int argc, char **argv)
 
 	error = 0;
 	ret = 0;
+	lines = 0;
+	setvarsafe("_mapfile_cat_lines_read", "0", 0);
 	for (i = 0; i < argc; i++) {
 		handle = argv[i];
 		INTOFF;
 		md = md_find(handle);
-		if ((error = _mapfile_cat(md, Tflag)) != 0) {
+		lines = 0;
+		if ((error = _mapfile_cat(md, Tflag, &lines)) != 0) {
 			ret = error;
 		}
 		assert(is_int_on());
 		INTON;
 	}
+	snprintf(liness, sizeof(liness), "%zd", lines);
+	setvarsafe("_mapfile_cat_lines_read", liness, 0);
 
 	return (ret);
 }
@@ -745,6 +754,8 @@ mapfile_cat_filecmd(int argc, char **argv)
 	char *end;
 	int error, ret;
 	int i, ch, Tflag, qflag;
+	size_t lines;
+	char liness[10];
 
 	Tflag = -1;
 	qflag = 0;
@@ -769,6 +780,8 @@ mapfile_cat_filecmd(int argc, char **argv)
 		errx(EX_USAGE, "%s", usage);
 
 	ret = 0;
+	lines = 0;
+	setvarsafe("_mapfile_cat_file_lines_read", "0", 0);
 	for (i = 0; i < argc; i++) {
 		file = argv[i];
 		INTOFF;
@@ -780,13 +793,16 @@ mapfile_cat_filecmd(int argc, char **argv)
 			continue;
 		}
 		assert(md != NULL);
-		if ((error = _mapfile_cat(md, Tflag)) != 0) {
+		lines = 0;
+		if ((error = _mapfile_cat(md, Tflag, &lines)) != 0) {
 			ret = error;
 		}
 		assert(is_int_on());
 		md_close(md);
 		INTON;
 	}
+	snprintf(liness, sizeof(liness), "%zd", lines);
+	setvarsafe("_mapfile_cat_file_lines_read", liness, 0);
 	return (ret);
 }
 

@@ -749,6 +749,7 @@ fi
 	assert_ret 0 mapfile handle "${TMP2}" "we"
 	assert_ret 0 mapfile_cat_file "${TMP}" |
 	    assert_ret 0 mapfile_write "${handle}"
+	assert 0 "${_mapfile_cat_file_lines_read}"
 	assert 0 "$?" "pipe exit status"
 	assert_ret 0 mapfile_close "${handle}"
 	[ ! -s "${TMP2}" ]
@@ -821,6 +822,8 @@ fi
 
 	:>"${TMP2}"
 	assert_ret 0 mapfile_cat_file "${TMP}" > "${TMP2}"
+	count_lines "${TMP}" lines
+	assert "${lines}" "${_mapfile_cat_file_lines_read}"
 	assert_ret 0 diff -u "${TMP}" "${TMP2}"
 	rm -f "${TMP}" "${TMP2}"
 }
@@ -1081,6 +1084,8 @@ fi
 	assert_not "" "${ps_handle}"
 	#assert_ret 0 kill -0 "$!"
 	assert_ret 0 mapfile_cat "${ps_handle}" > "${TMP}.2"
+	count_lines "${TMP}" lines
+	assert "${lines}" "${_mapfile_cat_lines_read}"
 	assert_file "${TMP}" "${TMP}.2"
 	assert_ret 0 mapfile_close "${ps_handle}"
 	#assert_ret_not 0 kill -0 "$!"

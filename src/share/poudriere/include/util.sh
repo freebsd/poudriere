@@ -811,14 +811,14 @@ readlines() {
 
 readlines_file() {
 	# Blank vars will still read and output $_readlines_lines_read
-	[ "$#" -ge 1 ] || eargs readlines_file '[-T]' file '[vars...]'
+	[ "$#" -ge 1 ] || eargs readlines_file '[-T]' file '[-|vars...]'
 	local rlf_file
 	local rlf_var rlf_line rlf_var_count
 	local rlf_rest rlf_nl rlf_handle rlf_ret
 	local flag Tflag
 	local OPTIND=1 IFS
 
-	Tflag=0
+	Tflag=
 	while getopts "T" flag; do
 		case "${flag}" in
 		T)
@@ -828,7 +828,7 @@ readlines_file() {
 		esac
 	done
 	shift $((OPTIND-1))
-	[ "$#" -ge 1 ] || eargs readlines_file '[-T]' file '[vars...]'
+	[ "$#" -ge 1 ] || eargs readlines_file '[-T]' file '[-|vars...]'
 	rlf_file="$1"
 	shift
 
@@ -844,11 +844,17 @@ readlines_file() {
 		fi
 		;;
 	esac
-
+	rlf_ret=0
+	case "$#.${1-}" in
+	1.-)
+		mapfile_cat_file "${rlf_file:?}" || rlf_ret="$?"
+		_readlines_lines_read="${_mapfile_cat_file_lines_read:?}"
+		return "${rlf_ret}"
+		;;
+	esac
 	rlf_nl=${RL_NL-$'\n'}
 	rlf_var_count="$#"
 	unset rlf_rest
-	rlf_ret=0
 	if mapfile -F rlf_handle "${rlf_file:?}" "r"; then
 		while IFS= mapfile_read "${rlf_handle}" rlf_line; do
 			_readlines_lines_read="$((_readlines_lines_read + 1))"
@@ -1559,6 +1565,7 @@ mapfile_cat() {
 	[ $# -ge 1 ] || eargs mapfile_cat '[-T fd]' handle...
 	local OPTIND=1 Tflag flag ret
 
+	_mapfile_cat_lines_read=0
 	Tflag=
 	while getopts "T:" flag; do
 		case "${flag}" in
@@ -1573,6 +1580,7 @@ mapfile_cat() {
 	ret=0
 	for handle in "$@"; do
 		while IFS= mapfile_read "${handle}" line; do
+			_mapfile_cat_lines_read="$((_mapfile_cat_lines_read + 1))"
 			# shellcheck disable=SC2320
 			echo "${line}" || ret=$?
 			case "${Tflag}" in
@@ -1595,6 +1603,7 @@ mapfile_cat_file() {
 	local  _handle ret _file
 	local OPTIND=1 Tflag qflag flag
 
+	_mapfile_cat_file_lines_read=0
 	qflag=
 	Tflag=
 	while getopts "qT:" flag; do
@@ -1620,6 +1629,7 @@ mapfile_cat_file() {
 			mapfile_cat ${Tflag:+-T "${Tflag}"} "${_handle}" ||
 			    ret="$?"
 			mapfile_close "${_handle}" || ret="$?"
+			_mapfile_cat_file_lines_read="${_mapfile_cat_lines_read:?}"
 		else
 			ret="$?"
 		fi
