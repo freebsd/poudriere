@@ -95,6 +95,16 @@ assert_ret_not 0 shash_get pkgname-origin "pkg-1.7" value
 	rm -f "${TMP}"
 }
 
+# shash_get to stdout, basis for some of the streaming handling.
+{
+	assert_true shash_set test key "value"
+	TMP="$(mktemp -ut shash-basic.stdout)"
+	assert_true shash_get test key - > "${TMP}"
+	assert_file - "${TMP}" <<-EOF
+	value
+	EOF
+}
+
 # shash_read_mapfile on existing var-key should pass
 {
 

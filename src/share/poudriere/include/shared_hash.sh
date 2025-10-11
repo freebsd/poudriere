@@ -73,10 +73,20 @@ shash_get() {
 			;;
 		esac
 		sg_rret=0
-		readlines_file "${_f:?}" _sh_value || sg_rret=$?
+		case "${sg_var_return:?}" in
+		-)
+			readlines_file "${_f:?}" - || sg_rret=$?
+			;;
+		*)
+			readlines_file "${_f:?}" _sh_value || sg_rret=$?
+			;;
+		esac
 		case "${sg_rret}" in
 		0)
-			_sh_values="${_sh_values:+${_sh_values} }${_sh_value}"
+			case "${sg_var_return:?}" in
+			-) ;;
+			*) _sh_values="${_sh_values:+${_sh_values} }${_sh_value}" ;;
+			esac
 			;;
 		*)
 			sg_ret="${sg_rret}"
@@ -86,7 +96,10 @@ shash_get() {
 	done
 	set -o noglob
 
-	setvar "${sg_var_return}" "${_sh_values}" || return
+	case "${sg_var_return}" in
+	-) ;;
+	*) setvar "${sg_var_return}" "${_sh_values}" || return ;;
+	esac
 	return "${sg_ret}"
 }
 
@@ -134,10 +147,8 @@ shash_read() {
 	[ $# -eq 2 ] || eargs shash_read var key
 	local sr_var="$1"
 	local sr_key="$2"
-	local _shash_varkey_file
 
-	_shash_varkey_file "${sr_var}" "${sr_key}"
-	mapfile_cat_file -q "${_shash_varkey_file}"
+	shash_get "${sr_var}" "${sr_key}" -
 }
 
 shash_read_mapfile() {
