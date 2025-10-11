@@ -210,28 +210,28 @@ _catch_err() {
 : "${READY_FILE:=condchan}"
 cond_timedwait() {
 	local maxtime="$1"
-	local which="$2"
+	local which="${2-}"
 	local reason="${3-}"
 	local start now got_reason
 
 	start="$(clock -monotonic)"
-	until [ -e "${READY_FILE:?}.${which:?}" ]; do
+	until [ -e "${READY_FILE:?}${which:+.${which}}" ]; do
 		sleep 0.001
 		now="$(clock -monotonic)"
 		if [ "$((now - start))" -gt "${maxtime}" ]; then
-			msg_error "cond_timedwait: Timeout waiting for signal which='${which}' reason='${reason}'"
+			msg_error "cond_timedwait: Timeout waiting for signal ${which:+which='${which}' }reason='${reason}'"
 			return 1
 		fi
 	done
 	got_reason=
-	read got_reason < "${READY_FILE:?}.${which:?}"
-	echo "${which:?} sent signal: ${got_reason}" >&2
+	read got_reason < "${READY_FILE:?}${which:+.${which}}"
+	echo "${which:+${which} }sent signal: ${got_reason}" >&2
 	assert "${reason}" "${got_reason}" "READY FILE reason"
-	rm -f "${READY_FILE:?}.${which:?}"
+	rm -f "${READY_FILE:?}${which:+.${which}}"
 }
 
 cond_signal() {
-	local which="$1"
+	local which="${1-}"
 	local reason="${2-}"
 
 	case "${reason:+set}" in
@@ -239,13 +239,13 @@ cond_signal() {
 		# Likely noclobber failure if this fails.
 		# Using 'noclobber' to make log clearer.
 		assert_true noclobber \
-		    write_atomic "${READY_FILE:?}.${which:?}" "${reason}"
+		    write_atomic "${READY_FILE:?}${which:+.${which}}" "${reason}"
 		;;
 	*)
 		local -
 
 		set -C # noclobber
-		: > "${READY_FILE:?}.${which:?}" || return
+		: > "${READY_FILE:?}${which:+.${which}}" || return
 		;;
 	esac
 }
