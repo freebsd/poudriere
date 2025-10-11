@@ -1506,12 +1506,12 @@ pset() { attr_set ports "$@" ; }
 
 _attr_get() {
 	[ $# -eq 4 ] || eargs _attr_get var_return type name property
-	local var_return="$1"
+	local _ag_outvar="$1"
 	local type="$2"
 	local name="$3"
 	local property="$4"
 
-	read_file "${var_return}" \
+	read_file "${_ag_outvar}" \
 	    "${POUDRIERED}/${type}/${name}/${property}"
 }
 
@@ -1530,18 +1530,18 @@ attr_get() {
 jget() { attr_get jails "$@" ; }
 _jget() {
 	[ $# -eq 3 ] || eargs _jget var_return ptname property
-	local var_return="$1"
+	local _jg_outvar="$1"
 
 	shift
-	_attr_get "${var_return}" jails "$@"
+	_attr_get "${_jg_outvar}" jails "$@"
 }
 pget() { attr_get ports "$@" ; }
 _pget() {
 	[ $# -eq 3 ] || eargs _pget var_return ptname property
-	local var_return="$1"
+	local _pg_outvar="$1"
 
 	shift
-	_attr_get "${var_return}" ports "$@"
+	_attr_get "${_pg_outvar}" ports "$@"
 }
 
 #build getter/setter
@@ -1550,9 +1550,9 @@ _bget() {
 	case "${POUDRIERE_BUILD_TYPE-}" in
 	"") return 1 ;;
 	esac
-	local var_return id property mnt log file READ_FILE_USE_CAT file
+	local _bg_outvar id property mnt log file READ_FILE_USE_CAT file
 
-	var_return="$1"
+	_bg_outvar="$1"
 	_log_path log
 	shift
 	if [ $# -eq 2 ]; then
@@ -1568,7 +1568,7 @@ _bget() {
 		;;
 	esac
 
-	read_file "${var_return}" "${log:?}/${file:?}"
+	read_file "${_bg_outvar}" "${log:?}/${file:?}"
 }
 
 bget() {

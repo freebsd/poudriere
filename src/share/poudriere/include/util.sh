@@ -515,7 +515,7 @@ randint() {
 	[ "$#" -eq 1 ] || [ "$#" -eq 2 ] ||
 	    eargs randint max_val '[var_return]'
 	local max_val="$1"
-	local var_return="${2-}"
+	local r_outvar="${2-}"
 	local val
 
 	if [ "$#" -eq 1 ]; then
@@ -523,7 +523,7 @@ randint() {
 		return
 	fi
 	val=$(jot -r 1 "${max_val}")
-	setvar "${var_return}" "${val}"
+	setvar "${r_outvar}" "${val}"
 }
 ;;
 esac
@@ -580,7 +580,7 @@ trap_push() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs trap_push signal var_return
 	local signal="$1"
-	local var_return="$2"
+	local tp_outvar="$2"
 	local _trap ldash lhandler lsig
 
 	_trap="-"
@@ -605,7 +605,7 @@ trap_push() {
 	$(trap)
 	EOF
 
-	setvar "${var_return}" "${_trap}"
+	setvar "${tp_outvar}" "${_trap}"
 }
 
 trap_pop() {
@@ -693,11 +693,11 @@ esac
 read_file() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs read_file var_return file
-	local var_return="$1"
+	local rf_outvar="$1"
 	local rf_file="$2"
 	local rf_ret - IFS
 
-	# var_return may be empty if only $_read_file_lines_read is being
+	# rf_outvar may be empty if only $_read_file_lines_read is being
 	# used.
 	rf_ret=0
 	_read_file_lines_read=0
@@ -711,15 +711,15 @@ read_file() {
 		-|/dev/stdin|/dev/fd/0) ;;
 		*)
 			if [ ! -r "${rf_file:?}" ]; then
-				case "${var_return}" in
+				case "${rf_outvar}" in
 				""|-) ;;
-				*) unset "${var_return}" ;;
+				*) unset "${rf_outvar}" ;;
 				esac
 				return "${EX_NOINPUT:-66}"
 			fi
 			;;
 		esac
-		case "${var_return:+set}" in
+		case "${rf_outvar:+set}" in
 		set)
 			rf_data="$(cat "${rf_file}")" || rf_ret="$?"
 			;;
@@ -730,15 +730,15 @@ read_file() {
 			    _read_file_lines_read=0
 			;;
 		esac
-		case "${var_return}" in
+		case "${rf_outvar}" in
 		"") ;;
 		-) echo "${rf_data}" ;;
-		*) setvar "${var_return}" "${rf_data}" || return ;;
+		*) setvar "${rf_outvar}" "${rf_data}" || return ;;
 		esac
 
 		return "${rf_ret}"
 	else
-		readlines_file "${rf_file}" ${var_return:+"${var_return}"} ||
+		readlines_file "${rf_file}" ${rf_outvar:+"${rf_outvar}"} ||
 		    rf_ret="$?"
 		_read_file_lines_read="${_readlines_lines_read:?}"
 		return "${rf_ret}"
@@ -2137,7 +2137,7 @@ timespecsub() {
 
 calculate_duration() {
 	[ $# -eq 2 ] || eargs calculate_duration var_return elapsed
-	local var_return="$1"
+	local cd_outvar="$1"
 	local _elapsed="$2"
 	local seconds minutes hours days _duration
 
@@ -2156,7 +2156,7 @@ calculate_duration() {
 	_duration=$(printf "%s%02d:%02d:%02d" "${_duration}" \
 	    "${hours}" "${minutes}" "${seconds}")
 
-	setvar "${var_return}" "${_duration}"
+	setvar "${cd_outvar}" "${_duration}"
 }
 
 _write_atomic() {
