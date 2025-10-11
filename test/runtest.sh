@@ -545,18 +545,32 @@ raise() {
 	kill -"${sig}" "$(getpid)"
 }
 
+# Need to cleanup some stuff before calling traps.
+_trap_pre_handler() {
+	_ERET="$?"
+	unset IFS
+	set +u
+	set +e
+	trap '' PIPE INT INFO HUP TERM
+}
+# {} is used to avoid set -x EPIPE
+alias trap_pre_handler='{ _trap_pre_handler; } 2>/dev/null; (exit "${_ERET}")'
+
 setup_traps() {
-	[ "$#" -eq 1 ] || eargs setup_traps exit_handler
-	local exit_handler="$1"
+	[ "$#" -eq 0 ] || [ "$#" -eq 1 ] || eargs setup_traps '[exit_handler]'
+	local exit_handler="${1-}"
 	local sig
 
 	for sig in INT HUP PIPE TERM; do
-		trap "sig_handler ${sig} ${exit_handler}" "${sig}"
+		trap "trap_pre_handler; sig_handler ${sig}${exit_handler:+ \"${exit_handler}\"}" "${sig}"
 	done
-	trap "${exit_handler}" EXIT
+	case "${exit_handler:+set}" in
+	set)
+		trap "trap_pre_handler; ${exit_handler}" EXIT
+		;;
+	esac
 	gotinfo=0
-	# hide set -x
-	trap '{ siginfo_handler; } 2>/dev/null' INFO
+	trap 'siginfo_handler' INFO
 }
 
 format_siginfo() {
@@ -578,6 +592,7 @@ format_siginfo() {
 }
 
 siginfo_handler() {
+	local -; set +e
 	case "${pids-}" in
 	"") return ;;
 	esac
@@ -597,13 +612,26 @@ siginfo_handler() {
 
 sig_handler() {
 	local sig="$1"
-	local exit_handler="$2"
+	local exit_handler="${2-}"
 
-	set +e +u
-	unset IFS
-	trap '' PIPE INT INFO HUP TERM
 	trap - EXIT
-	"${exit_handler}"
+	case "${exit_handler:+set}" in
+	set)
+		local sig_ret
+
+		case "${sig}" in
+		TERM) sig_ret=$((128 + 15)) ;;
+		INT)  sig_ret=$((128 + 2)) ;;
+		HUP)  sig_ret=$((128 + 1)) ;;
+		PIPE) sig_ret=$((128 + 13)) ;;
+		*)    sig_ret= ;;
+		esac
+		case "${sig_ret:+set}" in
+		set) (exit "${sig_ret}") ;;
+		esac
+		"${exit_handler}"
+		;;
+	esac
 	trap - "${sig}"
 	raise "${sig}"
 }
@@ -623,6 +651,7 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 		# hide set -x
 	} >&2 2>/dev/null
 	cleanup() {
+		local ret="$?"
 		local jobs
 
 		exec >/dev/null 2>&1
@@ -636,6 +665,7 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 			done
 			;;
 		esac
+		exit "${ret}"
 	}
 	setup_traps cleanup
 	TEST_CONTEXTS_TOTAL="$(env \
@@ -718,8 +748,8 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 	exit "${MAIN_RET}"
 fi
 
-# hide set -x
-trap '{ siginfo_handler; } 2>/dev/null' INFO
+setup_traps
+trap 'siginfo_handler' INFO
 pids="$$"
 setvar "pid_test_start_$$" "$(clock -monotonic)"
 setvar "pid_test_$$" "$(format_siginfo "this" "${TEST}" "1" "1" "$(get_log_name)")"
