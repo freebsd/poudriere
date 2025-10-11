@@ -302,11 +302,6 @@ runtest() {
 		# With truss use --foreground to prevent process reaper and
 		# ptrace deadlocking.
 		TIMEOUT_FOREGROUND="--foreground"
-
-		# Let truss finish draining when receiving a signal.
-		# Only do this for truss as otherwise some tests will not
-		# be able to modify the signals for their own purposes.
-		trap '' INT PIPE TERM HUP
 		;;
 	esac
 	setproctitle "poudriere runtest: $(get_log_name)"
