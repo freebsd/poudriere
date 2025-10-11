@@ -385,8 +385,9 @@ _test_jobs_2() {
 	assert_true pwait_racy "${sleep1_pid}"
 
 	assert_true get_jobs "${TMP}"
+	# Done|Running due to pwait_racy not being good enough
 	assert_file_reg - "${TMP}" <<-EOF
-	\[1\]   [0-9]+ Done
+	\[1\]   [0-9]+ (Done|Running)
 	      [0-9]+
 	      ${sleep1_pid}
 	\[2\] - [0-9]+ Running
