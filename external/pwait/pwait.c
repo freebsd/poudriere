@@ -67,7 +67,7 @@ int
 main(int argc, char *argv[])
 {
 #ifdef SHELL
-	struct sigdata info_oact, alrm_oact;
+	struct sigdata alrm_oact;
 	int pushed_alarm;
 #endif
 	struct itimerval itv;
@@ -145,12 +145,10 @@ main(int argc, char *argv[])
 
 #ifdef SHELL
 	INTOFF;
-	trap_push(SIGINFO, &info_oact);
 #endif
 	kq = kqueue();
 	if (kq == -1) {
 #ifdef SHELL
-		trap_pop(SIGINFO, &info_oact);
 		INTON;
 #endif
 		err(EX_OSERR, "kqueue");
@@ -160,7 +158,6 @@ main(int argc, char *argv[])
 	if (e == NULL) {
 #ifdef SHELL
 		close(kq);
-		trap_pop(SIGINFO, &info_oact);
 		INTON;
 #endif
 		err(EX_OSERR, "malloc");
@@ -203,7 +200,6 @@ main(int argc, char *argv[])
 #ifdef SHELL
 				close(kq);
 				free(e);
-				trap_pop(SIGINFO, &info_oact);
 				INTON;
 #endif
 				exit(EX_OK);
@@ -223,7 +219,6 @@ main(int argc, char *argv[])
 #ifdef SHELL
 			close(kq);
 			free(e);
-			trap_pop(SIGINFO, &info_oact);
 			INTON;
 #endif
 			err(EX_OSERR, "kevent");
@@ -239,7 +234,6 @@ main(int argc, char *argv[])
 #ifdef SHELL
 			close(kq);
 			free(e);
-			trap_pop(SIGINFO, &info_oact);
 			trap_pop(SIGALRM, &alrm_oact);
 			INTON;
 #endif
@@ -261,7 +255,6 @@ main(int argc, char *argv[])
 			}
 			close(kq);
 			free(e);
-			trap_pop(SIGINFO, &info_oact);
 			if (tflag && pushed_alarm) {
 				alarm(0);
 				trap_pop(SIGALRM, &alrm_oact);
@@ -285,7 +278,6 @@ main(int argc, char *argv[])
 #ifdef SHELL
 				close(kq);
 				free(e);
-				trap_pop(SIGINFO, &info_oact);
 				if (tflag && pushed_alarm) {
 					alarm(0);
 					trap_pop(SIGALRM, &alrm_oact);
@@ -313,7 +305,6 @@ main(int argc, char *argv[])
 #ifdef SHELL
 				close(kq);
 				free(e);
-				trap_pop(SIGINFO, &info_oact);
 				if (tflag && pushed_alarm) {
 					alarm(0);
 					trap_pop(SIGALRM, &alrm_oact);
@@ -329,7 +320,6 @@ main(int argc, char *argv[])
 #ifdef SHELL
 	close(kq);
 	free(e);
-	trap_pop(SIGINFO, &info_oact);
 	if (tflag && pushed_alarm) {
 		alarm(0);
 		trap_pop(SIGALRM, &alrm_oact);

@@ -86,7 +86,7 @@ make_getjob() {
 		jobs >/dev/null
 		if [ "${THIS_JOB}" -eq 0 ] ||
 		    ! kill -0 "${THIS_JOB}" 2>/dev/null ||
-		    command pwait -o -t "0.1" "${THIS_JOB}" >/dev/null 2>&1; then
+		    pwait -o -t "0.1" "${THIS_JOB}" >/dev/null 2>&1; then
 			# This runtest.sh runner itself was given a job.
 			# Use it before asking the jobserver for more.
 			collectpids "0.1" || :
@@ -369,6 +369,66 @@ _wait() {
 	return "${ret}"
 }
 
+case "$(type pwait)" in
+"pwait is a shell builtin")
+	PWAIT_BUILTIN=1
+	;;
+esac
+# Wrapper to fix SIGINFO [EINTR], -t 0, and ssert on errors.
+pwait() {
+	[ "$#" -ge 1 ] || eargs pwait '[pwait flags]' pids
+	local OPTIND=1 flag
+	local ret oflag tflag timeout time_start now vflag
+
+	tflag=
+	while getopts "ot:v" flag; do
+		case "${flag}" in
+		o) oflag=1 ;;
+		t) tflag="${OPTARG}" ;;
+		v) vflag=1 ;;
+		*) err 1 "pwait: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+
+	[ "$#" -ge 1 ] || eargs pwait '[pwait flags]' pids
+	case "${tflag}" in
+	0) tflag="0.00001" ;;
+	esac
+	case "${tflag}" in
+	"") ;;
+	*.*) timeout="${tflag}" ;;
+	*) time_start="$(clock -monotonic)" ;;
+	esac
+	while :; do
+		# Adjust timeout
+		case "${tflag}" in
+		""|*.*) ;;
+		*)
+			now="$(clock -monotonic)"
+			timeout="$((tflag - (now - time_start)))"
+			case "${timeout}" in
+			"-"*) timeout=0 ;;
+			esac
+			;;
+		esac
+		ret=0
+		command pwait \
+		    ${tflag:+-t "${timeout}"} \
+		    ${vflag:+-v} ${oflag:+-o} \
+		    "$@" || ret="$?"
+		case "${ret}" in
+		# Read again on SIGINFO interrupts
+		157) continue ;;
+		esac
+		break
+	done
+	case "${ret}" in
+	124|0) return "${ret}" ;;
+	esac
+	err "${EX_SOFTWARE:-70}" "pwait: timeout=${timeout} pids=${pids} ret=${ret}"
+}
+
 collectpids() {
 	local timeout="$1"
 	local pids_copy tries max
@@ -393,7 +453,7 @@ collectpids() {
 			echo "+ Waiting on pids: ${pids} timeout: ${timeout}" >&2
 			gotinfo=0
 		fi
-		command pwait -o -t "${timeout}" ${pids} >/dev/null 2>&1 || :
+		pwait -o -t "${timeout}" ${pids} >/dev/null 2>&1 || :
 		pids_copy="${pids}"
 		pids=
 		now="$(clock -monotonic)"

@@ -87,16 +87,17 @@ case "$(type pwait)" in
 	PWAIT_BUILTIN=1
 	;;
 esac
-# Wrapper to fix -t 0 and assert on errors.
+# Wrapper to fix SIGINFO [EINTR], -t 0, and ssert on errors.
 pwait() {
 	[ "$#" -ge 1 ] || eargs pwait '[pwait flags]' pids
 	local OPTIND=1 flag
-	local ret oflag timeout vflag
+	local ret oflag tflag timeout time_start now vflag
 
+	tflag=
 	while getopts "ot:v" flag; do
 		case "${flag}" in
 		o) oflag=1 ;;
-		t) timeout="${OPTARG}" ;;
+		t) tflag="${OPTARG}" ;;
 		v) vflag=1 ;;
 		*) err 1 "pwait: Invalid flag ${flag}" ;;
 		esac
@@ -104,32 +105,59 @@ pwait() {
 	shift $((OPTIND-1))
 
 	[ "$#" -ge 1 ] || eargs pwait '[pwait flags]' pids
-	case "${timeout}" in
-	0) timeout="0.00001" ;;
+	case "${tflag}" in
+	"") ;;
+	*.*) timeout="${tflag}" ;;
+	*) time_start="$(clock -monotonic)" ;;
 	esac
-	ret=0
-	# If pwait is NOT builtin then sh will update its jobs state
-	# which means we may pwait on dead procs unexpectedly. It returns
-	# status==0 but may write to stderr.
-	case "${PWAIT_BUILTIN:-0}" in
-	1)
-		# This not returning error assumes that the pid being waited on
-		# is the only pid in the job. Multi-pid jobs may return
-		# ESRCH on stderr.
-		command pwait \
-		    ${timeout:+-t "${timeout}"} ${vflag:+-v} ${oflag:+-o} \
-		    "$@" || ret="$?"
-		;;
-	*)
-		command pwait \
-		    ${timeout:+-t "${timeout}"} ${vflag:+-v} ${oflag:+-o} \
-		    "$@" 2>/dev/null || ret="$?"
-		;;
-	esac
+	while :; do
+		# Adjust timeout
+		case "${tflag}" in
+		""|*.*) ;;
+		*)
+			now="$(clock -monotonic)"
+			timeout="$((tflag - (now - time_start)))"
+			case "${timeout}" in
+			"-"*) timeout=0 ;;
+			esac
+			# Special case for pwait as it does not handle
+			# -t 0 well.
+			case "${timeout}" in
+			0) timeout="0.00001" ;;
+			esac
+			;;
+		esac
+		ret=0
+		# If pwait is NOT builtin then sh will update its jobs state
+		# which means we may pwait on dead procs unexpectedly. It returns
+		# status==0 but may write to stderr.
+		case "${PWAIT_BUILTIN:-0}" in
+		1)
+			# This not returning error assumes that the pid being waited on
+			# is the only pid in the job. Multi-pid jobs may return
+			# ESRCH on stderr.
+			command pwait \
+			    ${tflag:+-t "${timeout}"} \
+			    ${vflag:+-v} ${oflag:+-o} \
+			    "$@" || ret="$?"
+			;;
+		*)
+			command pwait \
+			    ${tflag:+-t "${timeout}"} \
+			    ${vflag:+-v} ${oflag:+-o} \
+			    "$@" 2>/dev/null || ret="$?"
+			;;
+		esac
+		case "${ret}" in
+		# Read again on SIGINFO interrupts
+		157) continue ;;
+		esac
+		break
+	done
 	case "${ret}" in
 	124|0) return "${ret}" ;;
 	esac
-	err "${EX_SOFTWARE}" "pwait: timeout=${timeout} pids=${pids} ret=${ret}"
+	err "${EX_SOFTWARE:-70}" "pwait: timeout=${timeout} pids=${pids} ret=${ret}"
 }
 
 kill_and_wait() {
