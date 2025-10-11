@@ -21,6 +21,8 @@ check_task:
         pkg_bootstrap_script:
                 - env ASSUME_ALWAYS_YES=yes pkg bootstrap -f
                 - env IGNORE_OSVERSION=yes pkg update -f
+        shellcheck_setup_script:
+                - env IGNORE_OSVERSION=yes pkg install -y hs-ShellCheck
         ccache_setup_script:
                 - env IGNORE_OSVERSION=yes pkg install -y ccache-static
                 - ccache --max-size=${CCACHE_SIZE}
