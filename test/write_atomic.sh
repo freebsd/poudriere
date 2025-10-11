@@ -72,3 +72,33 @@ set_pipefail
 	assert_ret 0 diff -u "${TMP}" "${TMP3}"
 	rm -f "${TMP}" "${TMP2}" "${TMP3}"
 }
+
+# Test multi-param data
+{
+	TMP="$(mktemp -t mapfile)"
+	TMP3="$(mktemp -t mapfile)"
+	write_atomic -T "${TMP}" "1" "2" > "${TMP3}"
+	assert 0 "$?"
+	assert_file - "${TMP}" <<-EOF
+	1 2
+	EOF
+	assert_file - "${TMP3}" <<-EOF
+	1 2
+	EOF
+	rm -f "${TMP3}"
+}
+
+# Test multi-param data
+{
+	TMP="$(mktemp -t mapfile)"
+	TMP3="$(mktemp -t mapfile)"
+	write_atomic -T "${TMP}" "1" "2" > "${TMP3}"
+	assert 0 "$?"
+	assert_file - "${TMP}" <<-EOF
+	1 2
+	EOF
+	assert_file - "${TMP3}" <<-EOF
+	1 2
+	EOF
+	rm -f "${TMP3}"
+}

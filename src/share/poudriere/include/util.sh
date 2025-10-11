@@ -2161,7 +2161,7 @@ calculate_duration() {
 
 _write_atomic() {
 	local -; set +x
-	[ $# -eq 3 ] || [ $# -eq 4 ] ||
+	[ $# -eq 3 ] || [ $# -ge 4 ] ||
 	    eargs _write_atomic cmp tee destfile '< data | data'
 	local cmp="$1"
 	local tee="$2"
@@ -2172,7 +2172,8 @@ _write_atomic() {
 	shift 3
 	unset data
 	case "$#" in
-	1) data=1 ;;
+	0) ;;
+	*) data=1 ;;
 	esac
 	case "$-${tee-}" in
 	C1)
@@ -2264,7 +2265,7 @@ write_atomic_cmp() {
 		esac
 	done
 	shift $((OPTIND-1))
-	[ $# -eq 1 ] || [ $# -eq 2 ] ||
+	[ $# -eq 1 ] || [ $# -ge 2 ] ||
 	    eargs write_atomic_cmp '[-T]' destfile '< data | data'
 
 	_write_atomic 1 "${Tflag}" "$@" || return
@@ -2287,7 +2288,7 @@ write_atomic() {
 		esac
 	done
 	shift $((OPTIND-1))
-	[ $# -eq 1 ] || [ $# -eq 2 ] ||
+	[ $# -eq 1 ] || [ $# -ge 2 ] ||
 	    eargs write_atomic '[-T]' destfile '< data | data'
 
 	_write_atomic 0 "${Tflag}" "$@" || return

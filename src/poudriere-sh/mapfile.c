@@ -973,7 +973,9 @@ _mapfile_write(/*XXX const*/ struct mapped_data *md, const char *handle,
 	}
 	if (Tflag) {
 		outbin(data, datalen, out1);
-		out1c('\n');
+		if (!nflag) {
+			out1c('\n');
+		}
 	}
 	return (ret);
 }
@@ -985,7 +987,7 @@ mapfile_writecmd(int argc, char **argv)
 {
 	struct mapped_data *md;
 	const char *handle, *data;
-	int ch, nflag, Tflag, ret;
+	int ch, error, nflag, Tflag, ret;
 
 	static const char usage[] = "Usage: mapfile_write <handle> [-nT] "
 		    "<data>";
@@ -1010,9 +1012,35 @@ mapfile_writecmd(int argc, char **argv)
 	argv += optind;
 	INTOFF;
 	md = md_find(handle);
-	if (argc == 1) {
-		data = argv[0];
-		ret = _mapfile_write(md, handle, nflag, Tflag, data, -1);
+	if (argc > 0) {
+		ret=0;
+		for (int i = 0; i < argc; i++) {
+			if (i > 0) {
+				if (ifsset()) {
+					data = ifsval();
+				} else {
+					data = " ";
+				}
+				error = _mapfile_write(md, handle, 1,
+				    0, data, 1);
+				if (error != 0) {
+					ret = error;
+					break;
+				}
+				if (Tflag) {
+					out1c(data[0]);
+				}
+			}
+			data = argv[i];
+			error = _mapfile_write(md, handle,
+			    i == argc - 1 ? nflag : 1,
+			    Tflag, data,
+			    strlen(data));
+			if (error != 0) {
+				ret = error;
+				break;
+			}
+		}
 		assert(is_int_on());
 	} else {
 		char *line;

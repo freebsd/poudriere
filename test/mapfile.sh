@@ -92,7 +92,8 @@ writer() {
 	assert_true mapfile_read "${file_read}" line
 	assert "file_read0" "${line}"
 	assert_true mapfile_write "${file_write1}" "data1"
-	assert_true mapfile_write "${file_write2}" "data2"
+	assert_true mapfile_write "${file_write2}" "data2" "data3"
+	assert_true mapfile_write "${file_write2}" "data4" "data5 data6"
 	assert_true mapfile_read "${file_read}" line
 	assert "read0" "${line}"
 	assert_false mapfile_read "${file_read}" line
@@ -112,7 +113,8 @@ writer() {
 
 	assert_file - "${TMP3}" <<-EOF
 	file_write2
-	data2
+	data2 data3
+	data4 data5 data6
 	EOF
 
 	rm -f "${TMP}" "${TMP2}" "${TMP3}"
