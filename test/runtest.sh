@@ -340,6 +340,34 @@ runtest() {
 	return "${ret}"
 }
 
+_wait() {
+	[ "$#" -ge 0 ] || eargs _wait '[%job|pid...]'
+	local wret ret pid
+
+	if [ "$#" -eq 0 ]; then
+		return 0
+	fi
+
+	ret=0
+	for pid in "$@"; do
+		while :; do
+			wret=0
+			wait "${pid}" || wret="$?"
+			case "${wret}" in
+			157) # SIGINFO [EINTR]
+				continue
+				;;
+			0) ;;
+			*) ret="${wret}" ;;
+			esac
+			# msg_dev "Job ${pid} collected ret=${wret}"
+			break
+		done
+	done
+
+	return "${ret}"
+}
+
 collectpids() {
 	local timeout="$1"
 	local pids_copy tries max
@@ -377,7 +405,7 @@ collectpids() {
 			fi
 			getvar "pid_num_${pid}" pid_test_context_num
 			pret=0
-			wait "${pid}" || pret="$?"
+			_wait "${pid}" || pret="$?"
 			MAIN_RET="$((MAIN_RET + pret))"
 			case "${pret}" in
 			0)
