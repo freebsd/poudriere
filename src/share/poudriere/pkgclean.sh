@@ -164,7 +164,7 @@ else
 	read_packages_from_params "$@"
 fi
 
-PACKAGES="${POUDRIERE_DATA:?}/packages/${MASTERNAME:?}"
+: "${PACKAGES:=${POUDRIERE_DATA:?}/packages/${MASTERNAME:?}}"
 PACKAGES_ROOT="${PACKAGES:?}"
 PACKAGES_PKG_CACHE="${PACKAGES_ROOT:?}/.pkg-cache"
 case "${ATOMIC_PACKAGE_REPOSITORY}" in
