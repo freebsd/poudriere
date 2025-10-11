@@ -714,6 +714,7 @@ set_job_title() {
 	setproctitle "poudriere runtest jobd tests=${TEST_CONTEXTS_FINISHED}/${TEST_CONTEXTS_TOTAL} jobs=${JOBS} elapsed=$(($(clock -monotonic) - TEST_SUITE_START)): $(TEST_CONTEXT_NUM= get_log_name)"
 }
 
+# This is only used if not using make jobserver from ${MAKEFLAGS}
 : ${TEST_CONTEXTS_PARALLEL:=4}
 TEST_CONTEXTS_FINISHED=0
 TEST_SUITE_START="$(clock -monotonic)"
