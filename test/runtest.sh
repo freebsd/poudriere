@@ -169,6 +169,7 @@ while read var; do
 	URL_BASE|\
 	PVERBOSE|VERBOSE|\
 	SH_DISABLE_VFORK|TIMESTAMP|TRUSS|TIMEOUT_BIN|\
+	TIMEOUT_KILL_TIMEOUT|TIMEOUT_TRUSS_MULTIPLIER|\
 	TIMEOUT_SH_MULTIPLIER|\
 	HTML_JSON_UPDATE_INTERVAL|\
 	TESTS_SKIP_BUILD|\
@@ -242,11 +243,17 @@ case "${TEST##*/}" in
 # Bump anything touching logclean
 bulk*.sh|testport*.sh|distclean*.sh|options*.sh) : "${TIMEOUT:=$((TIMEOUT + (LOGCLEAN_WAIT * 1)))}" ;;
 esac
+: "${TIMEOUT_KILL_TIMEOUT=30}"
+: "${TIMEOUT_TRUSS_MULTIPLIER:=4}"
 case "${TRUSS-}" in
-"") ;;
-*) TIMEOUT="$((TIMEOUT * 4))" ;;
+"")
+	;;
+*)
+	TIMEOUT="$((TIMEOUT * TIMEOUT_TRUSS_MULTIPLIER))"
+	TIMEOUT_KILL_TIMEOUT="${TIMEOUT_KILL_TIMEOUT:-$((TIMEOUT_KILL_TIMEOUT * TIMEOUT_TRUSS_MULTIPLIER))}"
+	;;
 esac
-TIMEOUT_KILL="-k 30"
+TIMEOUT_KILL="${TIMEOUT_KILL_TIMEOUT:+-k ${TIMEOUT_KILL_TIMEOUT}}"
 case "${SH}" in
 /bin/sh)
 	# 3 was too low for at least bulk builds.
