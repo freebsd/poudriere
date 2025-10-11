@@ -1097,6 +1097,7 @@ exit_return() {
 
 	# shellcheck disable=SC2034
 	IN_EXIT_HANDLER=1
+	trap - EXIT
 
 	case "${SHFLAGS-$-}${_trap_x-}${SETX_EXIT:-0}" in
 	*x*1) set -x ;;
