@@ -2526,14 +2526,18 @@ _lock_read_pid() {
 	[ $# -eq 2 ] || eargs _lock_read_pid pidfile pid_var_return
 	local _lrp_pidfile="$1"
 	local _lrp_var_return="$2"
-	local _lrp_pid
+	local _lrp_pid _lrp_tries _lrp_max
 
 	# The pidfile has no newline, so read until we have a value
 	# regardless of the read error. The rereads are to avoid
 	# racing with signals.
 	_lrp_pid=
-	until [ "${_lrp_pid:+set}" == "set" ]; do
+	_lrp_tries=0
+	_lrp_max=20
+	until [ "${_lrp_pid:+set}" == "set" ] ||
+	    [ "${_lrp_tries:?}" -eq "${_lrp_max:?}" ]; do
 		read -r _lrp_pid < "${_lrp_pidfile:?}" || :
+		_lrp_tries="$((_lrp_tries + 1))"
 	done
 	setvar "${_lrp_var_return:?}" "${_lrp_pid:?}" || return
 }
