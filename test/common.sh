@@ -359,6 +359,22 @@ list_test_functions() {
 	echo
 }
 
+run_test_functions() {
+	[ $# -eq 0 ] || eargs run_test_functions
+
+	case "${TESTFUNCS+set}" in
+	set) ;;
+	*) err 99 "run_test_functions: no add_test_function() called" ;;
+	esac
+
+	set_test_contexts - '' '' <<-EOF
+	TESTFUNC $(list_test_functions)
+	EOF
+	while get_test_context; do
+		assert_true "${TESTFUNC}"
+	done
+}
+
 # set_test_contexts setup_str teardown_str <<env matrix
 set_test_contexts() {
 	[ "$#" -eq 3 ] || eargs set_test_contexts env_file setup_str teardown_str

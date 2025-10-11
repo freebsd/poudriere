@@ -1156,9 +1156,4 @@ test_jobs_20() {
 	assert_runs_shorter_than 1 assert_ret 143 wait %1
 }
 
-set_test_contexts - '' '' <<-EOF
-TESTFUNC $(list_test_functions)
-EOF
-while get_test_context; do
-	assert_true "${TESTFUNC}"
-done
+run_test_functions

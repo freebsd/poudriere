@@ -174,11 +174,6 @@ test_timestamp_7() {
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
 }
 
-set_test_contexts - '' '' <<-EOF
-TESTFUNC $(list_test_functions)
-EOF
-while get_test_context; do
-	assert_true "${TESTFUNC}"
-done
+run_test_functions
 
 rm -f ${STDOUT}* ${STDERR}*

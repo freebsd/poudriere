@@ -719,7 +719,7 @@ TEST_CONTEXTS_FINISHED=0
 TEST_SUITE_START="$(clock -monotonic)"
 
 if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
-    grep -q get_test_context "${TEST}"; then
+    egrep -q '(get_test_context|run_test_functions)' "${TEST}"; then
 	{
 		echo "Test suite started: $(date)"
 		# hide set -x
