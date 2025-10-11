@@ -1726,6 +1726,8 @@ update_remaining() {
 
 exit_handler() {
 	: ${EXIT_STATUS:="$?"}
+	# SIGPIPE is blocked while in here from setup_traps() as we want
+	# to ensure we cleanup jails before giving up.
 
 	post_getopts
 
@@ -1825,7 +1827,6 @@ exit_handler() {
 		EXIT_STATUS=$((EXIT_STATUS + 1))
 		;;
 	esac
-
 	case "${EXIT_STATUS}" in
 	0)
 		if check_pipe_fatal_error; then
