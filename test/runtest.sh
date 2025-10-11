@@ -163,7 +163,7 @@ while read var; do
 	PATH|\
 	PWD|\
 	TIMEOUT|\
-	KEEP_OLD_PACKAGES_COUNT|KEEP_LOGS_COUNT|\
+	KEEP_OLD_PACKAGES_COUNT|KEEP_LOGS_COUNT|LOGCLEAN_WAIT|\
 	PARALLEL_JOBS|\
 	TEST_NUMS|ASSERT_CONTINUE|TEST_CONTEXTS_PARALLEL|\
 	URL_BASE|\
@@ -228,17 +228,21 @@ BUILD_DIR="${PWD}"
 THISDIR=${am_VPATH}
 THISDIR="$(realpath "${THISDIR}")"
 cd "${THISDIR}"
+: "${LOGCLEAN_WAIT:=30}"
+export LOGCLEAN_WAIT
 
 case "${1##*/}" in
 prep.sh) : ${TIMEOUT:=1800} ;;
 bulk*build*.sh|testport*build*.sh) : ${TIMEOUT:=1800} ;;
-# Bump anything touching logclean
-bulk*.sh|testport*.sh|distclean*.sh|options*.sh) : ${TIMEOUT:=500} ;;
 critical_section_inherit.sh) : ${TIMEOUT:=20} ;;
 locked_mkdir.sh) : ${TIMEOUT:=120} ;;
 jobs.sh) : ${TIMEOUT:=80} ;;
 esac
 : ${TIMEOUT:=90}
+case "${TEST##*/}" in
+# Bump anything touching logclean
+bulk*.sh|testport*.sh|distclean*.sh|options*.sh) : "${TIMEOUT:=$((TIMEOUT + (LOGCLEAN_WAIT * 1)))}" ;;
+esac
 case "${TRUSS-}" in
 "") ;;
 *) TIMEOUT=$((TIMEOUT * 3)) ;;

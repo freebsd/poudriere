@@ -1643,7 +1643,7 @@ EOF
 	echo -n "Pruning previous logs..."
 	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} logclean \
 	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
-	    -y -N ${KEEP_LOGS_COUNT-10} -w ${LOGCLEAN_WAIT-60} >/dev/null || :
+	    -y -N ${KEEP_LOGS_COUNT-10} -w ${LOGCLEAN_WAIT-30} >/dev/null || :
 	echo " done"
 } >&${REDIRECTED_STDERR_FD:-2}
 
