@@ -235,6 +235,7 @@ export LOGCLEAN_WAIT
 
 case "${TEST##*/}" in
 prep.sh) : "${TIMEOUT:=250}" ;;
+*-build-quick*.sh) : "${TIMEOUT:=120}" ;;
 bulk*build*.sh|testport*build*.sh) : "${TIMEOUT:=400}" ;;
 critical_section_inherit.sh) : "${TIMEOUT:=20}" ;;
 esac
