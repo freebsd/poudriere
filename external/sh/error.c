@@ -125,7 +125,9 @@ vwarning(const char *msg, va_list ap)
 {
 	const char *funcname;
 
-	funcname = lookupvar("FUNCNAME");
+	funcname = lookupvar("FUNCNAMESTACK");
+	if (funcname == NULL)
+		funcname = lookupvar("FUNCNAME");
 	if (commandname)
 		outfmt(out2, "Error: (%d) %s:%s%s%d: ", getpid(), commandname,
 		    funcname != NULL ? funcname : "",
