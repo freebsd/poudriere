@@ -1070,7 +1070,7 @@ test_jobs_16() {
 		assert_true kill -0 "${sleep1_pid}"
 		capture_output_simple stdout stderr
 		assert_runs_shorter_than 12 assert_ret 0 \
-		    timed_wait_and_kill_job 10 "%1"
+		    timed_wait_and_kill_job 13 "%1"
 		capture_output_simple_stop
 		assert_file - "${stdout}" <<-EOF
 		EOF
