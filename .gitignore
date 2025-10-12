@@ -18,6 +18,7 @@ libtool
 /dirempty
 /dirwatch
 /locked_mkdir
+/lockf
 /make_index
 /nc
 /poudriere_statsd

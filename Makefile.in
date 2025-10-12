@@ -99,8 +99,8 @@ noinst_PROGRAMS = external/sh/mknodes$(EXEEXT) \
 @ADDRESS_SANITIZER_TRUE@am__append_2 = -fsanitize=address -DADDRESS_SANITIZER -fno-omit-frame-pointer
 @ADDRESS_SANITIZER_TRUE@am__append_3 = -O1
 pkglibexec_PROGRAMS = clock$(EXEEXT) cpdup$(EXEEXT) dirempty$(EXEEXT) \
-	dirwatch$(EXEEXT) locked_mkdir$(EXEEXT) nc$(EXEEXT) \
-	poudriered$(EXEEXT) ptsort$(EXEEXT) pwait$(EXEEXT) \
+	dirwatch$(EXEEXT) locked_mkdir$(EXEEXT) lockf$(EXEEXT) \
+	nc$(EXEEXT) poudriered$(EXEEXT) ptsort$(EXEEXT) pwait$(EXEEXT) \
 	rename$(EXEEXT) @USE_RM@ setsid$(EXEEXT) timeout$(EXEEXT) \
 	timestamp$(EXEEXT) @BUILD_SH@
 EXTRA_PROGRAMS = rm$(EXEEXT) sh$(EXEEXT)
@@ -190,6 +190,9 @@ am_locked_mkdir_OBJECTS =  \
 	src/libexec/poudriere/locked_mkdir/locked_mkdir.$(OBJEXT)
 locked_mkdir_OBJECTS = $(am_locked_mkdir_OBJECTS)
 locked_mkdir_LDADD = $(LDADD)
+am_lockf_OBJECTS = external/lockf/lockf.$(OBJEXT)
+lockf_OBJECTS = $(am_lockf_OBJECTS)
+lockf_LDADD = $(LDADD)
 am_nc_OBJECTS = src/libexec/poudriere/nc/nc.$(OBJEXT)
 nc_OBJECTS = $(am_nc_OBJECTS)
 nc_LDADD = $(LDADD)
@@ -332,6 +335,7 @@ am__depfiles_remade = external/cpdup/src/$(DEPDIR)/cpdup-cpdup.Po \
 	external/libucl/src/$(DEPDIR)/libucl_la-ucl_schema.Plo \
 	external/libucl/src/$(DEPDIR)/libucl_la-ucl_sexp.Plo \
 	external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo \
+	external/lockf/$(DEPDIR)/lockf.Po \
 	external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po \
 	external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Plo \
 	external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Plo \
@@ -423,18 +427,18 @@ SOURCES = $(libptsort_la_SOURCES) $(libucl_la_SOURCES) \
 	$(clock_SOURCES) $(cpdup_SOURCES) $(dirempty_SOURCES) \
 	$(dirwatch_SOURCES) $(external_sh_mknodes_SOURCES) \
 	$(external_sh_mksyntax_SOURCES) $(locked_mkdir_SOURCES) \
-	$(nc_SOURCES) $(poudriered_SOURCES) $(ptsort_SOURCES) \
-	$(pwait_SOURCES) $(rename_SOURCES) $(rm_SOURCES) \
-	$(setsid_SOURCES) $(sh_SOURCES) $(timeout_SOURCES) \
-	$(timestamp_SOURCES)
+	$(lockf_SOURCES) $(nc_SOURCES) $(poudriered_SOURCES) \
+	$(ptsort_SOURCES) $(pwait_SOURCES) $(rename_SOURCES) \
+	$(rm_SOURCES) $(setsid_SOURCES) $(sh_SOURCES) \
+	$(timeout_SOURCES) $(timestamp_SOURCES)
 DIST_SOURCES = $(libptsort_la_SOURCES) $(libucl_la_SOURCES) \
 	$(clock_SOURCES) $(cpdup_SOURCES) $(dirempty_SOURCES) \
 	$(dirwatch_SOURCES) $(external_sh_mknodes_SOURCES) \
 	$(external_sh_mksyntax_SOURCES) $(locked_mkdir_SOURCES) \
-	$(nc_SOURCES) $(poudriered_SOURCES) $(ptsort_SOURCES) \
-	$(pwait_SOURCES) $(rename_SOURCES) $(rm_SOURCES) \
-	$(setsid_SOURCES) $(sh_SOURCES) $(timeout_SOURCES) \
-	$(timestamp_SOURCES)
+	$(lockf_SOURCES) $(nc_SOURCES) $(poudriered_SOURCES) \
+	$(ptsort_SOURCES) $(pwait_SOURCES) $(rename_SOURCES) \
+	$(rm_SOURCES) $(setsid_SOURCES) $(sh_SOURCES) \
+	$(timeout_SOURCES) $(timestamp_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -825,6 +829,7 @@ cpdup_CFLAGS = $(AM_CFLAGS) -D_ST_FLAGS_PRESENT_=1 -Wno-deprecated-declarations
 dirempty_SOURCES = src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES = src/libexec/poudriere/dirwatch/dirwatch.c
 locked_mkdir_SOURCES = src/libexec/poudriere/locked_mkdir/locked_mkdir.c
+lockf_SOURCES = external/lockf/lockf.c
 nc_SOURCES = src/libexec/poudriere/nc/nc.c
 pwait_SOURCES = external/pwait/pwait.c
 rename_SOURCES = src/libexec/poudriere/rename/rename.c
@@ -1197,6 +1202,18 @@ src/libexec/poudriere/locked_mkdir/locked_mkdir.$(OBJEXT):  \
 locked_mkdir$(EXEEXT): $(locked_mkdir_OBJECTS) $(locked_mkdir_DEPENDENCIES) $(EXTRA_locked_mkdir_DEPENDENCIES) 
 	@rm -f locked_mkdir$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(locked_mkdir_OBJECTS) $(locked_mkdir_LDADD) $(LIBS)
+external/lockf/$(am__dirstamp):
+	@$(MKDIR_P) external/lockf
+	@: >>external/lockf/$(am__dirstamp)
+external/lockf/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/lockf/$(DEPDIR)
+	@: >>external/lockf/$(DEPDIR)/$(am__dirstamp)
+external/lockf/lockf.$(OBJEXT): external/lockf/$(am__dirstamp) \
+	external/lockf/$(DEPDIR)/$(am__dirstamp)
+
+lockf$(EXEEXT): $(lockf_OBJECTS) $(lockf_DEPENDENCIES) $(EXTRA_lockf_DEPENDENCIES) 
+	@rm -f lockf$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(lockf_OBJECTS) $(lockf_LDADD) $(LIBS)
 src/libexec/poudriere/nc/$(am__dirstamp):
 	@$(MKDIR_P) src/libexec/poudriere/nc
 	@: >>src/libexec/poudriere/nc/$(am__dirstamp)
@@ -1528,6 +1545,7 @@ mostlyclean-compile:
 	-rm -f external/cpdup/src/*.$(OBJEXT)
 	-rm -f external/libucl/src/*.$(OBJEXT)
 	-rm -f external/libucl/src/*.lo
+	-rm -f external/lockf/*.$(OBJEXT)
 	-rm -f external/ptsort/bin/*.$(OBJEXT)
 	-rm -f external/ptsort/lib/*.$(OBJEXT)
 	-rm -f external/ptsort/lib/*.lo
@@ -1565,6 +1583,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_schema.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_sexp.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/lockf/$(DEPDIR)/lockf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Plo@am__quote@ # am--include-marker
@@ -3272,6 +3291,8 @@ distclean-generic:
 	-$(am__rm_f) external/cpdup/src/$(am__dirstamp)
 	-$(am__rm_f) external/libucl/src/$(DEPDIR)/$(am__dirstamp)
 	-$(am__rm_f) external/libucl/src/$(am__dirstamp)
+	-$(am__rm_f) external/lockf/$(DEPDIR)/$(am__dirstamp)
+	-$(am__rm_f) external/lockf/$(am__dirstamp)
 	-$(am__rm_f) external/ptsort/bin/$(DEPDIR)/$(am__dirstamp)
 	-$(am__rm_f) external/ptsort/bin/$(am__dirstamp)
 	-$(am__rm_f) external/ptsort/lib/$(DEPDIR)/$(am__dirstamp)
@@ -3333,6 +3354,7 @@ distclean: distclean-recursive
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_schema.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_sexp.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo
+	-rm -f external/lockf/$(DEPDIR)/lockf.Po
 	-rm -f external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po
 	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Plo
 	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Plo
@@ -3470,6 +3492,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_schema.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_sexp.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo
+	-rm -f external/lockf/$(DEPDIR)/lockf.Po
 	-rm -f external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po
 	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Plo
 	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Plo
