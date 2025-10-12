@@ -596,13 +596,13 @@ pkg_note_add() {
 }
 
 pkg_notes_get() {
-	[ $# -eq 3 ] || eargs pkg_notes_get pkgname PKGENV PKGENV_var
+	[ $# -eq 2 ] || eargs pkg_notes_get pkgname PKGENV_var
 	local pkgname="$1"
-	local _pkgenv="$2"
-	local _pkgenv_var="$3"
-	local notes key value
+	local _pkgenv_var="$2"
+	local notes key value _pkgenv
 
 	hash_remove pkgname-notes "${pkgname}" notes || return 0
+	getvar "${_pkgenv_var}" _pkgenv || _pkgenv=
 	_pkgenv="${_pkgenv:+${_pkgenv} }'PKG_NOTES=${notes}'"
 	for key in ${notes}; do
 		hash_remove "pkgname-notes-${key}" "${pkgname}" value || value=

@@ -5277,9 +5277,10 @@ build_port() {
 			chown -R ${JUSER} "${mnt:?}/.npkg"
 			:> "${mnt:?}/.npkg_mounted"
 
+			pkgenv="${PKGENV}"
 			# Only set PKGENV during 'package' to prevent
 			# testport-built packages from going into the main repo
-			pkg_notes_get "${pkgname}" "${PKGENV}" pkgenv
+			pkg_notes_get "${pkgname}" pkgenv
 			case "${PKG_NO_VERSION_FOR_DEPS}" in
 			"no") ;;
 			*)
