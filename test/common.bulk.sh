@@ -1540,7 +1540,7 @@ if [ -n "${JAILMNT}" ] && [ -z "${TEST_CONTEXTS_NUM_CHECK-}" ]; then
 		;;
 	esac
 fi
-if [ -z "${JAILMNT}" ]; then
+if [ -z "${JAILMNT}" ] && [ -z "${TEST_CONTEXTS_NUM_CHECK-}" ]; then
 	if [ ${BOOTSTRAP_ONLY:-0} -eq 0 ]; then
 		echo "ERROR: Must run prep.sh" >&2
 		exit 99
@@ -1634,18 +1634,26 @@ set_make_conf() {
 set_make_conf <<-EOF
 EOF
 
-{
+do_logclean() {
 	echo -n "Pruning stale jails..."
 	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} jail -k \
 	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
 	    >/dev/null || :
 	echo " done"
 	echo -n "Pruning previous logs..."
+	log_ret=0
 	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} logclean \
 	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
-	    -y -N ${KEEP_LOGS_COUNT-10} -w ${LOGCLEAN_WAIT-30} >/dev/null || :
+	    -y -N ${KEEP_LOGS_COUNT-10} -w ${LOGCLEAN_WAIT-30} || log_ret="$?"
+	case "${log_ret}" in
+	0|124) ;;
+	*) err 99 "logclean failure ret=${log_ret}" ;;
+	esac
 	echo " done"
-} >&${REDIRECTED_STDERR_FD:-2}
+}
+if [ -z "${TEST_CONTEXTS_NUM_CHECK-}" ]; then
+	do_logclean >&${REDIRECTED_STDERR_FD:-2}
+fi
 
 # Import local ports tree
 pset "${PTNAME}" mnt "${PTMNT}"

@@ -152,7 +152,12 @@ find_broken_latest_per_pkg_links() {
 	# -Btime is to avoid racing with bulk logfile()
 	find -x latest-per-pkg -type f -Btime +1m ! -links "${log_links}"
 	# Each MASTERNAME/latest-per-pkg
-	find -x . -mindepth 2 -maxdepth 2 -name latest-per-pkg -print0 | \
+	# -ignore_readdir_race as we may otherwise find builds,
+	# _not latest-per-pkg_, that get deleted after logclean_all slock
+	# is dropped by other logcleans on other builds. We only care
+	# about the latest-per-pkg dir here.
+	find -x . -mindepth 2 -maxdepth 2 -name latest-per-pkg \
+	    -ignore_readdir_race -print0 | \
 	    xargs -0 -J {} find -x {} -type f -Btime +1m \
 	    ! -links "${log_links}" | sed -e 's,^\./,,'
 }

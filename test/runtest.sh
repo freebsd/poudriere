@@ -329,11 +329,20 @@ runtest() {
 	    ${TRUSS:+truss -ae -f -s256 -o "$(get_log_name).truss"} \
 	    "${SH}" "${TEST}" || ret="$?"
 	{
-		if [ "${ret}" -eq 0 ] &&
-		    grep -v 'sleep:.*about.*second' "$(get_log_name)" |
-		    grep -q ' Error: ([0-9]\+) [a-zA-Z0-9]*'; then
-			ret=99
-			echo "UNHANDLED ERROR DETECTED"
+		# "Error: (pid) cmd" is an sh command error.
+		# "Error: [pid] ..." is err().
+		if [ "${ret}" -eq 0 ]; then
+			echo -n "Checking for unhandled errors..."
+			if egrep \
+			    ' Error: (\([0-9]+\) [a-zA-Z0-9]*|\[[0-9]+\])' \
+			    "$(get_log_name)" |
+			    grep -v 'sleep:.*about.*second' |
+			    grep -v 'Another logclean is busy'; then
+				ret=99
+				echo "UNHANDLED ERROR DETECTED"
+			else
+				echo " done"
+			fi
 		fi
 		TEST_END="$(clock -monotonic)"
 		echo "Test ended: $(date) -- duration: $((TEST_END - TEST_START))s"
