@@ -597,18 +597,19 @@ pkg_note_add() {
 
 pkg_notes_get() {
 	[ $# -eq 2 ] || eargs pkg_notes_get pkgname PKGENV_var
-	local pkgname="$1"
-	local _pkgenv_var="$2"
-	local notes key value _pkgenv
+	local _png_pkgname="$1"
+	local _png_pkgenv_var="$2"
+	local _png_notes _png_key _png_value _png_pkgenv
 
-	hash_remove pkgname-notes "${pkgname}" notes || return 0
-	getvar "${_pkgenv_var}" _pkgenv || _pkgenv=
-	_pkgenv="${_pkgenv:+${_pkgenv} }'PKG_NOTES=${notes}'"
-	for key in ${notes}; do
-		hash_remove "pkgname-notes-${key}" "${pkgname}" value || value=
-		_pkgenv="${_pkgenv} 'PKG_NOTE_${key}=${value}'"
+	hash_remove pkgname-notes "${_png_pkgname}" _png_notes || return 0
+	getvar "${_png_pkgenv_var}" _png_pkgenv || _png_pkgenv=
+	_png_pkgenv="${_png_pkgenv:+${_png_pkgenv} }'PKG_NOTES=${_png_notes}'"
+	for _png_key in ${_png_notes}; do
+		hash_remove "pkgname-notes-${_png_key}" "${_png_pkgname}" \
+		    _png_value || _png_value=
+		_png_pkgenv="${_png_pkgenv} 'PKG_NOTE_${_png_key}=${_png_value}'"
 	done
-	setvar "${_pkgenv_var}" "${_pkgenv}"
+	setvar "${_png_pkgenv_var}" "${_png_pkgenv}"
 }
 
 sign_pkg() {
