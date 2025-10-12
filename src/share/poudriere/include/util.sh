@@ -2549,6 +2549,7 @@ _lock_read_pid() {
 		read -r _lrp_pid < "${_lrp_pidfile:?}" || :
 		_lrp_tries="$((_lrp_tries + 1))"
 	done
+	# This || return to make it clear this function may error.
 	setvar "${_lrp_var_return:?}" "${_lrp_pid:?}" || return
 }
 
@@ -2603,7 +2604,8 @@ _lock_acquire() {
 			fi
 			return 1
 		fi
-		_lock_read_pid "${lockpath:?}.pid" real_lock_pid
+		_lock_read_pid "${lockpath:?}.pid" real_lock_pid ||
+		    real_lock_pid=
 		case "${real_lock_pid}" in
 		"${mypid}") ;;
 		*)
@@ -2740,7 +2742,7 @@ _lock_release() {
 		hash_unset have_lock "${lockname}"
 		[ -f "${lockpath:?}.pid" ] ||
 			err 1 "No pidfile found for ${lockpath}"
-		_lock_read_pid "${lockpath:?}.pid" pid
+		_lock_read_pid "${lockpath:?}.pid" pid || pid=
 		case "${pid}" in
 		"")
 			err 1 "Pidfile is empty for ${lockpath}"
@@ -2755,6 +2757,9 @@ _lock_release() {
 		rmdir "${lockpath:?}" ||
 			err 1 "Held lock dir not found: ${lockpath}"
 	fi
+
+	# Callers assume _lock_release cannot fail.
+	return 0
 }
 
 # Release local build lock
