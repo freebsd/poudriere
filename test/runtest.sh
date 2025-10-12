@@ -258,8 +258,8 @@ TIMEOUT_KILL="${TIMEOUT_KILL_TIMEOUT:+-k ${TIMEOUT_KILL_TIMEOUT}}"
 TIMEOUT_KILL="${TIMEOUT_KILL:+${TIMEOUT_KILL} }${TIMEOUT_KILL_SIGNAL:+-s ${TIMEOUT_KILL_SIGNAL} }"
 case "${SH}" in
 /bin/sh)
-	# 3 was too low for at least bulk builds.
-	: "${TIMEOUT_SH_MULTIPLIER:=4}"
+	# It's about 4.6 times slower.
+	: "${TIMEOUT_SH_MULTIPLIER:=5}"
 	TIMEOUT="$((TIMEOUT * TIMEOUT_SH_MULTIPLIER))"
 	;;
 esac
