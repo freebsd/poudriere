@@ -2272,6 +2272,7 @@ fetch_file() {
 
 # Make sure 'mktemp foo' wasn't passed in without a prefix.
 _validate_mktemp() {
+	local -; set +x
 	local OPTIND flag
 
 	OPTIND=1
@@ -2448,6 +2449,7 @@ markfs() {
 }
 
 rm() {
+	local -; set +x
 	local arg
 
 	for arg in "$@"; do
