@@ -457,6 +457,9 @@ else
 			err 1 "Unable to extract pkg."
 		fi
 		injail ${PKG_ADD} "/tmp/pkgs/${PKGNAME:?}.${PKG_EXT}" || :
+	else
+		find "${MASTERMNT:?}/tmp/pkgs" || :
+		err 1 "PACKAGE NOT FOUND: ${MASTERMNT:?}/tmp/pkgs/${PKGNAME:?}.${PKG_EXT}"
 	fi
 fi
 
@@ -467,6 +470,7 @@ injail /usr/bin/make -C "${portdir:?}" -DNOCLEANDEPENDS clean \
 if [ -z "${POUDRIERE_INTERACTIVE_NO_INSTALL-}" ]; then
 	msg "Deinstalling package"
 	ensure_pkg_installed
+	injail ${PKG_BIN:?} info || :
 	injail ${PKG_DELETE} "${PKGNAME:?}"
 fi
 

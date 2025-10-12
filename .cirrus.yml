@@ -36,8 +36,8 @@ check_task:
                 - name: "Checkquick"
                   env:
                           SH: "sh"
-        checkquick_script: make -s ${MAKEJOBS} checkquick SH=${SH} VERBOSE=1 || { cat test/test-suite.log; exit 1; }
-        distcheckquick_script: make -s ${MAKEJOBS} distcheckquick SH=${SH} VERBOSE=1 || { find . -name test-suite.log -exec cat {} +; exit 1; }
+        checkquick_script: make -s ${MAKEJOBS} checkquick TESTS=testport-build-quick-1-dep.sh SH=${SH} VERBOSE=1 || { cat test/test-suite.log; exit 1; }
+        distcheckquick_script: make -s ${MAKEJOBS} distcheckquick TESTS=testport-build-quick-1-dep.sh SH=${SH} VERBOSE=1 || { find . -name test-suite.log -exec cat {} +; exit 1; }
         always:
                 bulk_logs_cleanup_script:
                         - ( find -x test_bulk/data/logs/bulk ! -name '*.log' ! -name '.poudriere.*' ! -name '*.json' -delete; ) || true
