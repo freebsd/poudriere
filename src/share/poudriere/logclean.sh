@@ -138,6 +138,17 @@ OLDLOGS="$(mktemp -t poudriere_logclean)"
 
 cd "${log_top:?}"
 
+# -ignore_readdir_race as we may otherwise find builds,
+# _not latest-per-pkg_, that get deleted after logclean_all slock
+# is dropped by other logcleans on other builds.
+find_in_build_dirs() {
+	[ $# -ge 1 ] || eargs find_in_build_dirs dir "find args..."
+	local dir="$1"
+	shift
+
+	find -x "${dir}" -mindepth 2 -maxdepth 2 -ignore_readdir_race "$@"
+}
+
 # Logfiles in latest-per-pkg should have 3 links total.
 #  1 = itself
 #  2 = jail-specific latest-per-pkg
@@ -152,7 +163,7 @@ find_broken_latest_per_pkg_links() {
 	# -Btime is to avoid racing with bulk logfile()
 	find -x latest-per-pkg -type f -Btime +1m ! -links "${log_links}"
 	# Each MASTERNAME/latest-per-pkg
-	find -x . -mindepth 2 -maxdepth 2 -name latest-per-pkg -print0 | \
+	find_in_build_dirs . -name latest-per-pkg -print0 |
 	    xargs -0 -J {} find -x {} -type f -Btime +1m \
 	    ! -links "${log_links}" | sed -e 's,^\./,,'
 }
@@ -165,7 +176,7 @@ delete_broken_latest_per_pkg_old_symlinks() {
 		err 1 "delete_broken_latest_per_pkg_old_symlinks requires slock logs_latest-per-pkg"
 	find -x -L latest-per-pkg -type l -exec rm -f {} +
 	# Each MASTERNAME/latest-per-pkg
-	find -x . -mindepth 2 -maxdepth 2 -name latest-per-pkg -print0 | \
+	find_in_build_dirs . -name latest-per-pkg -print0 |
 	    xargs -0 -J {} find -x -L {} -type l -exec rm -f {} +
 }
 
@@ -202,7 +213,7 @@ msg_n "Acquiring logclean lock..."
 if slock_acquire -q "logclean_all" "${LOGCLEAN_LOCK_WAIT}"; then
 	echo " done"
 else
-	err 1 "Another logclean is busy"
+	err 124 "Another logclean is busy"
 fi
 msg_n "Looking for ${reason}..."
 case "${MAX_COUNT:+set}" in
@@ -317,7 +328,7 @@ fi
 if [ ${logs_deleted} -eq 1 ]; then
 	[ "${DRY_RUN}" -eq 0 ] || err 1 "Would delete files with dry-run"
 	msg_n "Fixing latest symlinks..."
-	for MASTERNAME in ${MASTERNAMES_LOCKED:?}; do
+	for MASTERNAME in ${MASTERNAMES_LOCKED?}; do
 		echo -n "${MASTERNAME:?}..."
 		latest="$(find -x "${MASTERNAME:?}" -mindepth 2 -maxdepth 2 \
 		    \( -type d -name 'latest*' -prune \) -o \
@@ -333,23 +344,28 @@ if [ ${logs_deleted} -eq 1 ]; then
 	echo " done"
 
 	msg_n "Fixing latest-done symlinks..."
-	for MASTERNAME in ${MASTERNAMES_LOCKED:?}; do
+	for MASTERNAME in ${MASTERNAMES_LOCKED?}; do
 		echo -n "${MASTERNAME:?}..."
 		latest_done="$(find -x "${MASTERNAME:?}" -mindepth 2 -maxdepth 2 \
 		    \( -type d -name 'latest*' -prune \) -o \
 		    -type f -name .poudriere.status \
 		    -exec grep -l done: {} + | sort -u -d | tail -n 1 | \
-		    awk -F / '{print $(NF - 1)}')"
-		rm -f "${MASTERNAME:?}/latest-done"
-		case "${latest}" in
-		"") continue ;;
+		    awk -F / '{print $(NF - 1)}')" || latest_done=
+		case "${latest_done-}" in
+		"") ;;
+		*)
+			rm -f "${MASTERNAME:?}/latest-done"
+			case "${latest}" in
+			"") continue ;;
+			esac
+			ln -s "${latest_done:?}" "${MASTERNAME:?}/latest-done"
+			;;
 		esac
-		ln -s "${latest_done:?}" "${MASTERNAME:?}/latest-done"
 	done
 	echo " done"
 
 	msg_n "Updating latest-per-pkg links..."
-	for MASTERNAME in ${MASTERNAMES_LOCKED:?}; do
+	for MASTERNAME in ${MASTERNAMES_LOCKED?}; do
 		echo -n " ${MASTERNAME}..."
 		find -x "${MASTERNAME:?}" -maxdepth 2 -mindepth 2 -name logs -print0 | \
 		    xargs -0 -J % find -x % -mindepth 1 -maxdepth 1 -type f | \
@@ -374,11 +390,15 @@ if [ ${logs_deleted} -eq 1 ]; then
 
 	msg_n "Removing empty build log directories..."
 	if lock_have "logs_latest-per-pkg"; then
-		echo "${MASTERNAMES_LOCKED:?}" | sed -e 's,$,/latest-per-pkg,' | \
-		    tr '\n' '\000' | \
-		    xargs -0 -J % find -x % -mindepth 0 -maxdepth 0 -empty | \
-		    sed -e 's,$,/..,' | xargs realpath | tr '\n' '\000' | \
-		    xargs -0 rm -rf
+		case "${MASTERNAMES_LOCKED:+set}" in
+		set)
+			echo "${MASTERNAMES_LOCKED:?}" | sed -e 's,$,/latest-per-pkg,' | \
+			    tr '\n' '\000' | \
+			    xargs -0 -J % find -x % -mindepth 0 -maxdepth 0 -empty | \
+			    sed -e 's,$,/..,' | xargs realpath | tr '\n' '\000' | \
+			    xargs -0 rm -rf
+			;;
+		esac
 		echo " done"
 	else
 		echo " skipped (locked by another process)"
@@ -389,12 +409,12 @@ if [ ${logs_deleted} -eq 1 ]; then
 	fi
 
 	# unlock builds
-	for MASTERNAME in ${MASTERNAMES_LOCKED:?}; do
+	for MASTERNAME in ${MASTERNAMES_LOCKED?}; do
 		slock_release "logs_${MASTERNAME}"
 	done
 
 	msg "Rebuilding HTML JSON files..."
-	for MASTERNAME in ${MASTERNAMES_LOCKED:?}; do
+	for MASTERNAME in ${MASTERNAMES_LOCKED?}; do
 		# Was this build eliminated?
 		[ -d "${MASTERNAME:?}" ] || continue
 		msg_n "Rebuilding HTML JSON for: ${MASTERNAME}..."

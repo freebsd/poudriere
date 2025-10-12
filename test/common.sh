@@ -625,6 +625,7 @@ cleanup() {
 }
 
 expect_error_on_stderr() {
+	local -; set +e
 	local tmpfile ret
 
 	tmpfile="$(mktemp -ut expect_error_on_stderr)"
