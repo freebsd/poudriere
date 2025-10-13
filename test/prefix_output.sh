@@ -54,7 +54,10 @@ while get_test_context; do
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr_quick stderr output should match"
 	)
-	assert 0 "$?"
+	ret=$?
+	cat "${OUTPUT}" || :
+	cat "${OUTPUT}.stderr" >&2 || :
+	assert 0 "${ret}"
 
 	# Basic output test with prefix_stdout
 	(
@@ -77,7 +80,10 @@ while get_test_context; do
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stdout stderr output should match"
 	)
-	assert 0 "$?"
+	ret=$?
+	cat "${OUTPUT}" || :
+	cat "${OUTPUT}.stderr" >&2 || :
+	assert 0 "${ret}"
 
 	# Basic output test with prefix_stderr
 	(
@@ -100,7 +106,10 @@ while get_test_context; do
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr stderr output should match"
 	)
-	assert 0 "$?"
+	ret=$?
+	cat "${OUTPUT}" || :
+	cat "${OUTPUT}.stderr" >&2 || :
+	assert 0 "${ret}"
 
 	# Basic output test with prefix_output
 	(
@@ -123,7 +132,10 @@ while get_test_context; do
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_output stderr output should match"
 	)
-	assert 0 "$?"
+	ret=$?
+	cat "${OUTPUT}" || :
+	cat "${OUTPUT}.stderr" >&2 || :
+	assert 0 "${ret}"
 
 	# Basic output test with chaining prefix_stderr and prefix_stdout
 	(
@@ -146,7 +158,10 @@ while get_test_context; do
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr+prefix_stdout stderr output should match"
 	)
-	assert 0 "$?"
+	ret=$?
+	cat "${OUTPUT}" || :
+	cat "${OUTPUT}.stderr" >&2 || :
+	assert 0 "${ret}"
 
 	# Now test exit statuses (pipefail and such)
 
@@ -172,7 +187,10 @@ while get_test_context; do
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr_quick/5 stderr output should match"
 	)
-	assert 0 "$?"
+	ret=$?
+	cat "${OUTPUT}" || :
+	cat "${OUTPUT}.stderr" >&2 || :
+	assert 0 "${ret}"
 
 	# pipefail test with prefix_stdout
 	(
@@ -195,7 +213,10 @@ while get_test_context; do
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stdout/5 stderr output should match"
 	)
-	assert 0 "$?"
+	ret=$?
+	cat "${OUTPUT}" || :
+	cat "${OUTPUT}.stderr" >&2 || :
+	assert 0 "${ret}"
 
 	# pipefail test with prefix_stderr
 	(
@@ -218,7 +239,10 @@ while get_test_context; do
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr/5 stderr output should match"
 	)
-	assert 0 "$?"
+	ret=$?
+	cat "${OUTPUT}" || :
+	cat "${OUTPUT}.stderr" >&2 || :
+	assert 0 "${ret}"
 
 	# pipefail test with prefix_output
 	(
@@ -241,7 +265,10 @@ while get_test_context; do
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_output/5 stderr output should match"
 	)
-	assert 0 "$?"
+	ret=$?
+	cat "${OUTPUT}" || :
+	cat "${OUTPUT}.stderr" >&2 || :
+	assert 0 "${ret}"
 
 	# pipefail test with chaining prefix_stderr and prefix_stdout
 	(
@@ -264,6 +291,9 @@ while get_test_context; do
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr+prefix_stdout/5 stderr output should match"
 	)
-	assert 0 "$?"
+	ret=$?
+	cat "${OUTPUT}" || :
+	cat "${OUTPUT}.stderr" >&2 || :
+	assert 0 "${ret}"
 	rm -f "${OUTPUT}" "${OUTPUT}.stderr" "${OUTPUT}.expected"
 done
