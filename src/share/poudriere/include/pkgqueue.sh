@@ -465,7 +465,8 @@ _pkgqueue_clean_queue() {
 	return "${ret}"
 }
 
-# This is expected to run from the child build process.
+# This is expected to run from the child build process, or main for
+# cleaning up after a crashed build.
 pkgqueue_clean_queue() {
 	[ "$#" -eq 3 ] || eargs pkgqueue_clean_queue job_type job_name clean_rdepends
 	local job_type="$1"
