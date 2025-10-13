@@ -1857,9 +1857,6 @@ exit_handler() {
 		;;
 	esac
 
-	if lock_have "jail_start_${MASTERNAME}"; then
-		slock_release "jail_start_${MASTERNAME}" || :
-	fi
 	slock_release_all || :
 	case "${POUDRIERE_TMPDIR:+set}" in
 	set)
