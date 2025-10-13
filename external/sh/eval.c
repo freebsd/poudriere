@@ -1164,20 +1164,33 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 		funcnest++;
 		mklocal("FUNCNAME");
 		setvar("FUNCNAME", argv[0], 0);
-		/* This can stay only if we ignore SIGPIPE. */
-		if (!in_trap()) {
+		{
 			char *funcstack;
 			int exitstatus_save = exitstatus, oexitstatus_save = oexitstatus;
 			mklocal("FUNCNAMESTACK");
-			asprintf(&funcstack,
-			    "FUNCNAMESTACK=\"${FUNCNAMESTACK:-${0}:%d:}${FUNCNAMESTACK:+:}${FUNCNAME}\"", plinno);
-			evalstring(funcstack, 0);
-			if (!is_int_on()) {
+			if (funcnest > 1) {
+				const char *funcnamestack;
+
+				funcnamestack = lookupvar("FUNCNAMESTACK");
+				assert(funcnamestack != NULL);
 				/*
-				 * evalstring may have FORCEINTON
+				 * Adding line number in for this would
+				 * require work similar to what was done
+				 * in dash commit 5bb39bb1995 and 0df96793e.
 				 */
-				INTOFF;
+				asprintf(&funcstack, "%s:%s",
+				    funcnamestack,
+				    argv[0]);
+			} else {
+				asprintf(&funcstack, "%s:%d:%s",
+				    arg0,
+				    plinno,
+				    argv[0]);
 			}
+			/* Avoid SIGPIPE from trap. */
+			if (!in_trap())
+				xtracestr("FUNCNAMESTACK=%s", funcstack);
+			setvar("FUNCNAMESTACK", funcstack, 0);
 			assert(is_int_on());
 			exitstatus = exitstatus_save;
 			oexitstatus = oexitstatus_save;
