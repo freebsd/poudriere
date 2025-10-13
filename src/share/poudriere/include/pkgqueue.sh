@@ -540,23 +540,29 @@ pkgqueue_balance_pool() {
 		return 0
 	fi
 
+	if ! cd pool; then
+		lock_release pkgqueue_balance_pool
+		msg_error "pkgqueue_balance_pool: cd pool"
+		return 1
+	fi
 	# For everything ready-to-run...
-	for pkgq_dir in pool/unbalanced/*; do
+	for pkgq_dir in unbalanced/*; do
 		# May be empty due to racing with pkgqueue_get_next()
 		case "${pkgq_dir}" in
-		"pool/unbalanced/*") break ;;
+		"unbalanced/*") break ;;
 		esac
 		pkgqueue_job="${pkgq_dir##*/}"
 		hash_remove "pkgqueue_priority" "${pkgqueue_job}" dep_count ||
 		    dep_count=0
 		# This races with pkgqueue_get_next(), just ignore failure
 		# to move it.
-		rename "${pkgq_dir}" "pool/${dep_count}/${pkgqueue_job}" || :
+		rename "${pkgq_dir}" "${dep_count}/${pkgqueue_job}" || :
 	done 2>/dev/null
 	# New files may have been added in unbalanced/ via
 	# pkgqueue_clean_queue() due to not being locked.
 	# These will be picked up in the next run.
 	lock_release pkgqueue_balance_pool
+	cd ..
 }
 
 # Create a pool of ready-to-run from the deps pool
