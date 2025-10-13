@@ -28,12 +28,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sysexits.h>
+#include <unistd.h>
 
 #ifdef SHELL
 #define main renamecmd
 #include "bltin/bltin.h"
 #include "helpers.h"
 #endif
+
+static void
+usage(void)
+{
+	errx(EX_USAGE, "Usage: rename [-v] src dst");
+}
 
 /**
  * Just call rename(2) on the params. This is a replacement for mv(1)
@@ -44,12 +51,29 @@
 int
 main(int argc, char **argv)
 {
+	int ch, vflag;
 
-	if (argc != 3)
-		errx(EX_USAGE, "Usage: rename src dst");
+	vflag = 0;
+	while ((ch = getopt(argc, argv, "v")) != -1) {
+		switch (ch) {
+		case 'v':
+			vflag = 1;
+			break;
+		default:
+			usage();
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
 
-	if (rename(argv[1], argv[2]))
-		err(EXIT_FAILURE, "%s to %s", argv[1], argv[2]);
+	if (argc != 2)
+		usage();
+
+	if (rename(argv[0], argv[1]))
+		err(EXIT_FAILURE, "%s -> %s", argv[0], argv[1]);
+	else if (vflag)
+		printf("%s -> %s\n", argv[0], argv[1]);
 
 	return (0);
 }
