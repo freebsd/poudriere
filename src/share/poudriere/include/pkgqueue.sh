@@ -564,6 +564,23 @@ pkgqueue_move_ready_to_pool() {
 	required_env pkgqueue_move_ready_to_pool PWD "${MASTER_DATADIR_ABS:?}"
 	[ $# -eq 0 ] || eargs pkgqueue_move_ready_to_pool
 
+	case "${POOL_BUCKET_DIRS:+set}" in
+	# Tests may run this again.
+	set) ;;
+	*)
+		_pkgqueue_create_pool_dirs ||
+		     err 1 "pkgqueue_move_ready_to_pool: failed to create pool dirs"
+		;;
+	esac
+	find deps -type d -depth 2 -empty |
+	    xargs -J % mv % pool/unbalanced
+	pkgqueue_balance_pool
+}
+
+_pkgqueue_create_pool_dirs() {
+	required_env _pkgqueue_create_pool_dirs PWD "${MASTER_DATADIR_ABS:?}"
+	[ $# -eq 0 ] || eargs _pkgqueue_create_pool_dirs
+
 	# Create buckets to satisfy the dependency chain priorities.
 	case "${PKGQUEUE_PRIORITIES:+set}" in
 	set)
@@ -583,17 +600,13 @@ pkgqueue_move_ready_to_pool() {
 	# Create buckets after loading priorities in case of boosts.
 	(
 		if cd "${MASTER_DATADIR:?}/pool"; then
-			mkdir ${POOL_BUCKET_DIRS:?}
+			mkdir ${POOL_BUCKET_DIRS:?} || return
 		fi
-	)
+	) || return
 
 	# unbalanced is where everything starts at.  Items are moved in
 	# pkgqueue_balance_pool based on their priority.
 	POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS:?} unbalanced"
-
-	find deps -type d -depth 2 -empty |
-	    xargs -J % mv % pool/unbalanced
-	pkgqueue_balance_pool
 }
 
 pkgqueue_remove_many_pipe() {
