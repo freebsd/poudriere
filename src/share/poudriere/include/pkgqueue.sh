@@ -525,17 +525,18 @@ pkgqueue_prioritize() {
 
 pkgqueue_balance_pool() {
 	required_env pkgqueue_balance_pool PWD "${MASTER_DATADIR_ABS:?}"
-	local pkgq_dir pkgqueue_job dep_count lock
+	local pkgq_dir pkgqueue_job dep_count
 
 	# Avoid running this in parallel, no need. Note that this lock is
 	# not on the unbalanced/ dir, but only this function.
 	# pkgqueue_clean_queue() writes to unbalanced/, pkgqueue_empty() reads
 	# from it, and pkgqueue_get_next() moves from it.
-	lock=.lock-pkgqueue_balance_pool
-	mkdir "${lock}" 2>/dev/null || return 0
+	if ! lock_acquire -q pkgqueue_balance_pool 0; then
+		return 0
+	fi
 
 	if dirempty pool/unbalanced; then
-		rmdir "${lock}"
+		lock_release pkgqueue_balance_pool
 		return 0
 	fi
 
@@ -555,7 +556,7 @@ pkgqueue_balance_pool() {
 	# New files may have been added in unbalanced/ via
 	# pkgqueue_clean_queue() due to not being locked.
 	# These will be picked up in the next run.
-	rmdir "${lock}"
+	lock_release pkgqueue_balance_pool
 }
 
 # Create a pool of ready-to-run from the deps pool
