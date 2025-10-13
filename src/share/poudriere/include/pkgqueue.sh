@@ -798,13 +798,13 @@ pkgqueue_empty() {
 	# Check twice that the queue is empty. This avoids racing with
 	# pkgqueue_clean_queue() and pkgqueue_balance_pool() moving files
 	# between the dirs.
-	while [ ${n} -lt 2 ]; do
+	while [ "${n}" -lt 2 ]; do
 		for pool_dir in ${dirs}; do
-			if ! dirempty ${pool_dir}; then
+			if ! dirempty "${pool_dir}"; then
 				return 1
 			fi
 		done
-		n=$((n + 1))
+		n="$((n + 1))"
 	done
 
 	# Queue is empty
@@ -858,9 +858,9 @@ pkgqueue_find_dead_packages() {
 	[ $# -eq 0 ] || eargs pkgqueue_find_dead_packages
 	local dead_all dead_deps dead_top
 
-	dead_all=$(mktemp -t dead_packages.all)
-	dead_deps=$(mktemp -t dead_packages.deps)
-	dead_top=$(mktemp -t dead_packages.top)
+	dead_all="$(mktemp -t dead_packages.all)"
+	dead_deps="$(mktemp -t dead_packages.deps)"
+	dead_top="$(mktemp -t dead_packages.top)"
 	find deps -mindepth 2 > "${dead_all}"
 	# All packages in the queue
 	cut -d / -f 3 "${dead_all}" | sort -u -o "${dead_top}"
