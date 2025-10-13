@@ -182,7 +182,7 @@ _pkgqueue_job_start() {
 	pkgqueue_job_decode "${pkgqueue_job}" job_type job_name
 	# We may race with pkgqueue_balance_pool()
 	running_dir="${MASTER_DATADIR:?}/running/${pkgqueue_job:?}"
-	if ! rename "${pkgq_dir}" "${running_dir}" 2>/dev/null; then
+	if ! rename -q "${pkgq_dir}" "${running_dir}"; then
 		# Was the failure from /unbalanced?
 		case "${pkgq_dir}" in
 		"unbalanced/"*)
@@ -335,7 +335,7 @@ pkgqueue_clean_rdeps() {
 	# pkgqueue_clean_queue() owns it or there were no reverse
 	# deps for this package.
 	pkgqueue_dir rdep_dir_name "${pkgqueue_job}"
-	rename "rdeps/${rdep_dir_name}" "${rdep_dir}" 2>/dev/null ||
+	rename -q "rdeps/${rdep_dir_name}" "${rdep_dir}" ||
 	    return 0
 
 	# Cleanup everything that depends on my package
@@ -412,7 +412,7 @@ pkgqueue_clean_deps() {
 	# Exclusively claim the deps dir or return, another
 	# pkgqueue_clean_queue() owns it.
 	pkgqueue_dir pkg_dir_name "${pkgqueue_job}"
-	rename "deps/${pkg_dir_name}" "${dep_dir}" 2>/dev/null ||
+	rename -q "deps/${pkg_dir_name}" "${dep_dir}" ||
 	    return 0
 
 	# Remove myself from all my dependency rdeps to prevent them from
@@ -556,8 +556,8 @@ pkgqueue_balance_pool() {
 		    dep_count=0
 		# This races with pkgqueue_get_next(), just ignore failure
 		# to move it.
-		rename "${pkgq_dir}" "${dep_count}/${pkgqueue_job}" || :
-	done 2>/dev/null
+		rename -q "${pkgq_dir}" "${dep_count}/${pkgqueue_job}" || :
+	done
 	# New files may have been added in unbalanced/ via
 	# pkgqueue_clean_queue() due to not being locked.
 	# These will be picked up in the next run.

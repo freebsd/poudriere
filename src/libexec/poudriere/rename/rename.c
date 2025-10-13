@@ -39,7 +39,7 @@
 static void
 usage(void)
 {
-	errx(EX_USAGE, "Usage: rename [-v] src dst");
+	errx(EX_USAGE, "Usage: rename [-qv] src dst");
 }
 
 /**
@@ -51,11 +51,14 @@ usage(void)
 int
 main(int argc, char **argv)
 {
-	int ch, vflag;
+	int ch, qflag, vflag;
 
-	vflag = 0;
-	while ((ch = getopt(argc, argv, "v")) != -1) {
+	qflag = vflag = 0;
+	while ((ch = getopt(argc, argv, "qv")) != -1) {
 		switch (ch) {
+		case 'q':
+			qflag = 1;
+			break;
 		case 'v':
 			vflag = 1;
 			break;
@@ -70,9 +73,12 @@ main(int argc, char **argv)
 	if (argc != 2)
 		usage();
 
-	if (rename(argv[0], argv[1]))
-		err(EXIT_FAILURE, "%s -> %s", argv[0], argv[1]);
-	else if (vflag)
+	if (rename(argv[0], argv[1])) {
+		if (qflag == 0)
+			err(EXIT_FAILURE, "%s -> %s", argv[0], argv[1]);
+		else
+			exit(EXIT_FAILURE);
+	} else if (vflag)
 		printf("%s -> %s\n", argv[0], argv[1]);
 
 	return (0);
