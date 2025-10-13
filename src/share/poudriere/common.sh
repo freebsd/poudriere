@@ -1752,6 +1752,24 @@ exit_handler() {
 		    [ -d "${MASTER_DATADIR}" ]; then
 			cd "${MASTER_DATADIR:?}"
 		fi
+
+		# Save the .p dir on error exit.
+		# Super cautious to avoid any errors here.
+		case "${EXIT_STATUS}" in
+		0|130) ;;
+		*)
+			case "${MASTER_DATADIR:+set}.${BUILDNAME:+set}.${MASTERNAME:+set}" in
+			set.set.set)
+				local log
+
+				if _log_path log; then
+					find -x "${MASTER_DATADIR}" -ls \
+					    > "${log:?}/.poudriere.datadir%"
+				fi
+				;;
+			esac
+			;;
+		esac
 	fi
 
 	case "${EXIT_STATUS}" in
