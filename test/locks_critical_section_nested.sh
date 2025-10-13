@@ -95,5 +95,3 @@ assert 0 "$?" "critical_end"
 assert 1 ${main_sigint} "INT should be delivered on lock_release"
 assert 1 ${main_sigterm} "TERM should be delivered on lock_release"
 assert 1 ${main_siginfo} "INFO should be delivered on lock_release"
-
-find "${POUDRIERE_TMPDIR:?}/" -name "lock--*" -delete

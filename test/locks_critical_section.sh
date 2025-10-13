@@ -91,5 +91,3 @@ assert 1 ${main_siginfo} "INFO should be trapped"
 	lock_release TEST
 	assert 0 "$?" "lock_release"
 }
-
-find "${POUDRIERE_TMPDIR:?}/" -name "lock--*" -delete

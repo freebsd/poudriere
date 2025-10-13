@@ -578,6 +578,14 @@ cleanup() {
 	kill_all_jobs 20
 	if [ ${_DID_TMPDIR:-0} -eq 1 ] && \
 	    [ "${TMPDIR%%/poudriere/test/*}" != "${TMPDIR}" ]; then
+		find "${POUDRIERE_TMPDIR:?}/" \
+		    \( \
+		    -name "lock-*.flock" -o \
+		    -name "lock-*.pid" \
+		    \) -type f -delete
+		find "${POUDRIERE_TMPDIR:?}/" \
+		    -name "lock-*" \
+		    -type d -empty -delete
 		if [ -d "${TMPDIR}" ] && ! dirempty "${TMPDIR}"; then
 			echo "${TMPDIR} was not empty on exit!" >&2
 			find "${TMPDIR}" -ls >&2

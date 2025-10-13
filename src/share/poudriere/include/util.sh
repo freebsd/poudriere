@@ -2617,7 +2617,7 @@ lock_acquire() {
 	lockname="$1"
 	waittime="$2"
 
-	lockpath="${POUDRIERE_TMPDIR:?}/lock-${MASTERNAME}-${lockname:?}"
+	lockpath="${POUDRIERE_TMPDIR:?}/lock-${MASTERNAME:+${MASTERNAME}-}${lockname:?}"
 	_lock_acquire "${quiet}" "${lockname}" "${lockpath}" "${waittime}"
 }
 
@@ -2743,7 +2743,7 @@ lock_release() {
 	local lockname="$1"
 	local lockpath
 
-	lockpath="${POUDRIERE_TMPDIR:?}/lock-${MASTERNAME}-${lockname:?}"
+	lockpath="${POUDRIERE_TMPDIR:?}/lock-${MASTERNAME:+${MASTERNAME}-}${lockname:?}"
 	_lock_release "${lockname}" "${lockpath}"
 }
 

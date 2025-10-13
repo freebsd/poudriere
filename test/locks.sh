@@ -203,5 +203,3 @@ false &&
 	lock_release TEST
 	assert 0 "$?" "lock_release"
 }
-
-find "${POUDRIERE_TMPDIR:?}/" -name "lock--*" -delete
