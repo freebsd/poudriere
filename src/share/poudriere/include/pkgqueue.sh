@@ -837,12 +837,13 @@ pkgqueue_list_deps_recurse() {
 	pkgqueue_dir pkg_dir_name "${pkgqueue_job}"
 	# Show deps/*/${pkgname}
 	for pn in deps/"${pkg_dir_name}"/*; do
+		case "${pn}" in
+		# empty dir
+		"deps/${pkg_dir_name}/*") break ;;
+		esac
 		dep_pkgqueue_job="${pn##*/}"
 		case " ${FIND_ALL_DEPS} " in
-			*" ${dep_pkgqueue_job} "*) continue ;;
-		esac
-		case "${pn}" in
-		"deps/${pkg_dir_name}/*") break ;;
+		*" ${dep_pkgqueue_job} "*) continue ;;
 		esac
 		pkgqueue_job_decode "${dep_pkgqueue_job}" dep_job_type \
 		    dep_pkgname
