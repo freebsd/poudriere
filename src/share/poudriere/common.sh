@@ -5749,6 +5749,7 @@ build_queue() {
 	queue_empty=0
 
 	msg "Hit CTRL+t at any time to see build progress and stats"
+	msg_dev "build_queue: JOBS=${JOBS}"
 
 	job_finished=0
 	while :; do
@@ -5776,6 +5777,7 @@ build_queue() {
 					continue
 					;;
 				esac
+				msg_dev "build_queue: loop discovered job=${jobno} j=${j} was Done: $(jobs -l)"
 				# The job is Done or Terminated.
 				job_done "${j}"
 			fi
@@ -5789,6 +5791,8 @@ build_queue() {
 
 			pkgqueue_get_next job_type job_name ||
 			    err 1 "Failed to find a package from the queue."
+			msg_dev "build_queue: pkgqueue_get_next got" \
+			    "job=${job_type-}${job_name:+:${job_name}}"
 
 			case "${job_name}" in
 			"")
@@ -5796,6 +5800,9 @@ build_queue() {
 				# need-to-run pools are empty.
 				if pkgqueue_empty; then
 					queue_empty=1
+					msg_dev "build_queue: queue empty"
+				else
+					msg_dev "build_queue: queue idle"
 				fi
 				continue
 				;;
@@ -5817,6 +5824,8 @@ build_queue() {
 			hash_set builder_job_type "${j}" "${job_type}"
 			hash_set builder_job_name "${j}" "${job_name}"
 			list_add BUILDER_JOBNOS "${jobno}"
+			msg_dev "build_queue: launched jobno=${jobno}" \
+			    "job=${job_type}:${job_name}"
 		done
 
 		case "${queue_empty:?}" in
@@ -5838,7 +5847,13 @@ build_queue() {
 
 		# If builders are idle then there is a problem.
 		case "${builders_active:?}" in
-		0) pkgqueue_sanity_check 1 ;;
+		0)
+			msg_dev "build_queue: pkgqueue_sanity_check on idle" \
+			    "$(clock -monotonic)"
+			pkgqueue_sanity_check 1
+			msg_dev "build_queue: pkgqueue_sanity_check return" \
+			    "$(clock -monotonic)"
+			;;
 		esac
 
 		update_remaining
@@ -5848,18 +5863,24 @@ build_queue() {
 		read_blocking -t "${timeout}" jobid <&6 || :
 		case "${jobid:+set}" in
 		set)
+			msg_dev "build_queue: jobpipe read job=${jobid}"
 			# A job just finished.
 			if job_done "${jobid}"; then
 				# Do a quick scan to try dispatching
 				# ready-to-build to idle builders.
 				job_finished=1
+				msg_dev "build_queue: jobno=${jobid} job_done" \
+				    "success"
 			else
 				# The job is already done. It was found to be
 				# done by a kill -0 check in a scan.
 				:
+				msg_dev "build_queue: job=${jobid} was" \
+				    "already done"
 			fi
 			;;
 		"")
+			msg_dev "build_queue: jobpipe read timeout"
 			# No event found. The next scan will check for
 			# crashed builders and deadlocks by validating
 			# every builder is really non-idle.
