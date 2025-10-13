@@ -2567,7 +2567,6 @@ _lock_acquire() {
 			return "${lm_ret}"
 			;;
 		esac
-	fi
 	# XXX: Remove this block with locked_mkdir [EINTR] fixes.
 	{
 		# locked_mkdir is quite racy. We may have gotten a false-success
@@ -2590,6 +2589,14 @@ _lock_acquire() {
 			;;
 		esac
 	}
+	elif [ "${have_lock}" -eq 1 ]; then
+		# Lock recursion may happen in a trap handler if the lock
+		# was held before the trap.
+		:
+	else
+		# However it should not happen once.
+		err 1 "Attempted double recursive locking of ${lockname}"
+	fi
 	hash_set have_lock "${lockname}" $((have_lock + 1))
 	case "${lock_pid}" in
 	"")
