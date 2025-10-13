@@ -540,6 +540,11 @@ if [ -f "${WRKDIR}/world/etc/login.conf.orig" ]; then
 fi
 cap_mkdb ${WRKDIR:?}/world/etc/login.conf
 pwd_mkdb -d ${WRKDIR:?}/world/etc -p ${WRKDIR:?}/world/etc/master.passwd
+case "${SUBMEDIATYPE}" in
+	gpt|zfs)
+		echo "/dev/gpt/efiboot0	/boot/efi	msdosfs	rw	2	2" >> "${WRKDIR:?}/world/etc/fstab"
+		;;
+esac
 
 # Set hostname
 if [ -n "${HOSTNAME}" ]; then
