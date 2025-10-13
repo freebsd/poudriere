@@ -71,7 +71,7 @@ done
 	err 1 "Don't know on which jail to run please specify -j"
 
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
-PACKAGES="${POUDRIERE_DATA:?}/packages/${MASTERNAME}"
+: "${PACKAGES:=${POUDRIERE_DATA:?}/packages/${MASTERNAME:?}}"
 _mastermnt MASTERMNT
 
 PKG_EXT='*' package_dir_exists_and_has_packages || \
