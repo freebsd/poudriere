@@ -72,6 +72,7 @@ TESTS=\
 	pkgqueue_build_and_test.sh \
 	pkgqueue_failure_cleanup.sh \
 	pkgqueue_find_all_pool_references.sh \
+	pkgqueue_get_next_race.sh \
 	pkgqueue_mutually_exclusive.sh \
 	pkgqueue_prioritize.sh \
 	pkgqueue_remove_many_pipe.sh \

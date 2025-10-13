@@ -73,21 +73,36 @@ pkgqueue_get_next() {
 	[ "$#" -eq 2 ] || eargs pkgqueue_get_next job_type_var pkgname_var
 	local pgn_job_type_var="$1"
 	local pgn_pkgname_var="$2"
-	local pgn_job_type pkgq_dir pgn_pkgname __pkgqueue_job ret
+	local pgn_job_type pkgq_dir pgn_pkgname __pkgqueue_job ret recheck_empty
 
 	# May need to try multiple times due to races and queued-for-order jobs
+	recheck_empty=0
 	while :; do
 		pkgq_dir="$(find ${POOL_BUCKET_DIRS:?} \
 		    -ignore_readdir_race \
 		    -type d -depth 1 -empty -print -quit || :)"
-		# No more eligible work!
+		# Check twice that the queue is empty. This avoids racing with
+		# pkgqueue_clean_queue() and pkgqueue_balance_pool() moving files
+		# between the dirs; find does not have an atomic view of
+		# POOL_BUCKET_DIRS.
 		case "${pkgq_dir}" in
 		"")
+			case "${recheck_empty}" in
+			0)
+				recheck_empty=1
+				continue
+				;;
+			esac
+			# No current eligible work.
+			# This does not mean the queue is empty, only that
+			# the ready-to-build is empty. Some jobs may still
+			# be running.
 			pgn_job_type=
 			pgn_pkgname=
 			break
 			;;
 		esac
+		recheck_empty=0
 		ret=0
 		_pkgqueue_job_start "${pkgq_dir}" || ret="$?"
 		case "${ret}" in
@@ -580,7 +595,13 @@ pkgqueue_move_ready_to_pool() {
 	esac
 	find deps -type d -depth 2 -empty |
 	    xargs -J % mv % pool/unbalanced
-	pkgqueue_balance_pool
+	# Test hack
+	case "${TEST_PMRTP_SKIP_BALANCE_POOL:+set}" in
+	set) ;;
+	*)
+		pkgqueue_balance_pool || return
+		;;
+	esac
 }
 
 _pkgqueue_create_pool_dirs() {
