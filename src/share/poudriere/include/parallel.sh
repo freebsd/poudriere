@@ -1137,5 +1137,9 @@ setup_traps() {
 		done
 		trap "trap_pre_handler; exit_return" EXIT
 	fi
-	stack_push_front "${TRAPSVAR}" "${exit_handler}"
+	case "${exit_handler:+set}" in
+	set)
+		stack_push_front "${TRAPSVAR}" "${exit_handler}"
+		;;
+	esac
 }
