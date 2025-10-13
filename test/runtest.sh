@@ -245,7 +245,7 @@ case "${TEST##*/}" in
 bulk*.sh|testport*.sh|distclean*.sh|options*.sh) : "${TIMEOUT:=$((TIMEOUT + (LOGCLEAN_WAIT * 1)))}" ;;
 esac
 : "${TIMEOUT_KILL_TIMEOUT=30}"
-: "${TIMEOUT_TRUSS_MULTIPLIER:=4}"
+: "${TIMEOUT_TRUSS_MULTIPLIER:=6}"
 case "${TRUSS-}" in
 "")
 	;;
