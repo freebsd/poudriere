@@ -1,9 +1,8 @@
 . ./common.sh
 
-case "$(type cut)" in
-*"is a shell builtin") ;;
-*) exit 77 ;;
-esac
+if ! have_builtin cut; then
+	exit 77;
+fi
 
 {
 	val=$(echo foo/bar | cut -d / -f 2)

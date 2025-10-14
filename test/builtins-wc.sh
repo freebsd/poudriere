@@ -1,9 +1,8 @@
 . ./common.sh
 
-case "$(type wc)" in
-*"is a shell builtin") ;;
-*) exit 77 ;;
-esac
+if ! have_builtin wc; then
+	exit 77;
+fi
 
 val=$(echo 1 | wc -l)
 assert "1" ${val}

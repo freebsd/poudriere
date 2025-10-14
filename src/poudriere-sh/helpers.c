@@ -37,6 +37,7 @@
 #include <sysexits.h>
 
 #include "bltin/bltin.h"
+#include "exec.h"
 #include "eval.h"
 #include "syntax.h"
 #include "var.h"
@@ -543,4 +544,19 @@ getpidcmd(int argc, char **argv)
 	assert(getpid() == shpid);
 	fprintf(stdout, "%ld\n", shpid);
 	return (0);
+}
+
+int
+have_builtin(int argc, char**argv)
+{
+	const char *cmd;
+	int unused;
+
+	if (argc != 2)
+		errx(EX_USAGE, "Usage: %s: command", argv[0]);
+	cmd = argv[1];
+	if (find_builtin(cmd, &unused) >= 0) {
+		return (0);
+	}
+	return (1);
 }

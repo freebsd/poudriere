@@ -1,9 +1,8 @@
 . ./common.sh
 
-case "$(type paste)" in
-*"is a shell builtin") ;;
-*) exit 77 ;;
-esac
+if ! have_builtin paste; then
+	exit 77;
+fi
 
 {
 	TMPFILE=$(mktemp -ut paste)

@@ -21,6 +21,7 @@ for cmd in $(cat ${THISDIR}/../src/poudriere-sh/builtins-poudriere.def |
 	# Overridden to hide errors
 	unlink) continue ;;
 	esac
+	assert_true have_builtin "${cmd}"
 	assert "${cmd} is a shell builtin" "$(type "${cmd}")" \
 		"${cmd} should be a builtin"
 done

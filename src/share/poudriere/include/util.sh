@@ -35,6 +35,32 @@ if ! type eargs 2>/dev/null >&2; then
 	}
 fi
 
+case "$(type "have_builtin" 2>/dev/null)" in
+# The builtin version avoids searching PATH.
+*"is a shell builtin") ;;
+*)
+have_builtin() {
+	[ $# -eq 1 ] || eargs have_builtin cmd
+	local cmd="$1"
+	local hb_val
+
+	if hash_get have_builtin "${cmd}" hb_val; then
+		return "${hb_val}"
+	fi
+	# type(1) does hash positive results but not negative. We're not
+	# suddenly going to grow a builtin though so hash the negatives too.
+	case "$(type "${cmd}" 2>/dev/null)" in
+	*"is a shell builtin") hb_val=0 ;;
+	*) hb_val=1 ;;
+	esac
+	case "${IN_TEST:-0}" in
+	0) hash_set have_builtin "${cmd}" "${hb_val}" ;;
+	esac
+	return "${hb_val}"
+}
+;;
+esac
+
 if ! type setproctitle 2>/dev/null >&2; then
 	setproctitle() { :; }
 fi
@@ -497,20 +523,16 @@ cd() {
 	return ${ret}
 }
 
-case "$(type unlink 2>/dev/null)" in
-"unlink is a shell builtin") ;;
-*)
+if ! have_builtin unlink; then
 unlink() {
 	[ $# -eq 2 ] || [ $# -eq 1 ] || eargs unlink '[--]' file
 
+	# The builtin one ignores errors for ENOENT.
 	command unlink "$@" 2>/dev/null || :
 }
-;;
-esac
+fi
 
-case "$(type randint 2>/dev/null)" in
-"randint is a shell builtin") ;;
-*)
+if ! have_builtin randint; then
 randint() {
 	[ "$#" -eq 1 ] || [ "$#" -eq 2 ] ||
 	    eargs randint max_val '[var_return]'
@@ -525,8 +547,7 @@ randint() {
 	val=$(jot -r 1 "${max_val}")
 	setvar "${r_outvar}" "${val}"
 }
-;;
-esac
+fi
 
 _trap_ignore_block() {
 	local -; set +x
@@ -571,11 +592,9 @@ trap_ignore_block() {
 	_trap_ignore_block 1 "$@"
 }
 
-case "$(type trap_push 2>/dev/null)" in
-"trap_push is a shell builtin")
+if have_builtin trap_push; then
 critical_inherit() { :; }
-	;;
-*)
+else
 trap_push() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs trap_push signal var_return
@@ -686,8 +705,7 @@ critical_end() {
 		esac
 	done
 }
-;;
-esac
+fi
 
 # Read a file into the given variable.
 read_file() {
@@ -1247,8 +1265,7 @@ pipe_hold() {
 	return "${ph_ret}"
 }
 
-case "$(type mapfile 2>/dev/null)" in
-"mapfile is a shell builtin")
+if have_builtin mapfile; then
 mapfile_builtin() {
 	return 0
 }
@@ -1273,8 +1290,7 @@ mapfile_close() {
 	_mapfile_read_proc_close "${handle}" || ret="$?"
 	return "${ret}"
 }
-;;
-*)
+else
 mapfile() {
 	local -; set +x
 	[ "$#" -ge 2 ] || eargs mapfile '[-q'] handle_name file modes
@@ -1649,8 +1665,7 @@ mapfile_keeps_file_open_on_eof() {
 mapfile_supports_multiple_read_handles() {
 	return 1
 }
-;;
-esac
+fi
 
 # Alias for mapfile_read_loop "/dev/stdin" vars...
 mapfile_read_loop_redir() {
@@ -1887,8 +1902,7 @@ prefix_stderr_quick() {
 		} 2>&1 1>&3 | {
 			if [ "${USE_TIMESTAMP:-1}" -eq 1 ] && \
 			    command -v timestamp >/dev/null && \
-			    [ "$(type timestamp)" = \
-			    "timestamp is a shell builtin" ]; then
+			    have_builtin timestamp; then
 				# Let timestamp handle showing the proper time.
 				prefix="$(NO_ELAPSED_IN_MSG=1 msg_warn "${extra}:" 2>&1)"
 				TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
@@ -2347,11 +2361,9 @@ getpid() {
 fi
 
 # Export handling is different in builtin vs external
-case "$(type mktemp)" in
-"mktemp is a shell builtin")
+if have_builtin mktemp; then
 	MKTEMP_BUILTIN=1
-	;;
-esac
+fi
 _mktemp() {
 	local -; set +x
 	local _mktemp_var_return="$1"
@@ -2394,17 +2406,14 @@ _mktemp() {
 	return "${ret}"
 }
 
-case "$(type dirempty 2>/dev/null)" in
-"dirempty is a shell builtin") ;;
-*)
+if ! have_builtin dirempty; then
 dirempty() {
 	[ $# -eq 1 ] || eargs dirempty
 	local dir="$1"
 
 	! globmatch "${dir}/*"
 }
-;;
-esac
+fi
 
 globmatch() {
 	[ $# -eq 1 ] || eargs globmatch glob
@@ -2494,17 +2503,14 @@ count_lines() {
 	return "${cl_ret}"
 }
 
-case "$(type sleep)" in
-"sleep is a shell builtin") ;;
-*)
+if ! have_builtin sleep; then
 sleep() {
 	local -
 
 	set -T
 	command sleep "$@"
 }
-;;
-esac
+fi
 
 _lock_read_pid() {
 	[ $# -eq 2 ] || eargs _lock_read_pid pidfile pid_var_return
