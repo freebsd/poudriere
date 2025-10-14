@@ -297,6 +297,9 @@ create)
 			if [ ! -x "${GIT_CMD}" ]; then
 				err 1 "Git is not installed. Perhaps you need to 'pkg install git'"
 			fi
+			msg_n "Setting up proxy..."
+			${GIT_CMD} config --system http.proxy ${GIT_PROXY} || err 1 " fail"
+			echo " done"
 			msg_n "Cloning the ports tree..."
 			${GIT_CMD} clone ${GIT_DEPTH} ${quiet} \
 			    ${BRANCH:+-b ${BRANCH}} ${GIT_FULLURL} ${PTMNT} || \
@@ -387,6 +390,9 @@ update)
 		;;
 	git*)
 		# !! Any changes here should be considered for jail.sh too.
+		msg_n "Setting up proxy..."
+		${GIT_CMD} config --system http.proxy ${GIT_PROXY} || err 1 " fail"
+		echo " done"
 		msg_n "Updating portstree \"${PTNAME}\" with ${METHOD}..."
 		${GIT_CMD} -C ${PORTSMNT:-${PTMNT}} pull --rebase ${quiet} || \
 		    err 1 " fail"
