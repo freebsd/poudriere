@@ -53,16 +53,19 @@ NSEMI nbinary			# two commands separated by a semicolon
 
 NCMD ncmd			# a simple command
 	type	  int
+	linno	  int
 	args	  nodeptr		# the arguments
 	redirect  nodeptr		# list of file redirections
 
 NPIPE npipe			# a pipeline
 	type	  int
+	linno	  int
 	backgnd	  int			# set to run pipeline in background
 	cmdlist	  nodelist		# the commands in the pipeline
 
 NREDIR nredir			# redirection (of a complex command)
 	type	  int
+	linno	  int
 	n	  nodeptr		# the command
 	redirect  nodeptr		# list of file redirections
 

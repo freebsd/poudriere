@@ -376,6 +376,8 @@ pipeline(void)
 		pipenode = (union node *)stalloc(sizeof (struct npipe));
 		pipenode->type = NPIPE;
 		pipenode->npipe.backgnd = 0;
+		pipenode->npipe.linno = plinno;
+		/* fprintf(stderr, "NPIPE %d\n", pipenode->npipe.linno); */
 		lp = (struct nodelist *)stalloc(sizeof (struct nodelist));
 		pipenode->npipe.cmdlist = lp;
 		lp->n = n1;
@@ -565,6 +567,8 @@ command(void)
 		n1->type = NSUBSHELL;
 		n1->nredir.n = list(0);
 		n1->nredir.redirect = NULL;
+		n1->nredir.linno = plinno;
+		/* fprintf(stderr, "NREDIR %d\n", n1->nredir.linno); */
 		consumetoken(TRP);
 		checkkwd = CHKKWD | CHKALIAS;
 		is_subshell = 1;
@@ -625,6 +629,7 @@ simplecmd(union node **rpp, union node *redir)
 	union node *n = NULL;
 	int special;
 	int savecheckkwd;
+	const int saveplinno = plinno;
 
 	/* If we don't have any redirections already, then we must reset */
 	/* rpp to be the address of the local redir variable.  */
@@ -689,6 +694,8 @@ simplecmd(union node **rpp, union node *redir)
 	n->type = NCMD;
 	n->ncmd.args = args;
 	n->ncmd.redirect = redir;
+	n->ncmd.linno = saveplinno;
+	/* fprintf(stderr, "NCMD %s:%d\n", n->ncmd.args->narg.text, n->ncmd.linno); */
 	return n;
 }
 

@@ -59,6 +59,7 @@ struct jmploc *handler;
 volatile sig_atomic_t exception;
 volatile sig_atomic_t suppressint;
 volatile sig_atomic_t intpending;
+int errlinno;
 
 
 void verrorwithstatus(int, const char *, va_list) __printf0like(2, 0) __dead2;
@@ -123,21 +124,27 @@ onint(void)
 void
 vwarning(const char *msg, va_list ap)
 {
-	const char *funcname;
+	const char *funcname, *funcnamestack;
 
-	funcname = lookupvar("FUNCNAMESTACK");
-	if (funcname == NULL)
+	funcnamestack = lookupvar("FUNCNAMESTACK");
+	if (funcnamestack == NULL)
 		funcname = lookupvar("FUNCNAME");
+	else
+		funcname = funcnamestack;
 	if (commandname)
-		outfmt(out2, "Error: (%d) %s:%s%s%d: ", getpid(), commandname,
+		outfmt(out2, "Error: (%d) %s%s%s%s%d: ", getpid(),
+		    funcnamestack == NULL ? commandname : "",
+		    funcnamestack == NULL ? ":" : "",
 		    funcname != NULL ? funcname : "",
 		    funcname != NULL ? ":" : "",
-		    plinno);
+		    errlinno);
 	else if (arg0) {
-		outfmt(out2, "Error: (%d) %s:%s%s%d: ", getpid(), arg0,
+		outfmt(out2, "Error: (%d) %s%s%s%s%d: ", getpid(),
+		    funcnamestack == NULL ? arg0 : "",
+		    funcnamestack == NULL ? ":" : "",
 		    funcname != NULL ? funcname : "",
 		    funcname != NULL ? ":" : "",
-		    plinno);
+		    errlinno);
 	}
 	doformat(out2, msg, ap);
 	out2fmt_flush("\n");
