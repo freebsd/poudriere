@@ -421,3 +421,6 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Options: no, yes
 # Default: yes
 #IMMUTABLE_BASE=yes
+
+# Define proxy if no direct Internet is available
+#GIT_PROXY=https://proxy.freebsd.xyz:3128
