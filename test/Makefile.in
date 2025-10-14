@@ -404,6 +404,7 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 USE_DEBUG = @USE_DEBUG@
+USE_LOCKF = @USE_LOCKF@
 USE_RM = @USE_RM@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@

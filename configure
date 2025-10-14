@@ -659,6 +659,7 @@ LIBOBJS
 INSTALL
 BUILD_SH
 USE_RM
+USE_LOCKF
 LT_SYS_LIBRARY_PATH
 OTOOL64
 OTOOL
@@ -13552,6 +13553,32 @@ fi
 
 
 
+
+
+
+# Look for lockf -T support for test/runtest.
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether lockf -T works" >&5
+printf %s "checking whether lockf -T works... " >&6; }
+if test ${ac_cv_lockf_T_works+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) ac_cv_lockf_T_works=no
+                tmpfile=$(mktemp)
+                ret=0
+                lockf -T "${tmpfile}" true 2>/dev/null || ret=$?
+                rm -f "${tmpfile}"
+                test "${ret}" -eq 0 && ac_cv_lockf_T_works=yes ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lockf_T_works" >&5
+printf "%s\n" "$ac_cv_lockf_T_works" >&6; }
+if test "$ac_cv_lockf_T_works" = yes; then
+  USE_LOCKF=
+else
+  # Need bundled
+  USE_LOCKF=lockf
+fi
 
 
 
