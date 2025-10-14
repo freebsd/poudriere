@@ -687,6 +687,9 @@ install_from_vcs() {
 			if [ -n "${SRCPATCHFILE}" ]; then
 				err 1 "Patch files not supported with git, please use feature branches"
 			fi
+			msg_n "Setting up proxy..."
+			${GIT_CMD} config --system http.proxy ${GIT_PROXY} || err 1 " fail"
+			echo " done"
 			msg_n "Checking out the sources with ${METHOD}..."
 			${GIT_CMD} clone ${GIT_DEPTH} ${quiet} \
 			    ${VERSION:+-b ${VERSION}} ${GIT_FULLURL} \
@@ -706,6 +709,9 @@ install_from_vcs() {
 			;;
 		git*)
 			# !! Any changes here should be considered for ports.sh too.
+			msg_n "Setting up proxy..."
+			${GIT_CMD} config --system http.proxy ${GIT_PROXY} || err 1 " fail"
+			echo " done"
 			msg_n "Updating the sources with ${METHOD}..."
 			${GIT_CMD} -C ${SRC_BASE} pull --rebase ${quiet} || \
 			    err 1 " fail"
@@ -732,6 +738,9 @@ install_from_vcs() {
 		version_vcs="r${svn_rev}"
 	;;
 	git*)
+		msg_n "Setting up proxy..."
+		${GIT_CMD} config --system http.proxy ${GIT_PROXY} || err 1 " fail"
+		echo " done"
 		git_sha=$(${GIT_CMD} -C ${SRC_BASE} rev-parse --short HEAD)
 		version_vcs="${git_sha}"
 	;;
