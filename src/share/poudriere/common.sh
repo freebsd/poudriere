@@ -1328,7 +1328,8 @@ log_start() {
 				# stdout not writing to terminal but to tee.
 				TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
 				    _spawn_wrapper \
-				    timestamp -u < ${logfile}.pipe | \
+				    timestamp -u ${TIMESTAMP_FLAGS-} \
+				    < ${logfile}.pipe |
 				    tee ${logfile} &
 			else
 				_spawn_wrapper \
@@ -1337,7 +1338,8 @@ log_start() {
 		elif [ "${TIMESTAMP_LOGS}" = "yes" ]; then
 			TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
 			    _spawn_wrapper \
-			    timestamp > ${logfile} < ${logfile}.pipe &
+			    timestamp ${TIMESTAMP_FLAGS-} \
+			    > ${logfile} < ${logfile}.pipe &
 		fi
 		get_job_id "$!" log_start_job
 		msg_dev "log_start: spawned job %${log_start_job} pid=$!"
@@ -10871,6 +10873,7 @@ esac
 : ${QEMU_MAX_EXECUTION_TIME:=345600}   # 4 days for 1 command (phase)
 : ${QEMU_NOHANG_TIME:=21600}           # 6 hours with no log update
 : ${TIMESTAMP_LOGS:=no}
+: "${TIMESTAMP_FLAGS:=}"
 : ${ATOMIC_PACKAGE_REPOSITORY:=yes}
 : ${KEEP_OLD_PACKAGES:=no}
 : ${KEEP_OLD_PACKAGES_COUNT:=5}

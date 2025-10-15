@@ -1905,8 +1905,10 @@ prefix_stderr_quick() {
 			    have_builtin timestamp; then
 				# Let timestamp handle showing the proper time.
 				prefix="$(NO_ELAPSED_IN_MSG=1 msg_warn "${extra}:" 2>&1)"
+				# shellcheck disable=SC2086
 				TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
 				    timestamp -1 "${prefix}" \
+				    ${TIMESTAMP_FLAGS-} \
 				    -P "poudriere: ${PROC_TITLE} (prefix_stderr_quick)" \
 				    >&2
 			else
@@ -1936,8 +1938,10 @@ prefix_stderr() {
 		    command -v timestamp >/dev/null; then
 			# Let timestamp handle showing the proper time.
 			prefix="$(NO_ELAPSED_IN_MSG=1 msg_warn "${extra}:" 2>&1)"
+			# shellcheck disable=SC2086
 			TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
 			    timestamp -1 "${prefix}" \
+			    ${TIMESTAMP_FLAGS-} \
 			    -P "poudriere: ${PROC_TITLE} (prefix_stderr)" \
 			    >&2
 		else
@@ -1987,8 +1991,10 @@ prefix_stdout() {
 		    command -v timestamp >/dev/null; then
 			# Let timestamp handle showing the proper time.
 			prefix="$(NO_ELAPSED_IN_MSG=1 msg "${extra}:")"
+			# shellcheck disable=SC2086
 			TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
 			    timestamp -1 "${prefix}" \
+			    ${TIMESTAMP_FLAGS-} \
 			    -P "poudriere: ${PROC_TITLE} (prefix_stdout)"
 		else
 			set +x
@@ -2044,11 +2050,13 @@ prefix_output() {
 	mkfifo "${prefixpipe_stderr}"
 	prefix_stderr="$(NO_ELAPSED_IN_MSG=1 msg_warn "${extra}:" 2>&1)"
 
+	# shellcheck disable=SC2086
 	TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
 	    spawn_job \
 	    timestamp \
 	    -1 "${prefix_stdout}" -o "${prefixpipe_stdout}" \
 	    -2 "${prefix_stderr}" -e "${prefixpipe_stderr}" \
+	    ${TIMESTAMP_FLAGS-} \
 	    -P "poudriere: ${PROC_TITLE} (prefix_output)"
 	prefix_job="${spawn_jobid}"
 	exec 3>&1
