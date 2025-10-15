@@ -279,7 +279,7 @@ main(int argc, char **argv)
 {
 	FILE *fp_in_stdout, *fp_in_stderr;
 	pthread_t *thr_stdout, *thr_stderr;
-	struct kdata kdata_stdout, kdata_stderr;
+	struct kdata kdata_stdout = {0}, kdata_stderr = {0};
 	char *prefix_stdout, *prefix_stderr, *time_start;
 	char *end;
 	int child_stdout[2], child_stderr[2];
@@ -290,6 +290,11 @@ main(int argc, char **argv)
 	thr_stdout = thr_stderr = NULL;
 	prefix_stdout = prefix_stderr = NULL;
 	fp_in_stdout = fp_in_stderr = NULL;
+#ifdef SHELL
+	Dflag = 0;
+	child_pid = -1;
+	timespecclear(&start);
+#endif
 
 	while ((ch = getopt(argc, argv, "1:2:dDe:o:P:tTu")) != -1) {
 		switch (ch) {
