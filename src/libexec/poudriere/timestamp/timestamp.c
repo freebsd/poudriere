@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2014 Bryan Drewery <bdrewery@FreeBSD.org>
+ * Copyright (c) 2014-2025 Bryan Drewery <bdrewery@FreeBSD.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,11 +54,18 @@
 		}							\
 	} while (0)
 #endif
-#define TIMESTAMP_BUFSIZ 25
+#define TIMESTAMP_BUFSIZ 35
 static const char *const typefmt[] = {"[]", "()"};
 static int Dflag;
 static struct timespec start;
 pid_t child_pid = -1;
+enum timestamp_resolution {
+	RESOLUTION_SECONDS,
+	RESOLUTION_MILLISECONDS,
+	RESOLUTION_MICROSECONDS,
+	RESOLUTION_NANOSECONDS,
+};
+static enum timestamp_resolution resolution = RESOLUTION_SECONDS;
 
 struct kdata {
 	FILE *fp_in;
@@ -94,8 +101,19 @@ calculate_duration(char *timestamp, size_t tlen, const struct timespec *elapsed)
 		timestamp += slen;
 		assert(tlen > 0);
 	}
-	slen = snprintf(timestamp, tlen, "%02d:%02d:%02d",
-	    hours, minutes, seconds);
+	if (resolution == RESOLUTION_NANOSECONDS) {
+		slen = snprintf(timestamp, tlen, "%02d:%02d:%02d:%09ldns",
+		    hours, minutes, seconds, elapsed->tv_nsec);
+	} else if (resolution == RESOLUTION_MICROSECONDS) {
+		slen = snprintf(timestamp, tlen, "%02d:%02d:%02d:%06ldus",
+		    hours, minutes, seconds, elapsed->tv_nsec / 1000);
+	} else if (resolution == RESOLUTION_MILLISECONDS) {
+		slen = snprintf(timestamp, tlen, "%02d:%02d:%02d:%03ldms",
+		    hours, minutes, seconds, elapsed->tv_nsec / 1000000);
+	} else {
+		slen = snprintf(timestamp, tlen, "%02d:%02d:%02d",
+		    hours, minutes, seconds);
+	}
 	len += slen;
 	tlen -= len;
 	assert(tlen > 0);
@@ -254,7 +272,7 @@ usage(void)
 {
 
 	fprintf(stderr, "%s\n",
-	    "usage: timestamp [-1 <stdout prefix>] [-2 <stderr prefix>] [-eo in.fifo] [-P <proctitle>] [-dDutT] [command]");
+	    "usage: timestamp [-1 <stdout prefix>] [-2 <stderr prefix>] [-eo in.fifo] [-P <proctitle>] [-dDutT] [-s {s,ms,us,ns}] [command]");
 	exit(EX_USAGE);
 }
 
@@ -294,9 +312,10 @@ main(int argc, char **argv)
 	Dflag = 0;
 	child_pid = -1;
 	timespecclear(&start);
+	resolution = RESOLUTION_SECONDS;
 #endif
 
-	while ((ch = getopt(argc, argv, "1:2:dDe:o:P:tTu")) != -1) {
+	while ((ch = getopt(argc, argv, "1:2:dDe:no:P:s:tTu")) != -1) {
 		switch (ch) {
 		case '1':
 			prefix_stdout = strdup(optarg);
@@ -321,6 +340,18 @@ main(int argc, char **argv)
 		case 'o':
 			if ((fp_in_stdout = fopen(optarg, "r")) == NULL)
 				err(EX_DATAERR, "fopen");
+			break;
+		case 's':
+			if (strcmp(optarg, "s") == 0) {
+				resolution = RESOLUTION_SECONDS;
+			} else if (strcmp(optarg, "ms") == 0) {
+				resolution = RESOLUTION_MILLISECONDS;
+			} else if (strcmp(optarg, "us") == 0) {
+				resolution = RESOLUTION_MICROSECONDS;
+			} else if (strcmp(optarg, "ns") == 0) {
+				resolution = RESOLUTION_NANOSECONDS;
+			} else
+				usage();
 			break;
 		case 'P':
 			setproctitle("%s", optarg);
