@@ -966,14 +966,6 @@ injail_tty() {
 
 jstart() {
 	local mpath name network
-	local MAX_MEMORY_BYTES
-
-	unset MAX_MEMORY_BYTES
-	case "${MAX_MEMORY:+set}" in
-	set)
-		MAX_MEMORY_BYTES="$((MAX_MEMORY * 1024 * 1024 * 1024))"
-		;;
-	esac
 	network="${LOCALIPARGS:?}"
 
 	case "${RESTRICT_NETWORKING-}" in
