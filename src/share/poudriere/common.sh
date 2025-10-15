@@ -36,7 +36,7 @@ alias redirect_to_real_stderr='2>&${OUTPUT_REDIRECTED_STDERR:-2} '
 alias redirect_to_real_tty='redirect_to_real_stdout redirect_to_real_stderr '
 alias redirect_to_bulk='redirect_to_real_tty '
 
-case "$%$+${FUNCNAME}" in
+case "$%$+${FUNCNAME-}" in
 '$%$+') ;;
 # Customization.
 # $% = getpid()
