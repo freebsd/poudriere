@@ -2157,6 +2157,33 @@ calculate_duration() {
 	setvar "${cd_outvar}" "${_duration}"
 }
 
+calculate_duration_times() {
+	[ $# -eq 2 ] || eargs calculate_duration_times var_return elapsed
+	local cd_outvar="$1"
+	local _elapsed="$2"
+	local seconds minutes hours days _duration
+
+	days="$((_elapsed / 86400))"
+	_elapsed="$((_elapsed % 86400))"
+	hours="$((_elapsed / 3600))"
+	_elapsed="$((_elapsed % 3600))"
+	minutes="$((_elapsed / 60))"
+	_elapsed="$((_elapsed % 60))"
+	seconds="${_elapsed}"
+
+	_duration=
+	if [ "${days}" -gt 0 ]; then
+		_duration="$(printf "%s%dd" "${_duration}" "${days}")"
+	fi
+	if [ "${hours}" -gt 0 ]; then
+		_duration="$(printf "%s%dh" "${_duration}" "${hours}")"
+	fi
+	_duration="$(printf "%s%dm%.3fs" "${_duration}" "${minutes}" \
+	    "${seconds}")"
+
+	setvar "${cd_outvar}" "${_duration}"
+}
+
 _write_atomic() {
 	local -; set +x
 	[ $# -eq 3 ] || [ $# -ge 4 ] ||

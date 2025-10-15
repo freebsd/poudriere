@@ -1316,6 +1316,33 @@ _lookup_portdir() {
 	return
 }
 
+get_times() {
+	[ $# -eq 2 ] || eargs get_times reason elapsed
+	local reason="$1"
+	local elapsed="$2"
+	local times
+	local duration
+
+	calculate_duration_times duration "${elapsed}"
+
+	# times | read does not grab the proper info.
+	{
+		local n line which
+		n=0
+		while read -r line; do
+			case "${n}" in
+			0) which="shell" ;;
+			1) which="child" ;;
+			esac
+			echo "times ${reason} [${which}]" \
+			    "(user/sys/real): ${line} ${duration}"
+			n="$((n + 1))"
+		done
+	} <<-EOF
+	$(times)
+	EOF
+}
+
 buildlog_start() {
 	[ $# -eq 2 ] || eargs buildlog_start pkgname originspec
 	local pkgname="$1"
@@ -1440,6 +1467,7 @@ buildlog_start() {
 	echo "--Resource limits--"
 	cleanenv injail /bin/sh -c "ulimit -a" || :
 	echo "--End resource limits--"
+	get_times "start" "$(($(clock -monotonic) - TIME_START))"
 }
 
 buildlog_stop() {
@@ -1459,6 +1487,7 @@ buildlog_stop() {
 		elapsed=$((now - TIME_START_JOB))
 		calculate_duration buildtime "${elapsed}"
 		echo "build time: ${buildtime}"
+		get_times "end" "${elapsed}"
 		;;
 	esac
 	if [ ${build_failed} -gt 0 ]; then
