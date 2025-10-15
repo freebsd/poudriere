@@ -513,7 +513,7 @@ TESTS = adjust_timeout.sh alarm.sh array.sh builtins.sh \
 	shash-race-piped-noclobber.sh shellcheck.sh stack.sh \
 	stripansi.sh test_contexts.sh test_contexts_expand.sh \
 	timeout.sh timespec.sh timestamp.sh trap_ignore_block.sh \
-	trap_save.sh trap_save_block.sh write_atomic.sh \
+	trap_save.sh trap_save_block.sh trim.sh write_atomic.sh \
 	write_atomic-piped.sh write_atomic_cmp.sh \
 	write_atomic_cmp-piped.sh $(JAIL_TESTS) prep.sh
 JAIL_TESTS = \
@@ -1531,6 +1531,13 @@ trap_save.sh.log: trap_save.sh
 trap_save_block.sh.log: trap_save_block.sh
 	@p='trap_save_block.sh'; \
 	b='trap_save_block.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+trim.sh.log: trim.sh
+	@p='trim.sh'; \
+	b='trim.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

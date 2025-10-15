@@ -2158,6 +2158,52 @@ set_pipefail() {
 	command set -o pipefail 2>/dev/null || :
 }
 
+rtrim() {
+	local -; set +x
+	[ $# -eq 2 ] || [ $# -eq 3 ] || eargs rtrim in char '-|outvar'
+	local rt_in="$1"
+	local rt_char="$2"
+	local rt_outvar="${3-}"
+
+	case "${rt_in:+set}" in
+	set)
+		while :; do
+			case "${rt_in}" in
+			*"${rt_char}") rt_in="${rt_in%"${rt_char}"}" ;;
+			*) break ;;
+			esac
+		done
+		;;
+	esac
+	case "${rt_outvar-}" in
+	-|"") echo "${rt_in-}" ;;
+	*) setvar "${rt_outvar:?}" "${rt_in-}" || return ;;
+	esac
+}
+
+ltrim() {
+	local -; set +x
+	[ $# -eq 2 ] || [ $# -eq 3 ] || eargs ltrim in char '-|outvar'
+	local lt_in="$1"
+	local lt_char="$2"
+	local lt_outvar="${3-}"
+
+	case "${lt_in:+set}" in
+	set)
+		while :; do
+			case "${lt_in}" in
+			"${lt_char}"*) lt_in="${lt_in#"${lt_char}"}" ;;
+			*) break ;;
+			esac
+		done
+		;;
+	esac
+	case "${lt_outvar-}" in
+	-|"") echo "${lt_in-}" ;;
+	*) setvar "${lt_outvar:?}" "${lt_in-}" || return ;;
+	esac
+}
+
 prefix_stderr_quick() {
 	local flags="$-" -; set +x
 	local extra="$1"

@@ -118,6 +118,7 @@ TESTS=\
 	trap_ignore_block.sh \
 	trap_save.sh \
 	trap_save_block.sh \
+	trim.sh \
 	write_atomic.sh \
 	write_atomic-piped.sh \
 	write_atomic_cmp.sh \
