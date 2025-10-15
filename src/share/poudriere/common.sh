@@ -916,7 +916,8 @@ setup_jexec_limits()  {
 	local pkgbase_varname limit_var
 
 	_gsub_var_name "${pkgbase:?}" pkgbase_varname
-	for limit_var in EXECUTION_TIME FILES MEMORY; do
+	# MAX_FILES_ MAX_MEMORY_ MAX_EXECUTION_TIME_ MAX_MEMORY_BYTES_
+	for limit_var in EXECUTION_TIME FILES MEMORY MEMORY_BYTES; do
 		if isset "MAX_${limit_var:?}_${pkgbase_varname:?}"; then
 			getvar "MAX_${limit_var:?}_${pkgbase_varname:?}" \
 			    MAX_${limit_var:?}
@@ -924,7 +925,7 @@ setup_jexec_limits()  {
 	done
 	# Subtle but the `+set` rather than `:+set` allows
 	# `MAX_type_pkgbase=` to override the global value.
-	case "${MAX_MEMORY+set}${MAX_FILES+set}" in
+	case "${MAX_MEMORY+set}${MAX_MEMORY_BYTES+set}${MAX_FILES+set}" in
 	*set*)
 		JEXEC_LIMITS=1
 		;;
@@ -958,7 +959,6 @@ injail_direct() {
 	case "${name}" in
 	"") err 1 "No jail setup" ;;
 	esac
-	unset MAX_MEMORY_BYTES
 	case "${JEXEC_LIMITS:-0}" in
 	1)
 		case "${MAX_MEMORY:+set}" in
@@ -969,6 +969,7 @@ injail_direct() {
 		;;
 	0)
 		unset MAX_FILES
+		unset MAX_MEMORY_BYTES
 		;;
 	esac
 	${JEXEC_SETSID-} /usr/sbin/jexec \
@@ -11152,6 +11153,8 @@ esac
 : ${LC_COLLATE:=C}
 export LC_COLLATE
 
+: "${MAX_MEMORY:=}"
+: "${MAX_MEMORY_BYTES:=}"
 : ${MAX_FILES:=8192}
 : ${PIPE_FATAL_ERROR_FILE:="${POUDRIERE_TMPDIR:?}/pipe_fatal_error-$$"}
 HAVE_FDESCFS=0

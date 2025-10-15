@@ -76,6 +76,8 @@ USE_TMPFS=yes
 # in GiB (default: none)
 # This can also be set per PKGBASE, such as MAX_MEMORY_rust=20.
 # Package names with hyphens (-) should be replaced with underscores (_).
+# MAX_MEMORY_BYTES can also be used in the same manner but only
+# 1 form should be used together.
 #MAX_MEMORY=8
 
 # How many file descriptors to limit each jail process to (default: 8192)

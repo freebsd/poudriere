@@ -5,11 +5,13 @@ LISTPORTS="${TESTPORT}"
 
 set_test_contexts - '' '' <<-EOF
 - MAX_MEMORY 1 ""
+- MAX_MEMORY_BYTES $((20 * 1024 * 1024)) $((512 * 1024 * 1024)) ""
 - MAX_FILES 10 100 ""
 EOF
 while get_test_context; do
 	set_poudriere_conf <<-EOF
 	${MAX_MEMORY:+MAX_MEMORY="${MAX_MEMORY-}"}
+	${MAX_MEMORY_BYTES:+MAX_MEMORY_BYTES="${MAX_MEMORY_BYTES-}"}
 	${MAX_FILES:+MAX_FILES="${MAX_FILES-}"}
 	EOF
 
@@ -32,6 +34,13 @@ while get_test_context; do
 	EXPECTED_BUILT="${EXPECTED_TOBUILD}"
 	EXPECTED_FAILED=
 	exp_ret=0
+	case "${MAX_MEMORY_BYTES-}" in
+	"$((20 * 1024 * 1024))")
+		exp_ret=1
+		EXPECTED_BUILT=
+		EXPECTED_FAILED="${EXPECTED_TOBUILD}"
+		;;
+	esac
 	# MAX_FILES default is 8192
 	case "${MAX_FILES-}" in
 	"") MAX_FILES=8192 ;;
@@ -68,6 +77,19 @@ while get_test_context; do
 		max_memory_kbytes="$((MAX_MEMORY * 1024 * 1024))"
 		assert_true grep "^virtual mem size.*\<${max_memory_kbytes}\$" \
 		    "${log}/logs/pkg-"*.log
+		;;
+	*)
+		case "${MAX_MEMORY_BYTES:+set}" in
+		set)
+			max_memory_kbytes="$((MAX_MEMORY_BYTES / 1024))"
+			assert_true grep "^virtual mem size.*\<${max_memory_kbytes}\$" \
+			    "${log}/logs/pkg-"*.log
+			;;
+		*)
+			assert_true grep "^virtual mem size.*unlimited\$" \
+			    "${log}/logs/pkg-"*.log
+			;;
+		esac
 		;;
 	esac
 done
