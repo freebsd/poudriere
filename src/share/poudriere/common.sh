@@ -4297,9 +4297,7 @@ jail_cleanup() {
 			jail_stop
 
 			case "${PACKAGES:+set}" in
-			set)
-				rm -rf "${PACKAGES:?}/.npkg"
-				;;
+			set) rm -rfx "${PACKAGES:?}/.npkg" ;;
 			esac
 			rm -rf \
 			    "${POUDRIERE_DATA:?}/packages/${MASTERNAME:?}/.latest/.npkg" \
@@ -6520,7 +6518,7 @@ stop_build() {
 			    umount -f "${mnt:?}/.npkg"
 			unlink "${mnt:?}/.npkg_mounted"
 		fi
-		rm -rf "${PACKAGES:?}/.npkg/${pkgname:?}"
+		rm -rfx "${PACKAGES:?}/.npkg/${pkgname:?}"
 
 		if [ "${PORTTESTING}" -eq 1 ]; then
 			if jail_has_processes; then
