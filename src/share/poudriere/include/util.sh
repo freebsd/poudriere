@@ -2201,7 +2201,7 @@ _write_atomic() {
 	*) data=1 ;;
 	esac
 	case "$-${tee-}" in
-	C1)
+	*C*1)
 		err "${EX_USAGE:-64}" "_write_atomic: Teeing with noclobber" \
 			              "cannot work"
 		;;
