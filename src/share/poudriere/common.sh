@@ -1972,7 +1972,7 @@ show_dry_run_summary() {
 
 show_build_summary() {
 	local status nbb nbf nbs nbi nbin nbq nbp ndone nbremaining buildname
-	local log now elapsed buildtime nbtb
+	local log now elapsed buildtime nbtb dev_msg
 
 	_bget status status || status=unknown
 	_log_path log
@@ -2015,15 +2015,19 @@ ${COLOR_RESET}Remaining: %d\n" \
 	    "${MASTERNAME}" "${buildname}" "${status%%:*}" "${buildtime}" \
 	    "${nbq}" "${nbin}" "${nbi}" "${nbb}" "${nbf}" "${nbs}" "${nbp}" \
 	    "${nbremaining}"
+	case "${CRASHED:-0}" in
+	0) dev_msg="dev_err ${EX_SOFTWARE}" ;;
+	1) dev_msg="msg_warn" ;;
+	esac
 	case "${nbremaining}" in
-	-*) dev_err "${EX_SOFTWARE}" "show_build_summary: negative remaining count" ;;
+	-*) ${dev_msg} "show_build_summary: negative remaining count" ;;
 	esac
 	case "${status}" in
 	idle:)
 		case "${nbremaining}" in
 		0) ;;
 		*)
-			dev_err "${EX_SOFTWARE}" "show_build_summary: remaining count >0 after build"
+			${dev_msg} "show_build_summary: remaining count >0 after build"
 		esac
 	esac
 }
