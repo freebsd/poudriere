@@ -2980,8 +2980,9 @@ do_portbuild_mounts() {
 	no) ;;
 	*)
 		${msgmount} "Mounting distfiles from: ${DISTFILES_CACHE:?}"
-		${NULLMOUNT} "${DISTFILES_CACHE:?}" "${mnt:?}/distfiles" ||
-			err 1 "Failed to mount the distfiles cache directory"
+		${NULLMOUNT} -o ro \
+		    "${DISTFILES_CACHE:?}" "${mnt:?}/distfiles" ||
+		    err 1 "Failed to mount the distfiles cache directory"
 		;;
 	esac
 
