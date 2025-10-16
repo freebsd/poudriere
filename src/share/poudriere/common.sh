@@ -987,7 +987,7 @@ injail_direct() {
 		unset MAX_FILES
 		;;
 	esac
-	${JEXEC_SETSID-} jexec \
+	${JEXEC_SETSID-} /usr/sbin/jexec \
 		-U "${JUSER:-root}" \
 		"${name:?}${JNETNAME:+-${JNETNAME}}" \
 		${JEXEC_LIMITS+/usr/bin/limits} \
