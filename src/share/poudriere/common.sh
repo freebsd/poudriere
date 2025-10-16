@@ -5578,12 +5578,16 @@ may show failures if the port does not respect PREFIX."
 		# everything was fine we can copy the package to the package
 		# directory
 		find "${PACKAGES:?}/.npkg/${pkgname}" \
-			-mindepth 1 \( -type f -or -type l \) | \
-			while mapfile_read_loop_redir pkg_path; do
-			pkg_file="${pkg_path#"${PACKAGES}/.npkg/${pkgname}"}"
+		    -mindepth 1 \( -type f -or -type l \) |
+		    while mapfile_read_loop_redir pkg_path; do
+			pkg_file="${pkg_path#"${PACKAGES}/.npkg/${pkgname:?}"}"
 			pkg_base="${pkg_file%/*}"
-			mkdir -p "${PACKAGES:?}/${pkg_base}"
-			mv "${pkg_path}" "${PACKAGES:?}/${pkg_base}"
+			mkdir -p "${PACKAGES:?}/${pkg_base:?}"
+			# rename as this is expected to be on the same
+			# filesystem.
+			rename "${pkg_path}" \
+			    "${PACKAGES:?}/${pkg_base:?}/${pkg_path##*/}" ||
+			    err 1 "build_port: rename"
 		done
 	fi
 
