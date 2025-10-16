@@ -6078,6 +6078,7 @@ build_queue() {
 			MY_BUILDER_ID="${builder_id:?}" spawn_job_protected \
 			    maybe_start_builder "${builder_id}" "${jname}" \
 			        "${ptname}" "${setname}" \
+			    reset_funcstack \
 			    build_pkg "${job_name}"
 			jobno="%${spawn_jobid:?}"
 			hash_set builder_jobs "${builder_id}" "${jobno}"

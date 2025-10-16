@@ -3315,3 +3315,10 @@ rmrf_many() {
 	_remove_many rm -rf -- "$@"
 }
 remove_many() { rmrf_many "$@"; }
+
+reset_funcstack() {
+	[ $# -ge 1 ] || eargs reset_funcstack 'cmd...'
+	# Reset the stack so it starts in the child.
+	unset FUNCNAMESTACK FUNCNAME
+	"$@"
+}
