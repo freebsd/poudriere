@@ -57,6 +57,12 @@ __FBSDID("$FreeBSD$");
 #include <string.h>
 #include <unistd.h>
 
+#ifdef SHELL
+#define main chmodcmd
+#include "bltin/bltin.h"
+#include "helpers.h"
+#endif
+
 static volatile sig_atomic_t siginfo;
 
 static void usage(void);
@@ -82,6 +88,9 @@ main(int argc, char *argv[])
 
 	set = NULL;
 	Hflag = Lflag = Rflag = fflag = hflag = vflag = 0;
+#ifdef SHELL
+	siginfo = 0;
+#endif
 	while ((ch = getopt(argc, argv, "HLPRXfghorstuvwx")) != -1)
 		switch (ch) {
 		case 'H':
@@ -137,7 +146,17 @@ done:	argv += optind;
 	if (argc < 2)
 		usage();
 
+#ifdef SHELL
+	struct sigaction act, oact;
+	INTOFF;
+	act.sa_handler = siginfo_handler;
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = SA_RESTART;
+	sigaction(SIGINFO, &act, &oact);
+#else
 	(void)signal(SIGINFO, siginfo_handler);
+#endif
+
 
 	if (Rflag) {
 		if (hflag)
@@ -159,11 +178,21 @@ done:	argv += optind;
 	}
 
 	mode = *argv;
-	if ((set = setmode(mode)) == NULL)
+	if ((set = setmode(mode)) == NULL) {
+#ifdef SHELL
+		sigaction(SIGINFO, &oact, NULL);
+		INTON;
+#endif
 		errx(1, "invalid file mode: %s", mode);
+	}
 
-	if ((ftsp = fts_open(++argv, fts_options, 0)) == NULL)
+	if ((ftsp = fts_open(++argv, fts_options, 0)) == NULL) {
+#ifdef SHELL
+		sigaction(SIGINFO, &oact, NULL);
+		INTON;
+#endif
 		err(1, "fts_open");
+	}
 	for (rval = 0; (p = fts_read(ftsp)) != NULL;) {
 		int atflag;
 
@@ -224,6 +253,10 @@ done:	argv += optind;
 			siginfo = 0;
 		}
 	}
+#ifdef SHELL
+	sigaction(SIGINFO, &oact, NULL);
+	INTON;
+#endif
 	if (errno)
 		err(1, "fts_read");
 	exit(rval);

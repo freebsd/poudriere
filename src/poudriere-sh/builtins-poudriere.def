@@ -1,3 +1,4 @@
+chmodcmd -n		chmod
 clockcmd -n		clock
 critical_startcmd -n	critical_start
 critical_endcmd -n	critical_end

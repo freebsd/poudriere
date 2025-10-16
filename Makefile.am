@@ -222,6 +222,7 @@ CLEANFILES+=		\
 			src/poudriere-sh/shell.h
 sh_SOURCES+=		\
 			src/poudriere-sh/builtins-poudriere.def \
+			src/poudriere-sh/chmod.c \
 			src/poudriere-sh/helpers.c \
 			src/poudriere-sh/helpers.h \
 			src/poudriere-sh/mapfile.c \
