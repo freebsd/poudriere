@@ -5064,7 +5064,22 @@ check_fs_violation() {
 }
 
 gather_distfiles() {
-	[ $# -eq 6 ] || eargs gather_distfiles originspec_main pkgname_main \
+	[ $# -eq 7 ] || [ $# -eq 6 ] ||
+	    eargs gather_distfiles '[-l]' originspec_main pkgname_main \
+	    originspec pkgname from to
+	local OPTIND flag lflag
+
+	OPTIND=1
+	lflag=0
+	while getopts "l" flag; do
+		case "${flag}" in
+		l) lflag=1 ;;
+		*) err 1 "gather_distfiles: invalid flag ${flag}" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ $# -eq 6 ] ||
+	    eargs gather_distfiles '[-l]' originspec_main pkgname_main \
 	    originspec pkgname from to
 	local originspec_main="$1"
 	local pkgname_main="$2"
@@ -5106,26 +5121,71 @@ gather_distfiles() {
 		if [ ! -f "${from}/${sub}/${d}" ]; then
 			continue
 		fi
-		if [ ! -f "${to}/${sub}/${d}" ]; then
-			msg_debug "gather_distfiles: missing '${to}/${sub}/${d}'"
-			doinstall=1
-		else
-			dstsize="$(stat -f %z "${to}/${sub}/${d}")"
-			srcsize="$(stat -f %z "${from}/${sub}/${d}")"
-			if [ "${srcsize}" -ne "${dstsize}" ]; then
-				msg_debug "gather_distfiles: size mismatch ($srcsize != $dstsize), overwriting '${to}/${sub}/${d}'"
+		case "${lflag}" in
+		0)	# We want to do a hard copy of the files.
+			local linkpath
+
+			# If the file is a symlink then it may be pointing
+			# back to the null-mounted distdir, or it is some
+			# distfile symlink like go.mod or user-made.
+			if linkpath="$(readlink "${from}/${sub}/${d}")"; then
+				case "${linkpath}" in
+				..*/distfiles/*)
+					msg_debug "gather_distfiles:" \
+					    "skipping untouched" \
+					    "'${from}/${sub}/${d}'"
+					continue
+					;;
+				esac
+				# We need to copy the symlink.
+			fi
+			if [ ! -f "${to}/${sub}/${d}" ]; then
+				msg_debug "gather_distfiles: missing" \
+				    "'${to}/${sub}/${d}'"
 				doinstall=1
 			else
-				msg_debug "gather_distfiles: skipping copy '${to}/${sub}/${d}'"
-				doinstall=0
+				dstsize="$(stat -f %z "${to}/${sub}/${d}")"
+				srcsize="$(stat -f %z "${from}/${sub}/${d}")"
+				case "${srcsize}" in
+				"${dstsize}")
+					msg_debug "gather_distfiles:" \
+					    "skipping copy" \
+					    "'${from}/${sub}/${d}'"
+					doinstall=0
+					;;
+				*)
+					msg_debug "gather_distfiles:" \
+					    "size mismatch" \
+					    "($srcsize != $dstsize)," \
+					    "overwriting '${to}/${sub}/${d}'"
+					doinstall=1
+					;;
+				esac
 			fi
-		fi
-		# XXX: A --relative would be nice
-		if [ "${doinstall}" -eq 1 ]; then
-			install -pS -m 0644 "${from}/${sub}/${d}" \
+			if [ "${doinstall}" -eq 1 ]; then
+				msg_debug "gather_distfiles:" \
+				    "copying" \
+				    "'${from}/${sub}/${d}'" \
+				    "->" \
+				    "'${to}/${sub}/${d}'"
+				install -pS -m 0644 \
+				    "${from}/${sub}/${d}" \
+				    "${to}/${sub}/${d}" ||
+				    return 1
+			fi
+			;;
+		1)	# We want to symlink all the needed files in.
+			msg_debug "gather_distfiles:" \
+			    "symlinking (relative)" \
+			    "'${to}/${sub}/${d}'" \
+			    "->" \
+			    "${from}/${sub}/${d}"
+			install -p -m 0644 -lrs \
+			    "${from}/${sub}/${d}" \
 			    "${to}/${sub}/${d}" ||
 			    return 1
-		fi
+			;;
+		esac
 	done
 
 	for special in ${specials}; do
@@ -5269,9 +5329,13 @@ build_port() {
 				mkdir -p "${mnt:?}/portdistfiles"
 				echo "DISTDIR=/portdistfiles" >> \
 				    "${mnt:?}/etc/make.conf"
-				gather_distfiles "${originspec}" "${pkgname}" \
+				# Symlink in existing distfiles from the
+				# read-only mount at /distfiles to
+				# /portdistfiles.
+				gather_distfiles -l \
 				    "${originspec}" "${pkgname}" \
-				    "${DISTFILES_CACHE:?}" \
+				    "${originspec}" "${pkgname}" \
+				    "${mnt:?}/distfiles" \
 				    "${mnt:?}/portdistfiles" || \
 				    return 1
 				;;
