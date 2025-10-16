@@ -5440,13 +5440,6 @@ build_port() {
 			if [ "${allownetworking}" -eq 0 ]; then
 				JNETNAME=""
 			fi
-			;;
-		esac
-
-		print_phase_footer
-
-		case "${phase}" in
-		"checksum")
 			case "${DISTFILES_CACHE}" in
 			"no") ;;
 			*)
@@ -5459,6 +5452,8 @@ build_port() {
 			esac
 			;;
 		esac
+
+		print_phase_footer
 
 		case "${PORTTESTING}${phase}" in
 		"1""stage")
