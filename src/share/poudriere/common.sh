@@ -678,6 +678,12 @@ _log_path() {
 	setvar "$1" "${log_path_jail:?}/${BUILDNAME:?}"
 }
 
+_tmpfs_blacklist_tmpdir() {
+	local -; set -u +x
+
+	setvar "$1" "${TMPFS_BLACKLIST_TMPDIR:?}/wrkdirs/${MASTERNAME:?}/${BUILDNAME:?}"
+}
+
 # Call function with vars set:
 # log MASTERNAME BUILDNAME jailname ptname setname
 for_each_build() {
@@ -5714,12 +5720,14 @@ stop_builders() {
 
 		case "${TMPFS_BLACKLIST_TMPDIR:+set}" in
 		set)
-			if [ -d "${TMPFS_BLACKLIST_TMPDIR:?}/wrkdirs" ] &&
-			    ! rm -rf "${TMPFS_BLACKLIST_TMPDIR:?}/wrkdirs/"*; then
+			local tmpfs_blacklist_tmpdir
+
+			_tmpfs_blacklist_tmpdir tmpfs_blacklist_tmpdir
+			if [ -d "${tmpfs_blacklist_tmpdir:?}" ] &&
+			    ! rm -rfx "${tmpfs_blacklist_tmpdir:?}/"*; then
 				chflags -R 0 \
-				    "${TMPFS_BLACKLIST_TMPDIR:?}/wrkdirs"/* || :
-				rm -rf "${TMPFS_BLACKLIST_TMPDIR:?}/wrkdirs"/* ||
-				    :
+				    "${tmpfs_blacklist_tmpdir:?}"/* || :
+				rm -rfx "${tmpfs_blacklist_tmpdir:?}"/* || :
 			fi
 			;;
 		esac
@@ -6303,9 +6311,12 @@ build_pkg() {
 		# shellcheck disable=SC2254
 		case "${pkgbase}" in
 		${jpkg_glob})
-			mkdir -p "${TMPFS_BLACKLIST_TMPDIR:?}/wrkdirs"
+			local tmpfs_blacklist_tmpdir
+
+			_tmpfs_blacklist_tmpdir tmpfs_blacklist_tmpdir
+			mkdir -p "${tmpfs_blacklist_tmpdir:?}"
 			tmpfs_blacklist_dir="$(\
-				TMPDIR="${TMPFS_BLACKLIST_TMPDIR:?}/wrkdirs" \
+				TMPDIR="${tmpfs_blacklist_tmpdir:?}" \
 				mktemp -dt "${pkgname:?}")"
 			${NULLMOUNT} "${tmpfs_blacklist_dir:?}" "${mnt:?}/wrkdirs"
 			echo "${tmpfs_blacklist_dir:?}" \
