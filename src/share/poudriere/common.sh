@@ -5048,11 +5048,9 @@ gather_distfiles() {
 
 	from=$(realpath "$5")
 	to=$(realpath "$6")
-	port_var_fetch_originspec "${originspec}" \
-	    DIST_SUBDIR sub \
-	    ALLFILES dists || \
-	    err 1 "Failed to lookup distfiles for ${COLOR_PORT}${originspec}${COLOR_RESET}"
-
+	# Can't remove the values as other ports may have us as a special.
+	shash_get originspec-dist_subdir "${originspec}" sub || sub=
+	shash_get originspec-dist_allfiles "${originspec}" dists || dists=
 	originspec_decode "${originspec}" origin flavor subpkg
 	case "${pkgname}" in
 	"")
@@ -6616,6 +6614,7 @@ deps_fetch_vars() {
 	local _origin_subpkg
 	local _prefix _pkgname_var _pdeps_var _bdeps_var _rdeps_var
 	local _depend_specials= _build_as_non_root= _need_root=
+	local dist_subdir dist_allfiles
 
 	originspec_decode "${originspec}" origin _origin_flavor _origin_subpkg
 	# If we were passed in a FLAVOR then we better have already looked up
@@ -6677,6 +6676,8 @@ deps_fetch_vars() {
 		FORBIDDEN _forbidden \
 		NO_ARCH:Dyes _no_arch \
 		PREFIX _prefix \
+		DIST_SUBDIR dist_subdir \
+		ALLFILES dist_allfiles \
 		${_build_as_non_root} \
 		${_changed_deps} \
 		${_changed_options:+_PRETTY_OPTS='${SELECTED_OPTIONS:@opt@${opt}+@} ${DESELECTED_OPTIONS:@opt@${opt}-@}'} \
@@ -6802,6 +6803,12 @@ deps_fetch_vars() {
 	esac
 	case "${_prefix:+set}" in
 	set) shash_set pkgname-prefix "${_pkgname}" "${_prefix}" ;;
+	esac
+	case "${dist_subdir:+set}" in
+	set) shash_set originspec-dist_subdir "${originspec}" "${dist_subdir}" ;;
+	esac
+	case "${dist_allfiles:+set}" in
+	set) shash_set originspec-dist_allfiles "${originspec}" "${dist_allfiles}" ;;
 	esac
 	case "${_need_root:+set}" in
 	set) shash_set pkgname-need_root "${_pkgname}" "${_need_root}" ;;
