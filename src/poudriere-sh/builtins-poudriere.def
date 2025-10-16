@@ -24,6 +24,7 @@ mktempcmd -n		mktemp
 _mktempcmd -n		_mktemp
 pwaitcmd		pwait
 randintcmd -n		randint
+readlinkcmd -n		readlink
 realpathcmd -n		realpath
 renamecmd -n		rename
 rmcmd -n		rm
