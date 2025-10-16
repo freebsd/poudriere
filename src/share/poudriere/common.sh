@@ -1782,22 +1782,16 @@ exit_handler() {
 		    [ -d "${MASTER_DATADIR}" ]; then
 			cd "${MASTER_DATADIR:?}"
 
-			# Save the .p dir on error exit.
+			# Save the .p dir.
 			# Super cautious to avoid any errors here.
-			case "${EXIT_STATUS}" in
-			0|130) ;;
-			*)
-				case "${BUILDNAME:+set}.${MASTERNAME:+set}" in
-				set.set)
-					local log
+			case "${BUILDNAME:+set}.${MASTERNAME:+set}" in
+			set.set)
+				local log
 
-					if _log_path log &&
-					    [ -d "${log}" ]; then
-						find -x . -ls > \
-						    "${log:?}/.poudriere.datadir%"
-					fi
-					;;
-				esac
+				if _log_path log && [ -d "${log}" ]; then
+					find -x . -ls > \
+					    "${log:?}/.poudriere.datadir%"
+				fi
 				;;
 			esac
 		fi
