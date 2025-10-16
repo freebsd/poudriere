@@ -1174,6 +1174,7 @@ pkgbuild_done() {
 
 	for shash_bucket in \
 	    pkgname-check_shlibs \
+	    pkgname-need_root \
 	    pkgname-prefix \
 	    pkgname-shlibs_required \
 	    ; do
@@ -5139,7 +5140,7 @@ build_port() {
 	local jailuser JUSER
 	local testfailure=0
 	local max_execution_time allownetworking
-	local _need_root NEED_ROOT PREFIX MAX_FILES
+	local NEED_ROOT PREFIX MAX_FILES
 	local JEXEC_SETSID
 	local -
 
@@ -5154,23 +5155,17 @@ build_port() {
 		exec </dev/null
 	fi
 
+	NEED_ROOT=
 	case "${BUILD_AS_NON_ROOT}" in
-	"yes") _need_root="NEED_ROOT NEED_ROOT" ;;
+	"yes") shash_remove pkgname-need_root "${pkgname}" NEED_ROOT || : ;;
 	esac
 	case "${PORT_FLAGS:+set}" in
 	set)
 		shash_unset pkgname-prefix "${pkgname}" PREFIX
-		port_var_fetch_originspec "${originspec}" \
-		    ${PORT_FLAGS} \
-		    PREFIX PREFIX \
-		    ${_need_root}
 		;;
 	*)
 		shash_remove pkgname-prefix "${pkgname}" PREFIX ||
 		    err 1 "build_port: shash_get PREFIX"
-		port_var_fetch_originspec "${originspec}" \
-		    ${PORT_FLAGS} \
-		    ${_need_root}
 		;;
 	esac
 
@@ -6620,7 +6615,7 @@ deps_fetch_vars() {
 	local _origin_flavor _flavor _flavors _default_flavor
 	local _origin_subpkg
 	local _prefix _pkgname_var _pdeps_var _bdeps_var _rdeps_var
-	local _depend_specials=
+	local _depend_specials= _build_as_non_root= _need_root=
 
 	originspec_decode "${originspec}" origin _origin_flavor _origin_subpkg
 	# If we were passed in a FLAVOR then we better have already looked up
@@ -6670,6 +6665,9 @@ deps_fetch_vars() {
 		_bdeps_var='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS}'
 		_rdeps_var='${LIB_DEPENDS} ${RUN_DEPENDS}'
 	fi
+	case "${BUILD_AS_NON_ROOT}" in
+	yes) _build_as_non_root="NEED_ROOT _need_root" ;;
+	esac
 	if ! port_var_fetch_originspec "${originspec}" \
 		${_pkgname_var} _pkgname \
 		${_lookup_flavors} \
@@ -6679,6 +6677,7 @@ deps_fetch_vars() {
 		FORBIDDEN _forbidden \
 		NO_ARCH:Dyes _no_arch \
 		PREFIX _prefix \
+		${_build_as_non_root} \
 		${_changed_deps} \
 		${_changed_options:+_PRETTY_OPTS='${SELECTED_OPTIONS:@opt@${opt}+@} ${DESELECTED_OPTIONS:@opt@${opt}-@}'} \
 		${_changed_options:+'${_PRETTY_OPTS:O:C/(.*)([+-])$/\2\1/}' _selected_options} \
@@ -6803,6 +6802,9 @@ deps_fetch_vars() {
 	esac
 	case "${_prefix:+set}" in
 	set) shash_set pkgname-prefix "${_pkgname}" "${_prefix}" ;;
+	esac
+	case "${_need_root:+set}" in
+	set) shash_set pkgname-need_root "${_pkgname}" "${_need_root}" ;;
 	esac
 	case "${_forbidden:+set}" in
 	set) shash_set pkgname-forbidden "${_pkgname}" "${_forbidden}" ;;
