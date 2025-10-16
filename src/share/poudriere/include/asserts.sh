@@ -1,5 +1,5 @@
 _LINEINFO_FUNC_DATA='${LINEINFOSTACK:+${LINEINFOSTACK}:}${FUNCNAME:+${FUNCNAME}:}${LINENO}'
-_LINEINFO_DATA="\${lineinfo-\$0}:${_LINEINFO_FUNC_DATA:?}"
+_LINEINFO_DATA="\${lineinfo:-\$0}:${_LINEINFO_FUNC_DATA:?}"
 alias stack_lineinfo="LINEINFOSTACK=\"${_LINEINFO_FUNC_DATA:?}\" "
 if ! type err >/dev/null 2>&1; then
 	# This function may be called in "$@" contexts that do not use eval.
