@@ -423,6 +423,12 @@ _log_path() {
 	setvar "$1" "${log_path_jail}/${BUILDNAME}"
 }
 
+_tmpfs_blacklist_tmpdir() {
+	local -; set -u +x
+
+	setvar "$1" "${TMPFS_BLACKLIST_TMPDIR:?}/wrkdirs/${MASTERNAME:?}/${BUILDNAME:?}"
+}
+
 # Call function with vars set:
 # log MASTERNAME BUILDNAME jailname ptname setname
 for_each_build() {
@@ -4936,15 +4942,19 @@ stop_builders() {
 		done
 		parallel_stop
 
-		if [ -n "${TMPFS_BLACKLIST_TMPDIR-}" ] &&
-		    [ -d "${TMPFS_BLACKLIST_TMPDIR}/wrkdirs" ]; then
-			if ! rm -rf "${TMPFS_BLACKLIST_TMPDIR}/wrkdirs/"*; then
+		case "${TMPFS_BLACKLIST_TMPDIR:+set}" in
+		set)
+			local tmpfs_blacklist_tmpdir
+
+			_tmpfs_blacklist_tmpdir tmpfs_blacklist_tmpdir
+			if [ -d "${tmpfs_blacklist_tmpdir:?}" ] &&
+			    ! rm -rfx "${tmpfs_blacklist_tmpdir:?}/"*; then
 				chflags -R 0 \
-				    "${TMPFS_BLACKLIST_TMPDIR}/wrkdirs"/* || :
-				rm -rf "${TMPFS_BLACKLIST_TMPDIR}/wrkdirs"/* ||
-				    :
+				    "${tmpfs_blacklist_tmpdir:?}"/* || :
+				rm -rfx "${tmpfs_blacklist_tmpdir:?}"/* || :
 			fi
-		fi
+			;;
+		esac
 	fi
 
 	# No builders running, unset JOBS
@@ -5388,15 +5398,19 @@ build_pkg() {
 	# the case statement as a pattern
 	set -o noglob
 	for jpkg in ${TMPFS_BLACKLIST-}; do
+		# shellcheck disable=SC2254
 		case "${pkgname%-*}" in
 		${jpkg})
-			mkdir -p "${TMPFS_BLACKLIST_TMPDIR:?}/wrkdirs"
-			tmpfs_blacklist_dir=$(\
-				TMPDIR="${TMPFS_BLACKLIST_TMPDIR:?}/wrkdirs" \
-				mktemp -dt "${pkgname}")
-			${NULLMOUNT} "${tmpfs_blacklist_dir}" "${mnt}/wrkdirs"
-			echo "${tmpfs_blacklist_dir}" \
-			    > "${mnt}/.tmpfs_blacklist_dir"
+			local tmpfs_blacklist_tmpdir
+
+			_tmpfs_blacklist_tmpdir tmpfs_blacklist_tmpdir
+			mkdir -p "${tmpfs_blacklist_tmpdir:?}"
+			tmpfs_blacklist_dir="$(\
+				TMPDIR="${tmpfs_blacklist_tmpdir:?}" \
+				mktemp -dt "${pkgname:?}")"
+			${NULLMOUNT} "${tmpfs_blacklist_dir:?}" "${mnt:?}/wrkdirs"
+			echo "${tmpfs_blacklist_dir:?}" \
+			    > "${mnt:?}/.tmpfs_blacklist_dir"
 			break
 			;;
 		esac
