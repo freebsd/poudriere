@@ -2192,7 +2192,7 @@ _write_atomic() {
 	local tee="$2"
 	local dest="$3"
 	local data
-	local tmpfile_handle tmpfile ret tmpdir Tflag
+	local tmpfile_handle tmpfile ret tmpdir Tflag unlink
 
 	shift 3
 	unset data
@@ -2210,9 +2210,22 @@ _write_atomic() {
 	*/*) tmpdir="${dest%/*}" ;;
 	*)   tmpdir="." ;;
 	esac
+	# For noclobber mode we need to unlink, but otherwise avoid it.
+	case "$-" in
+	*C*) unlink=1 ;;
+	*) unlink= ;;
+	esac
 	mapfile_mktemp tmpfile_handle tmpfile \
-	    -p "${tmpdir}" -ut ".write_atomic-${dest##*/}" ||
+	    -p "${tmpdir}" ${unlink:+-u} -t ".write_atomic-${dest##*/}" ||
 	    err "$?" "write_atomic unable to create tmpfile in ${tmpdir}"
+	case "${unlink:+set}" in
+	set) ;;
+	*)
+		# Respect umask without needing -u above.
+		chmod "=rw" "${tmpfile}" ||
+		    err "$?" "write_atomic: chmod"
+		;;
+	esac
 	ret=0
 	case "${tee}" in
 	1) Tflag=1 ;;
