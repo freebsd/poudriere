@@ -1174,6 +1174,7 @@ pkgbuild_done() {
 
 	for shash_bucket in \
 	    pkgname-check_shlibs \
+	    pkgname-prefix \
 	    pkgname-shlibs_required \
 	    ; do
 		shash_unset "${shash_bucket}" "${pkgname}" || :
@@ -5156,10 +5157,22 @@ build_port() {
 	case "${BUILD_AS_NON_ROOT}" in
 	"yes") _need_root="NEED_ROOT NEED_ROOT" ;;
 	esac
-	port_var_fetch_originspec "${originspec}" \
-	    ${PORT_FLAGS} \
-	    PREFIX PREFIX \
-	    ${_need_root}
+	case "${PORT_FLAGS:+set}" in
+	set)
+		shash_unset pkgname-prefix "${pkgname}" PREFIX
+		port_var_fetch_originspec "${originspec}" \
+		    ${PORT_FLAGS} \
+		    PREFIX PREFIX \
+		    ${_need_root}
+		;;
+	*)
+		shash_remove pkgname-prefix "${pkgname}" PREFIX ||
+		    err 1 "build_port: shash_get PREFIX"
+		port_var_fetch_originspec "${originspec}" \
+		    ${PORT_FLAGS} \
+		    ${_need_root}
+		;;
+	esac
 
 	allownetworking=0
 
@@ -9890,7 +9903,6 @@ prepare_ports() {
 			    pkgname-deps-build \
 			    pkgname-run_deps \
 			    pkgname-lib_deps \
-			    pkgname-prefix \
 			    pkgname-trim_ignored \
 			    pkgname-skipped \
 			    ; do
