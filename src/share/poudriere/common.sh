@@ -1425,8 +1425,10 @@ buildlog_start() {
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
 	echo "Jail OSVERSION: ${JAIL_OSVERSION}"
 	echo "Job Id: ${MY_JOBID}"
-	echo "Jail Id (no networking): $(jls -j ${jname} jid || :)"
-	echo "Jail Id (networking)   : $(jls -j ${jname}-n jid || :)"
+	echo "Jail Id (no networking)  : $(jls -j ${jname} jid || :)"
+	echo "Jail Name (no networking): ${jname}"
+	echo "Jail Id (networking)     : $(jls -j ${jname}-n jid || :)"
+	echo "Jail Name (networking)   : ${jname}-n"
 	echo
 	if [ ${JAIL_OSVERSION} -gt ${HOST_OSVERSION} ]; then
 		echo
