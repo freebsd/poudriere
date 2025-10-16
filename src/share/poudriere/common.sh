@@ -5264,10 +5264,10 @@ build_port() {
 			fi
 			;;
 		fetch)
-			mkdir -p "${mnt:?}/portdistfiles"
 			case "${DISTFILES_CACHE}" in
 			"no") ;;
 			*)
+				mkdir -p "${mnt:?}/portdistfiles"
 				echo "DISTDIR=/portdistfiles" >> \
 				    "${mnt:?}/etc/make.conf"
 				gather_distfiles "${originspec}" "${pkgname}" \
