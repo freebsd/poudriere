@@ -35,6 +35,23 @@ alias redirect_to_real_stdout='>&${OUTPUT_REDIRECTED_STDOUT:-1} '
 alias redirect_to_real_stderr='2>&${OUTPUT_REDIRECTED_STDERR:-2} '
 alias redirect_to_real_tty='redirect_to_real_stdout redirect_to_real_stderr '
 alias redirect_to_bulk='redirect_to_real_tty '
+MSG_FUNCS="
+msg_verbose
+msg_dev
+msg_debug
+job_msg_verbose
+job_msg_status_verbose
+job_msg_status_debug
+job_msg_status_dev
+job_msg_dev
+job_msg_debug
+"
+# Alias the functions such that they can be disabled at runtime.
+for msg_func in ${MSG_FUNCS}; do
+	# Keep msg_assert_dev alias up-to-date too.
+	alias "${msg_func}"="\${MSG_FUNC_${msg_func}-} _${msg_func}"
+done
+unset msg_func
 
 case "$%$+${FUNCNAME-}" in
 '$%$+') ;;
@@ -361,7 +378,7 @@ msg() {
 	_msg_fmt_n "%s" "\n" "$*"
 }
 
-msg_verbose() {
+_msg_verbose() {
 	msg "$*"
 }
 
@@ -395,7 +412,7 @@ msg_error() {
 	return 0
 }
 
-msg_dev() {
+_msg_dev() {
 	local -; set +x
 	local MSG_NESTED
 
@@ -404,7 +421,7 @@ msg_dev() {
 	    msg "${COLOR_DEV}[$(getpid)] Dev:${COLOR_RESET} $*" >&2
 }
 
-msg_debug() {
+_msg_debug() {
 	local -; set +x
 	local MSG_NESTED
 
@@ -450,7 +467,7 @@ job_msg() {
 }
 
 # Stubbed until post_getopts
-job_msg_verbose() {
+_job_msg_verbose() {
 	job_msg "$@"
 }
 
@@ -470,25 +487,25 @@ job_msg_status() {
 	job_msg "${title_msg} ${job_name}${msg_colored-}"
 }
 
-job_msg_status_verbose() {
+_job_msg_status_verbose() {
 	job_msg_status "$@"
 }
 
-job_msg_status_debug() {
+_job_msg_status_debug() {
 	job_msg_status "$@"
 }
 
-job_msg_status_dev() {
+_job_msg_status_dev() {
 	job_msg_status "$@"
 }
 
 # These are aligned for 'Building msg'
-job_msg_dev() {
+_job_msg_dev() {
 	COLOR_ARROW="${COLOR_DEV}" \
 	    job_msg "${COLOR_DEV}Dev:     " "$@"
 }
 
-job_msg_debug() {
+_job_msg_debug() {
 	COLOR_ARROW="${COLOR_DEBUG}" \
 	    job_msg "${COLOR_DEBUG}Debug: " "$@"
 }
@@ -523,26 +540,39 @@ confirm_if_tty() {
 }
 
 # Handle needs after processing arguments.
+nop() { :; }
 post_getopts() {
-	# Short-circuit verbose functions to save CPU
-	if ! [ ${VERBOSE:-0} -gt 2 ]; then
-		msg_dev() { :; }
-		job_msg_dev() { :; }
-		job_msg_status_dev() { :; }
-		if [ "${IN_TEST:-0}" -eq 0 ]; then
-			msg_assert_dev() { :; }
+	local msg_func level disable
+
+	for msg_func in ${MSG_FUNCS}; do
+		level="${msg_func##*_}"
+		unset disable
+		if ! msg_level "${level}"; then
+			# Using ":" directly would be nice but it then
+			# breaks "FOO=value msg..." as it becomes
+			# "FOO-value : msg..." resulting in FOO being set
+			# after still.
+			disable="nop"
 		fi
+		setvar "MSG_FUNC_${msg_func}" ${disable:+"${disable}"}
+	done
+	return 0
+}
+
+msg_level() {
+	[ $# -eq 1 ] || eargs msg_level level
+	local level="$1"
+
+	case "${level}" in
+	*dev)		level=3 ;;
+	*debug)		level=2 ;;
+	*verbose)	level=1 ;;
+	*)		level=0 ;;
+	esac
+	if [ "${VERBOSE:-0}" -ge "${level}" ]; then
+		return 0
 	fi
-	if ! [ ${VERBOSE:-0} -gt 1 ]; then
-		msg_debug() { :; }
-		job_msg_debug() { :; }
-		job_msg_status_debug() { :; }
-	fi
-	if ! [ ${VERBOSE:-0} -gt 0 ]; then
-		msg_verbose() { :; }
-		job_msg_verbose() { :; }
-		job_msg_status_verbose() { :; }
-	fi
+	return 1
 }
 
 _mastermnt() {
@@ -7316,8 +7346,10 @@ _delete_old_pkg() {
 					;;
 				esac
 				msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: new dependency: ${COLOR_PORT}${d}${COLOR_RESET}"
-				msg_verbose "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: current deps: ${current_deps:+$(sorted ${current_deps})}"
-				msg_verbose "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: package deps: ${compiled_deps:+$(sorted ${compiled_deps})}"
+				if msg_level verbose; then
+					msg_verbose "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: current deps: ${current_deps:+$(sorted ${current_deps})}"
+					msg_verbose "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: package deps: ${compiled_deps:+$(sorted ${compiled_deps})}"
+				fi
 				delete_pkg "${pkg}"
 				return 0
 				;;

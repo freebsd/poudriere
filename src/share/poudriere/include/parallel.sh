@@ -256,7 +256,7 @@ _kill_job() {
 	ret=0
 	case "${jobid}" in
 	"%"*)
-		if [ "${VERBOSE:-0}" -gt 2 ]; then
+		if msg_level dev; then
 			# pgid only used in msg_dev calls
 			pgid="$(jobs -p "${jobid}")"
 		else
@@ -270,7 +270,7 @@ _kill_job() {
 		jobid="%${jobid}"
 		;;
 	esac
-	msg_dev "${funcname} job ${jobid} pgid=${pgid} spec: $*"
+	msg_dev "${funcname} job ${jobid} pgid=${pgid-} spec: $*"
 	for action in "$@"; do
 		case "${action}" in
 		":"*) timeout="${action#:}" ;;
@@ -282,7 +282,8 @@ _kill_job() {
 		"Running")
 			case "${timeout:+set}" in
 			set)
-				msg_dev "Pwait -t ${timeout} on ${status} job=${jobid} pgid=${pgid}"
+				msg_dev "Pwait -t ${timeout} on ${status}" \
+				    "job=${jobid} pgid=${pgid-}"
 				case "${jobid}" in
 				"%"*)
 					pwait_jobs -t "${timeout}" "${jobid}" ||
@@ -305,7 +306,8 @@ _kill_job() {
 				esac
 				;;
 			*)
-				msg_dev "Killing -${action} ${status} job=${jobid} pgid=${pgid}"
+				msg_dev "Killing -${action} ${status}" \
+				    "job=${jobid} pgid=${pgid-}"
 				if ! kill -STOP "${jobid}" ||
 				    ! kill -"${action}" "${jobid}" ||
 				    ! kill -CONT "${jobid}"; then
@@ -320,14 +322,14 @@ _kill_job() {
 			;;
 		esac
 	done
-	msg_dev "Collecting status='${status}' job=${jobid} pgid=${pgid}"
+	msg_dev "Collecting status='${status}' job=${jobid} pgid=${pgid-}"
 	# Truncate away pwait timeout for whatever the process exited with
 	# from the spec.
 	case "${ret}" in
 	124) ret=0 ;;
 	esac
 	_wait "${jobid}" || ret="$?"
-	msg_dev "Job ${jobid} pgid=${pgid} exited ${ret}"
+	msg_dev "Job ${jobid} pgid=${pgid-} exited ${ret}"
 	return "${ret}"
 }
 
@@ -439,7 +441,9 @@ kill_all_jobs() {
 	local jobid ret rest alljobs
 	local -
 
-	msg_dev "Jobs: $(jobs -l)"
+	if msg_level dev; then
+		msg_dev "Jobs: $(jobs -l)"
+	fi
 	ret=0
 	alljobs=
 	while mapfile_read_loop_redir jobid rest; do

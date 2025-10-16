@@ -24,11 +24,6 @@ msg_assert() {
 }
 fi
 
-# This function gets conditionally overwritten in post_getopts()
-msg_assert_dev() {
-	msg_assert "$@"
-}
-
 _err() {
 	set +e +u +x
 	local lineinfo="${1}"
@@ -47,12 +42,16 @@ aecho() {
 	case "${result}" in
 	TEST*)
 		shift 2
-		msg_assert_dev "$(printf "%d> ${COLOR_LINEINFO-}%-4s${COLOR_RESET-} ${COLOR_ASSERT_TEST-}%s${COLOR_RESET-}: %s\n" \
-		    "$(getpid)" "${lineinfo}" "${result}" "$*")"
+		if [ "${IN_TEST:-0}" -eq 1 ] || msg_level dev; then
+			msg_assert "$(printf "%d> ${COLOR_LINEINFO-}%-4s${COLOR_RESET-} ${COLOR_ASSERT_TEST-}%s${COLOR_RESET-}: %s\n" \
+			    "$(getpid)" "${lineinfo}" "${result}" "$*")"
+		fi
 		;;
 	OK)
-		msg_assert_dev "$(printf "%d> ${COLOR_LINEINFO-}%-4s${COLOR_RESET-} ${COLOR_ASSERT_OK-}%s${COLOR_RESET-}\n" \
-		    "$(getpid)" "${lineinfo}" "${result}")"
+		if [ "${IN_TEST:-0}" -eq 1 ] || msg_level dev; then
+			msg_assert "$(printf "%d> ${COLOR_LINEINFO-}%-4s${COLOR_RESET-} ${COLOR_ASSERT_OK-}%s${COLOR_RESET-}\n" \
+			    "$(getpid)" "${lineinfo}" "${result}")"
+		fi
 		;;
 	FAIL)
 		case "${ASSERT_CONTINUE:-0}" in
