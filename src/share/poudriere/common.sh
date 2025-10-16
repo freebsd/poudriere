@@ -5076,8 +5076,8 @@ gather_distfiles() {
 	local dep_originspec pkgname flavor subpkg
 	local srcsize dstsize doinstall
 
-	from=$(realpath "$5")
-	to=$(realpath "$6")
+	from="$(realpath "$5")"
+	to="$(realpath "$6")"
 	# Can't remove the values as other ports may have us as a special.
 	shash_get originspec-dist_subdir "${originspec}" sub || sub=
 	shash_get originspec-dist_allfiles "${originspec}" dists || dists=
