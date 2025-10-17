@@ -798,7 +798,7 @@ jobs_with_statuses() {
 		done
 		echo "%${jws_jobid} ${jws_status}"
 	done <<-EOF
-	${jobs_output}"
+	${jobs_output}
 	EOF
 }
 
