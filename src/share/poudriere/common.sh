@@ -3957,6 +3957,8 @@ jail_start() {
 	jstart
 	# Safe to release the lock now as jail_runs() will block further bulks.
 	slock_release "jail_start_${MASTERNAME}"
+	injail service ldconfig start >/dev/null || \
+	    err $? "Unable to regenerate runtime linker cache in jail. Emulation or ABI wrong."
 	injail id >/dev/null 2>&1 || \
 	    err $? "Unable to execute id(1) in jail. Emulation or ABI wrong."
 
@@ -4016,8 +4018,6 @@ jail_start() {
 	if was_a_bulk_run; then
 		msg "Will build as ${PORTBUILD_USER}:${PORTBUILD_GROUP} (${PORTBUILD_UID}:${PORTBUILD_GID})"
 	fi
-	injail service ldconfig start >/dev/null || \
-	    err 1 "Failed to set ldconfig paths."
 
 	setup_ccache "${tomnt}"
 
