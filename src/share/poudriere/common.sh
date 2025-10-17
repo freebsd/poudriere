@@ -4659,7 +4659,7 @@ download_from_repo() {
 	remote_all_prefix=$(mktemp -t remote_all_prefix)
 	injail ${pkg_bin} rquery -U '%n %p' > "${remote_all_prefix}"
 
-	parallel_start
+	parallel_start || err 1 "parallel_start"
 	wantedpkgs=$(mktemp -t wantedpkgs)
 	while mapfile_read_loop "${missing_pkgs}" pkgname; do
 		parallel_run download_from_repo_check_pkg \
@@ -4777,7 +4777,7 @@ download_from_repo_post_delete() {
 	_log_path log
 	msg "Package fetch: Generating logs for fetched packages"
 	read_line packagesite "${MASTER_DATADIR:?}/pkg_fetch_url"
-	parallel_start
+	parallel_start || err 1 "parallel_start"
 	while mapfile_read_loop "${MASTER_DATADIR:?}/pkg_fetch" fpkgname; do
 		if [ ! -e "${PACKAGES}/All/${fpkgname}.${PKG_EXT}" ]; then
 			case "${PKG_NO_VERSION_FOR_DEPS}" in
@@ -4966,7 +4966,7 @@ sanity_check_pkgs() {
 	ensure_pkg_installed ||
 	    err ${EX_SOFTWARE} "sanity_check_pkg: Missing bootstrap pkg"
 
-	parallel_start
+	parallel_start || err 1 "parallel_start"
 	for pkg in "${PACKAGES:?}"/All/*.${PKG_EXT}; do
 		parallel_run sanity_check_pkg "${pkg}" || ret=$?
 	done
@@ -5777,7 +5777,7 @@ start_builders() {
 
 	bset builders "${JOBS}"
 	bset status "starting_builders:"
-	parallel_start
+	parallel_start || err 1 "parallel_start"
 	for j in ${JOBS}; do
 		parallel_run start_builder "${j}" \
 		    "${jname}" "${ptname}" "${setname}"
@@ -5826,7 +5826,7 @@ stop_builders() {
 		msg "Stopping ${PARALLEL_JOBS} builders"
 
 		real_parallel_jobs=${PARALLEL_JOBS}
-		parallel_start
+		parallel_start || err 1 "parallel_start"
 		for j in ${JOBS-$(jot -w %02d ${real_parallel_jobs})}; do
 			parallel_run stop_builder "${j}"
 		done
@@ -7631,7 +7631,7 @@ delete_old_pkgs() {
 	ensure_pkg_installed ||
 	    err ${EX_SOFTWARE} "delete_old_pkgs: Missing bootstrap pkg"
 
-	parallel_start
+	parallel_start || err 1 "parallel_start"
 	for pkg in "${PACKAGES:?}"/All/*; do
 		case "${pkg}" in
 		"${PACKAGES:?}/All/*")  break ;;
@@ -8246,7 +8246,7 @@ gather_port_vars() {
 	mkdir gqueue dqueue mqueue fqueue
 	qlist=$(mktemp -t poudriere.qlist)
 
-	parallel_start
+	parallel_start || err 1 "parallel_start"
 	ports="$(listed_ports show_moved)" ||
 	    err "${EX_SOFTWARE}" "gather_port_vars: listed_ports failure"
 	for originspec in ${ports}; do
@@ -8336,7 +8336,7 @@ gather_port_vars() {
 		if ! dirempty dqueue; then
 			msg_debug "Processing depqueue"
 			:> "${qlist:?}"
-			parallel_start
+			parallel_start || err 1 "parallel_start"
 			for qorigin in dqueue/*; do
 				case "${qorigin}" in
 				"dqueue/*") break ;;
@@ -8367,7 +8367,7 @@ gather_port_vars() {
 		if ! dirempty gqueue; then
 			msg_debug "Processing gatherqueue"
 			:> "${qlist:?}"
-			parallel_start
+			parallel_start || err 1 "parallel_start"
 			for qorigin in gqueue/*; do
 				case "${qorigin}" in
 				"gqueue/*") break ;;
@@ -8894,7 +8894,7 @@ generate_queue() {
 
 	:> "${MASTER_DATADIR:?}/pkg_deps.unsorted"
 
-	parallel_start
+	parallel_start || err 1 "parallel_start"
 	while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs_not_ignored" \
 	    pkgname originspec _rdep _ignored; do
 		parallel_run generate_queue_pkg "${pkgname}" "${originspec}" \
@@ -9686,7 +9686,7 @@ trim_ignored() {
 	bset status "trimming_ignore:"
 	msg "Trimming IGNORED and blacklisted ports"
 
-	parallel_start
+	parallel_start || err 1 "parallel_start"
 	while mapfile_read_loop_redir pkgname originspec _rdep ignore; do
 		case "${pkgname}" in
 		"") break ;;

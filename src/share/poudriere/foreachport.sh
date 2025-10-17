@@ -154,7 +154,7 @@ exec >&3
 
 export PORTSDIR
 fetch_global_port_vars
-parallel_start
+parallel_start || err 1 "parallel_start"
 ports="$(listed_ports show_moved)" ||
     err "$?" "Failed to list ports"
 for originspec in ${ports}; do

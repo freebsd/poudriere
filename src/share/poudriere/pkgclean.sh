@@ -328,7 +328,7 @@ check_should_delete_pkg() {
 	esac
 }
 
-parallel_start
+parallel_start || err 1 "parallel_start"
 for file in "${PACKAGES:?}"/All/*; do
 	parallel_run check_should_delete_pkg "${file}"
 done
@@ -415,7 +415,7 @@ check_duplicated_packages() {
 	msg_verbose "Keeping latest package: ${lastpkg##*/}"
 }
 
-parallel_start
+parallel_start || err 1 "parallel_start"
 # Check for duplicated origins (older packages) and keep only newer ones
 # This also grouped by pkgbase to respect PKGNAME uniqueness
 sort "${FOUND_ORIGINS:?}" | awk '

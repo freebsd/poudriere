@@ -606,6 +606,10 @@ parallel_run() {
 	local ret spawn_jobid
 
 	ret=0
+	case "${NBPARALLEL:+set}" in
+	set) ;;
+	*) err 1 "parallel_run: did not parallel_start" ;;
+	esac
 
 	# Occasionally reap dead children. Don't do this too often or it
 	# becomes a bottleneck. Do it too infrequently and there is a risk
