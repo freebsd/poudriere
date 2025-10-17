@@ -1039,12 +1039,19 @@ jstart() {
 	jail -c persist "name=${name:?}" \
 		"path=${mpath:?}" \
 		"host.hostname=${BUILDER_HOSTNAME-${name}}" \
-		${network} ${JAIL_PARAMS-}
+		${network} ${JAIL_PARAMS-} ||
+	    err 1 "jstart: Failed to start jail ${name:?}" \
+		"${network:+network="'${network}'"}" \
+		"${JAIL_PARAMS:+JAIL_PARAMS="'${JAIL_PARAMS}'"}"
 	# Allow networking in -n jail
 	jail -c persist "name=${name}-n" \
 		"path=${mpath:?}" \
 		"host.hostname=${BUILDER_HOSTNAME-${name}}" \
-		${IPARGS:?} ${JAIL_PARAMS-} ${JAIL_NET_PARAMS-}
+		${IPARGS:?} ${JAIL_PARAMS-} ${JAIL_NET_PARAMS-} ||
+	    err 1 "jstart: Failed to start networking jail ${name:?}-n" \
+		"${JAIL_PARAMS:+JAIL_PARAMS="'${JAIL_PARAMS}'"}" \
+		"${IPARGS:+IPARGS='${IPARGS}'}" \
+		"${JAIL_NET_PARAMS:+JAIL_NET_PARAMS="'${JAIL_NET_PARAMS}'"}"
 	return 0
 }
 
