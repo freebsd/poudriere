@@ -2620,6 +2620,15 @@ enter_interactive() {
 	FreeBSD: {
 		enabled: no
 	}
+	FreeBSD-kmods: {
+		enabled: no
+	}
+	FreeBSD-ports: {
+		enabled: no
+	}
+	FreeBSD-ports-kmods: {
+		enabled: no
+	}
 
 	local: {
 		url: "file:///packages",
@@ -4513,7 +4522,24 @@ download_from_repo() {
 	fi
 	cat >> "${MASTERMNT:?}/etc/pkg/poudriere.conf" <<-EOF
 	FreeBSD: {
+	        enabled: no;
+	        priority: 100;
+	}
+	FreeBSD-kmods: {
+	        enabled: no;
+	        priority: 100;
+	}
+	FreeBSD-ports: {
+	        enabled: no;
+	        priority: 100;
+	}
+	FreeBSD-ports-kmods: {
+	        enabled: no;
+	        priority: 100;
+	}
+	Poudriere: {
 	        url: ${packagesite};
+	        mirror_type: $(if [ "${packagesite#pkg+}" = "${packagesite}" ]; then echo "none"; else echo "srv"; fi);
 	}
 	EOF
 
@@ -4522,7 +4548,7 @@ download_from_repo() {
 	# XXX: rquery is supposed to 'update' but it does not on first run.
 	if ! JNETNAME="n" injail env ASSUME_ALWAYS_YES=yes \
 	    PACKAGESITE="${packagesite:?}" \
-	    ${pkg_bin} update -f -r FreeBSD; then
+	    ${pkg_bin} update -f; then
 		msg "Package fetch: Not fetching as remote repository is unavailable."
 		rm -f "${missing_pkgs}"
 		return 0
