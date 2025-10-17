@@ -2807,3 +2807,9 @@ lock_have() {
 hide_stderr() {
 	"$@" 2>/dev/null
 }
+
+if ! type nproc >/dev/null 2>&1; then
+nproc() {
+	sysctl -n hw.ncpu
+}
+fi
