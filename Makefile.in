@@ -96,8 +96,6 @@ host_triplet = @host@
 noinst_PROGRAMS = @USE_LOCKF@ external/sh/mknodes$(EXEEXT) \
 	external/sh/mksyntax$(EXEEXT)
 @MAINTAINER_MODE_TRUE@am__append_1 = -Wextra -Werror
-@ADDRESS_SANITIZER_TRUE@am__append_2 = -fsanitize=address -DADDRESS_SANITIZER -fno-omit-frame-pointer
-@ADDRESS_SANITIZER_TRUE@am__append_3 = -O1
 pkglibexec_PROGRAMS = clock$(EXEEXT) cpdup$(EXEEXT) dirempty$(EXEEXT) \
 	dirwatch$(EXEEXT) locked_mkdir$(EXEEXT) nc$(EXEEXT) \
 	poudriered$(EXEEXT) ptsort$(EXEEXT) pwait$(EXEEXT) \
@@ -186,10 +184,12 @@ external_sh_mknodes_LDADD = $(LDADD)
 am_external_sh_mksyntax_OBJECTS = external/sh/mksyntax.$(OBJEXT)
 external_sh_mksyntax_OBJECTS = $(am_external_sh_mksyntax_OBJECTS)
 external_sh_mksyntax_LDADD = $(LDADD)
-am_locked_mkdir_OBJECTS =  \
-	src/libexec/poudriere/locked_mkdir/locked_mkdir.$(OBJEXT)
+am_locked_mkdir_OBJECTS = src/libexec/poudriere/locked_mkdir/locked_mkdir-locked_mkdir.$(OBJEXT)
 locked_mkdir_OBJECTS = $(am_locked_mkdir_OBJECTS)
 locked_mkdir_LDADD = $(LDADD)
+locked_mkdir_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(locked_mkdir_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_lockf_OBJECTS = external/lockf/lockf.$(OBJEXT)
 lockf_OBJECTS = $(am_lockf_OBJECTS)
 lockf_LDADD = $(LDADD)
@@ -280,9 +280,12 @@ am_timeout_OBJECTS = external/timeout/timeout.$(OBJEXT)
 timeout_OBJECTS = $(am_timeout_OBJECTS)
 timeout_LDADD = $(LDADD)
 am_timestamp_OBJECTS =  \
-	src/libexec/poudriere/timestamp/timestamp.$(OBJEXT)
+	src/libexec/poudriere/timestamp/timestamp-timestamp.$(OBJEXT)
 timestamp_OBJECTS = $(am_timestamp_OBJECTS)
 timestamp_DEPENDENCIES =
+timestamp_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(timestamp_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -386,12 +389,12 @@ am__depfiles_remade = external/cpdup/src/$(DEPDIR)/cpdup-cpdup.Po \
 	src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po \
 	src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po \
 	src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po \
-	src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir.Po \
+	src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Po \
 	src/libexec/poudriere/locked_mkdir/$(DEPDIR)/sh-locked_mkdir.Po \
 	src/libexec/poudriere/nc/$(DEPDIR)/nc.Po \
 	src/libexec/poudriere/rename/$(DEPDIR)/rename.Po \
 	src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Po \
-	src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp.Po \
+	src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-builtins.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-chmod.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-helpers.Po \
@@ -553,8 +556,7 @@ distcleancheck_listfiles = \
             \( -name .nfs* -o -name .smb* -o -name .__afs* \) \) -print
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
-AM_CFLAGS = -Wall -pipe -O2 @AM_CFLAGS@ $(am__append_1) \
-	$(am__append_2)
+AM_CFLAGS = -Wall -pipe -O2 @AM_CFLAGS@ $(am__append_1)
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
 AUTOCONF = @AUTOCONF@
@@ -564,7 +566,7 @@ AWK = @AWK@
 BUILD_SH = @BUILD_SH@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
-CFLAGS = @CFLAGS@ $(am__append_3)
+CFLAGS = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 CSCOPE = @CSCOPE@
 CTAGS = @CTAGS@
@@ -687,6 +689,9 @@ CLEANFILES = $(dist_rc_SCRIPTS) libucl.a libptsort.a \
 	external/sh/syntax.h external/sh/token.h
 MOSTLYCLEANFILES = poudriere
 ACLOCAL_AMFLAGS = -I m4
+@ADDRESS_SANITIZER_TRUE@ASAN_CFLAGS = -fsanitize=address -DADDRESS_SANITIZER -fno-omit-frame-pointer -O1
+@ADDRESS_SANITIZER_TRUE@UBSAN_CFLAGS = -fsanitize=undefined -fno-sanitize-recover=undefined
+SAN_CFLAGS = $(ASAN_CFLAGS) $(UBSAN_CFLAGS)
 awkdir = $(pkgdatadir)/awk
 shincludedir = $(pkgdatadir)/include
 assetsdir = $(htmldir)/assets
@@ -835,6 +840,7 @@ cpdup_CFLAGS = $(AM_CFLAGS) -D_ST_FLAGS_PRESENT_=1 -Wno-deprecated-declarations
 dirempty_SOURCES = src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES = src/libexec/poudriere/dirwatch/dirwatch.c
 locked_mkdir_SOURCES = src/libexec/poudriere/locked_mkdir/locked_mkdir.c
+locked_mkdir_CFLAGS = $(AM_CFLAGS) $(SAN_CFLAGS)
 lockf_SOURCES = external/lockf/lockf.c
 nc_SOURCES = src/libexec/poudriere/nc/nc.c
 pwait_SOURCES = external/pwait/pwait.c
@@ -846,11 +852,13 @@ setsid_SOURCES = external/setsid/setsid.c \
 setsid_CFLAGS = $(AM_CFLAGS) -DHAVE_ERR_H -DHAVE_NANOSLEEP
 timeout_SOURCES = external/timeout/timeout.c
 timestamp_SOURCES = src/libexec/poudriere/timestamp/timestamp.c
+timestamp_CFLAGS = $(AM_CFLAGS) $(SAN_CFLAGS)
 timestamp_LDADD = -lpthread
 sh_CFLAGS = $(AM_CFLAGS) -Wno-extra -DSHELL -std=gnu99 -DVTABSIZE=1000 \
 	${sh_hist_CFLAGS} -Wno-unused-const-variable -include \
 	$(top_srcdir)/external/sh_compat/compat.h -I$(top_srcdir)/src \
-	-I$(top_srcdir)/external/sh -I$(top_srcdir)/src/poudriere-sh \
+	-I$(top_srcdir)/external/sh $(SAN_CFLAGS) \
+	-I$(top_srcdir)/src/poudriere-sh \
 	-I$(top_builddir)/src/poudriere-sh
 sh_LDADD = ${sh_hist_LDADD} -lsbuf
 @MAINTAINER_MODE_TRUE@sh_hist_LDADD = -ledit
@@ -940,6 +948,7 @@ poudriered_SOURCES = src/poudriered/poudriered.c \
 			external/pkg/xmalloc.h
 
 poudriered_CFLAGS = $(AM_CFLAGS) \
+			$(SAN_CFLAGS) \
 			-DPREFIX=\"$(prefix)\" \
 			-I$(top_srcdir)/external/libucl/include \
 			-I$(top_srcdir)/external/pkg
@@ -1200,13 +1209,13 @@ src/libexec/poudriere/locked_mkdir/$(am__dirstamp):
 src/libexec/poudriere/locked_mkdir/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) src/libexec/poudriere/locked_mkdir/$(DEPDIR)
 	@: >>src/libexec/poudriere/locked_mkdir/$(DEPDIR)/$(am__dirstamp)
-src/libexec/poudriere/locked_mkdir/locked_mkdir.$(OBJEXT):  \
+src/libexec/poudriere/locked_mkdir/locked_mkdir-locked_mkdir.$(OBJEXT):  \
 	src/libexec/poudriere/locked_mkdir/$(am__dirstamp) \
 	src/libexec/poudriere/locked_mkdir/$(DEPDIR)/$(am__dirstamp)
 
 locked_mkdir$(EXEEXT): $(locked_mkdir_OBJECTS) $(locked_mkdir_DEPENDENCIES) $(EXTRA_locked_mkdir_DEPENDENCIES) 
 	@rm -f locked_mkdir$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(locked_mkdir_OBJECTS) $(locked_mkdir_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(locked_mkdir_LINK) $(locked_mkdir_OBJECTS) $(locked_mkdir_LDADD) $(LIBS)
 external/lockf/$(am__dirstamp):
 	@$(MKDIR_P) external/lockf
 	@: >>external/lockf/$(am__dirstamp)
@@ -1469,13 +1478,13 @@ src/libexec/poudriere/timestamp/$(am__dirstamp):
 src/libexec/poudriere/timestamp/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) src/libexec/poudriere/timestamp/$(DEPDIR)
 	@: >>src/libexec/poudriere/timestamp/$(DEPDIR)/$(am__dirstamp)
-src/libexec/poudriere/timestamp/timestamp.$(OBJEXT):  \
+src/libexec/poudriere/timestamp/timestamp-timestamp.$(OBJEXT):  \
 	src/libexec/poudriere/timestamp/$(am__dirstamp) \
 	src/libexec/poudriere/timestamp/$(DEPDIR)/$(am__dirstamp)
 
 timestamp$(EXEEXT): $(timestamp_OBJECTS) $(timestamp_DEPENDENCIES) $(EXTRA_timestamp_DEPENDENCIES) 
 	@rm -f timestamp$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(timestamp_OBJECTS) $(timestamp_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(timestamp_LINK) $(timestamp_OBJECTS) $(timestamp_LDADD) $(LIBS)
 install-dist_binSCRIPTS: $(dist_bin_SCRIPTS)
 	@$(NORMAL_INSTALL)
 	@list='$(dist_bin_SCRIPTS)'; test -n "$(bindir)" || list=; \
@@ -1638,12 +1647,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/locked_mkdir/$(DEPDIR)/sh-locked_mkdir.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/nc/$(DEPDIR)/nc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rename/$(DEPDIR)/rename.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-builtins.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-chmod.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-helpers.Po@am__quote@ # am--include-marker
@@ -1838,6 +1847,20 @@ external/cpdup/src/cpdup-misc.obj: external/cpdup/src/misc.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/cpdup/src/misc.c' object='external/cpdup/src/cpdup-misc.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o external/cpdup/src/cpdup-misc.obj `if test -f 'external/cpdup/src/misc.c'; then $(CYGPATH_W) 'external/cpdup/src/misc.c'; else $(CYGPATH_W) '$(srcdir)/external/cpdup/src/misc.c'; fi`
+
+src/libexec/poudriere/locked_mkdir/locked_mkdir-locked_mkdir.o: src/libexec/poudriere/locked_mkdir/locked_mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(locked_mkdir_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/locked_mkdir/locked_mkdir-locked_mkdir.o -MD -MP -MF src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Tpo -c -o src/libexec/poudriere/locked_mkdir/locked_mkdir-locked_mkdir.o `test -f 'src/libexec/poudriere/locked_mkdir/locked_mkdir.c' || echo '$(srcdir)/'`src/libexec/poudriere/locked_mkdir/locked_mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Tpo src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/locked_mkdir/locked_mkdir.c' object='src/libexec/poudriere/locked_mkdir/locked_mkdir-locked_mkdir.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(locked_mkdir_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/locked_mkdir/locked_mkdir-locked_mkdir.o `test -f 'src/libexec/poudriere/locked_mkdir/locked_mkdir.c' || echo '$(srcdir)/'`src/libexec/poudriere/locked_mkdir/locked_mkdir.c
+
+src/libexec/poudriere/locked_mkdir/locked_mkdir-locked_mkdir.obj: src/libexec/poudriere/locked_mkdir/locked_mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(locked_mkdir_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/locked_mkdir/locked_mkdir-locked_mkdir.obj -MD -MP -MF src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Tpo -c -o src/libexec/poudriere/locked_mkdir/locked_mkdir-locked_mkdir.obj `if test -f 'src/libexec/poudriere/locked_mkdir/locked_mkdir.c'; then $(CYGPATH_W) 'src/libexec/poudriere/locked_mkdir/locked_mkdir.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/locked_mkdir/locked_mkdir.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Tpo src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/locked_mkdir/locked_mkdir.c' object='src/libexec/poudriere/locked_mkdir/locked_mkdir-locked_mkdir.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(locked_mkdir_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/locked_mkdir/locked_mkdir-locked_mkdir.obj `if test -f 'src/libexec/poudriere/locked_mkdir/locked_mkdir.c'; then $(CYGPATH_W) 'src/libexec/poudriere/locked_mkdir/locked_mkdir.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/locked_mkdir/locked_mkdir.c'; fi`
 
 src/poudriered/poudriered-poudriered.o: src/poudriered/poudriered.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(poudriered_CFLAGS) $(CFLAGS) -MT src/poudriered/poudriered-poudriered.o -MD -MP -MF src/poudriered/$(DEPDIR)/poudriered-poudriered.Tpo -c -o src/poudriered/poudriered-poudriered.o `test -f 'src/poudriered/poudriered.c' || echo '$(srcdir)/'`src/poudriered/poudriered.c
@@ -2622,6 +2645,20 @@ src/poudriere-sh/sh-builtins.obj: src/poudriere-sh/builtins.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/builtins.c' object='src/poudriere-sh/sh-builtins.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-builtins.obj `if test -f 'src/poudriere-sh/builtins.c'; then $(CYGPATH_W) 'src/poudriere-sh/builtins.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/builtins.c'; fi`
+
+src/libexec/poudriere/timestamp/timestamp-timestamp.o: src/libexec/poudriere/timestamp/timestamp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(timestamp_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/timestamp/timestamp-timestamp.o -MD -MP -MF src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Tpo -c -o src/libexec/poudriere/timestamp/timestamp-timestamp.o `test -f 'src/libexec/poudriere/timestamp/timestamp.c' || echo '$(srcdir)/'`src/libexec/poudriere/timestamp/timestamp.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Tpo src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/timestamp/timestamp.c' object='src/libexec/poudriere/timestamp/timestamp-timestamp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(timestamp_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/timestamp/timestamp-timestamp.o `test -f 'src/libexec/poudriere/timestamp/timestamp.c' || echo '$(srcdir)/'`src/libexec/poudriere/timestamp/timestamp.c
+
+src/libexec/poudriere/timestamp/timestamp-timestamp.obj: src/libexec/poudriere/timestamp/timestamp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(timestamp_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/timestamp/timestamp-timestamp.obj -MD -MP -MF src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Tpo -c -o src/libexec/poudriere/timestamp/timestamp-timestamp.obj `if test -f 'src/libexec/poudriere/timestamp/timestamp.c'; then $(CYGPATH_W) 'src/libexec/poudriere/timestamp/timestamp.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/timestamp/timestamp.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Tpo src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/timestamp/timestamp.c' object='src/libexec/poudriere/timestamp/timestamp-timestamp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(timestamp_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/timestamp/timestamp-timestamp.obj `if test -f 'src/libexec/poudriere/timestamp/timestamp.c'; then $(CYGPATH_W) 'src/libexec/poudriere/timestamp/timestamp.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/timestamp/timestamp.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -3424,12 +3461,12 @@ distclean: distclean-recursive
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po
 	-rm -f src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po
-	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir.Po
+	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Po
 	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/sh-locked_mkdir.Po
 	-rm -f src/libexec/poudriere/nc/$(DEPDIR)/nc.Po
 	-rm -f src/libexec/poudriere/rename/$(DEPDIR)/rename.Po
 	-rm -f src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Po
-	-rm -f src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp.Po
+	-rm -f src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-builtins.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-chmod.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-helpers.Po
@@ -3563,12 +3600,12 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po
 	-rm -f src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po
-	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir.Po
+	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Po
 	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/sh-locked_mkdir.Po
 	-rm -f src/libexec/poudriere/nc/$(DEPDIR)/nc.Po
 	-rm -f src/libexec/poudriere/rename/$(DEPDIR)/rename.Po
 	-rm -f src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Po
-	-rm -f src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp.Po
+	-rm -f src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-builtins.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-chmod.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-helpers.Po

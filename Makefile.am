@@ -10,9 +10,10 @@ if MAINTAINER_MODE
 AM_CFLAGS+=	-Wextra -Werror
 endif
 if ADDRESS_SANITIZER
-AM_CFLAGS+=	-fsanitize=address -DADDRESS_SANITIZER -fno-omit-frame-pointer
-CFLAGS+=	-O1
+ASAN_CFLAGS=	-fsanitize=address -DADDRESS_SANITIZER -fno-omit-frame-pointer -O1
+UBSAN_CFLAGS=	-fsanitize=undefined -fno-sanitize-recover=undefined
 endif
+SAN_CFLAGS=	$(ASAN_CFLAGS) $(UBSAN_CFLAGS)
 
 awkdir=	$(pkgdatadir)/awk
 htmldir= $(pkgdatadir)/html
@@ -187,6 +188,7 @@ cpdup_CFLAGS=	$(AM_CFLAGS) -D_ST_FLAGS_PRESENT_=1 -Wno-deprecated-declarations
 dirempty_SOURCES=	src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
 locked_mkdir_SOURCES=	src/libexec/poudriere/locked_mkdir/locked_mkdir.c
+locked_mkdir_CFLAGS=	$(AM_CFLAGS) $(SAN_CFLAGS)
 noinst_PROGRAMS+=	@USE_LOCKF@
 lockf_SOURCES=		external/lockf/lockf.c
 nc_SOURCES=		src/libexec/poudriere/nc/nc.c
@@ -198,6 +200,7 @@ setsid_SOURCES=		external/setsid/setsid.c \
 setsid_CFLAGS=		$(AM_CFLAGS) -DHAVE_ERR_H -DHAVE_NANOSLEEP
 timeout_SOURCES=	external/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
+timestamp_CFLAGS=	$(AM_CFLAGS) $(SAN_CFLAGS)
 timestamp_LDADD=	-lpthread
 
 sh_CFLAGS=		$(AM_CFLAGS) -Wno-extra \
@@ -206,6 +209,7 @@ sh_CFLAGS=		$(AM_CFLAGS) -Wno-extra \
 			-include $(top_srcdir)/external/sh_compat/compat.h \
 			-I$(top_srcdir)/src \
 			-I$(top_srcdir)/external/sh
+sh_CFLAGS+=		$(SAN_CFLAGS)
 sh_LDADD=		${sh_hist_LDADD} -lsbuf
 if MAINTAINER_MODE
 sh_hist_LDADD=		-ledit
@@ -342,6 +346,7 @@ poudriered_SOURCES=	src/poudriered/poudriered.c \
 			external/pkg/xstring.h \
 			external/pkg/xmalloc.h
 poudriered_CFLAGS=	$(AM_CFLAGS) \
+			$(SAN_CFLAGS) \
 			-DPREFIX=\"$(prefix)\" \
 			-I$(top_srcdir)/external/libucl/include \
 			-I$(top_srcdir)/external/pkg
