@@ -2618,21 +2618,25 @@ enter_interactive() {
 	mkdir -p ${MASTERMNT:?}${LOCALBASE:?}/etc/pkg/repos
 	cat > ${MASTERMNT:?}${LOCALBASE:?}/etc/pkg/repos/local.conf <<-EOF
 	FreeBSD: {
-		enabled: no
+	        enabled: no;
+	        priority: 100;
 	}
 	FreeBSD-kmods: {
-		enabled: no
+	        enabled: no;
+	        priority: 100;
 	}
 	FreeBSD-ports: {
-		enabled: no
+	        enabled: no;
+	        priority: 100;
 	}
 	FreeBSD-ports-kmods: {
-		enabled: no
+	        enabled: no;
+	        priority: 100;
 	}
 
 	local: {
-		url: "file:///packages",
-		enabled: yes
+	        url: "file:///packages";
+	        enabled: yes;
 	}
 	EOF
 	# XXX: build_repo ?
