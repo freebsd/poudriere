@@ -1615,7 +1615,7 @@ mapfile_cat() {
 # Basically an optimized loop of mapfile_read_loop_redir, or read_file
 mapfile_cat_file() {
 	local -; set +x
-	[ $# -ge 0 ] || eargs mapfile_cat_file '[-q] [-T fd]' file...
+	[ $# -ge 0 ] || eargs mapfile_cat_file '[-q] [-T fd]' '[-|file...]'
 	local  _handle ret _file
 	local OPTIND=1 Tflag qflag flag
 

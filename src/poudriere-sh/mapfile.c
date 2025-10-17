@@ -748,13 +748,15 @@ mapfile_catcmd(int argc, char **argv)
 int
 mapfile_cat_filecmd(int argc, char **argv)
 {
-	static const char usage[] = "Usage: mapfile_cat_file [-q] [-T fd] <file> ...";
+	static const char usage[] = "Usage: mapfile_cat_file [-q] [-T fd]" \
+				    "[-|file ...]";
 	struct mapped_data *md;
 	const char *file;
 	char *end;
 	int error, ret;
 	int i, ch, Tflag, qflag;
 	size_t lines;
+	bool read_stdin = false;
 	char liness[10];
 
 	Tflag = -1;
@@ -776,14 +778,23 @@ mapfile_cat_filecmd(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc < 1)
+	if (argc == 0) {
+		read_stdin = true;
+		argc = 1;
+	} else if (argc < 1) {
 		errx(EX_USAGE, "%s", usage);
+	}
 
 	ret = 0;
 	lines = 0;
 	setvarsafe("_mapfile_cat_file_lines_read", "0", 0);
 	for (i = 0; i < argc; i++) {
-		file = argv[i];
+		if (read_stdin) {
+		    assert(argc == 1);
+		    file = "-";
+		} else {
+			file = argv[i];
+		}
 		INTOFF;
 		/* Create handle */
 		md = _mapfile_open(file, "r", 1, qflag);

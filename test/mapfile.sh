@@ -749,12 +749,40 @@ fi
 	assert_ret 0 mapfile handle "${TMP2}" "we"
 	assert_ret 0 mapfile_cat_file "${TMP}" |
 	    assert_ret 0 mapfile_write "${handle}"
-	assert 0 "${_mapfile_cat_file_lines_read}"
 	assert 0 "$?" "pipe exit status"
+	assert 0 "${_mapfile_cat_file_lines_read}"
 	assert_ret 0 mapfile_close "${handle}"
 	[ ! -s "${TMP2}" ]
 	assert 0 "$?" "'mapfile_cat_file <empty file> | mapfile_write' should not write anything"
 	rm -f "${TMP}" "${TMP2}"
+}
+
+{
+	TMP=$(mktemp -t mapfile)
+	assert_ret 0 mapfile_cat_file - > "${TMP}" <<-EOF
+	1
+	2
+	EOF
+	assert 2 "${_mapfile_cat_file_lines_read}"
+	assert_file - "${TMP}" <<-EOF
+	1
+	2
+	EOF
+	rm -f "${TMP}"
+}
+
+{
+	TMP=$(mktemp -t mapfile)
+	assert_ret 0 mapfile_cat_file > "${TMP}" <<-EOF
+	1
+	2
+	EOF
+	assert 2 "${_mapfile_cat_file_lines_read}"
+	assert_file - "${TMP}" <<-EOF
+	1
+	2
+	EOF
+	rm -f "${TMP}"
 }
 
 {
