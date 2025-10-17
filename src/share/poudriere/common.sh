@@ -2834,12 +2834,14 @@ enter_interactive() {
 			cat >> "${MASTERMNT:?}/root/.login" <<-EOF
 			if ( -f /tmp/su-to-portbuild ) then
 				rm -f /tmp/su-to-portbuild
+				cd /
 				exec su -m "${PORTBUILD_USER}" -c ${INTERACTIVE_SHELL}
 			endif
 			EOF
 			cat >> "${MASTERMNT:?}/root/.profile" <<-EOF
 			if [ -f /tmp/su-to-portbuild ]; then
 				rm -f /tmp/su-to-portbuild
+				cd /
 				exec su -m "${PORTBUILD_USER}" -c ${INTERACTIVE_SHELL}
 			fi
 			EOF
