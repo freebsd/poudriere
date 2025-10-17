@@ -2776,11 +2776,26 @@ enter_interactive() {
 	msg "Installing local Pkg repository to ${LOCALBASE}/etc/pkg/repos"
 	mkdir -p ${MASTERMNT:?}${LOCALBASE:?}/etc/pkg/repos
 	cat > ${MASTERMNT:?}${LOCALBASE:?}/etc/pkg/repos/local.conf <<-EOF
-	FreeBSD: { enabled: no }
-	FreeBSD-kmods: { enabled: no }
-	FreeBSD-ports: { enabled: no }
-	FreeBSD-ports-kmods: { enabled: no }
-	FreeBSD-base: { enabled: no }
+	FreeBSD: {
+		enabled: no,
+		priority: 100
+	}
+	FreeBSD-kmods: {
+		enabled: no,
+		priority: 100
+	}
+	FreeBSD-ports: {
+		enabled: no,
+		priority: 100
+	}
+	FreeBSD-ports-kmods: {
+		enabled: no,
+		priority: 100
+	}
+	FreeBSD-base: {
+		enabled: no,
+		priority: 100
+	}
 
 	local: {
 		url: "file:///packages",
@@ -4688,15 +4703,30 @@ download_from_repo() {
 		pkg_bin="pkg"
 	fi
 	cat >> "${MASTERMNT:?}/etc/pkg/poudriere.conf" <<-EOF
-	FreeBSD: { enabled: no }
-	FreeBSD-kmods: { enabled: no }
-	FreeBSD-ports: { enabled: no }
-	FreeBSD-ports-kmods: { enabled: no }
-	FreeBSD-base: { enabled: no }
+	FreeBSD: {
+		enabled: no,
+		priority: 100
+	}
+	FreeBSD-kmods: {
+		enabled: no,
+		priority: 100
+	}
+	FreeBSD-ports: {
+		enabled: no,
+		priority: 100
+	}
+	FreeBSD-ports-kmods: {
+		enabled: no,
+		priority: 100
+	}
+	FreeBSD-base: {
+		enabled: no,
+		priority: 100
+	}
 
 	Poudriere: {
-	        url: ${packagesite};
-	        mirror_type: $(if [ "${packagesite#pkg+}" = "${packagesite}" ]; then echo "none"; else echo "srv"; fi);
+		url: ${packagesite},
+		mirror_type: $(if [ "${packagesite#pkg+}" = "${packagesite}" ]; then echo "none"; else echo "srv"; fi)
 	}
 	EOF
 
