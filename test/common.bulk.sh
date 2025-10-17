@@ -1635,19 +1635,26 @@ set_make_conf <<-EOF
 EOF
 
 do_logclean() {
+	local ret
+
 	echo -n "Pruning stale jails..."
+	ret=0
 	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} jail -k \
-	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
-	    >/dev/null || :
+	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} ||
+	    ret="$?"
 	echo " done"
+	case "${ret}" in
+	0) ;;
+	*) err 99 "jail cleanup failed ret=${ret}" ;;
+	esac
 	echo -n "Pruning previous logs..."
-	log_ret=0
+	ret=0
 	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} logclean \
 	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
-	    -y -N ${KEEP_LOGS_COUNT-10} -w ${LOGCLEAN_WAIT-30} || log_ret="$?"
-	case "${log_ret}" in
+	    -y -N ${KEEP_LOGS_COUNT-10} -w ${LOGCLEAN_WAIT-30} || ret="$?"
+	case "${ret}" in
 	0|124) ;;
-	*) err 99 "logclean failure ret=${log_ret}" ;;
+	*) err 99 "logclean failure ret=${ret}" ;;
 	esac
 	echo " done"
 }
