@@ -4684,7 +4684,7 @@ download_from_repo() {
 		pkg_bin="${PKG_BIN:?}"
 	else
 		# Will bootstrap
-		msg "Packge fetch: bootstrapping pkg"
+		msg "Package fetch: bootstrapping pkg"
 		pkg_bin="pkg"
 	fi
 	cat >> "${MASTERMNT:?}/etc/pkg/poudriere.conf" <<-EOF
