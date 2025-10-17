@@ -857,11 +857,26 @@ pkgbase: {
 }
 EOF
 	cat <<EOF > "${JAILMNT}/etc/pkg/FreeBSD2.conf"
-FreeBSD: { enabled: no }
-FreeBSD-kmods: { enabled: no }
-FreeBSD-ports: { enabled: no }
-FreeBSD-ports-kmods: { enabled: no }
-FreeBSD-base: { enabled: no }
+FreeBSD: {
+	enabled: no,
+	priority: 100
+}
+FreeBSD-kmods: {
+	enabled: no,
+	priority: 100
+}
+FreeBSD-ports: {
+	enabled: no,
+	priority: 100
+}
+FreeBSD-ports-kmods: {
+	enabled: no,
+	priority: 100
+}
+FreeBSD-base: {
+	enabled: no,
+	priority: 100
+}
 EOF
 
 	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH}" -r ${JAILMNT}/ update
