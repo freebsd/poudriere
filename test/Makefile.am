@@ -224,6 +224,10 @@ JAIL_TESTS= \
 TESTS+=	prep.sh
 $(JAIL_TESTS:.sh=.sh.log): prep.sh.log
 
+if ADDRESS_SANITIZER
+TIMEOUT_SAN_MULTIPLIER=	2
+endif
+
 run_env= env \
 	 am_abs_top_builddir="$(abs_top_builddir)" \
 	 am_abs_top_srcdir="$(abs_top_srcdir)" \
@@ -232,6 +236,7 @@ run_env= env \
 	 am_pkgdatadir="$(pkgdatadir)" \
 	 am_VPATH="$(VPATH)" \
 	 am_check=1 \
+	 TIMEOUT_SAN_MULTIPLIER=$(TIMEOUT_SAN_MULTIPLIER) \
 	 AM_TESTS_FD_STDERR=$(AM_TESTS_FD_STDERR)
 RUNTEST_SH ?= $(abs_top_builddir)/sh
 LOG_COMPILER=	$(run_env) $(RUNTEST_SH) $(srcdir)/runtest.sh

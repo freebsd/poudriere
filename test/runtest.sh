@@ -170,7 +170,7 @@ while read var; do
 	PVERBOSE|VERBOSE|\
 	SH_DISABLE_VFORK|TIMESTAMP|TIMESTAMP_FLAGS|TRUSS|TIMEOUT_BIN|\
 	TIMEOUT_KILL_TIMEOUT|TIMEOUT_TRUSS_MULTIPLIER|TIMEOUT_KILL_SIGNAL|\
-	TIMEOUT_SH_MULTIPLIER|\
+	TIMEOUT_SAN_MULTIPLIER|TIMEOUT_SH_MULTIPLIER|\
 	HTML_JSON_UPDATE_INTERVAL|\
 	TESTS_SKIP_BUILD|\
 	TESTS_SKIP_LONG|\
@@ -244,6 +244,9 @@ case "${TEST##*/}" in
 # Bump anything touching logclean
 bulk*.sh|testport*.sh|distclean*.sh|options*.sh) : "${TIMEOUT:=$((TIMEOUT + (LOGCLEAN_WAIT * 1)))}" ;;
 esac
+# Boost by the sanitizer multiplier depending on build in Makefile.am
+: "${TIMEOUT_SAN_MULTIPLIER:=1}"
+TIMEOUT="$((TIMEOUT * TIMEOUT_SAN_MULTIPLIER))"
 : "${TIMEOUT_KILL_TIMEOUT=30}"
 : "${TIMEOUT_TRUSS_MULTIPLIER:=6}"
 case "${TRUSS-}" in

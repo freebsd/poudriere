@@ -620,6 +620,7 @@ JAIL_TESTS = \
 	testport-default-all-flavors-failure.sh \
 	testport-specific-bad-flavor-failure.sh
 
+@ADDRESS_SANITIZER_TRUE@TIMEOUT_SAN_MULTIPLIER = 2
 run_env = env \
 	 am_abs_top_builddir="$(abs_top_builddir)" \
 	 am_abs_top_srcdir="$(abs_top_srcdir)" \
@@ -628,6 +629,7 @@ run_env = env \
 	 am_pkgdatadir="$(pkgdatadir)" \
 	 am_VPATH="$(VPATH)" \
 	 am_check=1 \
+	 TIMEOUT_SAN_MULTIPLIER=$(TIMEOUT_SAN_MULTIPLIER) \
 	 AM_TESTS_FD_STDERR=$(AM_TESTS_FD_STDERR)
 
 LOG_COMPILER = $(run_env) $(RUNTEST_SH) $(srcdir)/runtest.sh
