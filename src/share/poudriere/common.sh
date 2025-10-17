@@ -75,6 +75,23 @@ BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
 . "${SCRIPTPREFIX:?}/include/util.sh"
 SHFLAGS="$-"
 
+# Use builtin if possible.
+# note that only lines ending in newline will be read/printed with the builtin,
+# unlike cat which reads/prints everything by default.
+cat() {
+	# no flags are compat
+	case "${1-}" in
+	-*) ;;
+	*)
+		if have_builtin mapfile_cat_file; then
+			mapfile_cat_file "$@" || return
+			return 0
+		fi
+		;;
+	esac
+	command cat "$@"
+}
+
 # Return true if ran from bulk/testport, ie not daemon/status/jail
 was_a_bulk_run() {
 	case "${SCRIPTNAME:?}" in
@@ -919,7 +936,8 @@ do_confirm_delete() {
 	case "${answer}" in
 	"yes")
 		msg_n "Removing files..."
-		cat "${filelist:?}" | tr '\n' '\000' | \
+		mapfile_cat_file "${filelist:?}" |
+		    tr '\n' '\000' |
 		    xargs -0 rm -rf
 		echo " done"
 		ret=1
@@ -6392,9 +6410,14 @@ build_pkg() {
 	fi
 
 	if [ -f "${mnt:?}/.tmpfs_blacklist_dir" ]; then
+		local tmpfs_blacklist_dir
+
 		umount -n "${mnt:?}/wrkdirs" ||
 		    umount -f "${mnt:?}/wrkdirs"
-		rm -rf "$(cat "${mnt:?}/.tmpfs_blacklist_dir")"
+		read_line tmpfs_blacklist_dir \
+		    "${mnt:?}/.tmpfs_blacklist_dir" ||
+		    err 1 "Failed to read tmpfs blacklist dir"
+		rm -rfx "${tmpfs_blacklist_dir:?}"
 	fi
 	if [ -f "${mnt:?}/.need_rollback" ]; then
 		rollbackfs prepkg "${mnt:?}" || :
@@ -8331,7 +8354,9 @@ gather_port_vars() {
 			if ! parallel_stop; then
 				err 1 "Fatal errors encountered processing gathered ports metadata"
 			fi
-			cat "${qlist:?}" | tr '\n' '\000' | xargs -0 rmdir
+			mapfile_cat_file "${qlist:?}" |
+			    tr '\n' '\000' |
+			    xargs -0 rmdir
 		fi
 
 		# Now process the gatherqueue
@@ -8364,7 +8389,9 @@ gather_port_vars() {
 			if ! parallel_stop; then
 				err 1 "Fatal errors encountered gathering ports metadata"
 			fi
-			cat "${qlist:?}" | tr '\n' '\000' | xargs -0 rm -rf
+			mapfile_cat_file "${qlist:?}" |
+			    tr '\n' '\000' |
+			    xargs -0 rm -rf
 		fi
 
 		if ! dirempty gqueue || ! dirempty dqueue; then
@@ -9877,7 +9904,11 @@ prepare_ports() {
 		cp -f "${MASTER_DATADIR}/all_pkgs" "${log:?}/.poudriere.all_pkgs%"
 
 		if [ -f "${PACKAGES:?}/.jailversion" ]; then
-			case "$(cat "${PACKAGES:?}/.jailversion")" in
+			local jailversion
+
+			read_line jailversion "${PACKAGES:?}/.jailversion" ||
+			    err 1 "failed to read .jailversion"
+			case "${jailversion}" in
 			"$(jget ${JAILNAME} version)") ;;
 			*)
 				delete_all_pkgs "newer version of jail"
@@ -9938,7 +9969,8 @@ prepare_ports() {
 				;;
 			esac
 			msg "(${reason}) Flushing package deletions"
-			cat "${delete_pkg_list:?}" | tr '\n' '\000' | \
+			mapfile_cat_file "${delete_pkg_list:?}" |
+			    tr '\n' '\000' |
 			    xargs -0 rm -rf
 			unlink "${delete_pkg_list:?}" || :
 		fi

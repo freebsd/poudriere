@@ -262,7 +262,7 @@ display_output() {
 			if [ "${quiet}" -eq 0 ]; then
 				echo "${_DISPLAY_HEADER}"
 			fi
-			mapfile_cat_file "${_DISPLAY_TMP}.filtered"
+			cat "${_DISPLAY_TMP}.filtered"
 			case "${_DISPLAY_FOOTER:+set}" in
 			set) echo "${_DISPLAY_FOOTER}" ;;
 			esac
