@@ -760,15 +760,45 @@ madvise_protect() {
 	esac
 }
 
-# Output $(jobs) in a simpler format
+# Output $(jobs) in a simpler format and optional filtering.
 jobs_with_statuses() {
-	[ "$#" -eq 1 ] || eargs jobs_with_statuses "\$(jobs)"
+	[ "$#" -eq 1 ] || [ "$#" -gt 1 ] ||
+	    eargs jobs_with_statuses "\$(jobs)" '%job..'
 	local jobs_output="$1"
+	shift
 	local jobs_jobid jobs_rest
 	local jws_jobid jws_status
 	local - jws_arg
+	local jobs_filter
 
+	case "${jobs_output:+set}" in
+	set) ;;
+	*) return 0 ;;
+	esac
+	case "$#" in
+	0) jobs_filter= ;;
+	*)
+		for jobs_jobid in "$@"; do
+			case "${jobs_jobid}" in
+			"%"*) ;;
+			*)
+				err "${EX_USAGE}" "jobs_with_statuses:" \
+				    "Only %jobid is supported."
+				;;
+			esac
+			jobs_filter="${jobs_filter:+${jobs_filter} }[${jobs_jobid#%}]"
+		done
+		;;
+	esac
 	while mapfile_read_loop_redir jobs_jobid jobs_rest; do
+		case "${jobs_filter:+set}" in
+		set)
+			case " ${jobs_filter} " in
+			*" ${jobs_jobid} "*) ;;
+			*) continue ;;
+			esac
+			;;
+		esac
 		case "${jobs_jobid}" in
 		"["*"]")
 			jws_jobid="${jobs_jobid#"["}"
@@ -798,7 +828,7 @@ jobs_with_statuses() {
 		done
 		echo "%${jws_jobid} ${jws_status}"
 	done <<-EOF
-	${jobs_output}
+	${jobs_output:?}
 	EOF
 }
 

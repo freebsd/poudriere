@@ -174,6 +174,30 @@ test_jobs_1() {
 	%3 Running
 	EOF
 
+	cat > "${TMP}" <<-EOF
+	$(jobs_with_statuses "$(jobs)" %1 %2 %3)
+	EOF
+	assert_file - "${TMP}" <<-EOF
+	%1 Done
+	%2 Running
+	%3 Running
+	EOF
+
+	cat > "${TMP}" <<-EOF
+	$(jobs_with_statuses "$(jobs)" %1 %3)
+	EOF
+	assert_file - "${TMP}" <<-EOF
+	%1 Done
+	%3 Running
+	EOF
+
+	cat > "${TMP}" <<-EOF
+	$(jobs_with_statuses "$(jobs)" %2)
+	EOF
+	assert_file - "${TMP}" <<-EOF
+	%2 Running
+	EOF
+
 	assert_true get_job_status "%1" status
 	assert "Done" "${status}"
 	assert_true get_job_status "${sleep1_pid}" status
