@@ -957,9 +957,13 @@ create_jail() {
 			err ${EX_USAGE} "Must set -M to path of jail to use"
 			;;
 		esac
-		case "${JAILMNT}" in
-		"/")
-			err ${EX_USAGE} "Cannot use / for -M"
+		case "${ALLOW_CLONING_HOST:-no}" in
+		no)
+			case "${JAILMNT}" in
+			"/")
+				err ${EX_USAGE} "Cannot use / for -M"
+				;;
+			esac
 			;;
 		esac
 	fi

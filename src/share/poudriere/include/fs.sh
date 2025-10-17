@@ -72,8 +72,12 @@ _do_cpdup() {
 	local src="$3"
 	local dst="$4"
 
-	case "${src}" in
-	/) err 1 "Tried to cpdup /; src=${src} dst=${dst}" ;;
+	case "${ALLOW_CLONING_HOST:-no}" in
+	no)
+		case "${src}" in
+		/) err 1 "Tried to cpdup /; src=${src} dst=${dst}" ;;
+		esac
+		;;
 	esac
 	case "${dst}" in
 	/) err 1 "Tried to cpdup /; src=${src} dst=${dst}" ;;
@@ -113,8 +117,12 @@ _do_clone() {
 		dst="${3}"
 		case "${common}" in
 		/)
-			case "${src}" in
-			".") err 1 "Tried to cpdup /; common=${common} src=${src} dst=${dst}" ;;
+			case "${ALLOW_CLONING_HOST:-no}" in
+			no)
+				case "${src}" in
+				".") err 1 "Tried to cpdup /; common=${common} src=${src} dst=${dst}" ;;
+				esac
+				;;
 			esac
 			case "${dst}" in
 			".") err 1 "Tried to cpdup /; common=${common} src=${src} dst=${dst}" ;;
