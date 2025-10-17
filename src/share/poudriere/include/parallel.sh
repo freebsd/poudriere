@@ -602,6 +602,7 @@ parallel_shutdown() {
 	return "${ret}"
 }
 
+: "${PARALLEL_REAP_PERCENT:=200}"
 parallel_run() {
 	local ret spawn_jobid
 
@@ -612,11 +613,11 @@ parallel_run() {
 	esac
 
 	# Occasionally reap dead children. Don't do this too often or it
-	# becomes a bottleneck. Do it too infrequently and there is a risk
-	# of PID reuse/collision
+	# becomes a bottleneck.
 	_SHOULD_REAP="$((_SHOULD_REAP + 1))"
 	case "${_SHOULD_REAP}" in
-	16)
+	"$(((PARALLEL_JOBS * PARALLEL_REAP_PERCENT) / 100))")
+		msg_dev "parallel_run: REAPING AT ${_SHOULD_REAP} JOBS=${PARALLEL_JOBS}"
 		_SHOULD_REAP=0
 		_reap_children || ret="$?"
 		;;
