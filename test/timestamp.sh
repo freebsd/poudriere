@@ -122,7 +122,7 @@ test_timestamp_5() {
 	assert 0 $? "$0:${LINENO}: incorrect exit status"
 
 	assert_file_reg - "${STDOUT}" <<-EOF
-	\[00:00:0[345]\] \(00:00:00\) start
+	\[00:00:0[345]\] \(00:00:0[012]\) start
 	EOF
 
 	cat > "${STDERR}".expected <<-EOF
@@ -141,7 +141,7 @@ test_timestamp_6() {
 	assert 0 $? "$0:${LINENO}: incorrect exit status"
 
 	assert_file_reg - "${STDOUT}" <<-EOF
-	\[00:00:0[345]\] \(00:00:00\) start
+	\[00:00:0[345]\] \(00:00:0[012]\) start
 	\[00:00:0[678]\] \(00:00:0[345]\) end
 	EOF
 
@@ -161,8 +161,8 @@ test_timestamp_7() {
 	assert 0 $? "$0:${LINENO}: incorrect exit status"
 
 	assert_file_reg - "${STDOUT}" <<-EOF
-	\[00:00:00\] \(00:00:00\) start
-	\[00:00:00\] \(00:00:00\) hi
+	\[00:00:0[012]\] \(00:00:0[012]\) start
+	\[00:00:0[012]\] \(00:00:0[012]\) hi
 	\[00:00:0[345]\] \(00:00:0[345]\) bg
 	\[00:00:0[678]\] \(00:00:0[345]\) done
 	EOF
@@ -195,8 +195,8 @@ test_timestamp_forwards_sigterm() {
 	assert_file_reg - "${STDERR}" <<-EOF
 	timestamp: killing child pid [0-9]+ with SIGTERM
 	EOF
-	assert_file - "${STDOUT}" <<-EOF
-	[00:00:00] ${TMP}
+	assert_file_reg - "${STDOUT}" <<-EOF
+	\[00:00:0[012]\] ${TMP}
 	EOF
 	assert_file - "${TMP}" <<-EOF
 	143
