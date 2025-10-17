@@ -4704,7 +4704,6 @@ download_from_repo() {
 	# Bootstrapping might occur here.
 	# XXX: rquery is supposed to 'update' but it does not on first run.
 	if ! JNETNAME="n" injail env ASSUME_ALWAYS_YES=yes \
-	    PACKAGESITE="${packagesite:?}" \
 	    ${pkg_bin} update -f; then
 		msg "Package fetch: Not fetching as remote repository is unavailable."
 		rm -f "${missing_pkgs}"
