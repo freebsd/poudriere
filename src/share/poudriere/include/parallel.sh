@@ -338,7 +338,6 @@ pwait_jobs() {
 	local jobno pid pids allpids job_status
 	local OPTIND=1 flag
 	local oflag timeout vflag
-	local jobs_jobid
 	local -
 
 	while getopts "ot:v" flag; do
@@ -366,30 +365,28 @@ pwait_jobs() {
 	# Each $(jobs) calls (wait4(2)) so rather than fetch status from
 	# $(jobs) for each pid just fetch it once and then check each
 	# pid for what we care about.
-	while mapfile_read_loop_redir jobs_jobid job_status; do
-		for jobno in "$@"; do
-			case "${jobno}" in
-			"${jobs_jobid}") ;;
-			*) continue ;;
-			esac
-			case "${job_status}" in
-			"Running") ;;
-			*)
-				# Unless the job is *Running* there is nothing to do.
+	while mapfile_read_loop_redir jobno job_status; do
+		case "${jobno-}" in
+		# no jobs
+		"") break ;;
+		esac
+		case "${job_status}" in
+		"Running") ;;
+		*)
+			# Unless the job is *Running* there is nothing to do.
+			continue
+			;;
+		esac
+		pids="$(jobid "${jobno}")" ||
+		    err "${EX_SOFTWARE}" "kill_jobs: jobid"
+		for pid in ${pids}; do
+			if ! kill -0 "${pid}" 2>&5; then
 				continue
-				;;
-			esac
-			pids="$(jobid "${jobno}")" ||
-			    err "${EX_SOFTWARE}" "kill_jobs: jobid"
-			for pid in ${pids}; do
-				if ! kill -0 "${pid}" 2>&5; then
-					continue
-				fi
-				allpids="${allpids:+${allpids} }${pid}"
-			done
-		done 5>/dev/null
-	done <<-EOF
-	$(jobs_with_statuses "$(jobs)")
+			fi
+			allpids="${allpids:+${allpids} }${pid}"
+		done
+	done 5>/dev/null <<-EOF
+	$(jobs_with_statuses "$(jobs)" "$@")
 	EOF
 	case "${allpids:+set}" in
 	set) ;;
@@ -526,24 +523,26 @@ parallel_start() {
 # if any have non-zero return, and then remove them from the PARALLEL_JOBNOS
 # list.
 _reap_children() {
-	local jobno jobs_jobid jobs_status ret
+	local jobno jobs_status ret
+	local -
+	set -o noglob
 
 	ret=0
-	while mapfile_read_loop_redir jobs_jobid jobs_status; do
-		for jobno in ${PARALLEL_JOBNOS-}; do
-			case "${jobno}" in
-			"${jobs_jobid}") ;;
-			*) continue ;;
-			esac
-			case "${jobs_status}" in
-			"Running") continue ;;
-			esac
-			_wait "${jobno}" || ret="$?"
-			list_remove PARALLEL_JOBNOS "${jobno}" ||
-			    err 1 "_reap_children did not find ${jobno} in PARALLEL_JOBNOS"
-		done
+	while mapfile_read_loop_redir jobno jobs_status; do
+		case "${jobno-}" in
+		"") err 1 "_reap_children called with no running jobs" ;;
+		esac
+		case "${jobs_status}" in
+		"Running") continue ;;
+		esac
+		_wait "${jobno}" || ret="$?"
+		list_remove PARALLEL_JOBNOS "${jobno}" ||
+		    err 1 "_reap_children did not find ${jobno} in PARALLEL_JOBNOS"
 	done <<-EOF
-	$(jobs_with_statuses "$(jobs)")
+	$({
+		# shellcheck disable=SC2086
+		jobs_with_statuses "$(jobs)" ${PARALLEL_JOBNOS-}
+	})
 	EOF
 
 	return "${ret}"
