@@ -141,7 +141,7 @@ function minidraw(x, height, width, context, color, queued, variable) {
   var pct, total_pct, newx;
 
   /* Calculate how much percentage this value should display */
-  pct = Math.floor((variable * 100) / queued);
+  pct = (variable * 100) / queued;
   if (pct == 0) {
     return 0;
   }
