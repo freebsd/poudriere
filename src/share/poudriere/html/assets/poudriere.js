@@ -220,12 +220,12 @@ function update_canvas(stats) {
   context.lineWidth = 1;
   context.strokeStyle = "black";
   context.stroke();
-  x += minidraw(x, height, width, context, "#00CC00", queued, built);
-  x += minidraw(x, height, width, context, "#E00000", queued, failed);
-  x += minidraw(x, height, width, context, "#FF9900", queued, inspected);
-  x += minidraw(x, height, width, context, "#FF9900", queued, ignored);
-  x += minidraw(x, height, width, context, "#228B22", queued, fetched);
-  x += minidraw(x, height, width, context, "#CC6633", queued, skipped);
+  x += minidraw(x, height, width, context, getComputedStyle(document.documentElement).getPropertyValue('--bs-success-border-subtle'), queued, built);
+  x += minidraw(x, height, width, context, getComputedStyle(document.documentElement).getPropertyValue('--bs-danger-border-subtle'), queued, failed);
+  x += minidraw(x, height, width, context, getComputedStyle(document.documentElement).getPropertyValue('--bs-info-border-subtle'), queued, skipped);
+  x += minidraw(x, height, width, context, getComputedStyle(document.documentElement).getPropertyValue('--bs-warning-border-subtle'), queued, inspected);
+  x += minidraw(x, height, width, context, getComputedStyle(document.documentElement).getPropertyValue('--bs-warning-border-subtle'), queued, ignored);
+  x += minidraw(x, height, width, context, getComputedStyle(document.documentElement).getPropertyValue('--bs-primary-border-subtle'), queued, fetched);
 
   pctdone = ((queued - remaining) * 100) / queued;
   if (isNaN(pctdone)) {
