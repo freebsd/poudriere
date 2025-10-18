@@ -226,28 +226,29 @@ CLEANFILES+=		\
 			src/poudriere-sh/shell.h
 sh_SOURCES+=		\
 			src/poudriere-sh/builtins-poudriere.def \
-			src/poudriere-sh/chmod.c \
 			src/poudriere-sh/helpers.c \
 			src/poudriere-sh/helpers.h \
 			src/poudriere-sh/mapfile.c \
-			src/poudriere-sh/mkdir.c \
-			src/poudriere-sh/mkfifo.c \
-			src/poudriere-sh/mktemp.c \
-			src/poudriere-sh/realpath.c \
-			src/poudriere-sh/rmdir.c \
-			src/poudriere-sh/setproctitle.c \
-			src/poudriere-sh/sleep.c \
-			src/poudriere-sh/stat.c \
-			src/poudriere-sh/touch.c \
-			src/poudriere-sh/traps.c \
-			src/poudriere-sh/unlink.c \
-			src/poudriere-sh/wc.c
+			src/poudriere-sh/traps.c
+# external builtins
+sh_SOURCES+=		src/poudriere-sh/chmod.c
 sh_SOURCES+=		$(clock_SOURCES)
 sh_SOURCES+=		$(dirempty_SOURCES)
 sh_SOURCES+=		$(locked_mkdir_SOURCES)
+sh_SOURCES+=		src/poudriere-sh/mkdir.c
+sh_SOURCES+=		src/poudriere-sh/mkfifo.c
+sh_SOURCES+=		src/poudriere-sh/mktemp.c
 sh_SOURCES+=		$(pwait_SOURCES)
+sh_SOURCES+=		src/poudriere-sh/realpath.c
 sh_SOURCES+=		$(rename_SOURCES)
 sh_SOURCES+=		$(rm_SOURCES)
+sh_SOURCES+=		src/poudriere-sh/rmdir.c
+sh_SOURCES+=		src/poudriere-sh/setproctitle.c
+sh_SOURCES+=		src/poudriere-sh/sleep.c
+sh_SOURCES+=		src/poudriere-sh/stat.c
+sh_SOURCES+=		src/poudriere-sh/touch.c
+sh_SOURCES+=		src/poudriere-sh/unlink.c
+sh_SOURCES+=		src/poudriere-sh/wc.c
 noinst_PROGRAMS+=	external/sh/mknodes
 external_sh_mknodes_SOURCES= external/sh/mknodes.c
 external/sh/nodes.c: external/sh/mknodes \
