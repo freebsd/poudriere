@@ -936,9 +936,8 @@ do_confirm_delete() {
 	case "${answer}" in
 	"yes")
 		msg_n "Removing files..."
-		mapfile_cat_file "${filelist:?}" |
-		    tr '\n' '\000' |
-		    xargs -0 rm -rf
+		remove_many_file "${filelist:?}" rm -rf ||
+		    err 1 "Failed to delete files"
 		echo " done"
 		ret=1
 		;;
@@ -8365,9 +8364,8 @@ gather_port_vars() {
 			if ! parallel_stop; then
 				err 1 "Fatal errors encountered processing gathered ports metadata"
 			fi
-			mapfile_cat_file "${qlist:?}" |
-			    tr '\n' '\000' |
-			    xargs -0 rmdir
+			remove_many_file "${qlist:?}" rmdir ||
+			    err 1 "gather_port_vars: remove_many_file"
 		fi
 
 		# Now process the gatherqueue
@@ -8400,9 +8398,8 @@ gather_port_vars() {
 			if ! parallel_stop; then
 				err 1 "Fatal errors encountered gathering ports metadata"
 			fi
-			mapfile_cat_file "${qlist:?}" |
-			    tr '\n' '\000' |
-			    xargs -0 rm -rf
+			remove_many_file "${qlist:?}" rm -rf ||
+			    err 1 "gather_port_vars: remove_many_file"
 		fi
 
 		if ! dirempty gqueue || ! dirempty dqueue; then
@@ -9980,10 +9977,8 @@ prepare_ports() {
 				;;
 			esac
 			msg "(${reason}) Flushing package deletions"
-			mapfile_cat_file "${delete_pkg_list:?}" |
-			    tr '\n' '\000' |
-			    xargs -0 rm -rf
-			unlink "${delete_pkg_list:?}" || :
+			remove_many_file "${delete_pkg_list:?}" rm -rf ||
+			    err 1 "prepare_ports: remove_many_file"
 		fi
 
 		# If the build is being resumed then packages already

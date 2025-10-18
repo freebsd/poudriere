@@ -86,6 +86,9 @@ TESTS=\
 	readlines.sh \
 	relpath.sh \
 	relpath_common.sh \
+	remove_many.sh \
+	remove_many_file.sh \
+	remove_many_pipe.sh \
 	required_env.sh \
 	setup_traps.sh \
 	setvar.sh \

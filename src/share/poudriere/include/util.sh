@@ -2861,3 +2861,151 @@ nproc() {
 	sysctl -n hw.ncpu
 }
 fi
+
+# Delete all files listed in the given file.
+remove_many_file() {
+	[ $# -ge 1 ] || eargs remove_many_file filename 'rm cmd'
+	local filelist="$1"
+	shift
+	local cmd ret -
+	set_pipefail
+	set -o noglob
+
+	ret=0
+	if [ ! -s "${filelist:?}" ]; then
+		unlink "${filelist:?}" || return
+		return
+	fi
+	case "$#" in
+	0)
+		if have_builtin "unlink"; then
+			set -- "unlink" "--"
+		else
+			set --  "rm" "-f"
+		fi
+		;;
+	esac
+	cmd="${1-}"
+	if have_builtin "${cmd:?}"; then
+		local file
+
+		while mapfile_read_loop "${filelist:?}" file; do
+			"$@" "${file:?}" || ret="$?"
+		done
+	else
+		mapfile_cat_file "${filelist:?}" |
+		    remove_many_pipe "$@" ||
+		    ret="$?"
+	fi
+	case "${ret}" in
+	0) unlink "${filelist:?}" || ret="$?" ;;
+	esac
+	return "${ret}"
+}
+
+# Delete all files listed in stdin, possibly avoiding fork+exec.
+remove_many_pipe() {
+	[ $# -ge 0 ] || eargs remove_many_pipe 'rm cmd'
+	local ret -
+	local cmd file
+	set_pipefail
+	set -o noglob
+
+	case "$#" in
+	0)
+		if have_builtin "unlink"; then
+			set -- "unlink" "--"
+		else
+			set --  "rm" "-f"
+		fi
+		;;
+	esac
+	cmd="$1"
+	ret=0
+	if have_builtin "${cmd}"; then
+		while mapfile_read_loop_redir file; do
+			"$@" "${file:?}" || ret="$?"
+		done
+	else
+		tr '\n' '\000' |
+		    xargs -0 "$@" ||
+		    ret="$?"
+	fi
+	return "${ret}"
+}
+unlink_many_pipe() { remove_many_pipe; }
+rmdir_many_pipe() { remove_many_pipe rmdir; }
+rmrf_many_pipe() { remove_many_pipe rm -rf; }
+
+# These take 1 argument because we're really never going to be passed
+# an array of files in practice.
+# Delete all files passed in, possibly avoiding a fork+exec
+_remove_many() {
+	[ $# -ge 2 ] || eargs _remove_many cmd -- '"files..."'
+	local cmd="$1"
+	local cmd_extra
+	shift
+	local ret -
+	local file
+	set -o noglob
+
+	case "$@" in
+	--" "*|*" -- "*) ;;
+	*) eargs _remove_many cmd -- '"files..."' ;;
+	esac
+
+	cmd_extra=
+	while :; do
+		case "$1" in
+		--)
+			shift
+			break
+			;;
+		*)
+			cmd_extra="$1"
+			shift
+			;;
+		esac
+	done
+	[ $# -eq 1 ] || eargs _remove_many cmd -- '"files..."'
+	# Expand the 1 argument into an array.
+	# shellcheck disable=SC2086
+	set -- $1
+
+	ret=0
+	if have_builtin "${cmd}"; then
+		for file in "$@"; do
+			"${cmd}" ${cmd_extra:+"${cmd_extra}"} "${file:?}" || ret="$?"
+		done
+	else
+		for file in "$@"; do
+			echo "${file:?}"
+		done | remove_many_pipe "${cmd}" \
+		    ${cmd_extra:+"${cmd_extra}"} ||
+		    ret="$?"
+	fi
+	return "${ret}"
+}
+
+# Delete all files passed in, possibly avoiding a fork+exec
+unlink_many() {
+	[ $# -eq 1 ] || eargs unlink_many '"files..."'
+	if ! have_builtin unlink; then
+		_remove_many rm -f -- "$@" || return
+		return
+	fi
+	_remove_many unlink -- "$@"
+}
+
+# Delete all dirs passed in, possibly avoiding a fork+exec
+rmdir_many() {
+	[ $# -eq 1 ] || eargs rmdir_many '"dirs..."'
+	_remove_many rmdir -- "$@"
+}
+
+# Recursively delete all dirs passed in, possibly avoiding a fork+exec
+rmrf_many() {
+	[ $# -ge 1 ] || eargs rmrf_many '"dirs..."'
+	_remove_many rm -rf -- "$@"
+}
+remove_many() { rmrf_many "$@"; }
