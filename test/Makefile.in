@@ -509,10 +509,10 @@ TESTS = alarm.sh array.sh builtins.sh builtins-cut.sh \
 	shash-race.sh shash-race-noclobber.sh shash-race-piped.sh \
 	shash-race-piped-noclobber.sh shellcheck.sh stack.sh \
 	stripansi.sh test_contexts.sh test_contexts_expand.sh \
-	timespec.sh timestamp.sh trap_ignore_block.sh trap_save.sh \
-	trap_save_block.sh write_atomic.sh write_atomic-piped.sh \
-	write_atomic_cmp.sh write_atomic_cmp-piped.sh $(JAIL_TESTS) \
-	prep.sh
+	timeout.sh timespec.sh timestamp.sh trap_ignore_block.sh \
+	trap_save.sh trap_save_block.sh write_atomic.sh \
+	write_atomic-piped.sh write_atomic_cmp.sh \
+	write_atomic_cmp-piped.sh $(JAIL_TESTS) prep.sh
 JAIL_TESTS = \
 	bulk-MOVED-default.sh \
 	bulk-MOVED-flavor-all.sh \
@@ -1437,6 +1437,13 @@ test_contexts.sh.log: test_contexts.sh
 test_contexts_expand.sh.log: test_contexts_expand.sh
 	@p='test_contexts_expand.sh'; \
 	b='test_contexts_expand.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+timeout.sh.log: timeout.sh
+	@p='timeout.sh'; \
+	b='timeout.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

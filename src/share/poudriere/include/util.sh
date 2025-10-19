@@ -1148,6 +1148,66 @@ alarm() {
 }
 fi
 
+_timeout_job() {
+	[ $# -ge 1 ] || eargs _timeout_job '"$@"'
+
+	setproctitle "timeout_job $1"
+	"$@"
+}
+
+timeout() {
+	[ $# -ge 2 ] || eargs timeout duration 'cmd...'
+	local timeout="$1"
+	shift
+	local ret aret
+	local -
+
+	case "$(type "$1")" in
+	# sleep is hooked for set -T
+	"sleep is a shell function") ;;
+	*"is a shell function")
+		if ! have_builtin "$1"; then
+			err "${EX_USAGE:-64}" "timeout: Only supported for" \
+			    "external commands and builtins"
+		fi
+		;;
+	esac
+
+	set -T
+	ret=0
+	aret=0
+	# Need special handling due to how a signal interrupts the current
+	# command running.
+	if ! have_builtin "$1"; then
+		# shellcheck disable=SC2034
+		local spawn_jobid spawn_job spawn_pgid spawn_pid
+
+		spawn_job _timeout_job "$@" || ret="$?"
+		timed_wait_and_kill_job "${timeout}" "${spawn_job:?}" ||
+		    aret="$?"
+		case "${aret}" in
+		143) aret=124 ;;
+		esac
+	else
+		if alarm "${timeout}"; then
+			"$@" || ret="$?"
+			case "${ret}" in
+			142) ret=124 ;;
+			esac
+			alarm || aret="$?"
+			case "${aret}" in
+			142) aret=124 ;;
+			esac
+		else
+			aret=124
+		fi
+	fi
+	case "${ret}" in
+	0) ret="${aret}" ;;
+	esac
+	return "${ret}"
+}
+
 # SIGINFO traps won't abort the read, and if the pipe goes away or
 # turns into a file then an error is returned.
 read_pipe() {
