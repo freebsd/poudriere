@@ -953,7 +953,7 @@ readarray_file() {
 # SIGINFO traps won't abort the read.
 read_blocking() {
 	local -; set +x
-	[ $# -ge 1 ] || eargs read_blocking read_args
+	[ $# -ge 1 ] || eargs read_blocking '[-t timeout]' read_args
 	local rb_ret
 	local OPTIND=1 flag tflag timeout time_start now
 
@@ -965,27 +965,30 @@ read_blocking() {
 		esac
 	done
 	shift "$((OPTIND-1))"
-	case "${tflag}" in
-	"") ;;
-	*.*) timeout="${tflag}" ;;
-	*) time_start="$(clock -monotonic)" ;;
+	[ $# -ge 1 ] || eargs read_blocking '[-t timeout]' read_args
+	case "${tflag:+set}" in
+	set)
+		# read(builtin) does not support decimal timeout.
+		timeout="${tflag%.*}"
+		time_start="$(clock -monotonic)"
+		;;
+	*) unset timeout ;;
 	esac
 	while :; do
 		rb_ret=0
 		# Adjust timeout
-		case "${tflag}" in
-		""|*.*) ;;
+		case "${timeout-}" in
+		"") ;;
 		*)
 			now="$(clock -monotonic)"
-			timeout="$((tflag - (now - time_start)))"
+			timeout="$((timeout - (now - time_start)))"
 			case "${timeout}" in
 			"-"*) timeout=0 ;;
 			esac
 			;;
 		esac
 		set -o noglob
-		# shellcheck disable=SC2086
-		read -r ${tflag:+-t "${timeout}"} "$@" || rb_ret="$?"
+		read -r ${timeout:+-t "${timeout}"} "$@" || rb_ret="$?"
 		set +o noglob
 		case ${rb_ret} in
 			# Read again on SIGINFO interrupts
@@ -1004,9 +1007,10 @@ read_blocking() {
 # Same as read_blocking() but it reads an entire raw line.
 # Needed because 'IFS= read_blocking' doesn't reset IFS like the normal read
 # builtin does.
+# XXX: no tests
 read_blocking_line() {
 	local -; set +x
-	[ $# -ge 1 ] || eargs read_blocking_line read_args
+	[ $# -ge 1 ] || eargs read_blocking_line '[-t timeout]' read_args
 	local rbl_ret IFS
 	local OPTIND=1 flag tflag timeout time_start now
 
@@ -1018,27 +1022,30 @@ read_blocking_line() {
 		esac
 	done
 	shift "$((OPTIND-1))"
-	case "${tflag}" in
-	"") ;;
-	*.*) timeout="${tflag}" ;;
-	*) time_start="$(clock -monotonic)" ;;
+	[ $# -ge 1 ] || eargs read_blocking_line '[-t timeout]' read_args
+	case "${tflag:+set}" in
+	set)
+		# read(builtin) does not support decimal timeout.
+		timeout="${tflag%.*}"
+		time_start="$(clock -monotonic)"
+		;;
+	*) unset timeout ;;
 	esac
 	while :; do
 		rbl_ret=0
 		# Adjust timeout
-		case "${tflag}" in
-		""|*.*) ;;
+		case "${timeout-}" in
+		"") ;;
 		*)
 			now="$(clock -monotonic)"
-			timeout="$((tflag - (now - time_start)))"
+			timeout="$((timeout - (now - time_start)))"
 			case "${timeout}" in
 			"-"*) timeout=0 ;;
 			esac
 			;;
 		esac
 		set -o noglob
-		# shellcheck disable=SC2086
-		IFS= read -r ${tflag:+-t "${timeout}"} "$@" || rbl_ret="$?"
+		IFS= read -r ${timeout:+-t "${timeout}"} "$@" || rbl_ret="$?"
 		set +o noglob
 		case "${rbl_ret}" in
 			# Read again on SIGINFO interrupts
@@ -1145,7 +1152,7 @@ fi
 # turns into a file then an error is returned.
 read_pipe() {
 	local -; set +x
-	[ $# -ge 2 ] || eargs read_pipe fifo read_args
+	[ $# -ge 2 ] || eargs read_pipe fifo '[-t timeout]' read_args
 	local fifo="$1"
 	local rp_ret resread resopen
 	local OPTIND=1 flag tflag timeout time_start now
@@ -1160,10 +1167,14 @@ read_pipe() {
 		esac
 	done
 	shift "$((OPTIND-1))"
-	case "${tflag}" in
-	"") ;;
-	*.*) timeout="${tflag}" ;;
-	*) time_start="$(clock -monotonic)" ;;
+	[ $# -ge 1 ] || eargs read_pipe fifo '[-t timeout]' read_args
+	case "${tflag:+set}" in
+	set)
+		# read(builtin) does not support decimal timeout.
+		timeout="${tflag%.*}"
+		time_start="$(clock -monotonic)"
+		;;
+	*) unset timeout ;;
 	esac
 	while :; do
 		if ! [ -p "${fifo}" ]; then
@@ -1175,19 +1186,18 @@ read_pipe() {
 		resread=0
 		resopen=0
 		# Adjust timeout
-		case "${tflag}" in
-		""|*.*) ;;
+		case "${timeout-}" in
+		"") ;;
 		*)
 			now="$(clock -monotonic)"
-			timeout="$((tflag - (now - time_start)))"
+			timeout="$((timeout - (now - time_start)))"
 			case "${timeout}" in
 			"-"*) timeout=0 ;;
 			esac
 			;;
 		esac
 		set -o noglob
-		# shellcheck disable=SC2086
-		{ { read -r ${tflag:+-t "${timeout}"} "$@" || resread=$?; } \
+		{ { read -r ${timeout:+-t "${timeout}"} "$@" || resread=$?; } \
 		    < "${fifo}" || resopen=$?; } \
 		    2>/dev/null
 		set +o noglob
@@ -1218,9 +1228,10 @@ read_pipe() {
 }
 
 # Ignore EOF
+# XXX: no tests
 read_pipe_noeof() {
 	local -; set +x
-	[ $# -ge 2 ] || eargs read_pipe_noeof fifo read_args
+	[ $# -ge 2 ] || eargs read_pipe_noeof fifo '[-t timeout]' read_args
 	local fifo="$1"
 	local rpn_ret
 	shift
@@ -1234,27 +1245,30 @@ read_pipe_noeof() {
 		esac
 	done
 	shift "$((OPTIND-1))"
-	case "${tflag}" in
-	"") ;;
-	*.*) timeout="${tflag}" ;;
-	*) time_start="$(clock -monotonic)" ;;
+	[ $# -ge 1 ] || eargs read_pipe_noeof fifo '[-t timeout]' read_args
+	case "${tflag:+set}" in
+	set)
+		# read(builtin) does not support decimal timeout.
+		timeout="${tflag%.*}"
+		time_start="$(clock -monotonic)"
+		;;
+	*) unset timeout ;;
 	esac
 	while :; do
 		rpn_ret=0
 		# Adjust timeout
-		case "${tflag}" in
-		""|*.*) ;;
+		case "${timeout-}" in
+		"") ;;
 		*)
 			now="$(clock -monotonic)"
-			timeout="$((tflag - (now - time_start)))"
+			timeout="$((timeout - (now - time_start)))"
 			case "${timeout}" in
 			"-"*) timeout=0 ;;
 			esac
 			;;
 		esac
 		set -o noglob
-		# shellcheck disable=SC2086
-		read_pipe "${fifo}" ${tflag:+-t "${timeout}"} "$@" || rpn_ret="$?"
+		read_pipe "${fifo}" ${timeout:+-t "${timeout}"} "$@" || rpn_ret="$?"
 		set +o noglob
 		case "${rpn_ret}" in
 		1) ;;
