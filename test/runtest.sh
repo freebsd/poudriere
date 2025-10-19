@@ -420,7 +420,7 @@ case "$(type pwait)" in
 	PWAIT_BUILTIN=1
 	;;
 esac
-# Wrapper to fix SIGINFO [EINTR], -t 0, and ssert on errors.
+# Wrapper to fix SIGINFO [EINTR], -t 0, and assert on errors.
 pwait() {
 	[ "$#" -ge 1 ] || eargs pwait '[pwait flags]' pids
 	local OPTIND=1 flag
