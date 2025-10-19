@@ -498,7 +498,11 @@ _assert_runs_le() {
 # This function may be called in "$@" contexts that do not use eval.
 assert_runs_le() { _assert_runs_le "${lineinfo-}" "$@"; }
 alias assert_runs_le="_assert_runs_le \"${_LINEINFO_DATA:?}\" "
+assert_runs_shorter_than() { assert_runs_le "$@"; }
 alias assert_runs_shorter_than='assert_runs_le '
+assert_runs_less_than() { assert_runs_le "$@"; }
+alias assert_runs_less_than='assert_runs_le '
+assert_runs_within() { assert_runs_shorter_than "$@"; }
 alias assert_runs_within='assert_runs_shorter_than '
 
 _assert_runs_ge() {
@@ -520,11 +524,15 @@ _assert_runs_ge() {
 	fi
 	aecho TEST_FINISH "${lineinfo}" "ran in ${duration} seconds ret=${ret} cmd: $*"
 	_assert_compare "${lineinfo}" "-ge" "${within_ge}" "${duration}" "${reason}${REASON:+ "$'\n'" ${REASON}}"
+	return "${ret}"
 }
 # This function may be called in "$@" contexts that do not use eval.
 assert_runs_ge() { _assert_runs_ge "${lineinfo-}" "$@"; }
 alias assert_runs_ge="_assert_runs_ge \"${_LINEINFO_DATA:?}\" "
+assert_runs_longer_than() { assert_runs_ge "$@"; }
 alias assert_runs_longer_than='assert_runs_ge '
+assert_runs_greather_than() { assert_runs_ge "$@"; }
+alias assert_runs_greather_than='assert_runs_ge '
 
 _assert_runs_between() {
 	local -; set +x +e +u
@@ -546,6 +554,7 @@ _assert_runs_between() {
 	_assert_compare "${lineinfo}" "-ge" "${secs_start}" "${duration}" "${reason}${REASON:+ "$'\n'" ${REASON}}"
 	reason="Took longer than ${secs_end} seconds. Took ${duration} seconds. cmd: $*"
 	_assert_compare "${lineinfo}" "-le" "${secs_end}" "${duration}" "${reason}${REASON:+ "$'\n'" ${REASON}}"
+	return "${ret}"
 }
 # This function may be called in "$@" contexts that do not use eval.
 assert_runs_between() { _assert_runs_between "${lineinfo-}" "$@"; }
