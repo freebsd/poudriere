@@ -225,6 +225,7 @@ CLEANFILES+=		\
 			src/poudriere-sh/builtins.h \
 			src/poudriere-sh/shell.h
 sh_SOURCES+=		\
+			src/poudriere-sh/alarm.c \
 			src/poudriere-sh/builtins-poudriere.def \
 			src/poudriere-sh/helpers.c \
 			src/poudriere-sh/helpers.h \

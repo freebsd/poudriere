@@ -20,6 +20,7 @@ XFAIL_TESTS= \
 	options-overlays.sh
 
 TESTS=\
+	alarm.sh \
 	array.sh \
 	builtins.sh \
 	builtins-cut.sh \

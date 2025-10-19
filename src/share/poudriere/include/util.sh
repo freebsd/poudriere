@@ -1054,6 +1054,93 @@ read_blocking_line() {
 	return "${rbl_ret}"
 }
 
+if ! have_builtin alarm; then
+unset _ALARM_JOB
+_alarm_job() {
+	[ $# -eq 2 ] || eargs _alarm_job parentpid timeout
+	local parentpid="$1"
+	local timeout="$2"
+
+	case "${timeout}" in
+	*.*) timeout="${timeout%.*}" ;;
+	esac
+	setproctitle "alarm(${parentpid}, ${timeout})"
+	sleep "${timeout:?}" || return
+	kill -ALRM "${parentpid:?}"
+}
+
+# shellcheck disable=SC2120
+_alarm_cleanup() {
+	[ $# -eq 0 ] || eargs _alarm_cleanup
+	local _gotalrm
+
+	case "${_ALARM_JOB:+set}" in
+	set) ;;
+	*) err "${EX_USAGE:-64}" "alarm: not set" ;;
+	esac
+	kill_job 0 "${_ALARM_JOB:?}" 2>/dev/null || :
+	trap - ALRM
+	_gotalrm="${_GOTALRM:?}"
+	unset _ALARM_JOB _GOTALRM
+	# XXX: set_pop -T
+	return "${_gotalrm}"
+}
+
+# This is for setting an alarm on a *builtin* operation like redirecting
+# from a pipe.
+# Timing out for an external command currently requires timeout().
+# There is a race between arming the alarm and running the command.
+# ```
+# ret=0
+# aret=0
+# if alarm "${timeout}"; then
+#	cmd || ret=$?
+#	alarm || aret=?
+# else
+#	aret=142
+# fi
+# case "${ret}" in
+# 0) ret="${aret}" ;;
+# esac
+# ```
+# Returns 124 if timeout already reached (0).
+# Returns 142 if previous alarm was fired and not collected.
+# Returns 0 otherwise.
+alarm() {
+	[ $# -le 1 ] || eargs alarm '[timeout]'
+	local timeout="${1-}"
+	# shellcheck disable=SC2034
+	local spawn_jobid spawn_job spawn_pgid spawn_pid
+
+	case "${timeout:+set}" in
+	set)
+		# Cleanup previously fired alarm
+		case "${_ALARM_JOB:+set}" in
+		set) _alarm_cleanup || : ;;
+		esac
+		case "${_ALARM_JOB-unset}" in
+		unset) ;;
+		*)
+			err 1 "alarm: _ALARM_JOB is already set: ${_ALARM_JOB}"
+			;;
+		esac
+		case "${timeout}" in
+		0) return 124 ;;
+		esac
+		trap '_GOTALRM=142' ALRM
+		_GOTALRM=0
+		spawn_job _alarm_job "$(getpid)" "${timeout}" ||
+		    err "${EX_SOFTWARE}" "alarm: spawn_job"
+		_ALARM_JOB="${spawn_job:?}"
+		# XXX: set_push -T
+		;;
+	*)
+		_alarm_cleanup || return
+		;;
+	esac
+}
+fi
+
 # SIGINFO traps won't abort the read, and if the pipe goes away or
 # turns into a file then an error is returned.
 read_pipe() {
