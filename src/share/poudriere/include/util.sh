@@ -1214,7 +1214,7 @@ read_pipe() {
 	local -; set +x
 	[ $# -ge 2 ] || eargs read_pipe fifo '[-t timeout]' read_args
 	local fifo="$1"
-	local rp_ret resread resopen
+	local rp_ret resread resopen aret
 	local OPTIND=1 flag tflag timeout time_start now
 	shift
 
@@ -1257,9 +1257,35 @@ read_pipe() {
 			;;
 		esac
 		set -o noglob
-		{ { read -r ${timeout:+-t "${timeout}"} "$@" || resread=$?; } \
-		    < "${fifo}" || resopen=$?; } \
-		    2>/dev/null
+		case "${timeout:+set}" in
+		set)
+			if alarm "${timeout}"; then
+				{
+					{
+						read -r \
+						    ${timeout:+-t "${timeout}"} \
+						    "$@" || resread=$?
+					} < "${fifo}" || resopen=$?
+				}
+				aret=0
+				alarm || aret="$?"
+			else
+				aret=142
+			fi
+			case "${resopen}" in
+			0) resopen="${aret}" ;;
+			esac
+			;;
+		*)
+			{
+				{
+					read -r \
+					    ${timeout:+-t "${timeout}"} \
+					    "$@" || resread=$?
+				} < "${fifo}" || resopen=$?
+			}
+			;;
+		esac
 		set +o noglob
 		msg_dev "read_pipe ${fifo}: resread=${resread} resopen=${resopen}"
 		# First check the open errors
