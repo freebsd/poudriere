@@ -3160,8 +3160,8 @@ commit_packages() {
 
 	# Cleanup pkg cache
 	if [ -e "${PACKAGES_PKG_CACHE:?}" ]; then
-		find -L "${PACKAGES_PKG_CACHE:?}" -links 1 -print0 | \
-		    xargs -0 rm -f
+		find -L "${PACKAGES_PKG_CACHE:?}" -links 1 -print0 |
+		    unlink_many_pipe
 	fi
 
 	case "${ATOMIC_PACKAGE_REPOSITORY-}" in
@@ -3250,13 +3250,15 @@ symlink to .latest/${name}"
 		find "${PACKAGES_ROOT:?}/" -type d -mindepth 1 -maxdepth 1 \
 		    -name '.real_*' | sort -dr |
 		    sed -n "${keep_cnt},\$p" |
-		    xargs rm -rf 2>/dev/null || :
+		    rmrf_many_pipe ||
+		    err 1 "commit_packages: rm"
 		;;
 	*)
 		# Remove old and shadow dir
 		case "${pkgdir_old:+set}" in
 		set)
-			rm -rf "${pkgdir_old:?}" 2>/dev/null || :
+			rm -rf "${pkgdir_old:?}" ||
+			    err 1 "commit_packages: rm"
 			;;
 		esac
 		;;

@@ -381,8 +381,8 @@ pkgqueue_clean_rdeps() {
 			esac
 			dep_pkgqueue_job="${dep_dir##*/}"
 			pkgqueue_dir pkg_dir_name "${dep_pkgqueue_job}"
-			deps_to_check="${deps_to_check} deps/${pkg_dir_name}"
-			deps_to_clean="${deps_to_clean} deps/${pkg_dir_name}/${pkgqueue_job}"
+			deps_to_check="${deps_to_check:+${deps_to_check} }deps/${pkg_dir_name}"
+			deps_to_clean="${deps_to_clean:+${deps_to_clean} }deps/${pkg_dir_name}/${pkgqueue_job}"
 		done
 		case "${deps_to_clean:+set}${deps_to_check:+set}" in
 		"") ;;
@@ -392,11 +392,12 @@ pkgqueue_clean_rdeps() {
 			# Note that this is not needed when recursively cleaning
 			# as the entire /deps/<pkgname> for all my rdeps will
 			# be removed.
-			echo "${deps_to_clean}" | xargs rm -f || :
+			unlink_many "${deps_to_clean}" || :
 
 			# Look for packages that are now ready to build. They
 			# have no remaining dependencies. Move them to
 			# /unbalanced for later processing.
+			# shellcheck disable=SC2086
 			echo "${deps_to_check}" |
 			    xargs -J % \
 			    find % -type d -maxdepth 0 -empty |
@@ -447,7 +448,7 @@ pkgqueue_clean_deps() {
 
 	case "${rdeps_to_clean:+set}" in
 	set)
-		echo "${rdeps_to_clean}" | xargs rm -f 2>/dev/null || :
+		unlink_many "${rdeps_to_clean}" 2>/dev/null || :
 		;;
 	esac
 
@@ -658,7 +659,7 @@ _pkgqueue_remove_many_pipe() {
 			;;
 		*) ;;
 		esac
-	done | xargs rm -rf
+	done | remove_many_pipe rm -rf
 }
 
 _pkgqueue_compute_rdeps() {
