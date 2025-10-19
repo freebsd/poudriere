@@ -879,7 +879,8 @@ FreeBSD-base: {
 }
 EOF
 
-	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ update
+	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ update || \
+	    err 1 "pkg update failed"
 	# Omit the man/debug/kernel/src and tests packages, unneeded for us.
 	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ search -qCx '^FreeBSD-.*' | grep -vE -- '-man|-dbg|-kernel-|-tests|-src-' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ install -y
 	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ search -q '^FreeBSD-src-sys' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ install -y
