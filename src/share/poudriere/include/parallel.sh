@@ -105,15 +105,31 @@ pwait() {
 	shift $((OPTIND-1))
 
 	[ "$#" -ge 1 ] || eargs pwait '[pwait flags]' pids
-	case "${tflag}" in
-	"") ;;
-	*.*) timeout="${tflag}" ;;
-	*) time_start="$(clock -monotonic)" ;;
+	case "${tflag:+set}" in
+	set) time_start="$(clock -monotonic)" ;;
 	esac
 	while :; do
 		# Adjust timeout
-		case "${tflag}" in
-		""|*.*) ;;
+		case "${tflag-}" in
+		"") ;;
+		*.*)
+			local timeout_orig
+
+			now="$(clock -monotonic)"
+			timeout_orig="${tflag:?}"
+			timeout="$(printf "%d.%d" \
+			    "$((${timeout_orig%.*} - \
+			    (now - time_start)))" \
+			    "${timeout_orig#*.}")"
+			case "${timeout}" in
+			"-"*) timeout=0 ;;
+			esac
+			# Special case for pwait as it does not handle
+			# -t 0 well.
+			case "${timeout}" in
+			0) timeout="0.00001" ;;
+			esac
+			;;
 		*)
 			now="$(clock -monotonic)"
 			timeout="$((tflag - (now - time_start)))"

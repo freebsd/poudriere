@@ -501,7 +501,7 @@ TESTS = alarm.sh array.sh builtins.sh builtins-cut.sh \
 	pkgqueue_find_all_pool_references.sh pkgqueue_get_next_race.sh \
 	pkgqueue_mutually_exclusive.sh pkgqueue_prioritize.sh \
 	pkgqueue_remove_many_pipe.sh pkgqueue_trimmed_misordered.sh \
-	port_var_fetch.sh prefix_output.sh read_blocking.sh \
+	port_var_fetch.sh prefix_output.sh pwait.sh read_blocking.sh \
 	read_pipe.sh read_file.sh read_line.sh readarray.sh \
 	readlines.sh relpath.sh relpath_common.sh remove_many.sh \
 	remove_many_file.sh remove_many_pipe.sh required_env.sh \
@@ -1262,6 +1262,13 @@ port_var_fetch.sh.log: port_var_fetch.sh
 prefix_output.sh.log: prefix_output.sh
 	@p='prefix_output.sh'; \
 	b='prefix_output.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+pwait.sh.log: pwait.sh
+	@p='pwait.sh'; \
+	b='pwait.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

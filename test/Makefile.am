@@ -80,6 +80,7 @@ TESTS=\
 	pkgqueue_trimmed_misordered.sh \
 	port_var_fetch.sh \
 	prefix_output.sh \
+	pwait.sh \
 	read_blocking.sh \
 	read_pipe.sh \
 	read_file.sh \
