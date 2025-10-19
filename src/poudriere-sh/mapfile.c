@@ -77,6 +77,8 @@ struct mapped_data {
 	int pid;
 };
 static struct mapped_data *mapped_files[MAX_FILES] = {0};
+/* Hack for not using a hash table. */
+static int read_loop_handles[5] = {-1, -1, -1, -1, -1};
 
 static int
 _mapfile_read(struct mapped_data *md, char **linep, ssize_t *linelenp,
@@ -94,6 +96,12 @@ md_close(struct mapped_data *md)
 	assert(is_int_on());
 
 	idx = md->handle;
+	assert(idx != -1);
+#ifndef NDEBUG
+	for (int i = 0; i < nitems(read_loop_handles); i++) {
+		assert(read_loop_handles[i] != md->handle);
+	}
+#endif
 	md->handle = -1;
 	free(md->file);
 	md->file = NULL;
@@ -363,6 +371,7 @@ mapfile_readcmd(int argc, char **argv)
 	INTOFF;
 	md = md_find(handle);
 	INTON;
+
 	return (_mapfile_readcmd(md, argc, argv));
 }
 
@@ -490,10 +499,7 @@ done:
 
 /*
  * Cache recently used handles.
- * Hack for not using a hash table.
  */
-static int read_loop_handles[5] = {-1, -1, -1, -1, -1};
-
 static bool
 read_loop_check_file(struct mapped_data *md, const char *file)
 {
@@ -553,12 +559,20 @@ read_loop_find(bool (*function)(struct mapped_data *, const char *),
 		}
 	}
 	if (md != NULL) {
+#ifndef NDEBUG
+		bool found = false;
+#endif
+
 		for (int i = 0; i < nitems(read_loop_handles); i++) {
 			if (read_loop_handles[i] == -1) {
 				read_loop_handles[i] = md->handle;
+#ifndef NDEBUG
+				found = true;
+#endif
 				break;
 			}
 		}
+		assert(found == true);
 	}
 	return (md);
 }
@@ -610,6 +624,9 @@ mapfile_read_loopcmd(int argc, char **argv)
 	struct mapped_data *md;
 	const char *file;
 	int error;
+#ifndef NDEBUG
+	bool found;
+#endif
 
 	if (argc < 2)
 		errx(EX_USAGE, "%s", usage);
@@ -631,23 +648,37 @@ mapfile_read_loopcmd(int argc, char **argv)
 		assert(md != NULL);
 		md->fd0_redirected = fd0_redirected;
 		md->pid = shpid;
+#ifndef NDEBUG
+		found = false;
+#endif
 		for (int i = 0; i < nitems(read_loop_handles); i++) {
 			if (read_loop_handles[i] == -1) {
+#ifndef NDEBUG
+				found = true;
+#endif
 				read_loop_handles[i] = md->handle;
 				break;
 			}
 		}
+		assert(found == true);
 	}
 	INTON;
 	error = _mapfile_readcmd(md, argc, argv);
 	if (error != 0) {
 		INTOFF;
+#ifndef NDEBUG
+		found = false;
+#endif
 		for (int i = 0; i < nitems(read_loop_handles); i++) {
 			if (read_loop_handles[i] == md->handle) {
 				read_loop_handles[i] = -1;
+#ifndef NDEBUG
+				found = true;
+#endif
 				break;
 			}
 		}
+		assert(found == true);
 		md_close(md);
 		INTON;
 	}
@@ -922,9 +953,6 @@ out:
 			warn("fcntl(%s, F_SETFL, ~O_NONBLOCK)",
 			    handle);
 	}
-	/* Don't close on EOF or timeout as more data may come later. */
-	if (ret != 1 && ret != 0 && ret != 142)
-		md_close(md);
 
 	if (linelen == -1) {
 		line[0] = '\0';
