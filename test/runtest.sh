@@ -234,26 +234,26 @@ cd "${THISDIR}"
 export LOGCLEAN_WAIT
 
 case "${TEST##*/}" in
-prep.sh) : "${TIMEOUT:=250}" ;;
-*-build-quick*.sh) : "${TIMEOUT:=120}" ;;
-bulk*build*.sh|testport*build*.sh) : "${TIMEOUT:=400}" ;;
-critical_section_inherit.sh) : "${TIMEOUT:=20}" ;;
+prep.sh) : "${DEF_TIMEOUT:=250}" ;;
+*-build-quick*.sh) : "${DEF_TIMEOUT:=120}" ;;
+bulk*build*.sh|testport*build*.sh) : "${DEF_TIMEOUT:=400}" ;;
+critical_section_inherit.sh) : "${DEF_TIMEOUT:=20}" ;;
 esac
-: "${TIMEOUT:=60}"
+: "${DEF_TIMEOUT:=60}"
 case "${TEST##*/}" in
 # Bump anything touching logclean
-bulk*.sh|testport*.sh|distclean*.sh|options*.sh) : "${TIMEOUT:=$((TIMEOUT + (LOGCLEAN_WAIT * 1)))}" ;;
+bulk*.sh|testport*.sh|distclean*.sh|options*.sh) : "${DEF_TIMEOUT:=$((DEF_TIMEOUT + (LOGCLEAN_WAIT * 1)))}" ;;
 esac
 # Boost by the sanitizer multiplier depending on build in Makefile.am
 : "${TIMEOUT_SAN_MULTIPLIER:=1}"
-TIMEOUT="$((TIMEOUT * TIMEOUT_SAN_MULTIPLIER))"
+DEF_TIMEOUT="$((DEF_TIMEOUT * TIMEOUT_SAN_MULTIPLIER))"
 : "${TIMEOUT_KILL_TIMEOUT=30}"
 : "${TIMEOUT_TRUSS_MULTIPLIER:=6}"
 case "${TRUSS-}" in
 "")
 	;;
 *)
-	TIMEOUT="$((TIMEOUT * TIMEOUT_TRUSS_MULTIPLIER))"
+	DEF_TIMEOUT="$((DEF_TIMEOUT * TIMEOUT_TRUSS_MULTIPLIER))"
 	TIMEOUT_KILL_TIMEOUT="${TIMEOUT_KILL_TIMEOUT:-$((TIMEOUT_KILL_TIMEOUT * TIMEOUT_TRUSS_MULTIPLIER))}"
 	;;
 esac
@@ -264,9 +264,10 @@ case "${SH}" in
 /bin/sh)
 	# It's about 4.6 times slower.
 	: "${TIMEOUT_SH_MULTIPLIER:=5}"
-	TIMEOUT="$((TIMEOUT * TIMEOUT_SH_MULTIPLIER))"
+	DEF_TIMEOUT="$((DEF_TIMEOUT * TIMEOUT_SH_MULTIPLIER))"
 	;;
 esac
+: "${TIMEOUT:=${DEF_TIMEOUT:?}}"
 if [ -n "${TESTS_SKIP_BUILD-}" ]; then
 	case "${TEST##*/}" in
 	*-build-quick*.sh) ;;
