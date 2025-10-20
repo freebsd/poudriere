@@ -327,13 +327,13 @@ runtest() {
 		echo "Test started: $(date)"
 		# hide set -x
 	} >&2 2>/dev/null
-	${TIMEOUT_BIN:?} -v ${TIMEOUT_FOREGROUND} ${TIMEOUT_KILL} ${TIMEOUT} \
+	lockf -T -t 0 -k "$(get_log_name).lock" \
+	    ${TIMEOUT_BIN:?} -v ${TIMEOUT_FOREGROUND} ${TIMEOUT_KILL} ${TIMEOUT} \
 	    ${TIMESTAMP} \
 	    env \
 	    ${SH_DISABLE_VFORK:+SH_DISABLE_VFORK=1} \
 	    THISDIR="${THISDIR}" \
 	    SH="${SH}" \
-	    lockf ${TIMEOUT_FOREGROUND:+-T} -t 0 -k "$(get_log_name).lock" \
 	    ${TRUSS:+truss -ae -f -s256 -o "$(get_log_name).truss"} \
 	    "${SH}" "${TEST}" || ret="$?"
 	{
