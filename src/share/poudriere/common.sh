@@ -2585,8 +2585,16 @@ do_jail_mounts() {
 
 	# Mount some paths read-only from the ref-jail if possible.
 	nullpaths="$(nullfs_paths "${mnt}")"
-	echo ${nullpaths} | tr ' ' '\n' | sed -e "s,^/,${mnt}/," | \
-	    xargs mkdir -p
+	if have_builtin mkdir; then
+		for nullpath in ${nullpaths}; do
+			mkdir -p "${mnt:?}${nullpath:?}"
+		done
+	else
+		echo ${nullpaths} |
+		    tr ' ' '\n' |
+		    sed -e "s,^/,${mnt}/," |
+		    xargs mkdir -p
+	fi
 	for nullpath in ${nullpaths}; do
 		if [ -d "${from}${nullpath}" ]; then
 			case "${from}" in
@@ -5139,13 +5147,23 @@ gather_distfiles() {
 	mkdir -p "${to}/${sub}"
 	(
 		cd "${to}/${sub}"
-		for d in ${dists}; do
-			case "${d}" in
-			*/*) ;;
-			*) continue ;;
-			esac
-			echo "${d%/*}"
-		done | sort -u | xargs mkdir -p
+		if have_builtin mkdir; then
+			for d in ${dists}; do
+				case "${d}" in
+				*/*) ;;
+				*) continue ;;
+				esac
+				mkdir -p "${d%/*}"
+			done
+		else
+			for d in ${dists}; do
+				case "${d}" in
+				*/*) ;;
+				*) continue ;;
+				esac
+				echo "${d%/*}"
+			done | sort -u | xargs mkdir -p
+		fi
 	)
 	for d in ${dists}; do
 		if [ ! -f "${from}/${sub}/${d}" ]; then
