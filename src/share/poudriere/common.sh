@@ -957,7 +957,9 @@ setup_jexec_limits()  {
 			    MAX_${limit_var:?}
 		fi
 	done
-	case "${MAX_MEMORY:+set}${MAX_FILES:+set}" in
+	# Subtle but the `+set` rather than `:+set` allows
+	# `MAX_type_pkgbase=` to override the global value.
+	case "${MAX_MEMORY+set}${MAX_FILES+set}" in
 	*set*)
 		JEXEC_LIMITS=1
 		;;
