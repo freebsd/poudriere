@@ -6299,14 +6299,14 @@ crashed_build() {
 	# If the file already exists then all of this handling was done in
 	# build_pkg() already; The port failed already. What crashed
 	# came after.
+	COLOR_ARROW="${COLOR_FAIL}" job_msg_status \
+	    "Crashed" "${originspec}" "${pkgname}" \
+	    "Failed: ${COLOR_PHASE}${failed_phase}"
 	if ! [ -e "${log_error}" ]; then
 		# Symlink the buildlog into errors/
 		install -lrs "${log:?}" "${log_error:?}"
 		badd ports.failed \
 		    "${originspec} ${pkgname} ${failed_phase} ${failed_phase}"
-		COLOR_ARROW="${COLOR_FAIL}" job_msg_status \
-		    "Finished" "${originspec}" "${pkgname}" \
-		    "Failed: ${COLOR_PHASE}${failed_phase}"
 		pkgbuild_done "${pkgname}"
 		run_hook pkgbuild failed "${origin}" "${pkgname}" \
 		    "${failed_phase}" \
