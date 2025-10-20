@@ -98,7 +98,7 @@ NOLINUX=yes
 NO_LIB32=yes
 NO_SRC=yes
 SHARED_LOCK_DIR="${POUDRIERE_ETC}/run"
-IMMUTABLE_BASE=nullfs
+: "\${IMMUTABLE_BASE:=nullfs}"
 HTML_JSON_UPDATE_INTERVAL=${HTML_JSON_UPDATE_INTERVAL:?}
 ${URL_BASE:+URL_BASE="${URL_BASE}"}
 $(env | grep -q 'CCACHE_STATIC_PREFIX' && { env | awk '/^CCACHE/ {print "export " $0}'; } || :)
