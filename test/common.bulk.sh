@@ -1586,8 +1586,10 @@ set_blacklist() {
 	write_atomic_cmp "${blacklist}"
 	showfile "${blacklist}"
 }
+if [ -z "${TEST_CONTEXTS_NUM_CHECK-}" ]; then
 set_blacklist <<-EOF
 EOF
+fi
 
 set_poudriere_conf() {
 	local poudriere_conf
@@ -1614,8 +1616,10 @@ set_poudriere_conf() {
 	EOF
 	showfile "${poudriere_conf}"
 }
+if [ -z "${TEST_CONTEXTS_NUM_CHECK-}" ]; then
 set_poudriere_conf <<-EOF
 EOF
+fi
 
 set_make_conf() {
 	local make_conf
@@ -1631,9 +1635,11 @@ set_make_conf() {
 	showfile "${make_conf}"
 	recache_pkgnames
 }
+if [ -z "${TEST_CONTEXTS_NUM_CHECK-}" ]; then
 # Start empty
 set_make_conf <<-EOF
 EOF
+fi
 
 do_logclean() {
 	local ret
