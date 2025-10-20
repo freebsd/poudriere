@@ -664,6 +664,7 @@ set) ;;
 		msg "Source git hash: ${git_hash} modified: ${git_dirty}"
 	fi >&2
 	shash_remove_var "git_tree_dirty" 2>/dev/null || :
+	setproctitle "runtest ${0}${TEST_NUMS:+ TEST_NUMS=${TEST_NUMS}} (${git_hash})"
 	unset git_hash git_dirty
 	;;
 esac
