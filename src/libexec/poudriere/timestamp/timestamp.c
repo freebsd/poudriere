@@ -277,12 +277,12 @@ usage(void)
 }
 
 static void
-gotterm(int sig __unused)
+gotsig(int sig)
 {
 	if (child_pid == -1)
 		return;
-	warnx("killing child pid %d with SIGTERM", child_pid);
-	kill(child_pid, SIGTERM);
+	warnx("killing child pid %d with sig %d", child_pid, sig);
+	kill(child_pid, sig);
 	/*
 	 * We could reraise SIGTERM but let's ensure we flush everything
 	 * out that the child sends on its own SIGTERM.
@@ -411,7 +411,10 @@ main(int argc, char **argv)
 		setlinebuf(stderr);
 	}
 
-	signal(SIGTERM, gotterm);
+	signal(SIGTERM, gotsig);
+	signal(SIGALRM, gotsig);
+	signal(SIGINT, gotsig);
+	signal(SIGHUP, gotsig);
 	if (argc > 0) {
 		if (fp_in_stdout != NULL)
 			errx(EX_DATAERR, "Cannot use -o with command");

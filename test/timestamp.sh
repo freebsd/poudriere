@@ -193,7 +193,7 @@ test_timestamp_forwards_sigterm() {
 	assert_runs_shorter_than 5 assert_ret 0 \
 	    kill_and_wait 3 "${spawn_pgid}"
 	assert_file_reg - "${STDERR}" <<-EOF
-	timestamp: killing child pid [0-9]+ with SIGTERM
+	timestamp: killing child pid [0-9]+ with sig 15
 	EOF
 	assert_file_reg - "${STDOUT}" <<-EOF
 	\[00:00:0[012]\] ${TMP}
