@@ -2211,11 +2211,19 @@ _siginfo_handler() {
 
 			case "${pkgname:+set}" in
 			set)
-				elapsed=$((now - started))
-				calculate_duration buildtime "${elapsed}"
-				elapsed_phase=$((now - started_phase))
-				calculate_duration buildtime_phase \
-				    "${elapsed_phase}"
+				case "${started}" in
+				[0-9]*)
+					elapsed=$((now - started))
+					calculate_duration buildtime "${elapsed}"
+					elapsed_phase=$((now - started_phase))
+					calculate_duration buildtime_phase \
+					    "${elapsed_phase}"
+					;;
+				*)
+					elapsed=
+					elapsed_phase=
+					;;
+				esac
 				sep="|"
 				hash_remove siginfo_cpu "${j}" cpu || cpu=
 				hash_remove siginfo_mem "${j}" mem || mem=
