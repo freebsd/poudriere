@@ -195,7 +195,7 @@ _err() {
 	# Don't set it from children failures though, only master
 	case "${PARALLEL_CHILD:-0}" in
 	0)
-		bset ${MY_JOBID-} status "crashed:err:${MY_JOBID-}" || :
+		bset ${MY_JOBID-} status "crashed:err:${msg}" || :
 		case "${MY_JOBID-}" in
 		"") ;;
 		*)
