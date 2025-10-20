@@ -40,6 +40,7 @@ struct sigdata {
 void trap_push(int signo, struct sigdata *sd);
 void trap_push_sh(int signo, struct sigdata *sd);
 void trap_pop(int signo, struct sigdata *sd);
+double parse_duration(const char *duration);
 
 #ifdef SHELL
 #include <errno.h>

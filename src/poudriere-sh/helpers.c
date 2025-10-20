@@ -536,6 +536,62 @@ gsubcmd(int argc, char **argv)
 	return (_gsub(argv, var_return));
 }
 
+double
+parse_duration(const char *duration)
+{
+	double ret;
+	char *suffix;
+
+#ifdef SHELL
+	assert(is_int_on());
+#endif
+	ret = strtod(duration, &suffix);
+	if (suffix == duration) {
+#ifdef SHELL
+		INTON;
+#endif
+		errx(EX_USAGE, "duration is not a number");
+	}
+
+	if (*suffix == '\0')
+		return (ret);
+
+	if (suffix[1] != '\0') {
+#ifdef SHELL
+		INTON;
+#endif
+		errx(EX_USAGE, "duration unit suffix too long");
+	}
+
+	switch (*suffix) {
+	case 's':
+		break;
+	case 'm':
+		ret *= 60;
+		break;
+	case 'h':
+		ret *= 60 * 60;
+		break;
+	case 'd':
+		ret *= 60 * 60 * 24;
+		break;
+	default:
+#ifdef SHELL
+		INTON;
+#endif
+		errx(EX_USAGE, "duration unit suffix invalid");
+	}
+
+	if (ret < 0 || ret >= 100000000UL) {
+#ifdef SHELL
+		INTON;
+#endif
+		errx(EX_USAGE, "duration out of range");
+	}
+
+	return (ret);
+}
+
 /* $$ is not correct in subshells. */
 int
 getpidcmd(int argc, char **argv)
