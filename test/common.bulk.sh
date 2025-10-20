@@ -1387,7 +1387,13 @@ _assert_bulk_build_results() {
 			continue
 			;;
 		esac
-		assert_ret_not 0 [ -f "${file}" ]
+		# crashed tests may produce a package even with failure
+		case " ${EXPECTED_CRASHED-} " in
+		*" ${pkgname} "*) ;;
+		*)
+			assert_ret_not 0 [ -f "${file}" ]
+			;;
+		esac
 	done
 
 	echo "Asserting that logfiles were produced"
@@ -1397,8 +1403,17 @@ _assert_bulk_build_results() {
 		assert 0 $? "Logfile should exist: ${file}"
 		assert_ret 0 [ -s "${file}" ]
 		assert 0 $? "Logfile should not be empty: ${file}"
-		assert_ret_not 0 grep "build failure encountered" \
-		    "${file}"
+		# crashed build may still get a built package
+		case " ${EXPECTED_CRASHED-} " in
+		*" ${pkgname} "*)
+			assert_ret 0 grep "build crashed:" "${file}"
+			;;
+		*)
+			assert_ret_not 0 grep "build crashed:" "${file}"
+			assert_ret_not 0 grep "build failure encountered" \
+			    "${file}"
+			;;
+		esac
 		hash_get pkgname-originspec "${pkgname}" originspec ||
 			err 99 "Unable to find originspec for pkgname: ${pkgname}"
 		grep '^build of.*ended at' "${file}" || :
