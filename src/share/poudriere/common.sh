@@ -5960,7 +5960,6 @@ job_done() {
 		# Try to cleanup and mark build crashed
 		MY_JOBID="${j}" crashed_build "${job_type}" "${job_name}" \
 		    "${status%%:*}"
-		MY_JOBID="${j}" jkill
 		;;
 	esac
 }
