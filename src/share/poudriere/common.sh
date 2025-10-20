@@ -5961,7 +5961,6 @@ job_done() {
 		MY_JOBID="${j}" crashed_build "${job_type}" "${job_name}" \
 		    "${status%%:*}"
 		MY_JOBID="${j}" jkill
-		bset ${j} status "crashed:job_done:${job_name}:${status%%:*}"
 		;;
 	esac
 }
@@ -6321,6 +6320,12 @@ crashed_build() {
 	fi
 	clean_pool "${job_type}" "${pkgname}" "${originspec}" "${failed_phase}"
 	stop_build "${pkgname}" "${originspec}" 1 >> "${log:?}"
+	case "${MY_JOBID-}" in
+	"") ;;
+	*)
+		bset_job_status "crashed" "${originspec}" "${pkgname}"
+		;;
+	esac
 }
 
 clean_pool() {
