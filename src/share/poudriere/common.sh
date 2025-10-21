@@ -10066,6 +10066,8 @@ prepare_ports() {
 			    pkgname-options \
 			    pkgname-deps \
 			    pkgname-deps-build \
+			    pkgname-forbidden \
+			    pkgname-no_arch \
 			    pkgname-run_deps \
 			    pkgname-lib_deps \
 			    pkgname-trim_ignored \
