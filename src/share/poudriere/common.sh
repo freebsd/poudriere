@@ -5941,7 +5941,7 @@ stop_builders() {
 job_done() {
 	[ $# -eq 1 ] || eargs job_done builder_id
 	local builder_id="$1"
-	local job_name job_type status jobno ret
+	local job_name job_type status jobno ret MY_JOBID
 
 	# Failure to find this indicates the job is already done.
 	hash_remove builder_job_type "${builder_id}" job_type || return 1
