@@ -490,12 +490,13 @@ _job_msg_verbose() {
 
 : "${JOB_STATUS_TITLE_WIDTH:=10}"
 job_msg_status() {
-	[ "$#" -eq 3 ] || [ "$#" -eq 4 ] ||
-	    eargs job_msg_status msgfunc title originspec pkgname '[msg]'
+	[ "$#" -ge 3 ] ||
+	    eargs job_msg_status msgfunc title originspec pkgname '[msg]...'
 	local title="$1"
 	local originspec="$2"
 	local pkgname="$3"
-	local msg="${4-}"
+	shift 3
+	local msg="$*"
 	local title_msg job_name msg_colored
 
 	title_msg="${COLOR_ARROW-}$(printf "%-${JOB_STATUS_TITLE_WIDTH}s" "${title}")${COLOR_ARROW:+${COLOR_RESET}}"
