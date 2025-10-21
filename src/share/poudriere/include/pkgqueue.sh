@@ -134,7 +134,8 @@ pkgqueue_job_done() {
 	local delayed_pkgname delayed_job_type
 
 	pkgqueue_job_encode pkgqueue_job "${job_type}" "${job_name}"
-	rmdir "${MASTER_DATADIR:?}/running/${pkgqueue_job:?}"
+	rmdir "${MASTER_DATADIR:?}/running/${pkgqueue_job:?}" ||
+	    err 1 "pkgqueue_job_done: Job ${pkgqueue_job:?} was not running"
 
 	# Should we undelay anything?
 	if ! pkgqueue_job_is_mutually_exclusive "${pkgqueue_job}"; then
