@@ -6305,6 +6305,11 @@ crashed_build() {
 		    "${failed_phase}" \
 		    "${log_error}"
 	fi
+	if ! was_a_testport_run; then
+		COLOR_ARROW="${COLOR_FAIL}" \
+		    job_msg_verbose "${COLOR_PORT}${pkgname}${COLOR_RESET}" \
+		    "log: ${log_error:?}"
+	fi
 	clean_pool "${job_type}" "${pkgname}" "${originspec}" "${failed_phase}"
 	stop_build "${pkgname}" "${originspec}" 1 >> "${log:?}"
 }
@@ -6607,6 +6612,11 @@ build_pkg() {
 		    job_msg_status "Finished" \
 		    "${port}${FLAVOR:+@${FLAVOR}}" "${pkgname}" \
 		    "Failed: ${COLOR_PHASE}${failed_phase}"
+		if ! was_a_testport_run; then
+			COLOR_ARROW="${COLOR_FAIL}" \
+			    job_msg_verbose "${COLOR_PORT}${pkgname}${COLOR_RESET}" \
+			    "log: ${log:?}/logs/errors/${pkgname:?}.log"
+		fi
 		pkgbuild_done "${pkgname}"
 		redirect_to_bulk \
 		    run_hook pkgbuild failed "${port}" "${pkgname}" \
