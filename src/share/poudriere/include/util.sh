@@ -809,16 +809,16 @@ read_line() {
 
 readlines() {
 	[ "$#" -ge 0 ] || eargs readlines '[-T]' '[vars...]'
-	local flag Tflag
+	local rl_flag Tflag
 	local OPTIND=1
 
 	Tflag=
-	while getopts "T" flag; do
-		case "${flag}" in
+	while getopts "T" rl_flag; do
+		case "${rl_flag}" in
 		T)
 			Tflag=1
 			;;
-		*) err "${EX_USAGE}" "readlines: Invalid flag ${flag}" ;;
+		*) err "${EX_USAGE}" "readlines: Invalid flag ${rl_flag}" ;;
 		esac
 	done
 	shift $((OPTIND-1))
@@ -833,16 +833,16 @@ readlines_file() {
 	local rlf_file
 	local rlf_var rlf_line rlf_var_count
 	local rlf_rest rlf_nl rlf_handle rlf_ret
-	local flag Tflag
+	local rlf_flag rlf_Tflag
 	local OPTIND=1 IFS
 
-	Tflag=
-	while getopts "T" flag; do
-		case "${flag}" in
+	rlf_Tflag=
+	while getopts "T" rlf_flag; do
+		case "${rlf_flag}" in
 		T)
-			Tflag=1
+			rlf_Tflag=1
 			;;
-		*) err "${EX_USAGE}" "readlines_file: Invalid flag ${flag}" ;;
+		*) err "${EX_USAGE}" "readlines_file: Invalid flag ${rlf_flag}" ;;
 		esac
 	done
 	shift $((OPTIND-1))
@@ -876,7 +876,7 @@ readlines_file() {
 	if mapfile -F rlf_handle "${rlf_file:?}" "r"; then
 		while IFS= mapfile_read "${rlf_handle}" rlf_line; do
 			_readlines_lines_read="$((_readlines_lines_read + 1))"
-			case "${Tflag}" in
+			case "${rlf_Tflag}" in
 			1)
 				echo "${rlf_line}"
 				;;
@@ -955,40 +955,40 @@ read_blocking() {
 	local -; set +x
 	[ $# -ge 1 ] || eargs read_blocking '[-t timeout]' read_args
 	local rb_ret
-	local OPTIND=1 flag tflag timeout time_start now
+	local OPTIND=1 rb_flag rb_tflag rb_timeout rb_time_start rb_now
 
-	tflag=
-	while getopts "t:" flag; do
-		case "${flag}" in
-		t) tflag="${OPTARG:?}" ;;
-		*) err 1 "read_blocking: Invalid flag ${flag}" ;;
+	rb_tflag=
+	while getopts "t:" rb_flag; do
+		case "${rb_flag}" in
+		t) rb_tflag="${OPTARG:?}" ;;
+		*) err 1 "read_blocking: Invalid flag ${rb_flag}" ;;
 		esac
 	done
 	shift "$((OPTIND-1))"
 	[ $# -ge 1 ] || eargs read_blocking '[-t timeout]' read_args
-	case "${tflag:+set}" in
+	case "${rb_tflag:+set}" in
 	set)
 		# read(builtin) does not support decimal timeout.
-		timeout="${tflag%.*}"
-		time_start="$(clock -monotonic)"
+		rb_timeout="${rb_tflag%.*}"
+		rb_time_start="$(clock -monotonic)"
 		;;
-	*) unset timeout ;;
+	*) unset rb_timeout ;;
 	esac
 	while :; do
 		rb_ret=0
 		# Adjust timeout
-		case "${timeout-}" in
+		case "${rb_timeout-}" in
 		"") ;;
 		*)
-			now="$(clock -monotonic)"
-			timeout="$((timeout - (now - time_start)))"
-			case "${timeout}" in
-			"-"*) timeout=0 ;;
+			rb_now="$(clock -monotonic)"
+			rb_timeout="$((rb_timeout - (rb_now - rb_time_start)))"
+			case "${rb_timeout}" in
+			"-"*) rb_timeout=0 ;;
 			esac
 			;;
 		esac
 		set -o noglob
-		read -r ${timeout:+-t "${timeout}"} "$@" || rb_ret="$?"
+		read -r ${rb_timeout:+-t "${rb_timeout}"} "$@" || rb_ret="$?"
 		set +o noglob
 		case ${rb_ret} in
 			# Read again on SIGINFO interrupts
@@ -1012,40 +1012,40 @@ read_blocking_line() {
 	local -; set +x
 	[ $# -ge 1 ] || eargs read_blocking_line '[-t timeout]' read_args
 	local rbl_ret IFS
-	local OPTIND=1 flag tflag timeout time_start now
+	local OPTIND=1 rbl_flag rbl_tflag rbl_timeout rbl_time_start rbl_now
 
-	tflag=
-	while getopts "t:" flag; do
-		case "${flag}" in
-		t) tflag="${OPTARG:?}" ;;
-		*) err 1 "read_blocking_line: Invalid flag ${flag}" ;;
+	rbl_tflag=
+	while getopts "t:" rbl_flag; do
+		case "${rbl_flag}" in
+		t) rbl_tflag="${OPTARG:?}" ;;
+		*) err 1 "read_blocking_line: Invalid flag ${rbl_flag}" ;;
 		esac
 	done
 	shift "$((OPTIND-1))"
 	[ $# -ge 1 ] || eargs read_blocking_line '[-t timeout]' read_args
-	case "${tflag:+set}" in
+	case "${rbl_tflag:+set}" in
 	set)
 		# read(builtin) does not support decimal timeout.
-		timeout="${tflag%.*}"
-		time_start="$(clock -monotonic)"
+		rbl_timeout="${rbl_tflag%.*}"
+		rbl_time_start="$(clock -monotonic)"
 		;;
-	*) unset timeout ;;
+	*) unset rbl_timeout ;;
 	esac
 	while :; do
 		rbl_ret=0
 		# Adjust timeout
-		case "${timeout-}" in
+		case "${rbl_timeout-}" in
 		"") ;;
 		*)
-			now="$(clock -monotonic)"
-			timeout="$((timeout - (now - time_start)))"
-			case "${timeout}" in
-			"-"*) timeout=0 ;;
+			rbl_now="$(clock -monotonic)"
+			rbl_timeout="$((rbl_timeout - (rbl_now - rbl_time_start)))"
+			case "${rbl_timeout}" in
+			"-"*) rbl_timeout=0 ;;
 			esac
 			;;
 		esac
 		set -o noglob
-		IFS= read -r ${timeout:+-t "${timeout}"} "$@" || rbl_ret="$?"
+		IFS= read -r ${rbl_timeout:+-t "${rbl_timeout}"} "$@" || rbl_ret="$?"
 		set +o noglob
 		case "${rbl_ret}" in
 			# Read again on SIGINFO interrupts
@@ -1215,26 +1215,26 @@ read_pipe() {
 	[ $# -ge 2 ] || eargs read_pipe fifo '[-t timeout]' read_args
 	local fifo="$1"
 	local rp_ret resread resopen aret
-	local OPTIND=1 flag tflag timeout time_start now
+	local OPTIND=1 rp_flag rp_tflag rp_timeout rp_time_start rp_now
 	shift
 
 	rp_ret=0
-	tflag=
-	while getopts "t:" flag; do
-		case "${flag}" in
-		t) tflag="${OPTARG:?}" ;;
-		*) err 1 "read_pipe: Invalid flag ${flag}" ;;
+	rp_tflag=
+	while getopts "t:" rp_flag; do
+		case "${rp_flag}" in
+		t) rp_tflag="${OPTARG:?}" ;;
+		*) err 1 "read_pipe: Invalid flag ${rp_flag}" ;;
 		esac
 	done
 	shift "$((OPTIND-1))"
 	[ $# -ge 1 ] || eargs read_pipe fifo '[-t timeout]' read_args
-	case "${tflag:+set}" in
+	case "${rp_tflag:+set}" in
 	set)
 		# read(builtin) does not support decimal timeout.
-		timeout="${tflag%.*}"
-		time_start="$(clock -monotonic)"
+		rp_timeout="${rp_tflag%.*}"
+		rp_time_start="$(clock -monotonic)"
 		;;
-	*) unset timeout ;;
+	*) unset rp_timeout ;;
 	esac
 	while :; do
 		if ! [ -p "${fifo}" ]; then
@@ -1246,24 +1246,24 @@ read_pipe() {
 		resread=0
 		resopen=0
 		# Adjust timeout
-		case "${timeout-}" in
+		case "${rp_timeout-}" in
 		"") ;;
 		*)
-			now="$(clock -monotonic)"
-			timeout="$((timeout - (now - time_start)))"
-			case "${timeout}" in
-			"-"*) timeout=0 ;;
+			rp_now="$(clock -monotonic)"
+			rp_timeout="$((rp_timeout - (rp_now - rp_time_start)))"
+			case "${rp_timeout}" in
+			"-"*) rp_timeout=0 ;;
 			esac
 			;;
 		esac
 		set -o noglob
-		case "${timeout:+set}" in
+		case "${rp_timeout:+set}" in
 		set)
-			if alarm "${timeout}"; then
+			if alarm "${rp_timeout}"; then
 				{
 					{
 						read -r \
-						    ${timeout:+-t "${timeout}"} \
+						    ${rp_timeout:+-t "${rp_timeout}"} \
 						    "$@" || resread=$?
 					} < "${fifo}" || resopen=$?
 				}
@@ -1280,7 +1280,7 @@ read_pipe() {
 			{
 				{
 					read -r \
-					    ${timeout:+-t "${timeout}"} \
+					    ${rp_timeout:+-t "${rp_timeout}"} \
 					    "$@" || resread=$?
 				} < "${fifo}" || resopen=$?
 			}
@@ -1321,40 +1321,41 @@ read_pipe_noeof() {
 	local fifo="$1"
 	local rpn_ret
 	shift
-	local OPTIND=1 flag tflag timeout time_start now
+	local OPTIND=1 rpn_flag rpn_tflag rpn_timeout rpn_time_start rpn_now
 
-	tflag=
-	while getopts "t:" flag; do
-		case "${flag}" in
-		t) tflag="${OPTARG:?}" ;;
-		*) err 1 "read_pipe_noeof: Invalid flag ${flag}" ;;
+	rpn_tflag=
+	while getopts "t:" rpn_flag; do
+		case "${rpn_flag}" in
+		t) rpn_tflag="${OPTARG:?}" ;;
+		*) err 1 "read_pipe_noeof: Invalid flag ${rpn_flag}" ;;
 		esac
 	done
 	shift "$((OPTIND-1))"
 	[ $# -ge 1 ] || eargs read_pipe_noeof fifo '[-t timeout]' read_args
-	case "${tflag:+set}" in
+	case "${rpn_tflag:+set}" in
 	set)
 		# read(builtin) does not support decimal timeout.
-		timeout="${tflag%.*}"
-		time_start="$(clock -monotonic)"
+		rpn_timeout="${rpn_tflag%.*}"
+		rpn_time_start="$(clock -monotonic)"
 		;;
-	*) unset timeout ;;
+	*) unset rpn_timeout ;;
 	esac
 	while :; do
 		rpn_ret=0
 		# Adjust timeout
-		case "${timeout-}" in
+		case "${rpn_timeout-}" in
 		"") ;;
 		*)
-			now="$(clock -monotonic)"
-			timeout="$((timeout - (now - time_start)))"
-			case "${timeout}" in
-			"-"*) timeout=0 ;;
+			rpn_now="$(clock -monotonic)"
+			rpn_timeout="$((rpn_timeout - (rpn_now - rpn_time_start)))"
+			case "${rpn_timeout}" in
+			"-"*) rpn_timeout=0 ;;
 			esac
 			;;
 		esac
 		set -o noglob
-		read_pipe "${fifo}" ${timeout:+-t "${timeout}"} "$@" || rpn_ret="$?"
+		read_pipe "${fifo}" ${rpn_timeout:+-t "${rpn_timeout}"} "$@" ||
+		    rpn_ret="$?"
 		set +o noglob
 		case "${rpn_ret}" in
 		1) ;;
