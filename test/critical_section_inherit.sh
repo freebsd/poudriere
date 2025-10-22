@@ -2,7 +2,8 @@ set -e
 . ./common.sh
 set +e
 
-{
+add_test_function test_critical_inherit
+test_critical_inherit() {
 	set -x
 	bgjob() {
 		set -x
@@ -37,3 +38,5 @@ set +e
 	sleep 1
 	assert_ret 143 kill_job 5 "%${spawn_jobid}"
 }
+
+run_test_functions

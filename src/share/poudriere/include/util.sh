@@ -302,12 +302,12 @@ _relpath_common() {
 		;;
 	esac
 	# shellcheck disable=SC2001
-	_rc_dir1=$(realpath -q "$1" || echo "$1" | sed -e 's,//*,/,g') ||
-	    return "${EX_OSERR:-71}"
+	critical_retry_cmdsubst _rc_dir1 \
+		"\$(realpath -q '${1}' || echo '${1}' | sed -e 's,//*,/,g')"
 	_rc_dir1="${_rc_dir1%/}/"
 	# shellcheck disable=SC2001
-	_rc_dir2=$(realpath -q "$2" || echo "$2" | sed -e 's,//*,/,g') ||
-	    return "${EX_OSERR:-71}"
+	critical_retry_cmdsubst _rc_dir2 \
+		"\$(realpath -q '${2}' || echo '${2}' | sed -e 's,//*,/,g')"
 	_rc_dir2="${_rc_dir2%/}/"
 	if [ "${#_rc_dir1}" -ge "${#_rc_dir2}" ]; then
 		_rc_common="${_rc_dir1}"
@@ -547,7 +547,7 @@ cd() {
 	case "${OLDPWD}" in
 	"${PWD}") ;;
 	*)
-		_update_relpaths "${OLDPWD}" "${PWD}" || :
+		critical_retry _update_relpaths "${OLDPWD}" "${PWD}" || :
 		;;
 	esac
 	critical_end
@@ -645,9 +645,7 @@ trap_ignore_block() {
 	_trap_ignore_block 1 "$@"
 }
 
-if have_builtin trap_push; then
-critical_inherit() { :; }
-else
+if ! have_builtin trap_push; then
 trap_push() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs trap_push signal var_return
@@ -694,7 +692,9 @@ trap_pop() {
 		;;
 	esac
 }
+fi # have_builtin trap_push
 
+if ! have_builtin critical_start; then
 # Start a "critical section", disable INT/TERM while in here and delay until
 # critical_end is called.
 # Unfortunately this can not block signals to our commands. The builtin
@@ -717,17 +717,6 @@ critical_start() {
 		# shellcheck disable=SC2064
 		trap "{ _crit_caught_${sig}=1; } 2>/dev/null" "${sig}"
 		hash_set crit_saved_trap "${sig}-${_CRITSNEST}" "${saved_trap}"
-	done
-}
-
-critical_inherit() {
-	case "${_CRITSNEST:-0}" in
-	0) return 0 ;;
-	esac
-	local sig
-
-	for sig in ${CRITICAL_START_BLOCK_SIGS}; do
-		trap '' "${sig}"
 	done
 }
 
@@ -758,7 +747,78 @@ critical_end() {
 		esac
 	done
 }
-fi
+
+critical_inherit() {
+	case "${_CRITSNEST:-0}" in
+	0) return 0 ;;
+	esac
+	local sig
+
+	for sig in ${CRITICAL_START_BLOCK_SIGS}; do
+		trap '' "${sig}"
+	done
+}
+
+# Retry on signal if in a critical section.
+# The builtin sh does not need this but /bin/sh does.
+critical_retry() {
+	[ $# -ge 1 ] || eargs critical_retry 'cmd...'
+	local ret _CRITICAL_RETRY
+
+	_CRITICAL_RETRY=1
+	ret=0
+	"$@" || ret="$?"
+	case "${_CRITSNEST:-0}" in
+	0) return "${ret}" ;;
+	esac
+	# Possibly try again.
+	case "${ret}" in
+	130|143)
+		ret=0
+		"$@" || ret="$?"
+		;;
+	esac
+	return "${ret}"
+}
+else
+critical_inherit() { :; }
+critical_retry() { "$@"; }
+fi # ! have_builtin critical_start
+
+# Same as critical_retry but eval's the input to allow cmdsubst.
+# Don't call with untrusted input.
+_critical_retry_cmdsubst() {
+	# shellcheck disable=SC2016
+	[ $# -eq 2 ] || eargs _critical_retry_cmdsubst outvar '"\$(cmd...)"'
+	local _crc_outvar="${1:?}"
+	shift
+	local _crc_val _crc_ret
+	local -; set -u
+
+	# This is just ensuring proper syntax. The goal is to not execute
+	# anything until we are _in_ this function.
+	# shellcheck disable=SC2016
+	case "$@" in
+	'$('*')') ;;
+	*)
+		err "${EX_USAGE:-64}" "critical_retry_cmdsubst:" \
+		    "invalid syntax:" \
+		    "expected: \"\\\$(cmd...)\"" \
+		    "got:" "$@"
+		;;
+	esac
+	_crc_ret=0
+	unset _crc_val
+	# _crc_val="$(cmd)"
+	eval _crc_val="\"$*\"" || _crc_ret="$?"
+	setvar "${_crc_outvar:?}" "${_crc_val}" || _crc_ret="$?"
+	return "${_crc_ret:?}"
+}
+
+critical_retry_cmdsubst() {
+	# With builtins the critical_retry only tries once.
+	critical_retry _critical_retry_cmdsubst "$@"
+}
 
 # Read a file into the given variable.
 read_file() {
@@ -1556,7 +1616,7 @@ mapfile() {
 	local mypid _hkey ret
 
 	ret=0
-	mypid=$(getpid)
+	critical_retry_cmdsubst mypid "\$(getpid)"
 	case "${_file}" in
 	-) _file="/dev/fd/0" ;;
 	esac
@@ -2832,8 +2892,7 @@ _lock_acquire() {
 	local lockpath="$3"
 	local waittime="${4:-30}"
 
-	# Avoid blank value on signal (see critical_inherit).
-	until mypid="$(getpid)"; do :; done
+	critical_retry_cmdsubst mypid "\$(getpid)"
 	hash_get have_lock "${lockname}" have_lock || have_lock=0
 	# lock_pid is in case a subshell tries to reacquire/relase my lock
 	hash_get lock_pid "${lockname}" lock_pid || lock_pid=
@@ -2937,7 +2996,7 @@ locked() {
 		unset "${l_tmp_var}"
 		return 1
 	fi
-	setvar "${l_tmp_var}" "1"
+	setvar "${l_tmp_var}" "1" || return
 	until lock_acquire "${lockname}" "${waittime}"; do
 		sleep 1
 	done
@@ -2984,7 +3043,7 @@ slocked() {
 		unset "${s_tmp_var}"
 		return 1
 	fi
-	setvar "${s_tmp_var}" "1"
+	setvar "${s_tmp_var}" "1" || return
 	until slock_acquire "${lockname}" "${waittime}"; do
 		sleep 1
 	done
@@ -3004,8 +3063,7 @@ _lock_release() {
 	fi
 	hash_get lock_pid "${lockname}" lock_pid ||
 		err 1 "Lock had no pid ${lockname}"
-	# Avoid blank value on signal (see critical_inherit).
-	until mypid="$(getpid)"; do :; done
+	critical_retry_cmdsubst mypid "\$(getpid)"
 	case "${mypid}" in
 	"${lock_pid}") ;;
 	*)
@@ -3030,7 +3088,7 @@ _lock_release() {
 			err 1 "Releasing lock pid ${lock_pid} owns ${lockname}"
 			;;
 		esac
-		rmdir "${lockpath:?}" ||
+		critical_retry rmdir "${lockpath:?}" ||
 			err 1 "Held lock dir not found: ${lockpath}"
 	fi
 
@@ -3057,7 +3115,7 @@ slock_release() {
 	local lockpath
 
 	lockpath="${SHARED_LOCK_DIR:?}/lock-poudriere-shared-${lockname:?}"
-	_lock_release "${lockname}" "${lockpath}" || return
+	_lock_release "${lockname}" "${lockpath}"
 	list_remove SLOCKS "${lockname}"
 }
 
@@ -3083,8 +3141,7 @@ lock_have() {
 	if hash_isset have_lock "${lockname}"; then
 		hash_get lock_pid "${lockname}" lock_pid ||
 			err 1 "have_lock: Lock had no pid ${lockname}"
-		# Avoid blank value on signal (see critical_inherit).
-		until mypid="$(getpid)"; do :; done
+		critical_retry_cmdsubst mypid "\$(getpid)"
 		case "${lock_pid}" in
 		"${mypid}") return 0 ;;
 		esac

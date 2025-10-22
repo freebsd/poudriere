@@ -211,7 +211,13 @@ _err() {
 			lineinfo="${COLOR_ERROR}[$(getpid)${PROC_TITLE:+:${PROC_TITLE}}]${lineinfo:+ ${lineinfo}}${COLOR_RESET}"
 			;;
 		esac
-		msg_error "${lineinfo:+${lineinfo}:}${msg}"
+		# hack for tests using SH=/bin/sh. See critical_retry().
+		local msg_type
+		case "${_CRITICAL_RETRY:-0}.${exit_status}" in
+		1.143|1.130) msg_type=":" ;;
+		*) msg_type="msg_error" ;;
+		esac
+		"${msg_type}" "${lineinfo:+${lineinfo}:}${msg}"
 		;;
 	esac || :
 	case "${ERRORS_ARE_PIPE_FATAL:+set}${PARALLEL_CHILD:+set}" in
@@ -1739,7 +1745,7 @@ badd() {
 }
 
 update_stats() {
-	local type unused
+	local type unused scnt
 	local -
 
 	set +e
@@ -1748,14 +1754,15 @@ update_stats() {
 	critical_start
 
 	for type in built failed inspected ignored; do
-		_bget '' "ports.${type}"
-		bset "stats_${type}" "${_read_file_lines_read:?}"
+		critical_retry _bget '' "ports.${type}"
+		critical_retry bset "stats_${type}" "${_read_file_lines_read:?}"
 	done
 
 	# Skipped may have duplicates in it
-	bset stats_skipped $(critical_inherit; \
-		bget ports.skipped | awk '{print $1}' | \
-		sort -u | wc -l)
+	critical_retry_cmdsubst scnt \
+	    "\$(bget ports.skipped | awk '{print \$1}' | sort -u | wc -l)"
+	scnt="${scnt##* }"
+	critical_retry bset stats_skipped "${scnt}"
 
 	lock_release update_stats
 	critical_end
@@ -3110,6 +3117,23 @@ convert_repository() {
 	ln -s "${pkgdir:?}" "${PACKAGES:?}/.latest"
 }
 
+_stash_packages_clone() {
+	[ $# -eq 2 ] || eargs _stash_packages_clone src dst
+	local src="$1"
+	local dst="$2"
+
+	mkdir -p "${dst:?}"
+	PACKAGES_MADE_BUILDING=1
+	# hardlink copy all top-level directories
+	find "${src:?}/" -mindepth 1 -maxdepth 1 -type d |
+	    xargs -J % cp -al % "${dst:?}"
+
+	# Copy all top-level files to avoid appending
+	# to real copy in pkg-repo, etc.
+	find "${src:?}/" -mindepth 1 -maxdepth 1 -type f |
+	    xargs -J % cp -a % "${dst:?}"
+}
+
 stash_packages() {
 
 	PACKAGES_ROOT="${PACKAGES:?}"
@@ -3143,16 +3167,10 @@ stash_packages() {
 		# set; Must stay on the same device for linking.
 
 		critical_start
-		mkdir -p "${PACKAGES:?}/.building"
-		PACKAGES_MADE_BUILDING=1
-		# hardlink copy all top-level directories
-		find "${PACKAGES:?}/.latest/" -mindepth 1 -maxdepth 1 -type d |
-		    xargs -J % cp -al % "${PACKAGES:?}/.building"
-
-		# Copy all top-level files to avoid appending
-		# to real copy in pkg-repo, etc.
-		find "${PACKAGES:?}/.latest/" -mindepth 1 -maxdepth 1 -type f |
-		    xargs -J % cp -a % "${PACKAGES:?}/.building"
+		critical_retry _stash_packages_clone \
+		    "${PACKAGES:?}/.latest" \
+		    "${PACKAGES:?}/.building" ||
+		    err 1 "stash_packages: failed to clone repo"
 		critical_end
 	fi
 

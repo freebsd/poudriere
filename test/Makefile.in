@@ -484,20 +484,22 @@ XFAIL_TESTS = \
 TESTS = alarm.sh array.sh builtins.sh builtins-cut.sh \
 	builtins-paste.sh builtins-wc.sh cache.sh cache_pipe.sh \
 	calculate_duration.sh count_lines.sh \
-	critical_section_inherit.sh display.sh distclean-badorigin.sh \
-	distclean-overlays.sh distclean-smoke.sh do_clone.sh \
-	encode_args.sh err.sh err_catch.sh err_catch_framework.sh \
-	err_pipe_delayed.sh getpid.sh getvar.sh \
-	git_get_hash_and_dirty.sh git_tree_dirty.sh globmatch.sh \
-	gsub.sh hash_basic.sh hash_stack.sh jobs.sh list.sh \
-	locked_mkdir.sh locked_mkdir_waiters.sh \
-	locked_mkdir_waiters_all_lose.sh locked_mkdir_waiters_kill.sh \
-	locks.sh locks_critical_section.sh \
-	locks_critical_section_nested.sh logging.sh mapfile.sh \
-	mktemp.sh options-badorigin.sh options-overlays.sh \
-	options-smoke.sh originspec.sh parallel_run.sh pipe_func.sh \
-	pipe_hold.sh pkg_version.sh pkgqueue_basic.sh \
-	pkgqueue_build_and_test.sh pkgqueue_failure_cleanup.sh \
+	critical_section_inherit.sh critical_section_retry.sh \
+	critical_section_retry_cmdsubst.sh display.sh \
+	distclean-badorigin.sh distclean-overlays.sh \
+	distclean-smoke.sh do_clone.sh encode_args.sh err.sh \
+	err_catch.sh err_catch_framework.sh err_pipe_delayed.sh \
+	getpid.sh getvar.sh git_get_hash_and_dirty.sh \
+	git_tree_dirty.sh globmatch.sh gsub.sh hash_basic.sh \
+	hash_stack.sh jobs.sh list.sh locked_mkdir.sh \
+	locked_mkdir_waiters.sh locked_mkdir_waiters_all_lose.sh \
+	locked_mkdir_waiters_kill.sh locks.sh \
+	locks_critical_section.sh locks_critical_section_nested.sh \
+	logging.sh mapfile.sh mktemp.sh options-badorigin.sh \
+	options-overlays.sh options-smoke.sh originspec.sh \
+	parallel_run.sh pipe_func.sh pipe_hold.sh pkg_version.sh \
+	pkgqueue_basic.sh pkgqueue_build_and_test.sh \
+	pkgqueue_failure_cleanup.sh \
 	pkgqueue_find_all_pool_references.sh pkgqueue_get_next_race.sh \
 	pkgqueue_mutually_exclusive.sh pkgqueue_prioritize.sh \
 	pkgqueue_remove_many_pipe.sh pkgqueue_trimmed_misordered.sh \
@@ -919,6 +921,20 @@ count_lines.sh.log: count_lines.sh
 critical_section_inherit.sh.log: critical_section_inherit.sh
 	@p='critical_section_inherit.sh'; \
 	b='critical_section_inherit.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+critical_section_retry.sh.log: critical_section_retry.sh
+	@p='critical_section_retry.sh'; \
+	b='critical_section_retry.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+critical_section_retry_cmdsubst.sh.log: critical_section_retry_cmdsubst.sh
+	@p='critical_section_retry_cmdsubst.sh'; \
+	b='critical_section_retry_cmdsubst.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

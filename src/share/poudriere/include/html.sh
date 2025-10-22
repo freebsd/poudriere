@@ -79,6 +79,10 @@ html_json_main() {
 }
 
 build_all_json() {
+	required_env build_json \
+	    log_path_top! '' \
+	    log_path_jail! '' \
+	    log_path! ''
 	build_json
 	if slock_acquire -q "json_jail_${MASTERNAME:?}" 2; then
 		build_jail_json
@@ -90,26 +94,53 @@ build_all_json() {
 	fi
 }
 
+_build_json() {
+	[ $# -eq 1 ] || eargs _build_json log_path
+	local log_path="$1"
+	local - ret
+
+	ret=0
+	set_pipefail
+	/usr/bin/awk \
+	    -f "${AWKPREFIX:?}/json.awk" "${log_path:?}"/.poudriere.*[!%] |
+	    /usr/bin/awk 'ORS=""; {print} END {print "\n"}' |
+	    /usr/bin/sed  -e 's/,\([]}]\)/\1/g' |
+	    write_atomic_cmp "${log_path:?}/.data.json" || ret="$?"
+	# Build mini json for stats
+	/usr/bin/awk -v mini=yes \
+	    -f "${AWKPREFIX:?}/json.awk" "${log_path:?}"/.poudriere.*[!%] |
+	    /usr/bin/awk 'ORS=""; {print} END {print "\n"}' |
+	    /usr/bin/sed  -e 's/,\([]}]\)/\1/g' |
+	    write_atomic_cmp "${log_path:?}/.data.mini.json" || ret="$?"
+	return "${ret}"
+}
+
 build_json() {
 	required_env build_json log_path! ''
 	local ret
 
-	ret=0
 	critical_start
-	/usr/bin/awk \
-		-f "${AWKPREFIX:?}/json.awk" "${log_path:?}"/.poudriere.*[!%] | \
-		/usr/bin/awk 'ORS=""; {print} END {print "\n"}' | \
-		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' | \
-		write_atomic_cmp "${log_path:?}/.data.json"
-
-	# Build mini json for stats
-	/usr/bin/awk -v mini=yes \
-		-f "${AWKPREFIX:?}/json.awk" "${log_path:?}"/.poudriere.*[!%] | \
-		/usr/bin/awk 'ORS=""; {print} END {print "\n"}' | \
-		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' | \
-		write_atomic_cmp "${log_path:?}/.data.mini.json" || ret="$?"
+	ret=0
+	critical_retry _build_json "${log_path:?}" || ret="$?"
 	critical_end
 	return "${ret}"
+}
+
+_build_jail_json() {
+	[ $# -eq 1 ] || _build_jail_json log_path_jail
+	local log_path_jail="$1"
+	local -
+
+	set_pipefail
+	{
+		echo "{\"builds\":{"
+		echo "${log_path_jail:?}"/*/.data.mini.json |
+		    /usr/bin/xargs \
+		    /usr/bin/awk -f "${AWKPREFIX:?}/json_jail.awk" |
+		    /usr/bin/sed -e '/^$/d' |
+		    /usr/bin/paste -s -d , -
+		echo "}}"
+	} | write_atomic_cmp "${log_path_jail:?}/.data.json"
 }
 
 build_jail_json() {
@@ -125,28 +156,19 @@ build_jail_json() {
 		esac
 		break
 	done
-	ret=0
 	critical_start
-	{
-		echo "{\"builds\":{"
-		echo "${log_path_jail:?}"/*/.data.mini.json | \
-		    /usr/bin/xargs /usr/bin/awk -f "${AWKPREFIX:?}/json_jail.awk" |
-		    /usr/bin/sed -e '/^$/d' | \
-		    /usr/bin/paste -s -d , -
-		echo "}}"
-	} | write_atomic_cmp "${log_path_jail:?}/.data.json" || ret="$?"
+	ret=0
+	critical_retry _build_jail_json "${log_path_jail:?}" || ret="$?"
 	critical_end
 	return "${ret}"
 }
 
-build_top_json() {
-	required_env build_top_json log_path_top! ''
-	local empty ret
+_build_top_json() {
+	[ $# -eq 1 ] || eargs _build_top_json log_path_top
+	local log_path_top="$1"
+	local -
 
-	lock_have "json_top" ||
-		err 1 "build_top_json requires slock json_top"
-	ret=0
-	critical_start
+	set_pipefail
 	(
 		cd "${log_path_top:?}"
 		for empty in */latest/.data.mini.json; do
@@ -157,12 +179,24 @@ build_top_json() {
 			break
 		done
 		echo "{\"masternames\":{"
-		echo */latest/.data.mini.json | \
-		    /usr/bin/xargs /usr/bin/awk -f "${AWKPREFIX:?}/json_top.awk" 2>/dev/null | \
-		    /usr/bin/sed -e '/^$/d' | \
+		echo */latest/.data.mini.json |
+		    /usr/bin/xargs \
+		    /usr/bin/awk -f "${AWKPREFIX:?}/json_top.awk" 2>/dev/null |
+		    /usr/bin/sed -e '/^$/d' |
 		    /usr/bin/paste -s -d , -
 		echo "}}"
-	) | write_atomic_cmp "${log_path_top:?}/.data.json" || ret="$?"
+	) | write_atomic_cmp "${log_path_top:?}/.data.json"
+}
+
+build_top_json() {
+	required_env build_top_json log_path_top! ''
+	local empty ret
+
+	lock_have "json_top" ||
+		err 1 "build_top_json requires slock json_top"
+	critical_start
+	ret=0
+	critical_retry _build_top_json "${log_path_top:?}"
 	critical_end
 	return "${ret}"
 }
@@ -171,10 +205,14 @@ build_top_json() {
 html_json_cleanup() {
 	# shellcheck disable=SC2034
 	local log
+	local now
 
 	_log_path log
-	bset ended "$(clock -epoch)" || :
 	critical_start
+	critical_retry_cmdsubst now "\$(clock -epoch)"
+	critical_retry bset ended "${now}"
+	# no need for critical_retry here as it does it internally in smaller
+	# chunks.
 	build_all_json || :
 	critical_end
 }

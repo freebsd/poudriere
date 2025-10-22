@@ -31,6 +31,8 @@ TESTS=\
 	calculate_duration.sh \
 	count_lines.sh \
 	critical_section_inherit.sh \
+	critical_section_retry.sh \
+	critical_section_retry_cmdsubst.sh \
 	display.sh \
 	distclean-badorigin.sh \
 	distclean-overlays.sh \
