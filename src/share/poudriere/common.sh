@@ -195,13 +195,11 @@ _err() {
 	# Don't set it from children failures though, only master
 	case "${PARALLEL_CHILD:-0}" in
 	0)
-		bset ${MY_JOBID-} status "crashed:err:${msg}" || :
-		case "${MY_JOBID-}" in
-		"") ;;
-		*)
-			# Ensure build_queue() sees this failure.
-			echo ${MY_JOBID} >&6 || :
-			;;
+		bset ${MY_BUILDER_ID:+"${MY_BUILDER_ID}"} status \
+		    "crashed:err:${msg}" || :
+		# Ensure build_queue() sees this failure.
+		case "${MY_BUILDER_ID:+set}" in
+		set) echo "${MY_BUILDER_ID:?}" >&6 || : ;;
 		esac
 		;;
 	esac
@@ -406,7 +404,7 @@ msg_error() {
 
 	prefix="${DEV_ERROR:+Dev }Error:"
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
-	case "${MY_JOBID:+set}" in
+	case "${MY_BUILDER_ID:+set}" in
 	set)
 		# Send colored msg to bulk log...
 		COLOR_ARROW="${COLOR_ERROR}" \
@@ -466,7 +464,7 @@ job_msg() {
 	local -; set +x
 	local now elapsed NO_ELAPSED_IN_MSG output
 
-	case "${MY_JOBID:+set}" in
+	case "${MY_BUILDER_ID:+set}" in
 	set)
 		elapsed=
 		if [ "${IN_TEST:-0}" -eq 0 ]; then
@@ -474,7 +472,7 @@ job_msg() {
 			now=$(clock -monotonic)
 			calculate_duration elapsed "$((now - ${TIME_START_JOB:-${TIME_START:-0}}))"
 		fi
-		output="[${COLOR_JOBID-}${MY_JOBID}${COLOR_RESET}]${elapsed:+ [${elapsed}]}"
+		output="[${COLOR_JOBID-}${MY_BUILDER_ID}${COLOR_RESET}]${elapsed:+ [${elapsed}]}"
 		;;
 	*)
 		unset output
@@ -635,15 +633,15 @@ _mastermnt() {
 _my_path() {
 	local -; set -u +x
 
-	case "${MY_JOBID:+set}" in
+	case "${MY_BUILDER_ID:+set}" in
 	"") setvar "$1" "${MASTERMNT:?}" ;;
 	set)
 		case "${MASTERMNTROOT:+set}" in
 		set)
-			setvar "$1" "${MASTERMNTROOT:?}/${MY_JOBID}"
+			setvar "$1" "${MASTERMNTROOT:?}/${MY_BUILDER_ID}"
 			;;
 		"")
-			setvar "$1" "${MASTERMNT:?}/../${MY_JOBID}"
+			setvar "$1" "${MASTERMNT:?}/../${MY_BUILDER_ID}"
 			;;
 		esac
 		;;
@@ -653,7 +651,7 @@ _my_path() {
 _my_name() {
 	local -; set -u +x
 
-	setvar "$1" "${MASTERNAME}${MY_JOBID:+-job-${MY_JOBID}}"
+	setvar "$1" "${MASTERNAME}${MY_BUILDER_ID:+-job-${MY_BUILDER_ID}}"
 }
 
 _logfile() {
@@ -1033,7 +1031,7 @@ jstart() {
 
 	_my_name name
 
-	mpath="${MASTERMNT:?}${MY_JOBID:+/../${MY_JOBID}}"
+	mpath="${MASTERMNT:?}${MY_BUILDER_ID:+/../${MY_BUILDER_ID}}"
 	echo "::1 ${name:?}" >> "${mpath:?}/etc/hosts"
 	echo "127.0.0.1 ${name:?}" >> "${mpath:?}/etc/hosts"
 
@@ -1299,7 +1297,8 @@ run_hook_file() {
 		    POUDRIERE_DATA="${POUDRIERE_DATA-}" \
 		    MASTERNAME="${MASTERNAME-}" \
 		    MASTERMNT="${MASTERMNT-}" \
-		    MY_JOBID="${MY_JOBID-}" \
+		    MY_JOB_ID="${MY_BUILDER_ID-}" \
+		    MY_BUILDER_ID="${MY_BUILDER_ID-}" \
 		    BUILDNAME="${BUILDNAME-}" \
 		    JAILNAME="${JAILNAME-}" \
 		    PTNAME="${PTNAME-}" \
@@ -1485,7 +1484,7 @@ buildlog_start() {
 	esac
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
 	echo "Jail OSVERSION: ${JAIL_OSVERSION}"
-	echo "Job Id: ${MY_JOBID}"
+	echo "Builder Id: ${MY_BUILDER_ID}"
 	echo "Jail Id (no networking)  : $(jls -j ${jname} jid || :)"
 	echo "Jail Name (no networking): ${jname}"
 	echo "Jail Id (networking)     : $(jls -j ${jname}-n jid || :)"
@@ -1720,7 +1719,9 @@ bset_job_status() {
 	local originspec="$2"
 	local pkgname="$3"
 
-	bset ${MY_JOBID} status "${status}:${originspec}:${pkgname}:${TIME_START_JOB:-${TIME_START}}:$(clock -monotonic)"
+	# testport may call this without MY_BUILDER_ID set.
+	bset ${MY_BUILDER_ID:+"${MY_BUILDER_ID}"} status \
+	    "${status}:${originspec}:${pkgname}:${TIME_START_JOB:-${TIME_START}}:$(clock -monotonic)"
 }
 
 badd() {
@@ -1870,7 +1871,8 @@ exit_handler() {
 	# Don't set it from children failures though, only master
 	case "${EXIT_BSTATUS:+set}${PARALLEL_CHILD:-0}" in
 	set.0)
-		bset ${MY_JOBID-} status "${EXIT_BSTATUS}" || :
+		bset ${MY_BUILDER_ID:+"${MY_BUILDER_ID}"} status \
+		    "${EXIT_BSTATUS}" || :
 		;;
 	esac
 
@@ -5538,7 +5540,7 @@ build_port() {
 		*)
 			nohang ${max_execution_time} ${NOHANG_TIME} \
 				"${log:?}/logs/${pkgname:?}.log" \
-				"${MASTER_DATADIR:?}/var/run/${MY_JOBID:-00}_nohang.pid" \
+				"${MASTER_DATADIR:?}/var/run/${MY_BUILDER_ID:-00}_nohang.pid" \
 				cleanenv injail /usr/bin/env ${phaseenv:+-S "${phaseenv}"} \
 				/usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 				${phase}
@@ -5775,7 +5777,7 @@ save_wrkdir() {
 	esac
 
 	job_msg "Saving ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_RESET} wrkdir"
-	_bget status ${MY_JOBID} status
+	_bget status ${MY_BUILDER_ID:+"${MY_BUILDER_ID}"} status
 	bset_job_status "save_wrkdir" "${originspec}" "${pkgname}"
 	mkdir -p ${tardir}
 
@@ -5801,19 +5803,19 @@ save_wrkdir() {
 }
 
 start_builder() {
-	[ $# -eq 4 ] || eargs start_builder MY_JOBID jname ptname setname
+	[ $# -eq 4 ] || eargs start_builder MY_BUILDER_ID jname ptname setname
 	local id="$1"
 	local jname="$2"
 	local ptname="$3"
 	local setname="$4"
-	local mnt MY_JOBID NO_ELAPSED_IN_MSG TIME_START_JOB COLOR_JOBID
+	local mnt MY_BUILDER_ID NO_ELAPSED_IN_MSG TIME_START_JOB COLOR_JOBID
 
-	MY_JOBID=${id}
+	MY_BUILDER_ID="${id}"
 	_my_path mnt
 
 	NO_ELAPSED_IN_MSG=1
 	TIME_START_JOB=$(clock -monotonic)
-	colorize_job_id COLOR_JOBID "${MY_JOBID}"
+	colorize_job_id COLOR_JOBID "${MY_BUILDER_ID:?}"
 	job_msg "Builder starting"
 
 	# Jail might be lingering from previous build. Already recursively
@@ -5834,7 +5836,7 @@ start_builder() {
 }
 
 maybe_start_builder() {
-	[ $# -ge 5 ] || eargs maybe_start_builder MY_JOBID jname ptname \
+	[ $# -ge 5 ] || eargs maybe_start_builder MY_BUILDER_ID jname ptname \
 	    setname cmd [args]
 	local builder_id="$1"
 	local jname="$2"
@@ -5877,9 +5879,9 @@ start_builders() {
 stop_builder() {
 	[ $# -eq 1 ] || eargs stop_builder builder_id
 	local builder_id="$1"
-	local mnt MY_JOBID
+	local mnt MY_BUILDER_ID
 
-	MY_JOBID="${builder_id}"
+	MY_BUILDER_ID="${builder_id}"
 	_my_path mnt
 	run_hook builder stop "${builder_id}" "${mnt:?}"
 	jstop
@@ -5941,25 +5943,25 @@ stop_builders() {
 job_done() {
 	[ $# -eq 1 ] || eargs job_done builder_id
 	local builder_id="$1"
-	local job_name job_type status jobno ret MY_JOBID
+	local job_name job_type status jobno ret MY_BUILDER_ID
 
 	# Failure to find this indicates the job is already done.
 	hash_remove builder_job_type "${builder_id}" job_type || return 1
 	hash_remove builder_job_name "${builder_id}" job_name || return 1
 	hash_remove builder_jobs "${builder_id}" jobno || return 1
 	list_remove BUILDER_JOBNOS "${jobno}"
-	_bget status ${builder_id} status
+	_bget status "${builder_id:?}" status
 	pkgqueue_job_done "${job_type}" "${job_name}"
 	ret=0
 	_wait "${jobno}" || ret="$?"
 	case "${status}:" in
 	"done:"*)
 		dev_assert 0 "${ret}"
-		bset ${builder_id} status "idle:"
+		bset "${builder_id:?}" status "idle:"
 		;;
 	*)
 		# Try to cleanup and mark build crashed
-		MY_JOBID="${builder_id}" crashed_build "${job_type}" \
+		MY_BUILDER_ID="${builder_id:?}" crashed_build "${job_type}" \
 		    "${job_name}" "${status%%:*}"
 		;;
 	esac
@@ -5971,7 +5973,7 @@ build_queue() {
 	local jname="$1"
 	local ptname="$2"
 	local setname="$3"
-	# builder_id is analgous to MY_JOBID: builder number
+	# builder_id is analgous to MY_BUILDER_ID: builder number 0..$JOBS
 	# jobno is from $(jobs)
 	local builder_id jobno job_name builders_active queue_empty
 	local job_type job_status job_finished timeout
@@ -6052,7 +6054,7 @@ build_queue() {
 			esac
 			builders_active=1
 			# Opportunistically start the builder in a subproc
-			MY_JOBID="${builder_id}" spawn_job_protected \
+			MY_BUILDER_ID="${builder_id:?}" spawn_job_protected \
 			    maybe_start_builder "${builder_id}" "${jname}" \
 			        "${ptname}" "${setname}" \
 			    build_pkg "${job_name}"
@@ -6323,7 +6325,7 @@ crashed_build() {
 	fi
 	clean_pool "${job_type}" "${pkgname}" "${originspec}" "${failed_phase}"
 	stop_build "${pkgname}" "${originspec}" 1 >> "${log:?}"
-	case "${MY_JOBID-}" in
+	case "${MY_BUILDER_ID-}" in
 	"") ;;
 	*)
 		bset_job_status "crashed" "${originspec}" "${pkgname}"
@@ -6341,9 +6343,9 @@ clean_pool() {
 	local skipped_pkgname skipped_originspec skipped_origin
 	local skipped_job_type skipped_pkgqueue_job
 
-	case "${MY_JOBID:+set}" in
+	case "${MY_BUILDER_ID:+set}" in
 	set)
-		bset ${MY_JOBID} status "clean_pool:"
+		bset ${MY_BUILDER_ID} status "clean_pool:"
 		;;
 	esac
 
@@ -6444,7 +6446,7 @@ build_pkg() {
 	# which goes to master
 	NO_ELAPSED_IN_MSG=1
 	TIME_START_JOB=$(clock -monotonic)
-	colorize_job_id COLOR_JOBID "${MY_JOBID}"
+	colorize_job_id COLOR_JOBID "${MY_BUILDER_ID}"
 
 	get_originspec_from_pkgname originspec "${pkgname}"
 	originspec_decode "${originspec}" port FLAVOR subpkg
@@ -6472,8 +6474,8 @@ build_pkg() {
 			    "${clean_rdepends}"
 			clean_pool "build" "${pkgname}" "${originspec}" \
 			    "${clean_rdepends}"
-			bset ${MY_JOBID} status "done:"
-			echo ${MY_JOBID} >&6
+			bset "${MY_BUILDER_ID:?}" status "done:"
+			echo "${MY_BUILDER_ID:?}" >&6
 			return 0
 		fi
 		bset_job_status "starting" "${originspec}" "${pkgname}"
@@ -6580,7 +6582,7 @@ build_pkg() {
 				"${log:?}/logs/${pkgname:?}.log" \
 				2> /dev/null)
 		else
-			_bget failed_status ${MY_JOBID} status
+			_bget failed_status "${MY_BUILDER_ID:?}" status
 			failed_phase=${failed_status%%:*}
 		fi
 
@@ -6613,7 +6615,7 @@ build_pkg() {
 		    "${log:?}/logs/errors/${pkgname:?}.log"
 		case "${DETERMINE_BUILD_FAILURE_REASON-}" in
 		"yes")
-			_bget status ${MY_JOBID} status
+			_bget status "${MY_BUILDER_ID:?}" status
 			bset_job_status "processlog" "${originspec}" "${pkgname}"
 			errortype="$(awk -f ${AWKPREFIX:?}/processonelog.awk \
 				"${log:?}/logs/errors/${pkgname:?}.log" \
@@ -6687,9 +6689,9 @@ build_pkg() {
 
 	log_stop
 
-	bset ${MY_JOBID} status "done:"
+	bset "${MY_BUILDER_ID:?}" status "done:"
 
-	echo ${MY_JOBID} >&6
+	echo "${MY_BUILDER_ID:?}" >&6
 }
 
 stop_build() {
@@ -6699,7 +6701,7 @@ stop_build() {
 	local build_failed="$3"
 	local mnt
 
-	case "${MY_JOBID:+set}" in
+	case "${MY_BUILDER_ID:+set}" in
 	set)
 		_my_path mnt
 
@@ -10585,7 +10587,7 @@ case "$(type setproctitle 2>/dev/null)" in
 "setproctitle is a shell builtin")
 	setproctitle() {
 		PROC_TITLE="$*"
-		command setproctitle "poudriere${MASTERNAME:+[${MASTERNAME}]}${MY_JOBID:+[${MY_JOBID}]}: $*"
+		command setproctitle "poudriere${MASTERNAME:+[${MASTERNAME}]}${MY_BUILDER_ID:+[${MY_BUILDER_ID}]}: $*"
 	}
 	;;
 *)

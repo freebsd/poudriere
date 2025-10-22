@@ -28,9 +28,9 @@ logging_setup() {
 	colored_error="${COLOR_ERROR:?}Error:${COLOR_RESET:?} "
 	colored_arrow_warn="${COLOR_WARN:?}=>> ${COLOR_RESET:?}"
 	colored_warn="${COLOR_WARN:?}Warning:${COLOR_RESET:?} "
-	my_job_id="01"
-	colorize_job_id COLOR_JOBID "${my_job_id}"
-	colored_jobid="[${COLOR_JOBID:?}${my_job_id}${COLOR_RESET}] "
+	my_builder_id="01"
+	colorize_job_id COLOR_JOBID "${my_builder_id}"
+	colored_jobid="[${COLOR_JOBID:?}${my_builder_id}${COLOR_RESET}] "
 	colored_reset="${COLOR_RESET:?}"
 	case "${PORT_TEE:?}" in
 	1)
@@ -67,8 +67,8 @@ check_pids() {
 }
 
 # - job_msg() only ever goes to the bulk TTY
-# - msg_error() without MY_JOBID is for testport. Error is sent to TTY stderr.
-# - msg_error() with MY_JOBID sends the error to the current stderr AND
+# - msg_error() without MY_BUILDER_ID is for testport. Error is sent to TTY stderr.
+# - msg_error() with MY_BUILDER_ID sends the error to the current stderr AND
 #   duplicates it to job_msg(). In this case if we are teeing then the TTY
 #   stdout will get a duplicated copy of the message. That's not a real case
 #   but is an artifact of the test matrix here.
@@ -103,8 +103,8 @@ while get_test_context; do
 		# to the parent.
 		sleep "${TEE_SLEEP_TIME}"
 	fi
-	MY_JOBID=${my_job_id} job_msg "job msg to bulk${colored}x${colored_reset}"
-	MY_JOBID=${my_job_id} msg_error "job error from port for port stderr and bulk stdout"
+	MY_BUILDER_ID=${my_builder_id} job_msg "job msg to bulk${colored}x${colored_reset}"
+	MY_BUILDER_ID=${my_builder_id} msg_error "job error from port for port stderr and bulk stdout"
 	msg_error "error from port only for bulk stderr"
 	redirect_to_bulk echo console-port-test1
 	redirect_to_bulk echo console-port-test1-err >&2
@@ -120,7 +120,7 @@ while get_test_context; do
 		# to the parent.
 		sleep "${TEE_SLEEP_TIME}"
 	fi
-	MY_JOBID=${my_job_id} msg_error "job error-post from port for port stderr and bulk stdout"
+	MY_BUILDER_ID=${my_builder_id} msg_error "job error-post from port for port stderr and bulk stdout"
 	msg_error "error-post from port only for bulk stderr"
 	if [ "${expect_pids_port}" -eq 1 ]; then
 		tpid="$(jobid "%${log_start_job:?}")"
