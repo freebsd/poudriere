@@ -5622,29 +5622,24 @@ build_port() {
 			bset_job_status "leftovers" "${originspec}" \
 			    "${pkgname}"
 
-			if [ ! -f "${mnt:?}${PORTSDIR:?}/Mk/Scripts/check_leftovers.sh" ]; then
-				msg "Obsolete ports tree is missing /usr/ports/Mk/Scripts/check_leftovers.sh"
-				testfailure=2
-			else
-				check_leftovers "${mnt:?}" |
-				    sed -e "s|${mnt:?}||" |
-				    cleanenv injail /usr/bin/env \
-				    ${PORT_FLAGS:+-S "${PORT_FLAGS}"} \
-				    PORTSDIR=${PORTSDIR} \
-				    FLAVOR="${flavor}" \
-				    UID_FILES="${P_UID_FILES}" \
-				    portdir="${portdir}" \
-				    /bin/sh \
-				    "${PORTSDIR:?}/Mk/Scripts/check_leftovers.sh" \
-				    "${port:?}" | while \
-				    mapfile_read_loop_redir modtype data; do
-					case "${modtype}" in
-					+) echo "${data}" >> "${add:?}" ;;
-					-) echo "${data}" >> "${del:?}" ;;
-					M) echo "${data}" >> "${mod:?}" ;;
-					esac
-				done
-			fi
+			check_leftovers "${mnt:?}" |
+			    sed -e "s|${mnt:?}||" |
+			    cleanenv injail /usr/bin/env \
+			    ${PORT_FLAGS:+-S "${PORT_FLAGS}"} \
+			    PORTSDIR=${PORTSDIR} \
+			    FLAVOR="${flavor}" \
+			    UID_FILES="${P_UID_FILES}" \
+			    portdir="${portdir}" \
+			    /bin/sh \
+			    "${PORTSDIR:?}/Mk/Scripts/check_leftovers.sh" \
+			    "${port:?}" | while \
+			    mapfile_read_loop_redir modtype data; do
+				case "${modtype}" in
+				+) echo "${data}" >> "${add:?}" ;;
+				-) echo "${data}" >> "${del:?}" ;;
+				M) echo "${data}" >> "${mod:?}" ;;
+				esac
+			done
 
 			sort "${add}" -o "${add1}"
 			sort "${del}" -o "${del1}"
