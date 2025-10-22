@@ -168,31 +168,58 @@ trap_pop(int signo, struct sigdata *sd)
 	errno = serrno;
 }
 
+unsigned long
+get_ulong(const char *str, const char *desc)
+{
+	char *endp = NULL;
+	unsigned long val;
+
+	errno = 0;
+	val = strtoul(str, &endp, 10);
+	if (*endp != '\0' || errno != 0) {
+		err(EX_USAGE, "Invalid %s", desc);
+	}
+	return (val);
+}
+
 int
 randintcmd(int argc, char **argv)
 {
-	char *endp;
-	char valstr[20];
+	const char *outvar = NULL;
+	char valstr[40];
 	int ret;
 	uint32_t value;
-	unsigned long max_val;
+	unsigned long min_val, max_val;
 
-	if (argc != 2 && argc != 3)
-		errx(EX_USAGE, "%s", "Usage: randint <max_val> [var_return]");
+	if (argc != 2 && argc != 3 && argc != 4)
+		errx(EX_USAGE, "%s", "Usage: randint [min_val] <max_val> " \
+		    "[var_return]");
 
 	ret = 0;
-	errno = 0;
-	endp = NULL;
-	max_val = strtoul(argv[1], &endp, 10);
-	if (*endp != '\0' || errno != 0) {
-		err(EX_USAGE, "Invalid max_val");
+	min_val = 1;
+	outvar = NULL;
+	if (argc == 2) {
+		max_val = get_ulong(argv[1], "max_val");
+	} else if (argc == 3) {
+		if (argv[2][0] >= '0' && argv[2][0] <= '9') {
+			min_val = get_ulong(argv[1], "min_val");
+			max_val = get_ulong(argv[2], "max_val");
+		} else {
+			max_val = get_ulong(argv[1], "max_val");
+			outvar = argv[2];
+		}
+	} else {
+		assert(argc == 4);
+		min_val = get_ulong(argv[1], "min_val");
+		max_val = get_ulong(argv[2], "max_val");
+		outvar = argv[3];
 	}
 	INTOFF;
-	value = arc4random_uniform(max_val);
+	value = min_val + arc4random_uniform((max_val - min_val) + 1);
 	INTON;
-	if (argc == 3) {
+	if (outvar != NULL) {
 		snprintf(valstr, sizeof(valstr), "%u", value);
-		if (setvarsafe(argv[2], valstr, 0))
+		if (setvarsafe(outvar, valstr, 0))
 			ret = 1;
 	} else
 		printf("%u\n", value);

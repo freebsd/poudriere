@@ -534,18 +534,40 @@ fi
 
 if ! have_builtin randint; then
 randint() {
-	[ "$#" -eq 1 ] || [ "$#" -eq 2 ] ||
-	    eargs randint max_val '[var_return]'
-	local max_val="$1"
-	local r_outvar="${2-}"
-	local val
+	[ "$#" -eq 1 ] || [ "$#" -eq 2 ] || [ "$#" -eq 3 ] ||
+	    eargs randint '[min_val]' max_val '[var_return]'
+	local r_min_val r_max_val r_outvar r_val
 
-	if [ "$#" -eq 1 ]; then
-		jot -r 1 "${max_val}"
-		return
-	fi
-	val=$(jot -r 1 "${max_val}")
-	setvar "${r_outvar}" "${val}"
+	r_min_val=1
+	r_outvar=
+	case "$#" in
+	1)
+		r_max_val="$1"
+		;;
+	2)
+		case "$2" in
+		[0-9]*)
+			r_min_val="$1"
+			r_max_val="$2"
+			;;
+		*)
+			r_max_val="$1"
+			r_outvar="$2"
+			;;
+		esac
+		;;
+	3)
+		r_min_val="$1"
+		r_max_val="$2"
+		r_outvar="$3"
+		;;
+	esac
+
+	r_val="$(jot -r 1 "${r_min_val}" "${r_max_val}")"
+	case "${r_outvar}" in
+	""|-) echo "${r_val:?}" ;;
+	*) setvar "${r_outvar}" "${r_val}" || return ;;
+	esac
 }
 fi
 
