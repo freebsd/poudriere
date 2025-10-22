@@ -330,7 +330,7 @@ expand_test_contexts() {
 	case "${test_contexts_file}" in
 	-) unset test_contexts_file ;;
 	esac
-	cat ${test_contexts_file:+"${test_contexts_file}"} | awk '
+	awk '
 	function nest(varidx, nestlevel, combostr, n, i, pvar) {
 		pvar = varsd[varidx]
 		if (combostr && varidx == varn && nestlevel == varn) {
@@ -379,7 +379,7 @@ expand_test_contexts() {
 	END {
 		nest(0, 0)
 	}
-	'
+	' ${test_contexts_file:+"${test_contexts_file}"}
 }
 
 add_test_function() {
