@@ -5610,6 +5610,7 @@ build_port() {
 		case "${phase}" in
 		"deinstall")
 			local add add1 del del1 mod mod1
+			local m_add m_del m_mod
 			local die=0
 
 			add="$(mktemp -t lo.add)"
@@ -5632,38 +5633,77 @@ build_port() {
 			    portdir="${portdir}" \
 			    /bin/sh \
 			    "${PORTSDIR:?}/Mk/Scripts/check_leftovers.sh" \
-			    "${port:?}" | while \
-			    mapfile_read_loop_redir modtype data; do
-				case "${modtype}" in
-				+) echo "${data}" >> "${add:?}" ;;
-				-) echo "${data}" >> "${del:?}" ;;
-				M) echo "${data}" >> "${mod:?}" ;;
-				esac
-			done
-
-			sort "${add}" -o "${add1}"
-			sort "${del}" -o "${del1}"
-			sort "${mod}" -o "${mod1}"
-			comm -12 "${add1}" "${del1}" >> "${mod1:?}"
-			comm -23 "${add1}" "${del1}" > "${add:?}"
-			comm -13 "${add1}" "${del1}" > "${del:?}"
-			if [ -s "${add}" ]; then
+			    "${port:?}" |
+			{
+				mapfile m_add "${add:?}" "we" ||
+				    err 1 "mapfile m_add"
+				mapfile m_del "${del:?}" "we" ||
+				    err 1 "mapfile m_del"
+				mapfile m_mod "${mod:?}" "we" ||
+				    err 1 "mapfile m_mod"
+				while mapfile_read_loop_redir modtype data; do
+					case "${modtype}" in
+					+)
+						mapfile_write \
+						    "${m_add:?}" \
+						    "${data}"
+						;;
+					-)
+						mapfile_write \
+						    "${m_del:?}" \
+						    "${data}"
+						;;
+					M)
+						mapfile_write \
+						    "${m_mod:?}" \
+						    "${data}"
+						;;
+					*)
+						err 1 "check_leftovers" \
+						    "unsupported" \
+						    "modtype=${modtype}"
+						;;
+					esac
+				done
+				mapfile_close "${m_add:?}"
+				mapfile_close "${m_del:?}"
+				mapfile_close "${m_mod:?}"
+			}
+			if [ -s "${add:?}" ]; then
+				sort "${add:?}" -o "${add1:?}"
+			else
+				:> "${add1:?}"
+			fi
+			if [ -s "${del:?}" ]; then
+				sort "${del:?}" -o "${del1:?}"
+			else
+				:> "${del1:?}"
+			fi
+			if [ -s "${mod:?}" ]; then
+				sort "${mod:?}" -o "${mod1:?}"
+			else
+				:> "${mod1:?}"
+			fi
+			comm -12 "${add1:?}" "${del1:?}" >> "${mod1:?}"
+			comm -23 "${add1:?}" "${del1:?}" > "${add:?}"
+			comm -13 "${add1:?}" "${del1:?}" > "${del:?}"
+			if [ -s "${add:?}" ]; then
 				msg "Error: Files or directories left over:"
 				die=1
 				grep -v "^@dirrm" "${add:?}"
 				grep "^@dirrm" "${add:?}" | sort -r
 			fi
-			if [ -s "${del}" ]; then
+			if [ -s "${del:?}" ]; then
 				msg "Error: Files or directories removed:"
 				die=1
 				cat "${del:?}"
 			fi
-			if [ -s "${mod}" ]; then
+			if [ -s "${mod:?}" ]; then
 				msg "Error: Files or directories modified:"
 				die=1
 				cat "${mod1:?}"
 			fi
-			if [ "${die}" -eq 1 ] &&
+			if [ "${die:?}" -eq 1 ] &&
 			    [ "${PREFIX}" != "${LOCALBASE}" ] &&
 			    was_a_testport_run; then
 				msg "This test was done with" \
