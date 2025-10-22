@@ -5612,12 +5612,12 @@ build_port() {
 			local add add1 del del1 mod mod1
 			local die=0
 
-			add=$(mktemp -t lo.add)
-			add1=$(mktemp -t lo.add1)
-			del=$(mktemp -t lo.del)
-			del1=$(mktemp -t lo.del1)
-			mod=$(mktemp -t lo.mod)
-			mod1=$(mktemp -t lo.mod1)
+			add="$(mktemp -t lo.add)"
+			add1="$(mktemp -t lo.add1)"
+			del="$(mktemp -t lo.del)"
+			del1="$(mktemp -t lo.del1)"
+			mod="$(mktemp -t lo.mod)"
+			mod1="$(mktemp -t lo.mod1)"
 			msg "Checking for extra files and directories"
 			bset_job_status "leftovers" "${originspec}" \
 			    "${pkgname}"
@@ -5625,7 +5625,6 @@ build_port() {
 			if [ ! -f "${mnt:?}${PORTSDIR:?}/Mk/Scripts/check_leftovers.sh" ]; then
 				msg "Obsolete ports tree is missing /usr/ports/Mk/Scripts/check_leftovers.sh"
 				testfailure=2
-				touch "${add}" "${del}" "${mod}" || :
 			else
 				check_leftovers "${mnt:?}" |
 				    sed -e "s|${mnt:?}||" |
@@ -5650,9 +5649,9 @@ build_port() {
 			sort "${add}" -o "${add1}"
 			sort "${del}" -o "${del1}"
 			sort "${mod}" -o "${mod1}"
-			comm -12 ${add1} ${del1} >> "${mod1:?}"
-			comm -23 ${add1} ${del1} > "${add:?}"
-			comm -13 ${add1} ${del1} > "${del:?}"
+			comm -12 "${add1}" "${del1}" >> "${mod1:?}"
+			comm -23 "${add1}" "${del1}" > "${add:?}"
+			comm -13 "${add1}" "${del1}" > "${del:?}"
 			if [ -s "${add}" ]; then
 				msg "Error: Files or directories left over:"
 				die=1
@@ -5669,13 +5668,18 @@ build_port() {
 				die=1
 				cat "${mod1:?}"
 			fi
-			if [ ${die} -eq 1 -a "${PREFIX}" != "${LOCALBASE}" ] &&
+			if [ "${die}" -eq 1 ] &&
+			    [ "${PREFIX}" != "${LOCALBASE}" ] &&
 			    was_a_testport_run; then
-				msg "This test was done with PREFIX!=LOCALBASE which \
-may show failures if the port does not respect PREFIX."
+				msg "This test was done with" \
+				    "PREFIX!=LOCALBASE which may show" \
+				    "failures if the port does not respect" \
+				    "PREFIX."
 			fi
-			rm -f "${add} ${add1} ${del} ${del1} ${mod} ${mod1}"
-			[ $die -eq 0 ] || if [ "${PORTTESTING_FATAL}" != "no" ]; then
+			rm -f "${add}" "${add1}" "${del}" \
+			    "${del1}" "${mod}" "${mod1}"
+			[ "${die}" -eq 0 ] ||
+			    if [ "${PORTTESTING_FATAL}" != "no" ]; then
 				return 1
 			else
 				testfailure=2
@@ -10922,8 +10926,14 @@ esac
 : ${DEVFS_RULESET:=4}
 : ${PKG_HASH:=no}
 
-: ${POUDRIERE_TMPDIR:=$(command mktemp -dt poudriere)}
-: ${SHASH_VAR_PATH_DEFAULT:=${POUDRIERE_TMPDIR}}
+: "${POUDRIERE_TMPDIR:=$(command mktemp -dt poudriere)}"
+case "${IN_TEST:-0}" in
+0)
+# POUDRIERE_TMPDIR will be used for now on in mktemp() override.
+unset TMPDIR
+;;
+esac
+: "${SHASH_VAR_PATH_DEFAULT:=${POUDRIERE_TMPDIR:?}}"
 : ${SHASH_VAR_PATH:=${SHASH_VAR_PATH_DEFAULT}}
 : ${SHASH_VAR_PREFIX:=sh-}
 : ${DATADIR_NAME:=".p"}

@@ -1600,6 +1600,7 @@ set_poudriere_conf() {
 	poudriere_conf="${POUDRIERE_ETC:?}/poudriere.d/${MASTERNAME:?}-poudriere.conf"
 	msg "Updating ${poudriere_conf}" >&2
 	write_atomic_cmp "${poudriere_conf}" <<-EOF
+	${POUDRIERE_TMPDIR:+TMPDIR="${POUDRIERE_TMPDIR}"}
 	KEEP_OLD_PACKAGES=yes
 	KEEP_OLD_PACKAGES_COUNT=${KEEP_OLD_PACKAGES_COUNT:=10}
 	NOHANG_TIME=${NOHANG_TIME:-60}
