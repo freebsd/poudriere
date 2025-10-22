@@ -323,6 +323,7 @@ capture_output_simple_stop() {
 	esac
 }
 
+# see test/test_contexts_expand.sh
 expand_test_contexts() {
 	[ "$#" -eq 1 ] || eargs expand_test_contexts test_contexts_file
 	local test_contexts_file="$1"
@@ -331,29 +332,45 @@ expand_test_contexts() {
 	-) unset test_contexts_file ;;
 	esac
 	awk '
-	function nest(varidx, nestlevel, combostr, n, i, pvar) {
-		pvar = varsd[varidx]
-		if (combostr && varidx == varn && nestlevel == varn) {
-			print combostr
-			return
-		}
-
-		for (n = varidx + 1; n <= varn; n++) {
-			for (i = 0; i < combocount[pvar]; i++) {
-				nest(n, nestlevel + 1, combostr ? (combostr " " combos[pvar, i]) : combos[pvar, i])
+	function printperlines() {
+		for (n = 0; n < varn; n++) {
+			var = varsd[n]
+			if (!perlineidx[var]) {
+				continue
+			}
+			for (i = 0; i < perlineidx[var]; i++) {
+				if (have_combos) {
+					nest(0, 0, perline[var, i])
+				} else {
+					print perline[var, i]
+				}
 			}
 		}
 	}
-	BEGIN {
-		varn = 0
+	function nest(varidx, nestlevel, combostr, n, i, pvar) {
+		pvar = combovars[varidx]
+		if (combostr && varidx == have_combos && nestlevel == have_combos) {
+			print combostr
+			return
+		}
+		# nest pure combos
+		for (n = varidx + 1; n <= have_combos; n++) {
+			for (i = 0; i < combocount[pvar]; i++) {
+				nest(n, nestlevel + 1,
+				    combostr ? \
+				    (combostr " " combos[pvar, i]) : \
+				    combos[pvar, i])
+			}
+		}
 	}
-	/^#/ { next }
-	{
-		var = $1
+	function processline(var, first_arg, do_combo) {
 		varsd[varn] = var
 		varn++
-		combosidx = 0
-		for (i = 2; i <= NF; i++) {
+		if (do_combo) {
+			combovars[have_combos] = var
+			have_combos++
+		}
+		for (i = first_arg; i <= NF; i++) {
 			if ($i ~ /^".*"$/) {
 				value = substr($i, 2, length($i) - 2)
 			} else if ($i ~ /^"/) {
@@ -371,13 +388,42 @@ expand_test_contexts() {
 			} else {
 				value = $i
 			}
-			combos[var, combosidx] = sprintf("%s=\"%s\";", var, value)
-			combosidx++
+			output = sprintf("%s=\"%s\";", var, value)
+			if (do_combo) {
+				combos[var, combosidx] = output
+				combosidx++
+			} else {
+				perline[var, perlineidx[var]] = output
+				perlineidx[var]++
+			}
 		}
+	}
+	BEGIN {
+		varn = 0
+		have_combos = 0
+	}
+	/^#/ { next }
+	# pre-line context
+	$1 == "-" {
+		var = $2
+		perlineidx[var] = 0
+		have_perlines = 1
+		processline(var, 3, 0)
+		next
+	}
+	# matrix context
+	{
+		var = $1
+		combosidx = 0
+		processline(var, 2, 1)
 		combocount[var] = combosidx
 	}
 	END {
-		nest(0, 0)
+		if (have_perlines == 0) {
+			nest(0, 0)
+		} else {
+			printperlines()
+		}
 	}
 	' ${test_contexts_file:+"${test_contexts_file}"}
 }
