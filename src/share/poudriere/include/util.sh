@@ -656,6 +656,10 @@ trap_push() {
 	_trap="-"
 	# shellcheck disable=SC2034
 	while read -r ltrap ldash lhandler lsig; do
+		case "${ltrap-}" in
+		# no traps set
+		"") break ;;
+		esac
 		case "${lsig}" in
 		*" "*)
 			# Multi-word handler, need to shift it back into
