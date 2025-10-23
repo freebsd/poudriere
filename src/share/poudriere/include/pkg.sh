@@ -288,21 +288,25 @@ pkg_get_options() {
 	_compiled_options=
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
 	if ! shash_get 'pkg' 'options2' _compiled_options; then
+		local pgo_options
+
 		_compiled_options=
+		pgo_options="$({
+			set_pipefail
+			injail "${PKG_BIN:?}" query \
+			    -F "/packages/All/${pkg##*/}" '%Ok %Ov' |
+			    sort
+			})" || return
 		while mapfile_read_loop_redir key value; do
-			case "${key}" in
-			"!ERR! "*) return "${key#!ERR! }" ;;
-			esac
 			case "${value}" in
-				off|false) key="-${key}" ;;
-				on|true) key="+${key}" ;;
+			off|false) key="-${key}" ;;
+			on|true) key="+${key}" ;;
+			# no options
+			*) break ;;
 			esac
 			_compiled_options="${_compiled_options:+${_compiled_options} }${key}"
 		done <<-EOF
-		$(set_pipefail; \
-		    injail "${PKG_BIN:?}" \
-		    query -F "/packages/All/${pkg##*/}" '%Ok %Ov' | sort ||
-		    echo "!ERR! $?")
+		${pgo_options}
 		EOF
 		shash_set 'pkg' 'options2' "${_compiled_options-}"
 	fi
