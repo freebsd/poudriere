@@ -4772,7 +4772,8 @@ download_from_repo() {
 		fi
 		echo "${pkgname}"
 	done | sort | tee "${MASTER_DATADIR:?}/pkg_fetch" | (
-		cd "${PACKAGES_PKG_CACHE:?}"
+		cd "${PACKAGES_PKG_CACHE:?}" ||
+		    err 1 "cd ${PACKAGES_PKG_CACHE:?}"
 		sed -e "s,\$,.${PKG_EXT}," |
 		    xargs -J % ln -fL % "${packages_rel:?}/All/"
 	)
@@ -9875,7 +9876,7 @@ prepare_ports() {
 	local resuming_build
 	local cache_dir sflag delete_pkg_list shash_bucket
 
-	cd "${MASTER_DATADIR:?}"
+	cd "${MASTER_DATADIR:?}" || return
 	case "${SHASH_VAR_PATH:?}" in
 	"var/cache") ;;
 	*)
@@ -10148,7 +10149,8 @@ prepare_ports() {
 
 		# Cleanup cached data that is no longer needed.
 		(
-			cd "${SHASH_VAR_PATH:?}"
+			cd "${SHASH_VAR_PATH:?}" ||
+			    err 1 "cd ${SHASH_VAR_PATH:?} failed"
 			for shash_bucket in \
 			    origin-flavor-all \
 			    originspec-ignored \

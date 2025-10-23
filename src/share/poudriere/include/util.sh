@@ -456,7 +456,7 @@ in_reldir() {
 		ir_oldpwd=
 		;;
 	*)
-		cd "${wanted_dir:?}"
+		cd "${wanted_dir:?}" || return
 		ir_oldpwd="${OLDPWD}"
 		;;
 	esac
@@ -465,7 +465,7 @@ in_reldir() {
 	"$@" || ir_ret="$?"
 
 	case "${ir_oldpwd:+set}" in
-	set) cd "${ir_oldpwd}" ;;
+	set) cd "${ir_oldpwd}" || return ;;
 	esac
 
 	return "${ir_ret}"

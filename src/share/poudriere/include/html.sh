@@ -170,7 +170,7 @@ _build_top_json() {
 
 	set_pipefail
 	(
-		cd "${log_path_top:?}"
+		cd "${log_path_top:?}" || return
 		for empty in */latest/.data.mini.json; do
 			case "${empty}" in
 			# Empty
