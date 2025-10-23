@@ -282,6 +282,25 @@ _relpath_common() {
 	[ $# -eq 2 ] || eargs _relpath_common dir1 dir2
 	local _rc_dir1 _rc_dir2 _rc_common _rc_other
 
+	# relative paths must exist but absolutes are not validated.
+	case "$1" in
+	/*) ;;
+	*)
+		if [ ! -d "${1:?}" ]; then
+		    msg_error "_relpath_common: $1: Not a directory"
+		    return "${EX_DATAERR:-65}"
+		fi
+		;;
+	esac
+	case "$2" in
+	/*) ;;
+	*)
+		if ! [ -d "${2:?}" ]; then
+		    msg_error "_relpath_common: $2: Not a directory"
+		    return "${EX_DATAERR:-65}"
+		fi
+		;;
+	esac
 	# shellcheck disable=SC2001
 	_rc_dir1=$(realpath -q "$1" || echo "$1" | sed -e 's,//*,/,g') ||
 	    return "${EX_OSERR:-71}"

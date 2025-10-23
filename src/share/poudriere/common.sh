@@ -4744,7 +4744,9 @@ download_from_repo() {
 		rm -f "${wantedpkgs}"
 		return 0
 	fi
-	relpath "${PACKAGES:?}" "${PACKAGES_PKG_CACHE:?}" packages_rel
+	relpath "${PACKAGES:?}" "${PACKAGES_PKG_CACHE:?}" packages_rel ||
+	    err 1 "download_from_repo: relpath ${PACKAGES:?}" \
+		"${PACKAGES_PKG_CACHE:?}"
 	while mapfile_read_loop "${wantedpkgs}" pkgname; do
 		if [ ! -e "${PACKAGES_PKG_CACHE:?}/${pkgname}.${PKG_EXT}" ]; then
 			msg_warn "${COLOR_PORT}${pkgname}.${PKG_EXT}${COLOR_RESET} not found. Remote PKG_SUFX likely differs temporarily"

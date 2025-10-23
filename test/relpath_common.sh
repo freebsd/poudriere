@@ -20,20 +20,28 @@ set -- ${dirs}
 while [ $# -gt 0 ]; do
 	dir1="$1"
 	dir2="$2"
-	expected_common="$4"
-	expected_reldir1="$5"
-	expected_reldir2="$6"
+	expected_common="${4}"
+	expected_reldir1="${5}"
+	expected_reldir2="${6}"
 	shift 6
 	saved="$@"
 
-	set -- $(relpath_common "${dir1}" "${dir2}")
-	actual_common="$1"
-	actual_reldir1="$2"
-	actual_reldir2="$3"
+	assert_true mkdir -p "./${dir1:?}"
+	assert_true mkdir -p "./${dir2:?}"
 
-	assert "${expected_common}" "${actual_common}" "(common) dir1: '${dir1}' dir2: '${dir2}'"
-	assert "${expected_reldir1}" "${actual_reldir1}" "(reldir1) dir1: '${dir1}' dir2: '${dir2}'"
-	assert "${expected_reldir2}" "${actual_reldir2}" "(reldir2) dir1: '${dir1}' dir2: '${dir2}'"
+	set -- $(relpath_common "./${dir1}" "./${dir2}")
+	actual_common="${1#${PWD}}"
+	actual_reldir1="${2#${PWD}}"
+	actual_reldir2="${3#${PWD}}"
+
+	assert "${expected_common}" "${actual_common:-/}" \
+	    "(common) dir1: '${dir1}' dir2: '${dir2}'"
+	assert "${expected_reldir1}" "${actual_reldir1:-/}" \
+	    "(reldir1) dir1: '${dir1}' dir2: '${dir2}'"
+	assert "${expected_reldir2}" "${actual_reldir2:-/}" \
+	    "(reldir2) dir1: '${dir1}' dir2: '${dir2}'"
 
 	set -- ${saved}
+
+	find "${POUDRIERE_TMPDIR:?}" -mindepth 1 -type d -delete
 done

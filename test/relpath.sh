@@ -20,8 +20,13 @@ dirs="\
 assert_dir() {
 	local expected_rel_dir="$1"
 	local expected_abs_dir="$2"
+	local pwd_realpath ret
+
 	assert "${expected_rel_dir}" "${PWD}"
-	assert "${expected_abs_dir}" "$(realpath "${PWD}")"
+	ret=0
+	pwd_realpath="$(realpath "${PWD}")" || ret="$?"
+	assert 0 "${ret}"
+	assert "${expected_abs_dir}" "${pwd_realpath}"
 }
 
 set -- ${dirs}
@@ -32,30 +37,35 @@ while [ $# -gt 0 ]; do
 	shift 4
 	saved="$@"
 
-	actual_reldir=$(relpath "${dir1}" "${dir2}")
+	assert_true mkdir -p "./${dir1:?}"
+	assert_true mkdir -p "./${dir2:?}"
+
+	actual_reldir=$(relpath "./${dir1}" "./${dir2}")
 
 	assert "${expected_reldir}" "${actual_reldir}" "1. dir1: ${dir1} dir2: ${dir2}"
 
 	actual_reldir=
-	relpath "${dir1}" "${dir2}" actual_reldir
+	relpath "./${dir1}" "./${dir2}" actual_reldir
 	assert "${expected_reldir}" "${actual_reldir}" "2. dir1: ${dir1} dir2: ${dir2}"
 
 	set -- ${saved}
+
+	find "${POUDRIERE_TMPDIR:?}" -mindepth 1 -type d -delete
 done
 
 cd /tmp
-DEVNULL="../dev/null"
-add_relpath_var DEVNULL
-assert "../dev/null" "${DEVNULL}"
-assert "/dev/null" "${DEVNULL_ABS}"
+DEVFD="../dev/fd"
+add_relpath_var DEVFD
+assert "../dev/fd" "${DEVFD}"
+assert "/dev/fd" "${DEVFD_ABS}"
 
 cd /
-assert "dev/null" "${DEVNULL}"
-assert "/dev/null" "${DEVNULL_ABS}"
+assert "dev/fd" "${DEVFD}"
+assert "/dev/fd" "${DEVFD_ABS}"
 
 cd /tmp
-assert "../dev/null" "${DEVNULL}"
-assert "/dev/null" "${DEVNULL_ABS}"
+assert "../dev/fd" "${DEVFD}"
+assert "/dev/fd" "${DEVFD_ABS}"
 
 foo="$(mktemp -udt foo)"
 mkdir -p "${foo}/FOO"
@@ -82,8 +92,8 @@ assert 0 "$?"
 assert_true in_reldir bar assert_dir "${bar_real}" "${bar_ABS}"
 
 cd /
-assert "dev/null" "${DEVNULL}"
-assert "/dev/null" "${DEVNULL_ABS}"
+assert "dev/fd" "${DEVFD}"
+assert "/dev/fd" "${DEVFD_ABS}"
 assert "${foo_real#/}" "${foo}" 1
 assert "." "${bar}" 2
 assert "${foo_real}" "${foo_ABS}"
@@ -92,8 +102,8 @@ assert_true in_reldir foo assert_dir "${foo_real}" "${foo_ABS}"
 assert_true in_reldir bar assert_dir "${bar_real}" "${bar_ABS}"
 
 cd etc
-assert "../dev/null" "${DEVNULL}"
-assert "/dev/null" "${DEVNULL_ABS}"
+assert "../dev/fd" "${DEVFD}"
+assert "/dev/fd" "${DEVFD_ABS}"
 assert "..${foo_real}" "${foo}" 5
 assert ".." "${bar}" 6
 assert "${foo_real}" "${foo_ABS}"
@@ -102,8 +112,8 @@ assert_true in_reldir foo assert_dir "${foo_real}" "${foo_ABS}"
 assert_true in_reldir bar assert_dir "${bar_real}" "${bar_ABS}"
 
 cd /var/run
-assert "../../dev/null" "${DEVNULL}"
-assert "/dev/null" "${DEVNULL_ABS}"
+assert "../../dev/fd" "${DEVFD}"
+assert "/dev/fd" "${DEVFD_ABS}"
 assert "../..${foo_real}" "${foo}" 5
 assert "../.." "${bar}" 6
 assert "${foo_real}" "${foo_ABS}"
