@@ -355,9 +355,10 @@ runtest() {
 			"END") ;;
 			*)
 				echo -n "Checking for unhandled errors... "
-				if egrep -q \
+				if egrep \
 				    ' Error: (\([0-9]+\) [a-zA-Z0-9]*|\[[0-9]+\])' \
 				    "$(get_log_name)" |
+				    sed -e 's,Error:,UnhandledError:,' |
 				    grep -v 'sleep:.*about.*second' |
 				    grep -v 'Another logclean is busy'; then
 					ret=99
