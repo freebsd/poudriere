@@ -1035,8 +1035,6 @@ _mapfile_write(/*XXX const*/ struct mapped_data *md, const char *handle,
 	return (ret);
 }
 
-int evalcmd(int argc, char **argv);
-
 int
 mapfile_writecmd(int argc, char **argv)
 {
