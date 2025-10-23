@@ -230,7 +230,7 @@ BUILD_DIR="${PWD}"
 THISDIR=${am_VPATH}
 THISDIR="$(realpath "${THISDIR}")"
 cd "${THISDIR}"
-: "${LOGCLEAN_WAIT:=30}"
+: "${LOGCLEAN_WAIT:=5}"
 export LOGCLEAN_WAIT
 
 case "${TEST##*/}" in
@@ -238,11 +238,29 @@ prep.sh) : "${DEF_TIMEOUT:=250}" ;;
 *-build-quick*.sh) : "${DEF_TIMEOUT:=120}" ;;
 bulk*build*.sh|testport*build*.sh) : "${DEF_TIMEOUT:=400}" ;;
 critical_section_inherit.sh) : "${DEF_TIMEOUT:=20}" ;;
+shellcheck.sh) : "${DEF_TIMEOUT:=90}" ;;
 esac
 : "${DEF_TIMEOUT:=60}"
 case "${TEST##*/}" in
-# Bump anything touching logclean
-bulk*.sh|testport*.sh|distclean*.sh|options*.sh) : "${DEF_TIMEOUT:=$((DEF_TIMEOUT + (LOGCLEAN_WAIT * 1)))}" ;;
+bulk*.sh|testport*.sh|distclean*.sh|options*.sh)
+	# Bump anything touching logclean
+	DEF_TIMEOUT="$((DEF_TIMEOUT + (LOGCLEAN_WAIT * 1)))"
+	;;
+esac
+case "${TEST##*/}" in
+*-build-quick*.sh) ;;
+bulk*.sh|testport*.sh|distclean*.sh|options*.sh)
+	# The heavy load of bulk asserts need some extra time.
+	: "${BULK_EXTRA_TIME:=30}"
+	DEF_TIMEOUT="$((DEF_TIMEOUT + BULK_EXTRA_TIME))"
+	;;
+esac
+# Multiply on incremental builds
+case "${TEST##*/}" in
+*-inc-*.sh)
+	: "${BULK_INCREMENTAL_MULTIPLIER:=2}"
+	DEF_TIMEOUT="$((DEF_TIMEOUT * BULK_INCREMENTAL_MULTIPLIER))"
+	;;
 esac
 # Boost by the sanitizer multiplier depending on build in Makefile.am
 : "${TIMEOUT_SAN_MULTIPLIER:=1}"
@@ -263,7 +281,7 @@ TIMEOUT_KILL="${TIMEOUT_KILL:+${TIMEOUT_KILL} }${TIMEOUT_KILL_SIGNAL:+-s ${TIMEO
 case "${SH}" in
 /bin/sh)
 	# It's about 4.6 times slower.
-	: "${TIMEOUT_SH_MULTIPLIER:=5}"
+	: "${TIMEOUT_SH_MULTIPLIER:=6}"
 	DEF_TIMEOUT="$((DEF_TIMEOUT * TIMEOUT_SH_MULTIPLIER))"
 	;;
 esac
@@ -277,7 +295,11 @@ if [ -n "${TESTS_SKIP_BUILD-}" ]; then
 	esac
 fi
 if [ -n "${TESTS_SKIP_LONG-}" ]; then
-	:
+	case "${TEST##*/}" in
+	*build*-inc-*.sh|bulk-flavor-ignore-all.sh|bulk-overlay-all.sh)
+		exit 77
+		;;
+	esac
 fi
 if [ -n "${TESTS_SKIP_BULK-}" ]; then
 	case "${TEST##*/}" in
