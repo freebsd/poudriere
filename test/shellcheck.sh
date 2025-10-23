@@ -14,6 +14,7 @@ FILES="$({
 })"
 PASSING="
 include/hash.sh
+include/html.sh
 include/parallel.sh
 include/shared_hash.sh
 include/util.sh

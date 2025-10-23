@@ -25,7 +25,7 @@
 # SUCH DAMAGE.
 
 stress_snapshot() {
-	local loadavg swapinfo elapsed duration now min_load loadpct ncpu
+	local loadavg swapinfo elapsed now min_load loadpct ncpu
 
 	loadavg=$(/sbin/sysctl -n vm.loadavg|/usr/bin/awk '{print $2,$3,$4}')
 	min_load="${loadavg%% *}"
@@ -35,7 +35,7 @@ stress_snapshot() {
 	if [ "${ncpu:?}" -gt "${NCPU:?}" ]; then
 		ncpu="${NCPU}"
 	fi
-	loadpct="$(printf "%2.0f%%" $(echo "scale=20; 100 * (${min_load} / ${ncpu})" | bc))"
+	loadpct="$(printf "%2.0f%%" "$(echo "scale=20; 100 * (${min_load} / ${ncpu})" | bc)")"
 	swapinfo=$(/usr/sbin/swapinfo -k|/usr/bin/awk '/\// {sum+=$2; X+=$3} END {if (sum) {printf "%1.2f%%\n", X*100/sum}}')
 	now=$(clock -monotonic)
 	elapsed=$((now - TIME_START))
@@ -57,7 +57,8 @@ html_json_main() {
 	# Ensure we are not sitting in the MASTER_DATADIR directory and
 	# move into the logdir for relative operations.
 	_log_path_top log_path_top
-	cd "${log_path_top:?}"
+	cd "${log_path_top:?}" ||
+	    err 1 "html_json_main: cd ${log_path_top}"
 	log_path_top="."
 
 	# Determine relative paths
@@ -168,6 +169,7 @@ build_top_json() {
 
 # This is called at the end
 html_json_cleanup() {
+	# shellcheck disable=SC2034
 	local log
 
 	_log_path log
