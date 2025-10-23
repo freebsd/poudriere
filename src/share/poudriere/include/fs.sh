@@ -112,14 +112,13 @@ _do_clone() {
 
 	case "${relative}" in
 	1)
-		local relpath_vals
+		local _relpath_common _relpath_common_dir1 _relpath_common_dir2
 
-		relpath_vals="$(relpath_common "${src:?}" "${dst:?}")" ||
+		_relpath_common "${src:?}" "${dst:?}" ||
 		    err 1 "_do_clone: relpath_common '${src}' '${dst}'"
-		set -- ${relpath_vals:?}
-		common="${1:?}"
-		src="${2:?}"
-		dst="${3:?}"
+		common="${_relpath_common:?}"
+		src="${_relpath_common_dir1:?}"
+		dst="${_relpath_common_dir2:?}"
 		case "${common}" in
 		/)
 			case "${ALLOW_CLONING_HOST:-no}" in
@@ -370,15 +369,15 @@ clonefs() {
 		fi
 		case "${snap}" in
 		"clean")
-			local skippath skippaths common src dst relpath_vals
+			local skippath skippaths common src dst
+			local _relpath_common _relpath_common_dir1 \
+			    _relpath_common_dir2
 
-			relpath_vals="$(relpath_common "${from:?}" \
-			    "${mnt:?}")" ||
-			    err 1 "clonefs: relpath_common '${from}' '${mnt}'"
-			set -- ${relpath_vals:?}
-			common="${1:?}"
-			src="${2:?}"
-			dst="${3:?}"
+			_relpath_common "${from:?}" "${mnt:?}" ||
+			    err 1 "_do_clone: relpath_common '${from}' '${mnt}'"
+			common="${_relpath_common:?}"
+			src="${_relpath_common_dir1:?}"
+			dst="${_relpath_common_dir2:?}"
 
 			cpignore="$(mktemp -ut clone.cpignore)"
 			skippaths="$(nullfs_paths "${mnt}")"
