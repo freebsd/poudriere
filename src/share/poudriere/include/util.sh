@@ -327,9 +327,9 @@ _relpath_common() {
 	_rc_dir2="${_rc_dir2%/}"
 	_rc_dir2="${_rc_dir2:-.}"
 
-	_relpath_common="${_rc_common}"
-	_relpath_common_dir1="${_rc_dir1}"
-	_relpath_common_dir2="${_rc_dir2}"
+	_relpath_common="${_rc_common:?}"
+	_relpath_common_dir1="${_rc_dir1:?}"
+	_relpath_common_dir2="${_rc_dir2:?}"
 }
 
 # See _relpath_common
@@ -340,8 +340,10 @@ relpath_common() {
 	local rc_dir2="$2"
 	local _relpath_common _relpath_common_dir1 _relpath_common_dir2
 
-	_relpath_common "${rc_dir1}" "${rc_dir2}"
-	echo "${_relpath_common} ${_relpath_common_dir1} ${_relpath_common_dir2}"
+	_relpath_common "${rc_dir1}" "${rc_dir2}" || return
+	echo "${_relpath_common:?}" \
+	    "${_relpath_common_dir1:?}" \
+	    "${_relpath_common_dir2:?}"
 }
 
 : "${RELPATH_DEFAULT_VAR:=_relpath}"
@@ -359,7 +361,7 @@ _relpath() {
 	local -
 
 	# Find the common prefix
-	_relpath_common "${_r_dir1}" "${_r_dir2}"
+	_relpath_common "${_r_dir1}" "${_r_dir2}" || return
 
 	case "${_relpath_common_dir2}" in
 	".")
@@ -456,16 +458,23 @@ make_relative() {
 	local mr_var="$1"
 	local mr_oldroot="${2:-${PWD}}"
 	local mr_newroot="${3:-${PWD}}"
-	local mr_val
+	local mr_val mr_one mr_two
 
-	getvar "${mr_var}" mr_val || return 0
-	case "${mr_val}" in
+	getvar "${mr_var:?}" mr_val || return 0
+	case "${mr_val:?}" in
 	"") return 0 ;;
 	esac
-	case "${mr_val}" in
-	/*)	_relpath "${mr_val}" "${mr_newroot}" "${mr_var}" ;;
-	*)	_relpath "${mr_oldroot}/${mr_val}" "${mr_newroot}" "${mr_var}" ;;
+	case "${mr_val:?}" in
+	/*)
+		mr_one="${mr_val:?}"
+		mr_two="${mr_newroot:?}"
+		;;
+	*)
+		mr_one="${mr_oldroot:?}/${mr_val:?}"
+		mr_two="${mr_newroot:?}"
+		;;
 	esac
+	_relpath "${mr_one:?}" "${mr_two:?}" "${mr_var:?}"
 }
 
 _update_relpaths() {
@@ -473,11 +482,14 @@ _update_relpaths() {
 	[ $# -eq 2 ] || eargs _update_relpaths oldroot newroot
 	local _ur_oldroot="$1"
 	local _ur_newroot="$2"
-	local _ur_var
+	local _ur_var _ur_ret
 
+	_ur_ret=0
 	for _ur_var in ${RELATIVE_PATH_VARS}; do
-		make_relative "${_ur_var}" "${_ur_oldroot}" "${_ur_newroot}"
+		make_relative "${_ur_var:?}" "${_ur_oldroot:?}" \
+		    "${_ur_newroot:?}" || _ur_ret="$?"
 	done
+	return "${_ur_ret}"
 }
 
 add_relpath_var() {
