@@ -30,7 +30,7 @@ pwait_timeout_adjusts_on_eintr() {
 	killer_job="${spawn_job:?}"
 	trap 'gotinfo=1' INFO
 	assert_runs_between 2 5 assert_ret 124 pwait -t 2.5 1
-	assert_ret 143 kill_job 0 "${killer_job:?}"
+	assert_ret 143 kill_job 2 "${killer_job:?}"
 	trap - INFO
 }
 

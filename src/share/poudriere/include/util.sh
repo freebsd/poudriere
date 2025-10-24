@@ -1201,7 +1201,7 @@ _alarm_cleanup() {
 	set) ;;
 	*) err "${EX_USAGE:-64}" "alarm: not set" ;;
 	esac
-	kill_job 0 "${_ALARM_JOB:?}" 2>/dev/null || :
+	kill_job 2 "${_ALARM_JOB:?}" 2>/dev/null || :
 	trap - ALRM
 	_gotalrm="${_GOTALRM:?}"
 	unset _ALARM_JOB _GOTALRM

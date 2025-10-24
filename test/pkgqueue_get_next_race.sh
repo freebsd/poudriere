@@ -64,5 +64,5 @@ assert "" "${pkgname}"
 assert "" "${job_type}"
 
 assert_true cd "${POUDRIERE_TMPDIR:?}"
-assert_ret 143 kill_job 0 "${spawn_job}"
+assert_ret 143 kill_job 2 "${spawn_job}"
 rm -rf "${MASTER_DATADIR:?}"
