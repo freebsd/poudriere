@@ -144,8 +144,14 @@ main(int argc, char *argv[])
 			err(1, "nanosleep");
 		if (report_requested) {
 			/* Reporting does not bother with nanoseconds. */
+#ifdef SHELL
+			out2fmt_flush("sleep: about %ld second(s) left out"
+			    "of the original %ld\n",
+			    (long)time_to_sleep.tv_sec, (long)original);
+#else
 			warnx("about %ld second(s) left out of the original %ld",
 			    (long)time_to_sleep.tv_sec, (long)original);
+#endif
 			report_requested = 0;
 		} else if (errno != EINTR) {
 #ifdef SHELL
