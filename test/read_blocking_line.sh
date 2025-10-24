@@ -9,7 +9,7 @@ test_timeout_basic()
 	assert_ret 0 mkfifo "${TMP}"
 	start=$(clock -monotonic)
 	exec 4<> "${TMP}"
-	assert_runs_between 4 7 assert_ret 142 read_blocking -t 5 in < "${TMP}"
+	assert_runs_between 4 7 assert_ret 142 read_blocking_line -t 5 in < "${TMP}"
 	assert "" "${in}" "read with timeout should reset the output vars"
 	exec 4>&-
 	rm -f "${TMP}"
@@ -23,7 +23,7 @@ test_timeout_decimal()
 	start=$(clock -monotonic)
 	exec 4<> "${TMP}"
 	# The decimal gets trimmed off
-	assert_runs_between 4 7 assert_ret 142 read_blocking -t 5.9 in < "${TMP}"
+	assert_runs_between 4 7 assert_ret 142 read_blocking_line -t 5.9 in < "${TMP}"
 	assert "" "${in}" "read with timeout should reset the output vars"
 	exec 4>&-
 	rm -f "${TMP}"
@@ -37,7 +37,7 @@ test_timeout_decimal_zero()
 	start=$(clock -monotonic)
 	exec 4<> "${TMP}"
 	# The decimal gets trimmed off to be 0
-	assert_runs_less_than 1 assert_ret 142 read_blocking -t 0.9 in < "${TMP}"
+	assert_runs_less_than 1 assert_ret 142 read_blocking_line -t 0.9 in < "${TMP}"
 	assert "" "${in}" "read with timeout should reset the output vars"
 	exec 4>&-
 	rm -f "${TMP}"
@@ -61,7 +61,7 @@ test_siginfo_restart()
 	) &
 	# If this fails it is possible SIGINFO caused an [EINTR] which
 	# was not ignored.
-	assert_runs_between 4 7 assert_ret 142 read_blocking -t 5 in < "${TMP}"
+	assert_runs_between 4 7 assert_ret 142 read_blocking_line -t 5 in < "${TMP}"
 	assert 1 "${gotinfo}" "should have received SIGINFO"
 	assert "" "${in}" "read with timeout should reset the output vars"
 	exec 4>&-
@@ -76,8 +76,8 @@ test_read_IFS() (
 	TMP=$(mktemp -u)
 	expected="    test   "
 	echo "${expected}" > "${TMP}"
-	assert_true read_blocking actual < "${TMP}"
-	assert "|test|" "|${actual}|"
+	assert_true read_blocking_line actual < "${TMP}"
+	assert "|${expected}|" "|${actual}|"
 	assert_file - "${TMP}" <<-EOF
 	${expected}
 	EOF

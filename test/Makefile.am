@@ -84,6 +84,7 @@ TESTS=\
 	prefix_output.sh \
 	pwait.sh \
 	read_blocking.sh \
+	read_blocking_line.sh \
 	read_pipe.sh \
 	read_file.sh \
 	read_line.sh \

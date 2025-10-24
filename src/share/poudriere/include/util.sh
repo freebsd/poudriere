@@ -1124,7 +1124,6 @@ read_blocking() {
 # Same as read_blocking() but it reads an entire raw line.
 # Needed because 'IFS= read_blocking' doesn't reset IFS like the normal read
 # builtin does.
-# XXX: no tests
 read_blocking_line() {
 	local -; set +x
 	[ $# -ge 1 ] || eargs read_blocking_line '[-t timeout]' read_args
