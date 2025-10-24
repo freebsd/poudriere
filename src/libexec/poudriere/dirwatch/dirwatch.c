@@ -32,6 +32,13 @@
 #include <fcntl.h>
 #include <err.h>
 
+#ifdef SHELL
+#define main dirwatchcmd
+#include "bltin/bltin.h"
+#include "helpers.h"
+#include "trap.h"
+#endif
+
 /*
  * Watch a directory and exit immediately once a new file is added.
  * Used by poudriere-daemon to watch for items added by poudriere-queue
@@ -41,23 +48,70 @@ main(int argc, char **argv)
 {
 	struct kevent event, change;
 	int kq, fd;
+#ifdef SHELL
+	int ret;
+#endif
 
 	if (argc != 2)
 		errx(1, "Missing the directory argument");
-
+#ifdef SHELL
+	INTOFF;
+#endif
 	fd = open(argv[1], O_RDONLY | O_DIRECTORY);
-	if (fd == -1)
+	if (fd == -1) {
+#ifdef SHELL
+		INTON;
+#endif
 		err(1, "open()");
+	}
 
-	if ((kq = kqueue()) == -1)
+	if ((kq = kqueue()) == -1) {
+#ifdef SHELL
+		close(fd);
+		INTON;
+#endif
 		err(1, "kqueue()");
+	}
 
 	EV_SET(&change, fd, EVFILT_VNODE, EV_ADD | EV_ENABLE | EV_ONESHOT, NOTE_WRITE, 0, 0);
+#ifdef SHELL
+	/*
+	 * XXX: Might be better to use a timeout and check for interrupts
+	 * occasionally.
+	 */
+	INTON;
+#endif
+	if (kevent(kq, &change, 1, &event, 1, NULL) < 0) {
+#ifdef SHELL
+		int serrno = errno;
 
-	if (kevent(kq, &change, 1, &event, 1, NULL) < 0)
+		INTOFF;
+		if (errno == EINTR) {
+			if (pendingsig == 0) {
+				ret = 1;
+			} else {
+				ret = 128 + pendingsig;
+			}
+		} else {
+			ret = 1;
+		}
+		close(kq);
+		close(fd);
+		INTON;
+		if (serrno == EINTR) {
+			exit(ret);
+		} else {
+			err(ret, "kevent()");
+		}
+#else
 		err(1, "kevent()");
-
+#endif
+	}
+#ifdef SHELL
+	INTOFF;
+	close(kq);
 	close(fd);
-
+	INTON;
+#endif
 	return (0);
 }

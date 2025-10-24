@@ -235,6 +235,7 @@ sh_SOURCES+=		\
 sh_SOURCES+=		src/poudriere-sh/chmod.c
 sh_SOURCES+=		$(clock_SOURCES)
 sh_SOURCES+=		$(dirempty_SOURCES)
+sh_SOURCES+=		$(dirwatch_SOURCES)
 sh_SOURCES+=		$(locked_mkdir_SOURCES)
 sh_SOURCES+=		src/poudriere-sh/mkdir.c
 sh_SOURCES+=		src/poudriere-sh/mkfifo.c

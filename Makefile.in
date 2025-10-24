@@ -223,11 +223,12 @@ setsid_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am__objects_1 = src/libexec/poudriere/clock/sh-clock.$(OBJEXT)
 am__objects_2 = src/libexec/poudriere/dirempty/sh-dirempty.$(OBJEXT)
-am__objects_3 =  \
+am__objects_3 = src/libexec/poudriere/dirwatch/sh-dirwatch.$(OBJEXT)
+am__objects_4 =  \
 	src/libexec/poudriere/locked_mkdir/sh-locked_mkdir.$(OBJEXT)
-am__objects_4 = external/pwait/sh-pwait.$(OBJEXT)
-am__objects_5 = src/libexec/poudriere/rename/sh-rename.$(OBJEXT)
-am__objects_6 = external/rm/sh-rm.$(OBJEXT)
+am__objects_5 = external/pwait/sh-pwait.$(OBJEXT)
+am__objects_6 = src/libexec/poudriere/rename/sh-rename.$(OBJEXT)
+am__objects_7 = external/rm/sh-rm.$(OBJEXT)
 am_sh_OBJECTS = external/sh/sh-alias.$(OBJEXT) \
 	external/sh/sh-arith_yacc.$(OBJEXT) \
 	external/sh/sh-arith_yylex.$(OBJEXT) \
@@ -257,12 +258,12 @@ am_sh_OBJECTS = external/sh/sh-alias.$(OBJEXT) \
 	src/poudriere-sh/sh-mapfile.$(OBJEXT) \
 	src/poudriere-sh/sh-traps.$(OBJEXT) \
 	src/poudriere-sh/sh-chmod.$(OBJEXT) $(am__objects_1) \
-	$(am__objects_2) $(am__objects_3) \
+	$(am__objects_2) $(am__objects_3) $(am__objects_4) \
 	src/poudriere-sh/sh-mkdir.$(OBJEXT) \
 	src/poudriere-sh/sh-mkfifo.$(OBJEXT) \
-	src/poudriere-sh/sh-mktemp.$(OBJEXT) $(am__objects_4) \
-	src/poudriere-sh/sh-realpath.$(OBJEXT) $(am__objects_5) \
-	$(am__objects_6) src/poudriere-sh/sh-rmdir.$(OBJEXT) \
+	src/poudriere-sh/sh-mktemp.$(OBJEXT) $(am__objects_5) \
+	src/poudriere-sh/sh-realpath.$(OBJEXT) $(am__objects_6) \
+	$(am__objects_7) src/poudriere-sh/sh-rmdir.$(OBJEXT) \
 	src/poudriere-sh/sh-setproctitle.$(OBJEXT) \
 	src/poudriere-sh/sh-sleep.$(OBJEXT) \
 	src/poudriere-sh/sh-stat.$(OBJEXT) \
@@ -389,6 +390,7 @@ am__depfiles_remade = external/cpdup/src/$(DEPDIR)/cpdup-cpdup.Po \
 	src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po \
 	src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po \
 	src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po \
+	src/libexec/poudriere/dirwatch/$(DEPDIR)/sh-dirwatch.Po \
 	src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Po \
 	src/libexec/poudriere/locked_mkdir/$(DEPDIR)/sh-locked_mkdir.Po \
 	src/libexec/poudriere/nc/$(DEPDIR)/nc.Po \
@@ -895,14 +897,14 @@ sh_SOURCES = external/sh/alias.c external/sh/alias.h \
 	src/poudriere-sh/helpers.c src/poudriere-sh/helpers.h \
 	src/poudriere-sh/mapfile.c src/poudriere-sh/traps.c \
 	src/poudriere-sh/chmod.c $(clock_SOURCES) $(dirempty_SOURCES) \
-	$(locked_mkdir_SOURCES) src/poudriere-sh/mkdir.c \
-	src/poudriere-sh/mkfifo.c src/poudriere-sh/mktemp.c \
-	$(pwait_SOURCES) src/poudriere-sh/realpath.c $(rename_SOURCES) \
-	$(rm_SOURCES) src/poudriere-sh/rmdir.c \
-	src/poudriere-sh/setproctitle.c src/poudriere-sh/sleep.c \
-	src/poudriere-sh/stat.c src/poudriere-sh/touch.c \
-	src/poudriere-sh/unlink.c src/poudriere-sh/wc.c \
-	src/poudriere-sh/builtins.c
+	$(dirwatch_SOURCES) $(locked_mkdir_SOURCES) \
+	src/poudriere-sh/mkdir.c src/poudriere-sh/mkfifo.c \
+	src/poudriere-sh/mktemp.c $(pwait_SOURCES) \
+	src/poudriere-sh/realpath.c $(rename_SOURCES) $(rm_SOURCES) \
+	src/poudriere-sh/rmdir.c src/poudriere-sh/setproctitle.c \
+	src/poudriere-sh/sleep.c src/poudriere-sh/stat.c \
+	src/poudriere-sh/touch.c src/poudriere-sh/unlink.c \
+	src/poudriere-sh/wc.c src/poudriere-sh/builtins.c
 external_sh_mknodes_SOURCES = external/sh/mknodes.c
 external_sh_mksyntax_SOURCES = external/sh/mksyntax.c
 libucl_la_SOURCES = \
@@ -1421,6 +1423,9 @@ src/libexec/poudriere/clock/sh-clock.$(OBJEXT):  \
 src/libexec/poudriere/dirempty/sh-dirempty.$(OBJEXT):  \
 	src/libexec/poudriere/dirempty/$(am__dirstamp) \
 	src/libexec/poudriere/dirempty/$(DEPDIR)/$(am__dirstamp)
+src/libexec/poudriere/dirwatch/sh-dirwatch.$(OBJEXT):  \
+	src/libexec/poudriere/dirwatch/$(am__dirstamp) \
+	src/libexec/poudriere/dirwatch/$(DEPDIR)/$(am__dirstamp)
 src/libexec/poudriere/locked_mkdir/sh-locked_mkdir.$(OBJEXT):  \
 	src/libexec/poudriere/locked_mkdir/$(am__dirstamp) \
 	src/libexec/poudriere/locked_mkdir/$(DEPDIR)/$(am__dirstamp)
@@ -1652,6 +1657,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirwatch/$(DEPDIR)/sh-dirwatch.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/locked_mkdir/$(DEPDIR)/sh-locked_mkdir.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/nc/$(DEPDIR)/nc.Po@am__quote@ # am--include-marker
@@ -2441,6 +2447,20 @@ src/libexec/poudriere/dirempty/sh-dirempty.obj: src/libexec/poudriere/dirempty/d
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/dirempty/dirempty.c' object='src/libexec/poudriere/dirempty/sh-dirempty.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/dirempty/sh-dirempty.obj `if test -f 'src/libexec/poudriere/dirempty/dirempty.c'; then $(CYGPATH_W) 'src/libexec/poudriere/dirempty/dirempty.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/dirempty/dirempty.c'; fi`
+
+src/libexec/poudriere/dirwatch/sh-dirwatch.o: src/libexec/poudriere/dirwatch/dirwatch.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/dirwatch/sh-dirwatch.o -MD -MP -MF src/libexec/poudriere/dirwatch/$(DEPDIR)/sh-dirwatch.Tpo -c -o src/libexec/poudriere/dirwatch/sh-dirwatch.o `test -f 'src/libexec/poudriere/dirwatch/dirwatch.c' || echo '$(srcdir)/'`src/libexec/poudriere/dirwatch/dirwatch.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/dirwatch/$(DEPDIR)/sh-dirwatch.Tpo src/libexec/poudriere/dirwatch/$(DEPDIR)/sh-dirwatch.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/dirwatch/dirwatch.c' object='src/libexec/poudriere/dirwatch/sh-dirwatch.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/dirwatch/sh-dirwatch.o `test -f 'src/libexec/poudriere/dirwatch/dirwatch.c' || echo '$(srcdir)/'`src/libexec/poudriere/dirwatch/dirwatch.c
+
+src/libexec/poudriere/dirwatch/sh-dirwatch.obj: src/libexec/poudriere/dirwatch/dirwatch.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/dirwatch/sh-dirwatch.obj -MD -MP -MF src/libexec/poudriere/dirwatch/$(DEPDIR)/sh-dirwatch.Tpo -c -o src/libexec/poudriere/dirwatch/sh-dirwatch.obj `if test -f 'src/libexec/poudriere/dirwatch/dirwatch.c'; then $(CYGPATH_W) 'src/libexec/poudriere/dirwatch/dirwatch.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/dirwatch/dirwatch.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/dirwatch/$(DEPDIR)/sh-dirwatch.Tpo src/libexec/poudriere/dirwatch/$(DEPDIR)/sh-dirwatch.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/dirwatch/dirwatch.c' object='src/libexec/poudriere/dirwatch/sh-dirwatch.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/dirwatch/sh-dirwatch.obj `if test -f 'src/libexec/poudriere/dirwatch/dirwatch.c'; then $(CYGPATH_W) 'src/libexec/poudriere/dirwatch/dirwatch.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/dirwatch/dirwatch.c'; fi`
 
 src/libexec/poudriere/locked_mkdir/sh-locked_mkdir.o: src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/locked_mkdir/sh-locked_mkdir.o -MD -MP -MF src/libexec/poudriere/locked_mkdir/$(DEPDIR)/sh-locked_mkdir.Tpo -c -o src/libexec/poudriere/locked_mkdir/sh-locked_mkdir.o `test -f 'src/libexec/poudriere/locked_mkdir/locked_mkdir.c' || echo '$(srcdir)/'`src/libexec/poudriere/locked_mkdir/locked_mkdir.c
@@ -3481,6 +3501,7 @@ distclean: distclean-recursive
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po
 	-rm -f src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po
+	-rm -f src/libexec/poudriere/dirwatch/$(DEPDIR)/sh-dirwatch.Po
 	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Po
 	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/sh-locked_mkdir.Po
 	-rm -f src/libexec/poudriere/nc/$(DEPDIR)/nc.Po
@@ -3621,6 +3642,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po
 	-rm -f src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po
+	-rm -f src/libexec/poudriere/dirwatch/$(DEPDIR)/sh-dirwatch.Po
 	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Po
 	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/sh-locked_mkdir.Po
 	-rm -f src/libexec/poudriere/nc/$(DEPDIR)/nc.Po
