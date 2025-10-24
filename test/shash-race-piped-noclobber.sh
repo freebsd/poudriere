@@ -31,7 +31,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	writerjob="${spawn_jobid}"
 	writerpid="$!"
 	assert_true kill -0 "${writerpid}"
-	attempts=1000
+	attempts=100
 	# attempts=1
 	n=0
 	sleep 1
