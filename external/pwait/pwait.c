@@ -245,7 +245,7 @@ main(int argc, char *argv[])
 		if (n == -1) {
 #ifdef SHELL
 			serrno = errno;
-			if (tflag && serrno == EINTR) {
+			if (serrno == EINTR) {
 				sig = pendingsig;
 				if (sig == 0)
 					continue;
