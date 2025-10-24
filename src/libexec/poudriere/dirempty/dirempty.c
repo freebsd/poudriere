@@ -44,8 +44,15 @@ dir_empty(const char *path)
 	bool ret = true;
 	DIR *d;
 
-	if ((d = opendir(path)) == NULL)
+#ifdef SHELL
+	INTOFF;
+#endif
+	if ((d = opendir(path)) == NULL) {
+#ifdef SHELL
+		INTON;
+#endif
 		err(EXIT_FAILURE, "%s: ", path);
+	}
 
 	while ((ent = readdir(d))) {
 		if (strcmp(ent->d_name, ".") == 0 || (strcmp(ent->d_name, "..")) == 0)
@@ -54,7 +61,9 @@ dir_empty(const char *path)
 		break;
 	}
 	closedir(d);
-
+#ifdef SHELL
+	INTON;
+#endif
 	return (ret);
 }
  
