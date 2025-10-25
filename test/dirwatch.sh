@@ -17,6 +17,14 @@ test_dirwatch_basic_nonempty_timeout() {
 	rm -rf "${TMP}"
 }
 
+add_test_function test_dirwatch_basic_nonempty_nflag_timeout
+test_dirwatch_basic_nonempty_nflag_timeout() {
+	TMP=$(mktemp -dt dirwatch)
+	:> "${TMP}/a"
+	assert_ret 0 timeout 2 dirwatch -n "${TMP}"
+	rm -rf "${TMP}"
+}
+
 add_test_function test_dirwatch_basic_file_added
 test_dirwatch_basic_file_added() {
 	TMP=$(mktemp -dt dirwatch)
@@ -77,6 +85,42 @@ test_dirwatch_basic_file_added_race() {
 		find "${TMP}" -mindepth 1 -type f -delete
 	done
 	assert "124" "${ret}"
+	assert_ret 143 kill_job 0 "${spawn_job:?}"
+	rm -rf "${TMP}"
+}
+
+add_test_function test_dirwatch_basic_file_added_race_nflag
+test_dirwatch_basic_file_added_race_nflag() {
+	TMP=$(mktemp -dt dirwatch)
+	MAX=100
+	add_file() {
+		n=0
+		until [ "${n}" -eq "${MAX}" ]; do
+			# try to create a file as dirwatch is starting up
+			# but don't create one until it deletes the one
+			# we add
+			assert_true cond_timedwait 5
+			:> "${TMP}/${n}"
+			assert_true sleep "0.$(randint 1)$(randint 3)"
+			n="$((n + 1))"
+		done
+		# just wait to make 143 exit simpler to expect
+		sleep 60
+	}
+	assert_true spawn_job add_file
+	assert_not '' "${spawn_job}"
+
+	n=0
+	until [ "${n}" -eq "${MAX}" ]; do
+		n="$((n + 1))"
+		# If this times out then a file got added between calling
+		# and kevent blocking.
+		assert_true dirempty "${TMP}"
+		assert_true cond_signal
+		assert_true sleep "0.$(randint 1)$(randint 3)"
+		assert_ret 0 timeout 2 dirwatch -n "${TMP}"
+		find "${TMP}" -mindepth 1 -type f -delete
+	done
 	assert_ret 143 kill_job 0 "${spawn_job:?}"
 	rm -rf "${TMP}"
 }

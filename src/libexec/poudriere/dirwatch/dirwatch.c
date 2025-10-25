@@ -1,5 +1,6 @@
 /*-
  * Copyright (c) 2013 Baptiste Daroussin <bapt@FreeBSD.org>
+ * Copyright (c) 2025 Bryan Drewery <bdrewery@FreeBSD.org>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -28,9 +29,16 @@
 #include <sys/event.h>
 #include <sys/time.h>
 
-#include <unistd.h>
-#include <fcntl.h>
 #include <err.h>
+#include <errno.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sysexits.h>
+#include <unistd.h>
 
 #ifdef SHELL
 #define main dirwatchcmd
@@ -40,6 +48,46 @@
 #endif
 
 /*
+ * Returns 1 if non-empty, 0 if not, -1 on error.
+ */
+static int
+dir_nonempty_fd(int fd)
+{
+	struct dirent *ent;
+	int ret;
+	DIR *d;
+
+	ret = 0;
+#ifdef SHELL
+	INTOFF;
+#endif
+	if ((d = fdopendir(fd)) == NULL) {
+		warnx("fdopendir()");
+		goto out;
+	}
+	while ((ent = readdir(d))) {
+		if (strcmp(ent->d_name, ".") == 0 ||
+		    (strcmp(ent->d_name, "..")) == 0) {
+			continue;
+		}
+		ret = 1;
+		break;
+	}
+	(void)fdclosedir(d);
+out:
+#ifdef SHELL
+	INTON;
+#endif
+	return (ret);
+}
+
+static void
+usage(void)
+{
+	errx(EX_USAGE, "Usage: dirwatch [-n] <directory>");
+}
+
+/*
  * Watch a directory and exit immediately once a new file is added.
  * Used by poudriere-daemon to watch for items added by poudriere-queue
  */
@@ -47,17 +95,33 @@ int
 main(int argc, char **argv)
 {
 	struct kevent event, change;
-	int kq, fd;
+	bool want_non_empty;
+	int ch, kq, fd;
+	int error;
 #ifdef SHELL
 	int ret;
 #endif
 
-	if (argc != 2)
-		errx(1, "Missing the directory argument");
+	want_non_empty = false;
+	while ((ch = getopt(argc, argv, "n")) != -1) {
+		switch(ch) {
+		case 'n':
+			want_non_empty = true;
+			break;
+		default:
+			usage();
+		}
+	}
+	argc -= optind;
+	argv += optind;
+
+	if (argc != 1) {
+		usage();
+	}
 #ifdef SHELL
 	INTOFF;
 #endif
-	fd = open(argv[1], O_RDONLY | O_DIRECTORY);
+	fd = open(argv[0], O_RDONLY | O_DIRECTORY);
 	if (fd == -1) {
 #ifdef SHELL
 		INTON;
@@ -73,7 +137,32 @@ main(int argc, char **argv)
 		err(1, "kqueue()");
 	}
 
-	EV_SET(&change, fd, EVFILT_VNODE, EV_ADD | EV_ENABLE | EV_ONESHOT, NOTE_WRITE, 0, 0);
+	EV_SET(&change, fd, EVFILT_VNODE, EV_ADD | EV_ENABLE | EV_ONESHOT,
+	    NOTE_WRITE, 0, 0);
+	if (kevent(kq, &change, 1, NULL, 0, NULL) < 0) {
+#ifdef SHELL
+		close(kq);
+		close(fd);
+		INTON;
+#endif
+		err(1, "kevent()");
+	}
+	if (want_non_empty) {
+		/*
+		 * Now that the event is registered, check if the dir is
+		 * non-empty before blocking. This avoids a race.
+		 */
+		error = dir_nonempty_fd(fd);
+		/* 1 (is non-empty) -1 (error) both should exit. */
+		if (error != 0) {
+#ifdef SHELL
+			close(kq);
+			close(fd);
+			INTON;
+#endif
+			return (error == 1 ? EXIT_SUCCESS : EXIT_FAILURE);
+		}
+	}
 #ifdef SHELL
 	/*
 	 * XXX: Might be better to use a timeout and check for interrupts
@@ -81,7 +170,7 @@ main(int argc, char **argv)
 	 */
 	INTON;
 #endif
-	if (kevent(kq, &change, 1, &event, 1, NULL) < 0) {
+	if (kevent(kq, NULL, 0, &event, 1, NULL) < 0) {
 #ifdef SHELL
 		int serrno = errno;
 
