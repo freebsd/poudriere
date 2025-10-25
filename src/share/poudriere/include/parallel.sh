@@ -620,7 +620,8 @@ parallel_shutdown() {
 
 : "${PARALLEL_REAP_PERCENT:=200}"
 parallel_run() {
-	local ret spawn_jobid
+	local ret
+	local spawn_jobid spawn_job spawn_pgid spawn_pid
 
 	ret=0
 	case "${NBPARALLEL:+set}" in

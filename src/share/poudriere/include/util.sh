@@ -1550,6 +1550,7 @@ pipe_hold() {
 	local var_return_jobid="$1"
 	local ph_pid="$2"
 	shift 2
+	# shellcheck disable=SC2034
 	local spawn_jobid ph_fifo ph_sync ph_ret
 
 	ph_ret=0
@@ -1981,7 +1982,9 @@ mapfile_read_proc() {
 	[ "$#" -ge 1 ] || eargs mapfile_read_proc handle_name cmd...
 	local _mapfile_read_proc_handle="$1"
 	shift 1
-	local spawn_jobid ret tmp _real_handle
+	local ret tmp _real_handle
+	# shellcheck disable=SC2034
+	local spawn_jobid spawn_job spawn_pgid spawn_pid
 
 	tmp="$(mktemp -ut mapfile_read_proc_fifo)"
 	mkfifo "${tmp}" || return
@@ -2079,6 +2082,9 @@ pipe_func() {
 		hash_get pipe_func_read_params "${_mf_key}" _mf_read_params ||
 		    err "${EX_SOFTWARE}" "pipe_func: No stored read params for ${_mf_key}"
 	else
+		# shellcheck disable=SC2034
+		local spawn_jobid spawn_job spawn_pgid spawn_pid
+
 		_mf_read_params=
 		while :; do
 			_mf_var="$1"
@@ -2341,6 +2347,8 @@ prefix_output() {
 	local prefix_stdout prefix_stderr prefixpipe_stdout prefixpipe_stderr
 	local ret MSG_NESTED MSG_NESTED_STDERR prefix_job
 	local - errexit
+	# shellcheck disable=SC2034
+	local spawn_jobid spawn_job spawn_pgid spawn_pid
 	shift 1
 
 	if [ "${USE_TIMESTAMP:-1}" -eq 0 ] || \
