@@ -6193,7 +6193,7 @@ parallel_build() {
 	local ptname="$2"
 	local setname="$3"
 	local real_parallel_jobs=${PARALLEL_JOBS}
-	local nremaining
+	local nremaining log
 
 	if [ "${DRY_RUN}" -eq 1 ]; then
 		err "${EX_SOFTWARE}" "parallel_build: In DRY_RUN?"
@@ -6233,6 +6233,9 @@ parallel_build() {
 	load_priorities
 
 	pkgqueue_move_ready_to_pool
+	_log_path log
+	( cd "${MASTER_DATADIR:?}"; find pool ) > \
+	    "${log:?}/.poudriere.pkg_pool_trimmed%" || :
 
 	msg "Building ${nremaining} packages using up to ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
@@ -10175,8 +10178,6 @@ prepare_ports() {
 
 		( cd "${MASTER_DATADIR:?}"; find deps rdeps ) > \
 		    "${log:?}/.poudriere.pkg_deps_trimmed%" || :
-		( cd "${MASTER_DATADIR:?}"; find pool ) > \
-		    "${log:?}/.poudriere.pkg_pool_trimmed%" || :
 		pkgqueue_graph_dot > \
 		    "${log:?}/.poudriere.pkg_deps_trimmed.dot%" || :
 
