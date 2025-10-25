@@ -528,6 +528,9 @@ pkgqueue_list() {
 	done
 }
 
+PKGQUEUE_DEFAULT_PRIORITY=0
+# Ensure default bucket is always created.
+PKGQUEUE_PRIORITIES="${PKGQUEUE_DEFAULT_PRIORITY:?}"
 pkgqueue_prioritize() {
 	[ "$#" -eq 3 ] || eargs pkgqueue_prioritize job_type job_name priority
 	local job_type="$1"
@@ -570,7 +573,7 @@ pkgqueue_balance_pool() {
 		esac
 		pkgqueue_job="${pkgq_dir##*/}"
 		hash_remove "pkgqueue_priority" "${pkgqueue_job}" dep_count ||
-		    dep_count=0
+		    dep_count="${PKGQUEUE_DEFAULT_PRIORITY:?}"
 		# This races with pkgqueue_get_next(), just ignore failure
 		# to move it.
 		rename -q "${pkgq_dir}" "${dep_count}/${pkgqueue_job}" || :
@@ -610,19 +613,13 @@ _pkgqueue_create_pool_dirs() {
 	required_env _pkgqueue_create_pool_dirs PWD "${MASTER_DATADIR_ABS:?}"
 	[ $# -eq 0 ] || eargs _pkgqueue_create_pool_dirs
 
+
 	# Create buckets to satisfy the dependency chain priorities.
 	case "${PKGQUEUE_PRIORITIES:+set}" in
 	set)
 		POOL_BUCKET_DIRS="$(echo "${PKGQUEUE_PRIORITIES}" |
 		    tr ' ' '\n' | LC_ALL=C sort -run |
 		    paste -d ' ' -s -)"
-		;;
-	*)
-		# If there are no buckets then everything to build will fall
-		# into 0 as they depend on nothing and nothing depends on them.
-		# I.e., pkg-devel in -ac or testport on something with no deps
-		# needed.
-		POOL_BUCKET_DIRS="0"
 		;;
 	esac
 

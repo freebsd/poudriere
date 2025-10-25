@@ -19,6 +19,7 @@ assert 0 "$?"
 assert "$(sorted "bash patchutils pkg")" "${pkgqueue_list}"
 assert_out 0 "" pkgqueue_find_dead_packages
 assert_true pkgqueue_move_ready_to_pool
+assert_true [ -e "${MASTER_DATADIR:?}/pool/0" ]
 
 assert_out_unordered 0 - pkgqueue_remaining <<EOF
 build:pkg ready-to-run

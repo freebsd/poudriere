@@ -32,6 +32,7 @@ assert_true pkgqueue_prioritize "build" bash 48
 assert_true pkgqueue_prioritize "build" zsh 47
 assert_true pkgqueue_prioritize "build" patchutils 46
 assert_true pkgqueue_move_ready_to_pool
+assert_true [ -e "${MASTER_DATADIR:?}/pool/0" ]
 
 assert_true cd "${MASTER_DATADIR:?}/pool"
 
