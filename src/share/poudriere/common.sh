@@ -3502,6 +3502,7 @@ update_version_env() {
 	local osversion="$5"
 	local login_env
 
+	version="$(echo "${version}" | sed -E 's/(RELEASE)-p[0-9]+/\1/')"
 	login_env=",UNAME_r=${version% *},UNAME_v=FreeBSD ${version},OSVERSION=${osversion}"
 
 	# Tell pkg(8) to not use /bin/sh for the ELF ABI since it is native.
@@ -3527,6 +3528,7 @@ export_cross_env() {
 	local version="$3"
 	local mnt osversion
 
+	version="$(echo "${version}" | sed -E 's/(RELEASE)-p[0-9]+/\1/')"
 	export "UNAME_r=${version% *}"
 	export "UNAME_v=FreeBSD ${version}"
 	export "UNAME_m=${arch%.*}"
