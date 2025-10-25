@@ -485,7 +485,7 @@ TESTS = alarm.sh array.sh builtins.sh builtins-cut.sh \
 	builtins-paste.sh builtins-wc.sh cache.sh cache_pipe.sh \
 	calculate_duration.sh count_lines.sh \
 	critical_section_inherit.sh critical_section_retry.sh \
-	critical_section_retry_cmdsubst.sh display.sh \
+	critical_section_retry_cmdsubst.sh display.sh dirwatch.sh \
 	distclean-badorigin.sh distclean-overlays.sh \
 	distclean-smoke.sh do_clone.sh encode_args.sh err.sh \
 	err_catch.sh err_catch_framework.sh err_pipe_delayed.sh \
@@ -943,6 +943,13 @@ critical_section_retry_cmdsubst.sh.log: critical_section_retry_cmdsubst.sh
 display.sh.log: display.sh
 	@p='display.sh'; \
 	b='display.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+dirwatch.sh.log: dirwatch.sh
+	@p='dirwatch.sh'; \
+	b='dirwatch.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
