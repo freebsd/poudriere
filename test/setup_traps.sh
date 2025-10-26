@@ -6,7 +6,8 @@ READY_FILE="channel"
 EXIT_FILE="exit_file"
 
 # Basic test: should return 143 from handler
-{
+add_test_function test_basic_sigterm
+test_basic_sigterm() {
 	worker_cleanup() {
 		local ret="$?"
 		echo "in here" >&2
@@ -32,7 +33,8 @@ EXIT_FILE="exit_file"
 }
 
 # Should return 1 from set -e failure
-{
+add_test_function test_set_e
+test_set_e() {
 	worker_cleanup() {
 		local ret=$?
 		echo "in here $ret" >&2
@@ -55,7 +57,8 @@ EXIT_FILE="exit_file"
 }
 
 # Should exit 42 from exit call
-{
+add_test_function test_exit
+test_exit() {
 	worker_cleanup() {
 		local ret=$?
 		echo "in here $ret" >&2
@@ -77,7 +80,8 @@ EXIT_FILE="exit_file"
 }
 
 # Should exit 41 from cleanup changing exit code
-{
+add_test_function test_exit_in_exit_handler
+test_exit_in_exit_handler() {
 	worker_cleanup() {
 		local ret=$?
 		echo "in here $ret" >&2
@@ -101,7 +105,8 @@ EXIT_FILE="exit_file"
 
 
 # Should show handler got $?=143 but then exit 41
-{
+add_test_function test_exit_handler_sets_code
+test_exit_handler_sets_code() {
 	worker_cleanup() {
 		local ret=$?
 		echo "in here $ret" >&2
@@ -126,7 +131,8 @@ EXIT_FILE="exit_file"
 }
 
 # Should NOT exit SIGPIPE from handler
-{
+add_test_function test_no_sigpipe_in_handler
+test_no_sigpipe_in_handler() {
 	worker_cleanup() {
 		local ret=$?
 		assert 0 "${ret}" "worker had error before entering worker_cleanup; should not SIGPIPE until here" 2>&4
@@ -196,3 +202,5 @@ EXIT_FILE="exit_file"
 	EOF
 	rm -f "${FIFO}"
 }
+
+run_test_functions
