@@ -214,14 +214,26 @@ cond_timedwait() {
 	local reason="${3-}"
 	local start now got_reason
 
-	start="$(clock -monotonic)"
+	case "${maxtime}" in
+	0) ;;
+	*) start="$(clock -monotonic)" ;;
+	esac
+	# XXX: wait_for_file -t "${maxtime}" "${READY_FILE:?}${which+."${which}"}
 	until [ -e "${READY_FILE:?}${which:+.${which}}" ]; do
-		sleep 0.001
-		now="$(clock -monotonic)"
-		if [ "$((now - start))" -gt "${maxtime}" ]; then
-			msg_error "cond_timedwait: Timeout waiting for signal ${which:+which='${which}' }reason='${reason}'"
-			return 1
-		fi
+		sleep "0.$(randint 3)$(randint 9)"
+		case "${maxtime}" in
+		0) ;;
+		*)
+			now="$(clock -monotonic)"
+			if [ "$((now - start))" -gt "${maxtime}" ]; then
+				msg_error "cond_timedwait: Timeout waiting for" \
+				    "signal" \
+				    ${which:+which='${which}' }" \
+				    ${reason:+reason='${reason}' }"
+				return 1
+			fi
+			;;
+		esac
 	done
 	got_reason=
 	read got_reason < "${READY_FILE:?}${which:+.${which}}"
