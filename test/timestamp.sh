@@ -177,15 +177,17 @@ test_timestamp_7() {
 add_test_function test_timestamp_forwards_sigterm
 test_timestamp_forwards_sigterm() {
 	TMP="$(mktemp -ut timestamp_sigterm)"
+	waitfile=waitfile
 	doit() {
 		local TMP="$1"
 		timestamp \
-		    sh -c "echo \"${TMP}\"; trap 'echo 143>\"${TMP}\"' TERM; :>${READY_FILE:?}; sleep 20" \
+		    sh -c "echo \"${TMP}\"; trap 'echo 143>\"${TMP}\"' TERM; :>${waitfile:?}; sleep 20" \
 		    >${STDOUT} 2>${STDERR}
 	}
 	assert_true spawn_job doit "${TMP}"
 	assert_not '' "${spawn_pgid}"
-	assert_true cond_timedwait 3
+	assert_true wait_for_file 3 "${waitfile:?}"
+	rm -f "${waitfile:?}"
 	# Must not use kill_job here as that would send SIGTERM to the
 	# sh process as well. We are explicitly testing that timestamp
 	# forwards the SIGTERM, and that it allows the child to finish

@@ -210,59 +210,76 @@ _catch_err() {
 	return "${ret}"
 }
 
-: "${READY_FILE:=condchan}"
-cond_timedwait() {
+wait_for_file() {
 	local maxtime_orig="$1"
-	local which="${2-}"
-	local reason="${3-}"
-	local maxtime start now got_reason
+	local file="$2"
+	local timeout dir start now
 
-	maxtime="${maxtime_orig:?}"
-	case "${maxtime}" in
-	0) ;;
+	dirname "${file:?}" dir
+	timeout="${maxtime_orig:?}"
+	case "${maxtime_orig}" in
+	0) unset maxtime_orig ;;
 	*) start="$(clock -monotonic)" ;;
 	esac
-	# XXX: wait_for_file -t "${maxtime}" "${READY_FILE:?}${which+."${which}"}
-	until [ -e "${READY_FILE:?}${which:+.${which}}" ]; do
-		sleep "0.$(randint 3)$(randint 9)"
-		adjust_timeout "${maxtime_orig:?}" "${start-}" maxtime
-		case "${maxtime}" in
-		0) ;;
-		*)
+	until [ -e "${file:?}" ]; do
+		${maxtime_orig:+timeout "${timeout}"} \
+		    dirwatch -n "${dir:?}" ||
+		    return
+		case "${maxtime_orig:+set}" in
+		set)
 			now="$(clock -monotonic)"
-			if [ "$((now - start))" -gt "${maxtime}" ]; then
-				msg_error "cond_timedwait: Timeout waiting for" \
-				    "signal" \
-				    ${which:+which='${which}' }" \
-				    ${reason:+reason='${reason}' }"
-				return 1
-			fi
+			adjust_timeout "${maxtime_orig}" "${start-}" timeout \
+			    "${now:?}"
+			case "${timeout}" in
+			0) ;;
+			*)
+				if [ "$((now - start))" -gt "${timeout}" ]; then
+					msg_error "wait_for_file: Timeout" \
+					    "waiting for ${file:?}"
+					return 124
+				fi
+				;;
+			esac
 			;;
 		esac
+		sleep "0.$(randint 20)"
 	done
-	got_reason=
-	read got_reason < "${READY_FILE:?}${which:+.${which}}"
+}
+
+: "${READY_FILE:=condchan}"
+cond_timedwait() {
+	local maxtime="$1"
+	local which="${2-}"
+	local reason="${3-}"
+	local file ret got_reason
+
+	file="${READY_FILE:?}${which:+.${which}}"
+	wait_for_file "${maxtime}" "${file:?}" || return
+	assert_true [ -e "${file:?}" ]
+	read_file got_reason "${file:?}" || got_reason=
 	echo "${which:+${which} }sent signal: ${got_reason}" >&2
 	assert "${reason}" "${got_reason}" "READY FILE reason"
-	rm -f "${READY_FILE:?}${which:+.${which}}"
+	assert_true unlink "${file:?}"
 }
 
 cond_signal() {
 	local which="${1-}"
 	local reason="${2-}"
+	local file
 
+	file="${READY_FILE:?}${which:+.${which}}"
 	case "${reason:+set}" in
 	set)
 		# Likely noclobber failure if this fails.
 		# Using 'noclobber' to make log clearer.
 		assert_true noclobber \
-		    write_atomic "${READY_FILE:?}${which:+.${which}}" "${reason}"
+		    write_atomic "${file:?}" "${reason}"
 		;;
 	*)
 		local -
 
 		set -C # noclobber
-		: > "${READY_FILE:?}${which:+.${which}}" || return
+		: > "${file:?}" || return
 		;;
 	esac
 }
