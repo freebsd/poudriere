@@ -160,6 +160,9 @@ rm() {
 	command rm "$@"
 }
 
+. ${SCRIPTPREFIX}/common.sh
+post_getopts
+
 sorted() {
 	if [ "$#" -eq 0 ]; then
 		return 0
@@ -462,6 +465,7 @@ list_test_functions() {
 
 run_test_functions() {
 	[ $# -eq 0 ] || eargs run_test_functions
+	local rtf_ret
 
 	case "${TESTFUNCS+set}" in
 	set) ;;
@@ -472,7 +476,9 @@ run_test_functions() {
 	TESTFUNC $(list_test_functions)
 	EOF
 	while get_test_context; do
-		assert_true "${TESTFUNC}"
+		rtf_ret=0
+		FUNCNAME="" "${TESTFUNC:?}" || rtf_ret="$?"
+		assert 0 "${rtf_ret:?}"
 	done
 }
 
@@ -706,9 +712,6 @@ expect_error_on_stderr() {
 	rm -f "${tmpfile}"
 	return "${ret}"
 }
-
-. ${SCRIPTPREFIX}/common.sh
-post_getopts
 
 setup_traps cleanup
 
