@@ -7,6 +7,7 @@ EOF
 while get_test_context; do
 	set_poudriere_conf <<-EOF
 	PKG_NO_VERSION_FOR_DEPS=${PKG_NO_VERSION_FOR_DEPS:?}
+	PRIORITY_BOOST="pkg*"
 	EOF
 
 	EXPECTED_IGNORED=
@@ -28,4 +29,9 @@ while get_test_context; do
 	assert_bulk_queue_and_stats
 	assert_bulk_build_results
 	echo "------" | tee /dev/stderr
+
+	_log_path log || err 99 "Unable to determine logdir"
+	assert_true [ -e "${log:?}/.poudriere.pkg_deps_priority%" ]
+	assert_true read pkgline < "${log:?}/.poudriere.pkg_deps_priority%"
+	assert_case "99 build:pkg-*" "${pkgline}"
 done

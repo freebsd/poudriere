@@ -10222,9 +10222,10 @@ prepare_ports() {
 
 load_priorities_ptsort() {
 	local priority pkgname originspec origin flavor _rdep
-	local log pkgbase pkg_boost_glob
+	local log pkgbase pkg_boost_glob job_type
 	local -
 
+	_log_path log
 	awk '{print $2 " " $1}' "${MASTER_DATADIR:?}/pkg_deps" \
 	    > "${MASTER_DATADIR:?}/pkg_deps.ptsort"
 
@@ -10240,12 +10241,22 @@ load_priorities_ptsort() {
 		set -o noglob
 		for pkg_boost_glob in ${PRIORITY_BOOST}; do
 			# shellcheck disable=SC2254
-			case ${pkgbase} in
+			case ${pkgbase#*:} in
 			${pkg_boost_glob})
 				originspec_decode "${originspec}" origin \
 				    flavor subpkg
 				msg "Boosting priority: ${COLOR_PORT}${origin}${flavor:+@${flavor}}${subpkg:+~${subpkg}} | ${pkgname}"
-				echo "${pkgname} ${PRIORITY_BOOST_VALUE}" >> \
+				case "${pkgname}" in
+				*:*)
+					job_type="${pkgname%:*}"
+					pkgname="${pkgname#*:}"
+					;;
+				*)
+					job_type="build"
+					;;
+				esac
+				echo "${job_type}:${pkgname}" \
+				    "${PRIORITY_BOOST_VALUE}" >> \
 				    "${MASTER_DATADIR:?}/pkg_deps.ptsort"
 				break
 				;;
@@ -10254,10 +10265,11 @@ load_priorities_ptsort() {
 		set +o noglob
 	done
 
+	cp -f "${MASTER_DATADIR:?}/pkg_deps.ptsort" \
+	    "${log:?}/.poudriere.pkg_deps.ptsort%"
 	ptsort -p "${MASTER_DATADIR:?}/pkg_deps.ptsort" > \
 	    "${MASTER_DATADIR:?}/pkg_deps.priority"
 	unlink "${MASTER_DATADIR:?}/pkg_deps.ptsort"
-	_log_path log
 	cp -f "${MASTER_DATADIR:?}/pkg_deps.priority" \
 	    "${log:?}/.poudriere.pkg_deps_priority%"
 
