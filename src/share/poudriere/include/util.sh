@@ -536,6 +536,35 @@ add_relpath_var() {
 	make_relative "${arv_var}"
 }
 
+dirname() {
+	[ $# -eq 1 ] || [ $# -eq 2 ] || eargs dirname path '[outvar]'
+	local d_path="$1"
+	local d_outvar="${2-}"
+	local d_dir
+
+	case "${d_path?}" in
+	*/)
+		rtrim "${d_path?}" '/' d_path
+		case "${d_path}" in
+		"") d_path="/" ;;
+		esac
+		;;
+	esac
+	case "${d_path?}" in
+	/) d_dir="/" ;;
+	*/*)
+		d_dir="${d_path%/*}"
+		rtrim "${d_dir:?}" '/' d_dir
+		;;
+	*)   d_dir="." ;;
+	esac
+	case "${d_outvar:+set}" in
+	set) setvar "${d_outvar:?}" "${d_dir:?}" || return ;;
+	"") echo "${d_dir:?}" ;;
+	esac
+}
+
+
 # Handle relative path change needs
 cd() {
 	local ret
@@ -2580,10 +2609,7 @@ _write_atomic() {
 			              "cannot work"
 		;;
 	esac
-	case "${dest}" in
-	*/*) tmpdir="${dest%/*}" ;;
-	*)   tmpdir="." ;;
-	esac
+	dirname "${dest}" tmpdir
 	# For noclobber mode we need to unlink, but otherwise avoid it.
 	case "$-" in
 	*C*) unlink=1 ;;

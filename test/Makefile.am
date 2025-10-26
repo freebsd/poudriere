@@ -35,6 +35,7 @@ TESTS=\
 	critical_section_retry.sh \
 	critical_section_retry_cmdsubst.sh \
 	display.sh \
+	dirname.sh \
 	dirwatch.sh \
 	distclean-badorigin.sh \
 	distclean-overlays.sh \
