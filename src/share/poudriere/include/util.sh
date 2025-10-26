@@ -1986,7 +1986,12 @@ mapfile_read_proc() {
 
 	tmp="$(mktemp -ut mapfile_read_proc_fifo)"
 	mkfifo "${tmp}" || return
-	spawn_job _pipe_func_job "${tmp}" "$@"
+	ret=0
+	spawn_job _pipe_func_job "${tmp}" "$@" || ret="$?"
+	case "${ret}" in
+	0) ;;
+	*) return "${ret}" ;;
+	esac
 	# shellcheck disable=SC2034
 	if mapfile "${_mapfile_read_proc_handle}" "${tmp}" "re"; then
 		getvar "${_mapfile_read_proc_handle}" _real_handle
