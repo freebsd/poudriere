@@ -420,6 +420,11 @@ expand_test_contexts() {
 		have_combos = 0
 	}
 	/^#/ { next }
+	/=.*;/ {
+		# This is a pre-expanded line. Print as is.
+		print
+		next
+	}
 	# pre-line context
 	$1 == "-" {
 		var = $2
