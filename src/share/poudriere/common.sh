@@ -4461,8 +4461,8 @@ download_from_repo() {
 		fi
 		if was_a_testport_run; then
 			# Skip testport package
-			case "${originspec}" in
-			"${ORIGINSPEC:?}") continue ;;
+			case "${pkgname}" in
+			"${PKGNAME:?}") continue ;;
 			esac
 		fi
 		if ! pkgqueue_contains "build" "${pkgname}" ; then
@@ -5947,6 +5947,7 @@ parallel_build() {
 	# The port-to-test is "queued" but won't build in here. Avoid
 	# starting a builder for it.
 	if was_a_testport_run; then
+		dev_assert_not 0 "${nremaining}"
 		nremaining="$((nremaining - 1))"
 	fi
 
@@ -9691,6 +9692,9 @@ prepare_ports() {
 	esac
 
 	gather_port_vars
+	if was_a_testport_run; then
+		testport_post_gather_port_vars
+	fi
 
 	compute_needed
 

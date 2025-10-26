@@ -242,51 +242,57 @@ fi
 # deps_fetch_vars lookup for dependencies moved to prepare_ports()
 LISTPORTS="${ORIGINSPEC:?}"
 CLEAN_LISTED=1
-prepare_ports
-if check_moved "${ORIGINSPEC}" new_originspec 1; then
-	msg "MOVED: ${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET} moved to ${COLOR_PORT}${new_originspec}${COLOR_RESET}"
-	case "${new_originspec}" in
-	"EXPIRED "*) ;;
-	"") ;;
-	*)
-		# The ORIGIN may have a FLAVOR in it which overrides what
-		# user specified.
-		originspec_decode "${new_originspec}" ORIGIN NEW_FLAVOR NEW_SUBPKG
-		case "${NEW_FLAVOR:+set}" in
-		set) FLAVOR="${NEW_FLAVOR}" ;;
-		esac
-		case "${NEW_SUBPKG:+set}" in
-		set) SUBPKG="${NEW_SUBPKG}" ;;
-		esac
-		# Update ORIGINSPEC for the new ORIGIN
-		originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
-		;;
-	esac
-fi
-# Ensure the port exists after handling MOVED.
-_lookup_portdir portdir "${ORIGIN}"
-if [ "${portdir:?}" = "${PORTSDIR:?}/${ORIGIN:?}" ] &&
-	[ ! -f "${portsdir:?}/${ORIGIN:?}/Makefile" ] ||
-	[ -d "${portsdir:?}/${ORIGIN:?}/../Mk" ]; then
-	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
-fi
-get_pkgname_from_originspec "${ORIGINSPEC:?}" PKGNAME ||
-    err "${EX_SOFTWARE}" "Failed to find PKGNAME for ${ORIGINSPEC}"
-shash_get pkgname-ignore "${PKGNAME:?}" IGNORE || :
-if have_ports_feature FLAVORS; then
-	shash_get origin-flavors "${ORIGIN:?}" FLAVORS || FLAVORS=
-	case "${FLAVORS:+set}" in
-	set)
-		case "${FLAVOR}" in
-		""|"${FLAVOR_DEFAULT}")
-			FLAVOR="${FLAVORS%% *}"
-			originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" \
-			    "${SUBPKG}"
+testport_post_gather_port_vars() {
+	if check_moved "${ORIGINSPEC}" new_originspec 1; then
+		msg "MOVED: ${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET}" \
+		    "moved to ${COLOR_PORT}${new_originspec}${COLOR_RESET}"
+		case "${new_originspec}" in
+		"EXPIRED "*) ;;
+		"") ;;
+		*)
+			# The ORIGIN may have a FLAVOR in it which overrides
+			# what user specified.
+			originspec_decode "${new_originspec}" \
+			    ORIGIN NEW_FLAVOR NEW_SUBPKG
+			case "${NEW_FLAVOR:+set}" in
+			set) FLAVOR="${NEW_FLAVOR}" ;;
+			esac
+			case "${NEW_SUBPKG:+set}" in
+			set) SUBPKG="${NEW_SUBPKG}" ;;
+			esac
+			# Update ORIGINSPEC for the new ORIGIN
+			originspec_encode ORIGINSPEC \
+			    "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
 			;;
 		esac
-		;;
-	esac
-fi
+	fi
+	# Ensure the port exists after handling MOVED.
+	_lookup_portdir portdir "${ORIGIN}"
+	if [ "${portdir:?}" = "${PORTSDIR:?}/${ORIGIN:?}" ] &&
+		[ ! -f "${portsdir:?}/${ORIGIN:?}/Makefile" ] ||
+		[ -d "${portsdir:?}/${ORIGIN:?}/../Mk" ]; then
+		err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
+	fi
+	get_pkgname_from_originspec "${ORIGINSPEC:?}" PKGNAME ||
+	    err "${EX_SOFTWARE}" "Failed to find PKGNAME for ${ORIGINSPEC}"
+	shash_get pkgname-ignore "${PKGNAME:?}" IGNORE || :
+	if have_ports_feature FLAVORS; then
+		shash_get origin-flavors "${ORIGIN:?}" FLAVORS || FLAVORS=
+		case "${FLAVORS:+set}" in
+		set)
+			case "${FLAVOR}" in
+			""|"${FLAVOR_DEFAULT}")
+				FLAVOR="${FLAVORS%% *}"
+				originspec_encode ORIGINSPEC \
+				    "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
+				;;
+			esac
+			;;
+		esac
+	fi
+}
+prepare_ports
+
 # Unqueue our test port so parallel_build() does not build it.
 echo "${PKGNAME:?}" | pkgqueue_remove_many_pipe build
 
