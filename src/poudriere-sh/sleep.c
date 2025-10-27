@@ -58,6 +58,7 @@ __FBSDID("$FreeBSD: head/bin/sleep/sleep.c 308432 2016-11-08 05:31:01Z cem $");
 #define main sleepcmd
 #include "bltin/bltin.h"
 #include "helpers.h"
+#include "trap.h"
 #endif
 
 static void usage(void);
@@ -129,12 +130,25 @@ main(int argc, char *argv[])
 			err(1, "nanosleep");
 #ifdef SHELL
 		} else if (errno == EINTR) {
+			int ret;
+
 			/* Don't ignore interrupts that aren't SIGINFO. */
-			break;
+			if (pendingsig == 0 || pendingsig == SIGINFO) {
+				goto done;
+			}
+			/* For now only return EINTR signal on SIGALRM. */
+			if (pendingsig != SIGALRM) {
+				goto done;
+			}
+			ret = 128 + pendingsig;
+			sigaction(SIGINFO, &oact, NULL);
+			INTON;
+			exit (ret);
 #endif
 		}
 	}
 #ifdef SHELL
+done:
 	sigaction(SIGINFO, &oact, NULL);
 	INTON;
 #endif
