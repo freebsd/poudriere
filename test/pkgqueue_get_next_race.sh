@@ -21,7 +21,10 @@ add_next_foo() {
 }
 
 pkgqueue_balance_pool_worker() {
-	while :; do
+	local tmp
+
+	unset tmp
+	while time_bounded_loop tmp 60; do
 		assert_true pkgqueue_balance_pool
 		sleep 0.1
 	done

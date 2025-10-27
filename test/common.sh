@@ -317,6 +317,41 @@ cond_signal() {
 	esac
 }
 
+time_bounded_loop() {
+	[ $# -eq 2 ] || eargs time_bounded_loop tmpvar timeout
+	local tbl_tmpvar="$1"
+	local tbl_timeout_orig="$2"
+	local tbl_idx tbl_start tbl_now tbl_timeout
+
+	getvar "${tbl_tmpvar:?}" tbl_idx || unset tbl_idx
+	case "${tbl_idx:+set}" in
+	set)
+		hash_get tbl_start "${tbl_idx}" tbl_start ||
+		    err 1 "time_bounded_loop: hash_get tbl_start"
+		hash_get tbl_timeout "${tbl_idx}" tbl_timeout ||
+		    err 1 "time_bounded_loop: hash_get tbl_timeout"
+		;;
+	*)
+		tbl_idx="$(randint 10000000)"
+		setvar "${tbl_tmpvar:?}" "${tbl_idx:?}" ||
+		    err 1 "time_bounded_loop: setvar ${tbl_tmpvar}"
+		tbl_start="$(clock -monotonic)"
+		hash_set tbl_start "${tbl_idx}" "${tbl_start}"
+		;;
+	esac
+
+	adjust_timeout "${tbl_timeout_orig:?}" "${tbl_start:?}" tbl_timeout
+	case "${tbl_timeout:?}" in
+	0)
+		hash_unset tbl_timeout "${tbl_idx}"
+		hash_unset tbl_start "${tbl_idx}"
+		unset "${tbl_tmpvar}"
+		return 124
+		;;
+	esac
+	hash_set tbl_timeout "${tbl_idx}" "${tbl_timeout}"
+}
+
 capture_output_simple() {
 	local my_stdout_return="$1"
 	local my_stderr_return="$2"

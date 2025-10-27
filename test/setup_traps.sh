@@ -14,13 +14,16 @@ test_basic_sigterm() {
 		echo "${ret}" > "${EXIT_FILE}"
 	}
 	worker() {
+		local tmp
+
 		set -x
 		echo "I AM $(getpid)" >&2
 		setup_traps worker_cleanup
 		trap >&2
 		assert_true cond_signal child
-		while :; do
-			sleep 0.001
+		unset tmp
+		while time_bounded_loop tmp 10; do
+			sleep 0.01
 		done
 	}
 	assert_true spawn_job worker
@@ -114,11 +117,14 @@ test_exit_handler_sets_code() {
 		exit 41
 	}
 	worker() {
+		local tmp
+
 		echo "I AM $(getpid)" >&2
 		setup_traps worker_cleanup
 		assert_true cond_signal child
-		while :; do
-			sleep 0.001
+		unset tmp
+		while time_bounded_loop tmp 10; do
+			sleep 0.01
 		done
 	}
 	assert_true spawn_job worker

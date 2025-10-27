@@ -5,7 +5,10 @@ set +e
 MASTERMNT=$(mktemp -d)
 
 writer() {
-	while :; do
+	local tmp
+
+	unset tmp
+	while time_bounded_loop tmp 90; do
 		shash_set bucket key value || exit 2
 	done
 }

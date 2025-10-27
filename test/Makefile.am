@@ -113,6 +113,7 @@ TESTS=\
 	stripansi.sh \
 	test_contexts.sh \
 	test_contexts_expand.sh \
+	time_bounded_loop.sh \
 	timeout.sh \
 	timespec.sh \
 	timestamp.sh \
