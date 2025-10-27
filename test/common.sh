@@ -248,26 +248,59 @@ wait_for_file() {
 
 : "${READY_FILE:=condchan}"
 cond_timedwait() {
-	local maxtime="$1"
+	local maxtime_orig="$1"
 	local which="${2-}"
 	local reason="${3-}"
-	local file ret got_reason
+	local timeout file dir ret got_reason time_start
 
-	file="${READY_FILE:?}${which:+.${which}}"
-	wait_for_file "${maxtime}" "${file:?}" || return
+	timeout="${maxtime_orig:?}"
+	case "${maxtime_orig}" in
+	0) unset maxtime_orig ;;
+	*) time_start="$(clock -monotonic)" ;;
+	esac
+	assert "${POUDRIERE_TMPDIR:?}" "${PWD}"
+	dir="${READY_FILE:?}${which:+.${which}}"
+	file="${dir:?}/cv"
+	assert_true mkdir -p "${dir:?}"
+	ret=0
+	# dirwatch may return when the .tmpfile is written before
+	# renamed to the actual file. So a 2nd attempt may be needed.
+	until [ -e "${file:?}" ]; do
+		${maxtime_orig:+timeout "${timeout}"} \
+		    dirwatch -n "${dir:?}" ||
+		    ret="$?"
+		adjust_timeout "${maxtime_orig}" "${time_start-}" timeout
+		case "${ret}.${timeout-}" in
+		124.*|0.0)
+			msg_error "cond_timedwait: Timeout waiting for" \
+			    "signal" \
+			    "${which:+which='${which}' }" \
+			    "${reason:+reason='${reason}' }"
+			return "${ret}"
+			;;
+		0.*) ;;
+		*) err 1 "cond_timedwait: dirwatch ret=${ret}" ;;
+		esac
+	done
 	assert_true [ -e "${file:?}" ]
 	read_file got_reason "${file:?}" || got_reason=
 	echo "${which:+${which} }sent signal: ${got_reason}" >&2
 	assert "${reason}" "${got_reason}" "READY FILE reason"
 	assert_true unlink "${file:?}"
+	# assert_true rmdir "${dir}"
 }
 
 cond_signal() {
 	local which="${1-}"
 	local reason="${2-}"
-	local file
+	local file dir
 
-	file="${READY_FILE:?}${which:+.${which}}"
+	assert "${POUDRIERE_TMPDIR:?}" "${PWD}"
+	dir="${READY_FILE:?}${which:+.${which}}"
+	# Store as a single file in a dedicated directory so dirwatch
+	# can wakeup on it.
+	assert_true mkdir -p "${dir:?}"
+	file="${dir:?}/cv"
 	case "${reason:+set}" in
 	set)
 		# Likely noclobber failure if this fails.
@@ -674,6 +707,11 @@ cleanup() {
 		find "${POUDRIERE_TMPDIR:?}/" \
 		    -name "lock-*" \
 		    -type d -empty -delete
+		find "${POUDRIERE_TMPDIR:?}/" \
+		    \( \
+		    -name "${READY_FILE:?}" -o \
+		    -name "${READY_FILE:?}.*" \
+		    \) -delete
 		if [ -d "${TMPDIR}" ] && ! dirempty "${TMPDIR}"; then
 			echo "${TMPDIR} was not empty on exit!" >&2
 			find "${TMPDIR}" -ls >&2
