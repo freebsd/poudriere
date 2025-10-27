@@ -91,7 +91,7 @@ esac
 pwait() {
 	[ "$#" -ge 1 ] || eargs pwait '[pwait flags]' pids
 	local OPTIND=1 flag
-	local ret oflag tflag timeout time_start now vflag
+	local ret oflag tflag timeout time_start vflag
 
 	tflag=
 	while getopts "ot:v" flag; do
@@ -106,43 +106,16 @@ pwait() {
 
 	[ "$#" -ge 1 ] || eargs pwait '[pwait flags]' pids
 	case "${tflag:+set}" in
-	set) time_start="$(clock -monotonic)" ;;
+	set)
+		time_start="$(clock -monotonic)"
+		# pwait does not handle -t 0 well.
+		case "${tflag:?}" in
+		0) tflag="0.00001" ;;
+		esac
+		timeout="${tflag:?}"
+		;;
 	esac
 	while :; do
-		# Adjust timeout
-		case "${tflag-}" in
-		"") ;;
-		*.*)
-			local timeout_orig
-
-			now="$(clock -monotonic)"
-			timeout_orig="${tflag:?}"
-			timeout="$(printf "%d.%d" \
-			    "$((${timeout_orig%.*} - \
-			    (now - time_start)))" \
-			    "${timeout_orig#*.}")"
-			case "${timeout}" in
-			"-"*) timeout=0 ;;
-			esac
-			# Special case for pwait as it does not handle
-			# -t 0 well.
-			case "${timeout}" in
-			0) timeout="0.00001" ;;
-			esac
-			;;
-		*)
-			now="$(clock -monotonic)"
-			timeout="$((tflag - (now - time_start)))"
-			case "${timeout}" in
-			"-"*) timeout=0 ;;
-			esac
-			# Special case for pwait as it does not handle
-			# -t 0 well.
-			case "${timeout}" in
-			0) timeout="0.00001" ;;
-			esac
-			;;
-		esac
 		ret=0
 		# If pwait is NOT builtin then sh will update its jobs state
 		# which means we may pwait on dead procs unexpectedly. It returns
@@ -166,7 +139,21 @@ pwait() {
 		esac
 		case "${ret}" in
 		# Read again on SIGINFO interrupts
-		157) continue ;;
+		157)
+			case "${tflag:+set}" in
+			set)
+				adjust_timeout "${tflag:?}" \
+				    "${time_start:?}" timeout
+				case "${timeout:?}" in
+				0)
+					ret=124
+					break
+					;;
+				esac
+				;;
+			esac
+			continue
+			;;
 		esac
 		break
 	done

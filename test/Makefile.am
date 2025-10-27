@@ -20,6 +20,7 @@ XFAIL_TESTS= \
 	options-overlays.sh
 
 TESTS=\
+	adjust_timeout.sh \
 	alarm.sh \
 	array.sh \
 	builtins.sh \

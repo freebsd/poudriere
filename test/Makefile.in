@@ -481,9 +481,9 @@ XFAIL_TESTS = \
 
 
 # Depend bulk tests on jail setup
-TESTS = alarm.sh array.sh builtins.sh builtins-cut.sh \
-	builtins-paste.sh builtins-wc.sh cache.sh cache_pipe.sh \
-	calculate_duration.sh count_lines.sh \
+TESTS = adjust_timeout.sh alarm.sh array.sh builtins.sh \
+	builtins-cut.sh builtins-paste.sh builtins-wc.sh cache.sh \
+	cache_pipe.sh calculate_duration.sh count_lines.sh \
 	critical_section_inherit.sh critical_section_retry.sh \
 	critical_section_retry_cmdsubst.sh display.sh dirwatch.sh \
 	distclean-badorigin.sh distclean-overlays.sh \
@@ -849,6 +849,13 @@ recheck: all
 	        am__force_recheck=am--force-recheck \
 	        TEST_LOGS="$$log_list"; \
 	exit $$?
+adjust_timeout.sh.log: adjust_timeout.sh
+	@p='adjust_timeout.sh'; \
+	b='adjust_timeout.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 alarm.sh.log: alarm.sh
 	@p='alarm.sh'; \
 	b='alarm.sh'; \

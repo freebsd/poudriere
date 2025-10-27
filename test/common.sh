@@ -212,11 +212,12 @@ _catch_err() {
 
 : "${READY_FILE:=condchan}"
 cond_timedwait() {
-	local maxtime="$1"
+	local maxtime_orig="$1"
 	local which="${2-}"
 	local reason="${3-}"
-	local start now got_reason
+	local maxtime start now got_reason
 
+	maxtime="${maxtime_orig:?}"
 	case "${maxtime}" in
 	0) ;;
 	*) start="$(clock -monotonic)" ;;
@@ -224,6 +225,7 @@ cond_timedwait() {
 	# XXX: wait_for_file -t "${maxtime}" "${READY_FILE:?}${which+."${which}"}
 	until [ -e "${READY_FILE:?}${which:+.${which}}" ]; do
 		sleep "0.$(randint 3)$(randint 9)"
+		adjust_timeout "${maxtime_orig:?}" "${start-}" maxtime
 		case "${maxtime}" in
 		0) ;;
 		*)

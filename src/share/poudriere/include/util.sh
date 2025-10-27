@@ -1072,7 +1072,7 @@ read_blocking() {
 	local -; set +x
 	[ $# -ge 1 ] || eargs read_blocking '[-t timeout]' read_args
 	local rb_ret
-	local OPTIND=1 rb_flag rb_tflag rb_timeout rb_time_start rb_now
+	local OPTIND=1 rb_flag rb_tflag rb_timeout rb_time_start
 
 	rb_tflag=
 	while getopts "t:" rb_flag; do
@@ -1086,24 +1086,14 @@ read_blocking() {
 	case "${rb_tflag:+set}" in
 	set)
 		# read(builtin) does not support decimal timeout.
-		rb_timeout="${rb_tflag%.*}"
+		rb_tflag="${rb_tflag%.*}"
 		rb_time_start="$(clock -monotonic)"
 		;;
-	*) unset rb_timeout ;;
 	esac
 	while :; do
 		rb_ret=0
-		# Adjust timeout
-		case "${rb_timeout-}" in
-		"") ;;
-		*)
-			rb_now="$(clock -monotonic)"
-			rb_timeout="$((rb_timeout - (rb_now - rb_time_start)))"
-			case "${rb_timeout}" in
-			"-"*) rb_timeout=0 ;;
-			esac
-			;;
-		esac
+		adjust_timeout "${rb_tflag-}" "${rb_time_start-}" \
+		    rb_timeout
 		set -o noglob
 		read -r ${rb_timeout:+-t "${rb_timeout}"} "$@" || rb_ret="$?"
 		set +o noglob
@@ -1128,7 +1118,7 @@ read_blocking_line() {
 	local -; set +x
 	[ $# -ge 1 ] || eargs read_blocking_line '[-t timeout]' read_args
 	local rbl_ret IFS
-	local OPTIND=1 rbl_flag rbl_tflag rbl_timeout rbl_time_start rbl_now
+	local OPTIND=1 rbl_flag rbl_tflag rbl_timeout rbl_time_start
 
 	rbl_tflag=
 	while getopts "t:" rbl_flag; do
@@ -1142,24 +1132,14 @@ read_blocking_line() {
 	case "${rbl_tflag:+set}" in
 	set)
 		# read(builtin) does not support decimal timeout.
-		rbl_timeout="${rbl_tflag%.*}"
+		rbl_tflag="${rbl_tflag%.*}"
 		rbl_time_start="$(clock -monotonic)"
 		;;
-	*) unset rbl_timeout ;;
 	esac
 	while :; do
 		rbl_ret=0
-		# Adjust timeout
-		case "${rbl_timeout-}" in
-		"") ;;
-		*)
-			rbl_now="$(clock -monotonic)"
-			rbl_timeout="$((rbl_timeout - (rbl_now - rbl_time_start)))"
-			case "${rbl_timeout}" in
-			"-"*) rbl_timeout=0 ;;
-			esac
-			;;
-		esac
+		adjust_timeout "${rbl_tflag-}" "${rbl_time_start-}" \
+		    rbl_timeout
 		set -o noglob
 		IFS= read -r ${rbl_timeout:+-t "${rbl_timeout}"} "$@" || rbl_ret="$?"
 		set +o noglob
@@ -1331,7 +1311,7 @@ read_pipe() {
 	[ $# -ge 2 ] || eargs read_pipe fifo '[-t timeout]' read_args
 	local fifo="$1"
 	local rp_ret resread resopen aret
-	local OPTIND=1 rp_flag rp_tflag rp_timeout rp_time_start rp_now
+	local OPTIND=1 rp_flag rp_tflag rp_timeout rp_time_start
 	shift
 
 	rp_ret=0
@@ -1347,10 +1327,9 @@ read_pipe() {
 	case "${rp_tflag:+set}" in
 	set)
 		# read(builtin) does not support decimal timeout.
-		rp_timeout="${rp_tflag%.*}"
+		rp_tflag="${rp_tflag%.*}"
 		rp_time_start="$(clock -monotonic)"
 		;;
-	*) unset rp_timeout ;;
 	esac
 	while :; do
 		if ! [ -p "${fifo}" ]; then
@@ -1361,17 +1340,8 @@ read_pipe() {
 		# since opening the pipe blocks and may be interrupted.
 		resread=0
 		resopen=0
-		# Adjust timeout
-		case "${rp_timeout-}" in
-		"") ;;
-		*)
-			rp_now="$(clock -monotonic)"
-			rp_timeout="$((rp_timeout - (rp_now - rp_time_start)))"
-			case "${rp_timeout}" in
-			"-"*) rp_timeout=0 ;;
-			esac
-			;;
-		esac
+		adjust_timeout "${rp_tflag-}" "${rp_time_start-}" \
+		    rp_timeout
 		set -o noglob
 		case "${rp_timeout:+set}" in
 		set)
@@ -1437,7 +1407,7 @@ read_pipe_noeof() {
 	local fifo="$1"
 	local rpn_ret
 	shift
-	local OPTIND=1 rpn_flag rpn_tflag rpn_timeout rpn_time_start rpn_now
+	local OPTIND=1 rpn_flag rpn_tflag rpn_timeout rpn_time_start
 
 	rpn_tflag=
 	while getopts "t:" rpn_flag; do
@@ -1451,24 +1421,14 @@ read_pipe_noeof() {
 	case "${rpn_tflag:+set}" in
 	set)
 		# read(builtin) does not support decimal timeout.
-		rpn_timeout="${rpn_tflag%.*}"
+		rpn_tflag="${rpn_tflag%.*}"
 		rpn_time_start="$(clock -monotonic)"
 		;;
-	*) unset rpn_timeout ;;
 	esac
 	while :; do
 		rpn_ret=0
-		# Adjust timeout
-		case "${rpn_timeout-}" in
-		"") ;;
-		*)
-			rpn_now="$(clock -monotonic)"
-			rpn_timeout="$((rpn_timeout - (rpn_now - rpn_time_start)))"
-			case "${rpn_timeout}" in
-			"-"*) rpn_timeout=0 ;;
-			esac
-			;;
-		esac
+		adjust_timeout "${rpn_tflag-}" "${rpn_time_start-}" \
+		    rpn_timeout
 		set -o noglob
 		read_pipe "${fifo}" ${rpn_timeout:+-t "${rpn_timeout}"} "$@" ||
 		    rpn_ret="$?"
@@ -2454,6 +2414,49 @@ timespecsub() {
 		;;
 	*)
 		setvar "${_var_return}" "${res_sec}.${res_nsec}" || return
+		;;
+	esac
+}
+
+# Adjust timeout
+adjust_timeout() {
+	[ $# -eq 3 ] || [ $# -eq 4 ] ||
+	    eargs adjust_timeout orig_timeout start_time outvar '[now]'
+	local atd_orig_timeout="$1"
+	local atd_start_time="$2"
+	local atd_outvar="$3"
+	local atd_now="${4-}"
+	local atd_timeout
+
+	case "${atd_now}" in
+	"") atd_now="$(clock -monotonic)" ;;
+	esac
+	case "${atd_orig_timeout-}" in
+	0) atd_timeout=0 ;;
+	"") unset atd_timeout ;;
+	*)
+		case "${atd_orig_timeout:?}" in
+		*.*)
+			atd_timeout="$(printf "%d.%d" \
+			    "$((${atd_orig_timeout%.*} - \
+			    (atd_now - atd_start_time)))" \
+			    "${atd_orig_timeout#*.}")"
+			;;
+		*)
+			atd_timeout="$((atd_orig_timeout - \
+			    (atd_now - atd_start_time)))"
+			;;
+		esac
+		case "${atd_timeout}" in
+		"-"*) atd_timeout=0 ;;
+		esac
+	esac
+	case "${atd_timeout:+set}" in
+	set)
+		setvar "${atd_outvar:?}" "${atd_timeout?}" || return
+		;;
+	*)
+		unset "${atd_outvar:?}" || return
 		;;
 	esac
 }
