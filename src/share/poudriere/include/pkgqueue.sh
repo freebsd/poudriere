@@ -434,13 +434,11 @@ pkgqueue_clean_deps() {
 
 	# Remove myself from all my dependency rdeps to prevent them from
 	# trying to skip me later
-
+	unset rdeps_to_clean
 	for dir in "${dep_dir}"/*; do
 		case "${dir}" in
 		# empty dir
-		"${dep_dir}/*")
-			rdeps_to_clean=
-			;;
+		"${dep_dir}/*") break ;;
 		esac
 		rdep_pkgqueue_job="${dir##*/}"
 		pkgqueue_dir rdep_dir_name "${rdep_pkgqueue_job}"
