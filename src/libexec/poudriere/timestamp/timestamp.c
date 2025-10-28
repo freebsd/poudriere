@@ -438,6 +438,7 @@ main(int argc, char **argv)
 			close(child_stderr[1]);
 
 			execvp(argv[0], &argv[0]);
+			warn("%s", argv[0]);
 			_exit(127);
 		}
 		signal(SIGINT, SIG_IGN);
