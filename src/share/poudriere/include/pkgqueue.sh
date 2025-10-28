@@ -336,9 +336,9 @@ pkgqueue_add_dep() {
 # Remove myself from the remaining list of dependencies for anything
 # depending on this package. If clean_rdepends is set, instead cleanup
 # anything depending on me and skip them.
-pkgqueue_clean_rdeps() {
-	required_env pkgqueue_clean_rdeps PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -eq 2 ] || eargs pkgqueue_clean_rdeps pkgqueue_job clean_rdepends
+_pkgqueue_clean_rdeps() {
+	required_env _pkgqueue_clean_rdeps PWD "${MASTER_DATADIR_ABS:?}"
+	[ $# -eq 2 ] || eargs _pkgqueue_clean_rdeps pkgqueue_job clean_rdepends
 	local pkgqueue_job="$1"
 	local clean_rdepends="$2"
 	local dep_dir pkg_dir_name dep_pkgqueue_job
@@ -415,9 +415,9 @@ pkgqueue_clean_rdeps() {
 }
 
 # Remove my /deps/<pkgqueue_job> dir and any references to this dir in /rdeps/
-pkgqueue_clean_deps() {
-	required_env pkgqueue_clean_deps PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -eq 2 ] || eargs pkgqueue_clean_deps pkgqueue_job clean_rdepends
+_pkgqueue_clean_deps() {
+	required_env _pkgqueue_clean_deps PWD "${MASTER_DATADIR_ABS:?}"
+	[ $# -eq 2 ] || eargs _pkgqueue_clean_deps pkgqueue_job clean_rdepends
 	local pkgqueue_job="$1"
 	local clean_rdepends="$2"
 	local dep_dir rdep_pkgqueue_job pkg_dir_name
@@ -464,7 +464,7 @@ _pkgqueue_clean_queue() {
 	local ret
 
 	ret=0
-	pkgqueue_clean_rdeps "${pkgqueue_job}" "${clean_rdepends}" || ret="$?"
+	_pkgqueue_clean_rdeps "${pkgqueue_job}" "${clean_rdepends}" || ret="$?"
 
 	# Remove this pkg from the needs-to-build list. It will not exist
 	# if this build was sucessful. It only exists if pkgqueue_clean_queue is
@@ -472,7 +472,7 @@ _pkgqueue_clean_queue() {
 	# not be empty.
 	case "${clean_rdepends:+set}" in
 	set)
-		pkgqueue_clean_deps "${pkgqueue_job}" "${clean_rdepends}" ||
+		_pkgqueue_clean_deps "${pkgqueue_job}" "${clean_rdepends}" ||
 		    ret="$?"
 		;;
 	esac
