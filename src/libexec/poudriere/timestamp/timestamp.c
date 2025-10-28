@@ -279,8 +279,11 @@ usage(void)
 static void
 gotsig(int sig)
 {
-	if (child_pid == -1)
+	if (child_pid == -1) {
+		signal(sig, SIG_DFL);
+		raise(sig);
 		return;
+	}
 	warnx("killing child pid %d with sig %d", child_pid, sig);
 	kill(child_pid, sig);
 	/*
@@ -411,11 +414,11 @@ main(int argc, char **argv)
 		setlinebuf(stderr);
 	}
 
-	signal(SIGTERM, gotsig);
-	signal(SIGALRM, gotsig);
-	signal(SIGINT, gotsig);
-	signal(SIGHUP, gotsig);
 	if (argc > 0) {
+		signal(SIGTERM, gotsig);
+		signal(SIGALRM, gotsig);
+		signal(SIGINT, gotsig);
+		signal(SIGHUP, gotsig);
 		if (fp_in_stdout != NULL)
 			errx(EX_DATAERR, "Cannot use -o with command");
 		if (fp_in_stderr != NULL)
