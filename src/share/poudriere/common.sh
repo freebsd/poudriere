@@ -1448,11 +1448,11 @@ buildlog_start() {
 	    ${PORT_FLAGS} \
 	    ${make_vars}
 
-	echo "build started at $(date -Iseconds)"
+	echo "build started at $(date -Iseconds 2>/dev/null || date)"
 	case "${PKG_REPRODUCIBLE}" in
 	"yes") ;;
 	*)
-		date=$(date -u -Iseconds)
+		date="$(date -u -Iseconds 2>/dev/null || date -u)"
 		pkg_note_add "${pkgname}" build_timestamp "${date}"
 		;;
 	esac
@@ -1554,7 +1554,8 @@ buildlog_stop() {
 
 	_log_path log
 
-	echo "build of ${originspec} | ${pkgname} ended at $(date -Iseconds)"
+	echo "build of ${originspec} | ${pkgname} ended at" \
+	    "$(date -Iseconds 2>/dev/null || date)"
 	case "${TIME_START_JOB:+set}" in
 	set)
 		now=$(clock -monotonic)
