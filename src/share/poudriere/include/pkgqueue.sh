@@ -797,8 +797,13 @@ pkgqueue_sanity_check() {
 	esac
 
 	# No cycle, there's some unknown poudriere bug
-	err 1 "Unknown stuck queue bug detected. Please submit the entire build output to poudriere developers.
-$(find ${MASTER_DATADIR}/running ${MASTER_DATADIR}/pool ${MASTER_DATADIR}/deps ${MASTER_DATADIR}/cleaning)"
+	err 1 "Unknown stuck queue bug detected. Please submit the entire" \
+	    "build output to poudriere developers." \
+	    "$(find "${MASTER_DATADIR:?}/running" \
+		    "${MASTER_DATADIR:?}/pool" \
+		    "${MASTER_DATADIR:?}/deps" \
+		    "${MASTER_DATADIR:?}/cleaning" \
+	    )"
 }
 
 pkgqueue_empty() {
