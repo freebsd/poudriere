@@ -81,3 +81,13 @@ This changes Poudriere behavior in a few ways:
 - `PORTREVISION` bumps are now critical. The old behavior of recursively deleting hid how important these are as it often would rebuild things anyway. Now we basically only rebuild if the version or a required shared library version changed.
 
 More details on shared library handling are in [shlib_tracking.md](./shlib_tracking.md).
+
+## `PKG_NO_VERSION_FOR_DEPS` safety
+
+Removing the versions from the dependencies is likely safe for a single
+consistent repository. For multi-repository support we likely need more work
+for binary-dependencies (like `RUN_DEPENDS+= /usr/local/bin/foo:devel/fooport`)
+or provides/requires.
+
+Missed `PORTREVISION` chases can lead to very confusing `pkg upgrade`
+conflicts/behavior and runtime problems.
