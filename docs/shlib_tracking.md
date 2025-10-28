@@ -4,53 +4,12 @@
 
 Poudriere has 2 incremental build modes.
 
-1. Rebuild everything downstream if a dependency is missing or changed. This is the **curent default**.
-2. Only rebuild what `pkg upgrade` would [re]install for, but also ensure build reproducibility. Enabled with `PKG_NO_VERSION_FOR_DEPS=yes`.
-  - **Guiding principle is to only rebuild what `pkg upgrade` would upgrade for; build for `pkg upgrade` behavior.**
-  - In that sense the current algorithm rebuilds _a lot_ that `pkg upgrade` does not care about; we rebuild a lot needlessly.
+See [pkg_no_version_for_deps](./pkg_no_version_for_deps.md) for details.
 
-This document describes the algorithm for (2) with shared libraries.
+This document describes shared library handling for the new mode.
 
-## Brief overview of the new algorithm
-
-This belongs in another document but is here for context as that document does not yet exist.
-
-For `PKG_NO_VERSION_FOR_DEPS=yes` we do not store the versions for dependencies. If a dependency `foo-1.2` used to be registered but was bumped to `foo-1.3` it used to force a rebuild because the dependency was missing. Now we only store `foo` as a dependency, such that version bumps do not themselves force a rebuild.
-
-Always rebuild cases are:
-
-```
-# _delete_old_pkg():
-# We delete [a package] and force a rebuild in these cases:
-# - pkg bootstrap is not available
-# - FORBIDDEN is set for the port
-# - Corrupted package file
-# - bulk -a: A package which the tree no longer creates.
-#   For example, a package with a removed FLAVOR.
-# - Wrong origin cases:
-#   o MOVED: origin moved to a new location
-#   o MOVED: origin expired
-#   o Nonexistent origin
-#   o A package with the wrong origin for its PKGNAME
-# - Changed PKGNAME
-# - PORTVERSION, PORTREVISION, or PORTEPOCH bump.
-# - Changed ABI/ARCH/NOARCH
-# - FLAVOR for a PKGNAME changed
-# - New list of dependencies (not including versions)
-#   (requires default-on CHECK_CHANGED_DEPS)
-# - Changed options
-#   (requires default-on CHECK_CHANGED_OPTIONS)
-#
-# These are handled by pkg (pkg_jobs_need_upgrade()) but not Poudriere yet:
-#
-# - changed conflicts		# not used by ports
-# - changed provides		# not used by ports
-# - changed requires		# not used by ports
-# - changed provided shlibs	# effectively by CHECK_CHANGED_DEPS
-# - changed required shlibs	# effectively by CHECK_CHANGED_DEPS
-```
-
-Further it is possible that this package requires a shared library that no dependency provides for. Due to the lack of ports metadata advertising what libraries are provided we must search dependency packages _after they are built_ to determine if this package still has its shared library requirements met. That is, some of `_delete_old_pkg` (inspection of existing package) for shared library handling is deferred to the build.
+[Commit 8a64dc67da](https://github.com/freebsd/poudriere/commit/8a64dc67da40864d15e1808a6fc9a32bfb9e46bf)
+added this for use when `PKG_NO_VERSION_FOR_DEPS` is set to `yes`.
 
 ## Shared library missed PORTREVISION chase / Branch switch
 
