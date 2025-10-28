@@ -268,11 +268,34 @@ prefix_main(void *arg)
 }
 
 static void
+parse_time(const char *time_start, struct timespec *tv)
+{
+	char *end, *p;
+
+	p = strchr(time_start, '.');
+	if (p != NULL)
+		*p = '\0';
+	errno = 0;
+	tv->tv_sec = strtol(time_start, &end, 10);
+	if (tv->tv_sec < 0 || *end != '\0' || errno != 0)
+		err(1, "Invalid START_TIME");
+	if (p != NULL) {
+		++p;
+		errno = 0;
+		tv->tv_nsec = strtol(p, &end, 10);
+		if (tv->tv_nsec < 0 || *end != '\0' || errno != 0)
+			err(1, "Invalid START_TIME");
+	} else {
+		tv->tv_nsec = 0;
+	}
+}
+
+static void
 usage(void)
 {
 
 	fprintf(stderr, "%s\n",
-	    "usage: timestamp [-1 <stdout prefix>] [-2 <stderr prefix>] [-eo in.fifo] [-P <proctitle>] [-dDutT] [-s {s,ms,us,ns}] [command]");
+	    "usage: timestamp [-1 <stdout prefix>] [-2 <stderr prefix>] [-eo in.fifo] [-P <proctitle>] [-d duration] [-DutT] [-s {s,ms,us,ns}] [command]");
 	exit(EX_USAGE);
 }
 
@@ -302,12 +325,13 @@ main(int argc, char **argv)
 	pthread_t *thr_stdout, *thr_stderr;
 	struct kdata kdata_stdout = {0}, kdata_stderr = {0};
 	char *prefix_stdout, *prefix_stderr, *time_start;
-	char *end;
+	char *dflag;
 	int child_stdout[2], child_stderr[2];
-	int ch, status, ret, dflag, uflag, tflag, Tflag;
+	int ch, status, ret, uflag, tflag, Tflag;
 
 	ret = 0;
-	dflag = tflag = Tflag = uflag = 0;
+	tflag = Tflag = uflag = 0;
+	dflag = NULL;
 	thr_stdout = thr_stderr = NULL;
 	prefix_stdout = prefix_stderr = NULL;
 	fp_in_stdout = fp_in_stderr = NULL;
@@ -318,7 +342,7 @@ main(int argc, char **argv)
 	resolution = RESOLUTION_SECONDS;
 #endif
 
-	while ((ch = getopt(argc, argv, "1:2:dDe:no:P:s:tTu")) != -1) {
+	while ((ch = getopt(argc, argv, "1:2:d:De:no:P:s:tTu")) != -1) {
 		switch (ch) {
 		case '1':
 			prefix_stdout = strdup(optarg);
@@ -331,7 +355,9 @@ main(int argc, char **argv)
 				err(EXIT_FAILURE, "strdup");
 			break;
 		case 'd':
-			dflag = 1;
+			dflag = strdup(optarg);
+			if (dflag == NULL)
+				err(EXIT_FAILURE, "strdup");
 			break;
 		case 'D': /* dynamic prefix support */
 			Dflag = 1;
@@ -376,23 +402,7 @@ main(int argc, char **argv)
 	argv += optind;
 
 	if ((time_start = getenv("TIME_START")) != NULL) {
-		char *p;
-
-		p = strchr(time_start, '.');
-		if (p != NULL)
-			*p = '\0';
-		errno = 0;
-		start.tv_sec = strtol(time_start, &end, 10);
-		if (start.tv_sec < 0 || *end != '\0' || errno != 0)
-			err(1, "Invalid START_TIME");
-		if (p != NULL) {
-			++p;
-			errno = 0;
-			start.tv_nsec = strtol(p, &end, 10);
-			if (start.tv_nsec < 0 || *end != '\0' || errno != 0)
-				err(1, "Invalid START_TIME");
-		} else
-			start.tv_nsec = 0;
+		parse_time(time_start, &start);
 	} else if (clock_gettime(CLOCK_MONOTONIC_FAST, &start))
 		err(EXIT_FAILURE, "%s", "clock_gettime");
 
@@ -400,10 +410,12 @@ main(int argc, char **argv)
 		char timestamp[TIMESTAMP_BUFSIZ];
 		size_t dlen;
 
+		parse_time(dflag, &start);
 		dlen = calculate_duration(timestamp,
 		    TIMESTAMP_BUFSIZ, &start);
 		assert(dlen < TIMESTAMP_BUFSIZ);
 		printf("%s\n", timestamp);
+		free(dflag);
 		exit(0);
 	}
 
