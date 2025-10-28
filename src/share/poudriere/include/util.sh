@@ -1116,19 +1116,18 @@ read_blocking() {
 	set)
 		# read(builtin) does not support decimal timeout.
 		rb_tflag="${rb_tflag%.*}"
+		rb_timeout="${rb_tflag:?}"
 		rb_time_start="$(clock -monotonic)"
 		;;
 	esac
 	while :; do
 		rb_ret=0
-		adjust_timeout "${rb_tflag-}" "${rb_time_start-}" \
-		    rb_timeout
 		set -o noglob
 		read -r ${rb_timeout:+-t "${rb_timeout}"} "$@" || rb_ret="$?"
 		set +o noglob
 		case ${rb_ret} in
 			# Read again on SIGINFO interrupts
-			157) continue ;;
+			157) ;;
 			# Valid EOF
 			1) break ;;
 			# Success
@@ -1136,6 +1135,11 @@ read_blocking() {
 			# Unknown problem or signal, just return the error.
 			*) break ;;
 		esac
+		if ! adjust_timeout "${rb_tflag-}" "${rb_time_start-}" \
+		    rb_timeout; then
+			rb_ret=142
+			break
+		fi
 	done
 	return "${rb_ret}"
 }
@@ -1162,19 +1166,18 @@ read_blocking_line() {
 	set)
 		# read(builtin) does not support decimal timeout.
 		rbl_tflag="${rbl_tflag%.*}"
+		rbl_timeout="${rbl_tflag:?}"
 		rbl_time_start="$(clock -monotonic)"
 		;;
 	esac
 	while :; do
 		rbl_ret=0
-		adjust_timeout "${rbl_tflag-}" "${rbl_time_start-}" \
-		    rbl_timeout
 		set -o noglob
 		IFS= read -r ${rbl_timeout:+-t "${rbl_timeout}"} "$@" || rbl_ret="$?"
 		set +o noglob
 		case "${rbl_ret}" in
 			# Read again on SIGINFO interrupts
-			157) continue ;;
+			157) ;;
 			# Valid EOF
 			1) break ;;
 			# Success
@@ -1182,6 +1185,11 @@ read_blocking_line() {
 			# Unknown problem or signal, just return the error.
 			*) break ;;
 		esac
+		if ! adjust_timeout "${rbl_tflag-}" "${rbl_time_start-}" \
+		    rbl_timeout; then
+			rbl_ret=142
+			break
+		fi
 	done
 	return "${rbl_ret}"
 }
@@ -1357,6 +1365,7 @@ read_pipe() {
 	set)
 		# read(builtin) does not support decimal timeout.
 		rp_tflag="${rp_tflag%.*}"
+		rp_timeout="${rp_tflag:?}"
 		rp_time_start="$(clock -monotonic)"
 		;;
 	esac
@@ -1369,8 +1378,6 @@ read_pipe() {
 		# since opening the pipe blocks and may be interrupted.
 		resread=0
 		resopen=0
-		adjust_timeout "${rp_tflag-}" "${rp_time_start-}" \
-		    rp_timeout
 		set -o noglob
 		case "${rp_timeout:+set}" in
 		set)
@@ -1404,19 +1411,25 @@ read_pipe() {
 		set +o noglob
 		msg_dev "read_pipe ${fifo}: resread=${resread} resopen=${resopen}"
 		# First check the open errors
-		case ${resopen} in
+		case "${resopen}" in
 			# Open error.  We do a test -p in every iteration,
 			# so it was either a race or an interrupt.  Retry
 			# in case it was just an interrupt.
-			2) continue ;;
+			2)
+				# set resread=-1 so we skip over the
+				# resread check and check timeout
+				# before retrying.
+				resread=-1
+			;;
 			# Success
 			0) ;;
 			# Unknown problem or signal, just return the error.
 			*) rp_ret="${resopen}"; break ;;
 		esac
-		case ${resread} in
+		case "${resread}" in
+			-1) ;;
 			# Read again on SIGINFO interrupts
-			157) continue ;;
+			157) ;;
 			# Valid EOF
 			1) rp_ret="${resread}"; break ;;
 			# Success
@@ -1424,6 +1437,11 @@ read_pipe() {
 			# Unknown problem or signal, just return the error.
 			*) rp_ret="${resread}"; break ;;
 		esac
+		if ! adjust_timeout "${rp_tflag-}" "${rp_time_start-}" \
+		    rp_timeout; then
+			rp_ret=142
+			break
+		fi
 	done
 	return "${rp_ret}"
 }
@@ -1451,13 +1469,12 @@ read_pipe_noeof() {
 	set)
 		# read(builtin) does not support decimal timeout.
 		rpn_tflag="${rpn_tflag%.*}"
+		rpn_timeout="${rpn_tflag:?}"
 		rpn_time_start="$(clock -monotonic)"
 		;;
 	esac
 	while :; do
 		rpn_ret=0
-		adjust_timeout "${rpn_tflag-}" "${rpn_time_start-}" \
-		    rpn_timeout
 		set -o noglob
 		read_pipe "${fifo}" ${rpn_timeout:+-t "${rpn_timeout}"} "$@" ||
 		    rpn_ret="$?"
@@ -1466,6 +1483,11 @@ read_pipe_noeof() {
 		1) ;;
 		*) break ;;
 		esac
+		if ! adjust_timeout "${rpn_tflag-}" "${rpn_time_start-}" \
+		    rpn_timeout; then
+			rpn_ret=142
+			break
+		fi
 	done
 	return "${rpn_ret}"
 }
@@ -2501,8 +2523,9 @@ adjust_timeout() {
 	local atd_start_time="$2"
 	local atd_outvar="$3"
 	local atd_now="${4-}"
-	local atd_timeout
+	local atd_timeout atd_ret
 
+	atd_ret=0
 	case "${atd_now}" in
 	"") atd_now="$(clock -monotonic)" ;;
 	esac
@@ -2528,12 +2551,16 @@ adjust_timeout() {
 	esac
 	case "${atd_timeout:+set}" in
 	set)
+		case "${atd_timeout}" in
+		0) atd_ret=124 ;;
+		esac
 		setvar "${atd_outvar:?}" "${atd_timeout?}" || return
 		;;
 	*)
 		unset "${atd_outvar:?}" || return
 		;;
 	esac
+	return "${atd_ret}"
 }
 
 calculate_duration() {

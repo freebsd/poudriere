@@ -213,7 +213,7 @@ _catch_err() {
 wait_for_file() {
 	local maxtime_orig="$1"
 	local file="$2"
-	local timeout dir start now
+	local timeout dir start
 
 	dirname "${file:?}" dir
 	timeout="${maxtime_orig:?}"
@@ -227,19 +227,12 @@ wait_for_file() {
 		    return
 		case "${maxtime_orig:+set}" in
 		set)
-			now="$(clock -monotonic)"
-			adjust_timeout "${maxtime_orig}" "${start-}" timeout \
-			    "${now:?}"
-			case "${timeout}" in
-			0) ;;
-			*)
-				if [ "$((now - start))" -gt "${timeout}" ]; then
-					msg_error "wait_for_file: Timeout" \
-					    "waiting for ${file:?}"
-					return 124
-				fi
-				;;
-			esac
+			if ! adjust_timeout "${maxtime_orig:?}" "${start-}" \
+			    timeout; then
+				msg_error "wait_for_file: Timeout" \
+				    "waiting for ${file:?}"
+				return 124
+			fi
 			;;
 		esac
 		sleep "0.$(randint 20)"
@@ -269,7 +262,8 @@ cond_timedwait() {
 		${maxtime_orig:+timeout "${timeout}"} \
 		    dirwatch -n "${dir:?}" ||
 		    ret="$?"
-		adjust_timeout "${maxtime_orig}" "${time_start-}" timeout
+		adjust_timeout "${maxtime_orig}" "${time_start-}" timeout ||
+		    ret="$?"
 		case "${ret}.${timeout-}" in
 		124.*|0.0)
 			msg_error "cond_timedwait: Timeout waiting for" \
@@ -340,15 +334,13 @@ time_bounded_loop() {
 		;;
 	esac
 
-	adjust_timeout "${tbl_timeout_orig:?}" "${tbl_start:?}" tbl_timeout
-	case "${tbl_timeout:?}" in
-	0)
+	if ! adjust_timeout "${tbl_timeout_orig:?}" "${tbl_start:?}" \
+	    tbl_timeout; then
 		hash_unset tbl_timeout "${tbl_idx}"
 		hash_unset tbl_start "${tbl_idx}"
 		unset "${tbl_tmpvar}"
 		return 124
-		;;
-	esac
+	fi
 	hash_set tbl_timeout "${tbl_idx}" "${tbl_timeout}"
 }
 

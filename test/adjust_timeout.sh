@@ -9,11 +9,11 @@ test_adjust_basic() {
 	    new_timeout "${now}"
 	assert "${timeout}" "${new_timeout}"
 	now=6
-	assert_true adjust_timeout "${timeout}" "${start_time}" \
+	assert_ret 124 adjust_timeout "${timeout}" "${start_time}" \
 	    new_timeout "${now}"
 	assert "0" "${new_timeout}"
 	now=7
-	assert_true adjust_timeout "${timeout}" "${start_time}" \
+	assert_ret 124 adjust_timeout "${timeout}" "${start_time}" \
 	    new_timeout "${now}"
 	assert "0" "${new_timeout}"
 }
@@ -23,11 +23,11 @@ test_adjust_zero() {
 	timeout=0
 	start_time=5
 	now=5
-	assert_true adjust_timeout "${timeout}" "${start_time}" \
+	assert_ret 124 adjust_timeout "${timeout}" "${start_time}" \
 	    new_timeout "${now}"
 	assert "0" "${new_timeout}"
 	now=6
-	assert_true adjust_timeout "${timeout}" "${start_time}" \
+	assert_ret 124 adjust_timeout "${timeout}" "${start_time}" \
 	    new_timeout "${now}"
 	assert "0" "${new_timeout}"
 }
@@ -66,14 +66,14 @@ test_adjust_decimal() {
 	    new_timeout "${now}"
 	assert "0.5" "${new_timeout}"
 	now=7
-	assert_true adjust_timeout "${timeout}" "${start_time}" \
+	assert_ret 124 adjust_timeout "${timeout}" "${start_time}" \
 	    new_timeout "${now}"
 	assert "0" "${new_timeout}"
-	assert_true adjust_timeout "${timeout}" "${start_time}" \
+	assert_ret 124 adjust_timeout "${timeout}" "${start_time}" \
 	    new_timeout "${now}"
 	assert "0" "${new_timeout}"
 	now=8
-	assert_true adjust_timeout "${timeout}" "${start_time}" \
+	assert_ret 124 adjust_timeout "${timeout}" "${start_time}" \
 	    new_timeout "${now}"
 	assert "0" "${new_timeout}"
 }

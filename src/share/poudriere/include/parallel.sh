@@ -142,14 +142,11 @@ pwait() {
 		157)
 			case "${tflag:+set}" in
 			set)
-				adjust_timeout "${tflag:?}" \
-				    "${time_start:?}" timeout
-				case "${timeout:?}" in
-				0)
+				if ! adjust_timeout "${tflag:?}" \
+				    "${time_start:?}" timeout; then
 					ret=124
 					break
-					;;
-				esac
+				fi
 				;;
 			esac
 			continue
