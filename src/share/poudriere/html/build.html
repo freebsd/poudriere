@@ -101,17 +101,22 @@
                 Results
               </button>
               <ul class="dropdown-menu">
+                <li class="disabled" id="nav_remaining">
+                  <a href="#remaining_div" class="dropdown-item nav-link"
+                    >Remaining</a
+                  >
+                </li>
                 <li class="disabled" id="nav_built">
                   <a href="#built_div" class="dropdown-item nav-link">Built</a>
                 </li>
                 <li class="disabled" id="nav_failed">
                   <a href="#failed_div" class="dropdown-item nav-link">Failed</a>
                 </li>
-                <li class="disabled" id="nav_skipped">
-                  <a href="#skipped_div" class="dropdown-item nav-link">Skipped</a>
-                </li>
                 <li class="disabled" id="nav_inspected">
                   <a href="#inspected_div" class="dropdown-item nav-link">Inspected</a>
+                </li>
+                <li class="disabled" id="nav_skipped">
+                  <a href="#skipped_div" class="dropdown-item nav-link">Skipped</a>
                 </li>
                 <li class="disabled" id="nav_ignored">
                   <a href="#ignored_div" class="dropdown-item nav-link">Ignored</a>
@@ -121,11 +126,6 @@
                 </li>
                 <li class="disabled" id="nav_queued">
                   <a href="#queued_div" class="dropdown-item nav-link">Queued</a>
-                </li>
-                <li class="disabled" id="nav_remaining">
-                  <a href="#remaining_div" class="dropdown-item nav-link"
-                    >Remaining</a
-                  >
                 </li>
               </ul>
             </li>
@@ -228,23 +228,23 @@
                 <thead>
                   <tr>
                     <th class="text-center table-secondary">Queued</th>
-                    <th class="text-center table-success">Built</th>
-                    <th class="text-center table-danger">Failed</th>
+                    <th class="text-center table-primary">Fetched</th>
+                    <th class="text-center table-warning">Ignored</th>
                     <th class="text-center table-info">Skipped</th>
                     <th class="text-center table-warning">Inspected</th>
-                    <th class="text-center table-warning">Ignored</th>
-                    <th class="text-center table-primary">Fetched</th>
+                    <th class="text-center table-danger">Failed</th>
+                    <th class="text-center table-success">Built</th>
                     <th class="text-center">Remaining</th>
                   </tr>
                 </thead>
                 <tr>
                   <td id="stats_queued" class="queued text-center"></td>
-                  <td id="stats_built" class="built text-center"></td>
-                  <td id="stats_failed" class="failed text-center"></td>
+                  <td id="stats_fetched" class="text-center"></td>
+                  <td id="stats_ignored" class="text-center"></td>
                   <td id="stats_skipped" class="text-center"></td>
                   <td id="stats_inspected" class="text-center"></td>
-                  <td id="stats_ignored" class="text-center"></td>
-                  <td id="stats_fetched" class="text-center"></td>
+                  <td id="stats_failed" class="failed text-center"></td>
+                  <td id="stats_built" class="built text-center"></td>
                   <td id="stats_remaining" class="text-center"></td>
                 </tr>
               </table>
@@ -302,6 +302,22 @@
         <!-- /container -->
         <div class="row">
           <div class="col-md-12">
+            <div id="remaining_div" style="display: none">
+              <div class="card my-3 bg-dark text-white fs-5">
+                <div class="card-body fs-5">Remaining Ports</div>
+              </div>
+              <table class="table table-striped" id="remaining_table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Package</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="remaining_body"></tbody>
+              </table>
+            </div>
+            <!-- #remaining -->
             <div id="built_div" style="display: none">
               <div class="card my-3 bg-dark text-white fs-5">
                 <div class="card-body fs-5">Built Ports</div>
@@ -320,8 +336,10 @@
               </table>
             </div>
             <!-- #built -->
-            <div id="failed_div" class="status" style="display: none">
-              <h2 id="failed">Failed ports</h2>
+            <div id="failed_div" style="display: none">
+              <div class="card my-3 bg-dark text-white fs-5">
+                <div class="card-body fs-5">Failed Ports</div>
+              </div>
               <table class="table table-striped" id="failed_table">
                 <thead>
                   <tr>
@@ -338,23 +356,6 @@
               </table>
             </div>
             <!-- #failed -->
-            <div id="skipped_div" style="display: none">
-              <div class="card my-3 bg-dark text-white fs-5">
-                <div class="card-body fs-5">Skipped Ports</div>
-              </div>
-              <table class="table table-striped" id="skipped_table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Package</th>
-                    <th>Origin</th>
-                    <th>Reason</th>
-                  </tr>
-                </thead>
-                <tbody id="skipped_body"></tbody>
-              </table>
-            </div>
-            <!-- #skipped -->
             <div id="inspected_div" style="display: none">
               <div class="card my-3 bg-dark text-white fs-5">
                 <div class="card-body fs-5">Inspected Ports</div>
@@ -372,6 +373,23 @@
               </table>
             </div>
             <!-- #inspected -->
+            <div id="skipped_div" style="display: none">
+              <div class="card my-3 bg-dark text-white fs-5">
+                <div class="card-body fs-5">Skipped Ports</div>
+              </div>
+              <table class="table table-striped" id="skipped_table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Package</th>
+                    <th>Origin</th>
+                    <th>Reason</th>
+                  </tr>
+                </thead>
+                <tbody id="skipped_body"></tbody>
+              </table>
+            </div>
+            <!-- #skipped -->
             <div id="ignored_div" style="display: none">
               <div class="card my-3 bg-dark text-white fs-5">
                 <div class="card-body fs-5">Ignored Ports</div>
@@ -423,22 +441,6 @@
               </table>
             </div>
             <!-- #queued -->
-            <div id="remaining_div" style="display: none">
-              <div class="card my-3 bg-dark text-white fs-5">
-                <div class="card-body fs-5">Remaining Ports</div>
-              </div>
-              <table class="table table-striped" id="remaining_table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Package</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody id="remaining_body"></tbody>
-              </table>
-            </div>
-            <!-- #remaining -->
           </div>
           <!-- /col -->
         </div>
