@@ -614,15 +614,7 @@ set_test_contexts() {
 	esac
 }
 
-get_test_context() {
-	local IFS _line
-	local -
-
-	case "${TEST_CONTEXTS-}" in
-	"")
-		err "${EX_USAGE}" "Must call set_test_contexts with env to set"
-		;;
-	esac
+_get_next_context() {
 	unset TEST_CONTEXT
 	case "${TEST_CONTEXTS_DATA+set}" in
 	set)
@@ -671,15 +663,30 @@ get_test_context() {
 		esac
 		break
 	done
-	set +f
 	TEST_CONTEXT_NUM=$((TEST_CONTEXT_NUM + 1))
 	TEST_CONTEXT_PROGRESS="${TEST_CONTEXT_NUM}/${TEST_CONTEXTS_TOTAL}"
-	case " ${TEST_NUMS-null} " in
-	" null ") ;;
-        *" ${TEST_CONTEXT_NUM} "*) ;;
-	*) continue ;;
+}
+
+get_test_context() {
+	local IFS _line
+	local -
+
+	case "${TEST_CONTEXTS-}" in
+	"")
+		err "${EX_USAGE}" "Must call set_test_contexts with env to set"
+		;;
 	esac
+	while :; do
+		_get_next_context || return
+		case " ${TEST_NUMS-null} " in
+		" null ") ;;
+		*" ${TEST_CONTEXT_NUM} "*) ;;
+		*) continue ;;
+		esac
+		break
+	done
 	msg "Testing context ${TEST_CONTEXT_PROGRESS} with ${TEST_CONTEXT}" >&${REDIRECTED_STDERR_FD:-2}
+	set -o noglob
 	eval ${TEST_CONTEXT}
 	if [ -n "${TEST_SETUP-}" ]; then
 		msg "Running setup: ${TEST_SETUP}" >&${REDIRECTED_STDERR_FD:-2}
