@@ -28,4 +28,6 @@ while get_test_context; do
 	timestamp="$(timestamp -d "${seconds}")"
 	assert "0" "$?"
 	assert "${expected_duration}" "${timestamp}" "./timestamp -d"
+
+	unset duration timestamp
 done

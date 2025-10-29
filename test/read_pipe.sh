@@ -5,6 +5,8 @@ set +e
 add_test_function test_no_timeout
 test_no_timeout()
 {
+	local in start
+
 	TMP=$(mktemp -u)
 	assert_ret 0 mkfifo "${TMP}"
 	start=$(clock -monotonic)
@@ -19,6 +21,8 @@ test_no_timeout()
 add_test_function test_timeout_basic
 test_timeout_basic()
 {
+	local in start
+
 	TMP=$(mktemp -u)
 	assert_ret 0 mkfifo "${TMP}"
 	start=$(clock -monotonic)
@@ -32,6 +36,8 @@ test_timeout_basic()
 add_test_function test_timeout_decimal
 test_timeout_decimal()
 {
+	local in start
+
 	TMP=$(mktemp -u)
 	assert_ret 0 mkfifo "${TMP}"
 	start=$(clock -monotonic)
@@ -46,6 +52,8 @@ test_timeout_decimal()
 add_test_function test_timeout_decimal_zero
 test_timeout_decimal_zero()
 {
+	local in start
+
 	TMP=$(mktemp -u)
 	assert_ret 0 mkfifo "${TMP}"
 	start=$(clock -monotonic)
@@ -61,6 +69,8 @@ test_timeout_decimal_zero()
 add_test_function test_siginfo_restart
 test_siginfo_restart()
 {
+	local in start gotinfo
+
 	TMP=$(mktemp -u)
 	assert_ret 0 mkfifo "${TMP}"
 	start=$(clock -monotonic)

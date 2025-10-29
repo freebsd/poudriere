@@ -547,9 +547,74 @@ list_test_functions() {
 	echo
 }
 
+_pre_test_env_compare() {
+	_PRE_TEST_ENV="$(mktemp -t set)"
+	_DID_ASSERTS=0
+	set | awk -F= '{print $1}' > "${_PRE_TEST_ENV:?}"
+	_PRE_TEST_TMPFILES="$(mktemp -t tmpfile)"
+	find "${POUDRIERE_TMPDIR:?}" > "${_PRE_TEST_TMPFILES:?}"
+}
+
+_post_test_env_compare() {
+	local _did_asserts
+
+	_did_asserts="${_DID_ASSERTS:-0}"
+	assert_not 0 "${_DID_ASSERTS:?}" "Test ran no asserts?"
+	clean_allowed_tmpfiles
+	assert_file "${_PRE_TEST_TMPFILES:?}" - "leaked tmpfiles" <<-EOF
+	$(find "${POUDRIERE_TMPDIR:?}")
+	EOF
+	unset _PRE_TEST_TMPFILES
+	assert_file "${_PRE_TEST_ENV:?}" - "leaked locals" <<-EOF
+	$({
+		set | awk -F= '{print $1}' | while read varname; do
+			case "${varname:?}" in
+			_PRE_TEST_ENV) ;;
+			_did_asserts|_PRE_TEST_*) continue ;;
+			esac
+			echo "${varname:?}"
+		done
+	})
+	EOF
+	unset _PRE_TEST_ENV
+	_DID_ASSERTS="${_did_asserts:?}"
+	unset _PRE_TEST_DID_ASSERTS
+}
+
+_test_env_allowed_leaked_vars() {
+	echo spawn_jobid spawn_job spawn_pgid spawn_pid
+	echo FUNCNAME
+	echo CAUGHT_ERR_STATUS CAUGHT_ERR_MSG
+	echo TMP TMP1 TMP2 TMP3 TMPD TMPD2 TMPD3
+	echo MAX
+	echo _mapfile_cat_file_lines_read _mapfile_cat_lines_read
+	echo _read_file_lines_read
+	echo _readlines_lines_read
+	echo _relpath_common _relpath_common_dir1 _relpath_common_dir2
+	echo _gsub
+	echo _crit_caught_HUP _crit_caught_INT \
+	    _crit_caught_TERM _crit_caught_PIPE \
+	    _crit_caught_INFO \
+	    _CRITSNEST
+}
+
+# Hide some common test environment that is okay to leak.
+_run_test_function() {
+	local allowed_leaked_vars
+	local -
+
+	allowed_leaked_vars="$(_test_env_allowed_leaked_vars)"
+	set -o noglob
+	local ${allowed_leaked_vars}
+	set +o noglob
+
+	FUNCNAME="" "$@"
+}
+
 run_test_functions() {
 	[ $# -eq 0 ] || eargs run_test_functions
-	local rtf_ret
+	local rtf_ret rtf_assert
+	local _PRE_TEST_TMPFILES _PRE_TEST_ENV
 
 	case "${TESTFUNCS+set}" in
 	set) ;;
@@ -560,9 +625,15 @@ run_test_functions() {
 	TESTFUNC $(list_test_functions)
 	EOF
 	while get_test_context; do
+		_pre_test_env_compare
+		_DID_ASSERTS=0
 		rtf_ret=0
-		FUNCNAME="" "${TESTFUNC:?}" || rtf_ret="$?"
-		assert 0 "${rtf_ret:?}"
+		_run_test_function "${TESTFUNC:?}" || rtf_ret="$?"
+		rtf_assert="${_DID_ASSERTS:?}"
+		assert 0 "${rtf_ret:?}" "${TESTFUNC:?}() return value"
+		assert_not 0 "${rtf_assert:?}" "Test ran no asserts"
+		unset rtf_assert rtf_ret
+		_post_test_env_compare
 	done
 }
 
@@ -676,6 +747,11 @@ get_test_context() {
 		err "${EX_USAGE}" "Must call set_test_contexts with env to set"
 		;;
 	esac
+	case "${TEST_CONTEXT_RAN-}" in
+	1)
+		# _post_test_env_compare
+		;;
+	esac
 	while :; do
 		_get_next_context || return
 		case " ${TEST_NUMS-null} " in
@@ -693,6 +769,23 @@ get_test_context() {
 		eval ${TEST_SETUP} >&${REDIRECTED_STDERR_FD:-2}
 	fi
 	TEST_CONTEXT_RAN=1
+	# _pre_test_env_compare
+}
+
+clean_allowed_tmpfiles() {
+	find "${POUDRIERE_TMPDIR:?}/" \
+	    \( \
+	    -name "lock-*.flock" -o \
+	    -name "lock-*.pid" \
+	    \) -type f -delete
+	find "${POUDRIERE_TMPDIR:?}/" \
+	    -name "lock-*" \
+	    -type d -empty -delete
+	find "${POUDRIERE_TMPDIR:?}/" \
+	    \( \
+	    -name "${READY_FILE:?}" -o \
+	    -name "${READY_FILE:?}.*" \
+	    \) -delete
 }
 
 cleanup() {
@@ -733,19 +826,7 @@ cleanup() {
 	kill_all_jobs 20
 	if [ ${_DID_TMPDIR:-0} -eq 1 ] && \
 	    [ "${TMPDIR%%/poudriere/test/*}" != "${TMPDIR}" ]; then
-		find "${POUDRIERE_TMPDIR:?}/" \
-		    \( \
-		    -name "lock-*.flock" -o \
-		    -name "lock-*.pid" \
-		    \) -type f -delete
-		find "${POUDRIERE_TMPDIR:?}/" \
-		    -name "lock-*" \
-		    -type d -empty -delete
-		find "${POUDRIERE_TMPDIR:?}/" \
-		    \( \
-		    -name "${READY_FILE:?}" -o \
-		    -name "${READY_FILE:?}.*" \
-		    \) -delete
+		clean_allowed_tmpfiles
 		if [ -d "${TMPDIR}" ] && ! dirempty "${TMPDIR}"; then
 			echo "${TMPDIR} was not empty on exit!" >&2
 			find "${TMPDIR}" -ls >&2

@@ -63,6 +63,9 @@ multiple_children() {
 # spawn_job and get_job_id and get_job_status
 add_test_function test_jobs_1
 test_jobs_1() {
+	local sleep1_pid sleep2_pid sleep3_pid status
+	local sleep1_jobid sleep2_jobid sleep3_jobid
+
 	assert_true spawn_job sleep 50
 	assert "1" "${spawn_jobid}"
 	assert "%1" "${spawn_job}"
@@ -307,6 +310,9 @@ test_jobs_2() {
 	assert_runs_shorter_than 10 _test_jobs_2
 }
 _test_jobs_2() {
+	local sleep1_pid sleep2_pid sleep3_pid status
+	local sleep1_jobid sleep2_jobid sleep3_jobid
+
 	assert_true sleep 50 | sleep 50 | sleep 50 &
 	assert_true get_job_id "$!" spawn_jobid
 	assert "1" "${spawn_jobid}"
@@ -546,6 +552,9 @@ _test_jobs_2() {
 # kill_jobs
 add_test_function test_jobs_3
 test_jobs_3() {
+	local sleep1_pid sleep2_pid sleep3_pid
+	local sleep1_jobid sleep2_jobid sleep3_jobid
+
 	assert_true sleep 30 | sleep 30 &
 	assert_true get_job_id "$!" spawn_jobid
 	sleep1_pid="$!"
@@ -586,6 +595,9 @@ test_jobs_3() {
 # kill_jobs (different ordering)
 add_test_function test_jobs_4
 test_jobs_4() {
+	local sleep1_pid sleep2_pid sleep3_pid
+	local sleep1_jobid sleep2_jobid sleep3_jobid
+
 	assert_true spawn_job sleep 30
 	sleep1_pid="$!"
 	sleep1_jobid="${spawn_jobid}"
@@ -624,6 +636,10 @@ test_jobs_4() {
 # pwait_jobs on single-proc jobs
 add_test_function test_jobs_5
 test_jobs_5() {
+	local sleep1_pid sleep2_pid sleep3_pid
+	local sleep1_jobid sleep2_jobid sleep3_jobid
+	local stdout stderr
+
 	assert_true spawn_job sleep 10
 	sleep1_pid="$!"
 	sleep1_jobid="${spawn_jobid}"
@@ -675,6 +691,10 @@ test_jobs_5() {
 # pwait_jobs on multi-proc jobs
 add_test_function test_jobs_6
 test_jobs_6() {
+	local sleep1_pid sleep2_pid sleep3_pid
+	local sleep1_jobid sleep2_jobid sleep3_jobid
+	local stdout stderr
+
 	assert_true sleep 10 | sleep 10 &
 	assert_true get_job_id "$!" spawn_jobid
 	sleep1_pid="$!"
@@ -729,6 +749,9 @@ test_jobs_6() {
 # kill_all_jobs
 add_test_function test_jobs_7
 test_jobs_7() {
+	local sleep1_pid sleep2_pid sleep3_pid
+	local sleep1_jobid sleep2_jobid sleep3_jobid
+
 	assert_true spawn_job sleep 30
 	sleep1_pid="$!"
 	sleep1_jobid="${spawn_jobid}"
@@ -755,6 +778,9 @@ test_jobs_7() {
 # kill_all_jobs
 add_test_function test_jobs_8
 test_jobs_8() {
+	local sleep1_pid sleep2_pid sleep3_pid
+	local sleep1_jobid sleep2_jobid sleep3_jobid
+
 	assert_true sleep 30 | sleep 30 &
 	assert_true get_job_id "$!" spawn_jobid
 	sleep1_pid="$!"
@@ -791,6 +817,10 @@ test_jobs_8() {
 # kill_job
 add_test_function test_jobs_9
 test_jobs_9() {
+	local sleep1_pid sleep2_pid sleep3_pid
+	local sleep1_jobid sleep2_jobid sleep3_jobid
+	local sleep4_pid sleep4_jobid
+
 	assert_true sleep 30 | sleep 40 &
 	assert_true get_job_id "$!" spawn_jobid
 	sleep1_pid="$!"
@@ -876,6 +906,8 @@ test_jobs_9() {
 # timed_wait_and_kill_job
 add_test_function test_jobs_10
 test_jobs_10() {
+	local sleep1_pid sleep2_pid sleep3_pid
+
 	assert_true spawn_job eval "sleep 5; exit 7"
 	sleep1_pid="$!"
 	echo "sleep1_pid= $!"
@@ -935,6 +967,10 @@ test_jobs_10() {
 # timed_wait_and_kill_job with piped job.
 add_test_function test_jobs_11
 test_jobs_11() {
+	local sleep1_pid sleep2_pid sleep3_pid status
+	local sleep1_pgid
+	local stdout stderr
+
 	assert_true sleep 15 | sleep 5 &
 	assert_true get_job_id "$!" spawn_jobid
 	assert "1" "${spawn_jobid}"
@@ -967,7 +1003,10 @@ test_jobs_11() {
 # timed_wait_and_kill_job.
 add_test_function test_jobs_12
 test_jobs_12() {
+	local sleep1_pid sleep2_pid sleep3_pid status
+	local sleep1_pgid
 	local use_timed_wait="${1:-0}"
+	local stdout stderr
 
 	assert_true sleep 15 | sleep 5 &
 	assert_true get_job_id "$!" spawn_jobid
@@ -1065,7 +1104,10 @@ test_jobs_15() {
 # timed_wait_and_kill_job.
 add_test_function test_jobs_16
 test_jobs_16() {
+	local sleep1_pid sleep2_pid sleep3_pid status
+	local sleep1_pgid
 	local use_timed_wait="${1:-0}"
+	local stdout stderr
 
 	assert_true sleep 5 | sleep 15 &
 	assert_true get_job_id "$!" spawn_jobid
@@ -1151,6 +1193,9 @@ test_jobs_19() {
 # This test is mostly validating the expected behavior before testing
 add_test_function test_jobs_20
 test_jobs_20() {
+	local sleep1_pid sleep2_pid sleep3_pid status
+	local sleep1_pgid
+
 	assert_true sleep 5 | sleep 15 &
 	assert_true get_job_id "$!" spawn_jobid
 	assert "1" "${spawn_jobid}"

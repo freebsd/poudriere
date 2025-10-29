@@ -284,4 +284,6 @@ while get_test_context; do
 	mapfile_cat_file -q "${OUTPUT}.stderr" >&2 || :
 	assert 0 "${ret}"
 	rm -f "${OUTPUT}" "${OUTPUT}.stderr" "${OUTPUT}.expected"
+
+	unset OUTPUT ret TS
 done

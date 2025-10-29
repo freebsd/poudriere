@@ -39,4 +39,5 @@ while get_test_context; do
 	assert 4 "${_read_file_lines_read}" "_read_file_lines_read"
 
 	rm -f "${TMP}"
+	unset data
 done

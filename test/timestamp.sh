@@ -10,24 +10,21 @@ test_timestamp_1() {
 	timestamp -T -1 stdout -2 stderr \
 	    sh -c "echo stuff; echo errors>&2; echo more; echo 'more errors' >&2" \
 	    >${STDOUT} 2>${STDERR}
-	cat > "${STDOUT}".expected <<-EOF
+	assert_file - "${STDOUT}" <<-EOF
 	stdout stuff
 	stdout more
 	EOF
-	diff -u "${STDOUT}.expected" "${STDOUT}"
-	assert 0 $? "$0:${LINENO}: stdout output mismatch"
-
-	cat > "${STDERR}".expected <<-EOF
+	assert_file - "${STDERR}" <<-EOF
 	stderr errors
 	stderr more errors
 	EOF
-	diff -u "${STDERR}.expected" "${STDERR}"
-	assert 0 $? "$0:${LINENO}: stderr output mismatch"
 }
 
 # Prefix changing
 add_test_function test_timestamp_2
 test_timestamp_2() {
+	local one
+
 	timestamp -T -1 stdout -2 stderr \
 	    sh -c "\
 	    echo stuff; \
@@ -41,7 +38,7 @@ test_timestamp_2() {
 	    " \
 	    >${STDOUT} 2>${STDERR}
 	one=$'\001'
-	cat > "${STDOUT}".expected <<-EOF
+	assert_file - "${STDOUT}" <<-EOF
 	stdout stuff
 	stdout ${one}PX:[blah]
 	stdout ${one}PXfalse
@@ -49,20 +46,18 @@ test_timestamp_2() {
 	stdout ${one}PX:NEWPREFIX
 	stdout end
 	EOF
-	diff -u "${STDOUT}.expected" "${STDOUT}"
-	assert 0 $? "$0:${LINENO}: stdout output mismatch"
 
-	cat > "${STDERR}".expected <<-EOF
+	assert_file - "${STDERR}" <<-EOF
 	stderr errors
 	stderr errors
 	EOF
-	diff -u "${STDERR}.expected" "${STDERR}"
-	assert 0 $? "$0:${LINENO}: stderr output mismatch"
 }
 
 # Prefix changing
 add_test_function test_timestamp_3
 test_timestamp_3() {
+	local one
+
 	timestamp -D -T -1 stdout -2 stderr \
 	    sh -c "\
 	    echo stuff; \
@@ -76,21 +71,17 @@ test_timestamp_3() {
 	    " \
 	    >${STDOUT} 2>${STDERR}
 	one=$'\001'
-	cat > "${STDOUT}".expected <<-EOF
+	assert_file - "${STDOUT}" <<-EOF
 	stdout stuff
 	[blah] ${one}PXfalse
 	[blah] stuff
 	NEWPREFIX end
 	EOF
-	diff -u "${STDOUT}.expected" "${STDOUT}"
-	assert 0 $? "$0:${LINENO}: stdout output mismatch"
 
-	cat > "${STDERR}".expected <<-EOF
+	assert_file - "${STDERR}" <<-EOF
 	stderr errors
 	stderr errors
 	EOF
-	diff -u "${STDERR}.expected" "${STDERR}"
-	assert 0 $? "$0:${LINENO}: stderr output mismatch"
 }
 
 add_test_function test_timestamp_4
@@ -106,10 +97,8 @@ test_timestamp_4() {
 	\[00:00:0[345]\] start
 	EOF
 
-	cat > "${STDERR}".expected <<-EOF
+	assert_file - "${STDERR}" <<-EOF
 	EOF
-	diff -u "${STDERR}.expected" "${STDERR}"
-	assert 0 $? "$0:${LINENO}: stderr output mismatch"
 }
 
 add_test_function test_timestamp_5
@@ -125,10 +114,8 @@ test_timestamp_5() {
 	\[00:00:0[345]\] \(00:00:0[012]\) start
 	EOF
 
-	cat > "${STDERR}".expected <<-EOF
+	assert_file - "${STDERR}" <<-EOF
 	EOF
-	diff -u "${STDERR}.expected" "${STDERR}"
-	assert 0 $? "$0:${LINENO}: stderr output mismatch"
 }
 
 add_test_function test_timestamp_6
@@ -145,10 +132,8 @@ test_timestamp_6() {
 	\[00:00:0[678]\] \(00:00:0[345]\) end
 	EOF
 
-	cat > "${STDERR}".expected <<-EOF
+	assert_file - "${STDERR}" <<-EOF
 	EOF
-	diff -u "${STDERR}.expected" "${STDERR}"
-	assert 0 $? "$0:${LINENO}: stderr output mismatch"
 }
 
 # durations
@@ -167,15 +152,14 @@ test_timestamp_7() {
 	\[00:00:0[678]\] \(00:00:0[345]\) done
 	EOF
 
-
-	cat > "${STDERR}".expected <<-EOF
+	assert_file - "${STDERR}" <<-EOF
 	EOF
-	diff -u "${STDERR}.expected" "${STDERR}"
-	assert 0 $? "$0:${LINENO}: stderr output mismatch"
 }
 
 add_test_function test_timestamp_forwards_sigterm
 test_timestamp_forwards_sigterm() {
+	local waitfile
+
 	TMP="$(mktemp -ut timestamp_sigterm)"
 	waitfile=waitfile
 	doit() {

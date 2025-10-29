@@ -46,6 +46,8 @@ test_dirwatch_basic_file_added() {
 
 add_test_function test_dirwatch_basic_file_added_race
 test_dirwatch_basic_file_added_race() {
+	local n ret
+
 	TMP=$(mktemp -dt dirwatch)
 	MAX=100
 	add_file() {
@@ -91,6 +93,8 @@ test_dirwatch_basic_file_added_race() {
 
 add_test_function test_dirwatch_basic_file_added_race_nflag
 test_dirwatch_basic_file_added_race_nflag() {
+	local n
+
 	TMP=$(mktemp -dt dirwatch)
 	MAX=100
 	add_file() {

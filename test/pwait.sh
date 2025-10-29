@@ -14,6 +14,8 @@ pwait_timeout_decimal() {
 
 add_test_function pwait_timeout_adjusts_on_eintr
 pwait_timeout_adjusts_on_eintr() {
+	local gotinfo killer_job
+
 	siginfo_killer() {
 		local max n
 

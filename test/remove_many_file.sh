@@ -24,6 +24,8 @@ test_remove_many_rmdir()
 add_test_function test_remove_many_default_files
 test_remove_many_default_files()
 {
+	local n max
+
 	TMPD=$(mktemp -d)
 	TMP=$(mktemp -ut filelist)
 
@@ -43,6 +45,8 @@ test_remove_many_default_files()
 add_test_function test_remove_many_default_files_rmrf
 test_remove_many_default_files_rmrf()
 {
+	local n max
+
 	TMPD=$(mktemp -d)
 	TMP=$(mktemp -ut filelist)
 
@@ -62,6 +66,8 @@ test_remove_many_default_files_rmrf()
 add_test_function test_remove_many_default_nested
 test_remove_many_default_nested()
 {
+	local n max
+
 	TMPD=$(mktemp -d)
 	TMP=$(mktemp -ut filelist)
 
@@ -81,6 +87,8 @@ test_remove_many_default_nested()
 add_test_function test_remove_many_default_not_recursive
 test_remove_many_default_not_recursive()
 {
+	local n max
+
 	TMPD=$(mktemp -d)
 	TMP=$(mktemp -ut filelist)
 

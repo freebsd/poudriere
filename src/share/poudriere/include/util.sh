@@ -680,7 +680,7 @@ trap_push() {
 	[ $# -eq 2 ] || eargs trap_push signal var_return
 	local signal="$1"
 	local tp_outvar="$2"
-	local _trap ldash lhandler lsig
+	local _trap ltrap ldash lhandler lsig
 
 	_trap="-"
 	# shellcheck disable=SC2034

@@ -5,6 +5,8 @@ set +e
 add_test_function test_timeout_basic
 test_timeout_basic()
 {
+	local in start
+
 	TMP=$(mktemp -u)
 	assert_ret 0 mkfifo "${TMP}"
 	start=$(clock -monotonic)
@@ -18,6 +20,8 @@ test_timeout_basic()
 add_test_function test_timeout_decimal
 test_timeout_decimal()
 {
+	local in start
+
 	TMP=$(mktemp -u)
 	assert_ret 0 mkfifo "${TMP}"
 	start=$(clock -monotonic)
@@ -32,6 +36,8 @@ test_timeout_decimal()
 add_test_function test_timeout_decimal_zero
 test_timeout_decimal_zero()
 {
+	local in start
+
 	TMP=$(mktemp -u)
 	assert_ret 0 mkfifo "${TMP}"
 	start=$(clock -monotonic)
@@ -47,6 +53,8 @@ test_timeout_decimal_zero()
 add_test_function test_siginfo_restart
 test_siginfo_restart()
 {
+	local in start gotinfo
+
 	TMP=$(mktemp -u)
 	assert_ret 0 mkfifo "${TMP}"
 	start=$(clock -monotonic)
@@ -72,7 +80,9 @@ test_siginfo_restart()
 }
 
 add_test_function test_read_IFS
-test_read_IFS() (
+test_read_IFS() {
+	local expected actual
+
 	TMP=$(mktemp -u)
 	expected="    test   "
 	echo "${expected}" > "${TMP}"
@@ -81,6 +91,6 @@ test_read_IFS() (
 	assert_file - "${TMP}" <<-EOF
 	${expected}
 	EOF
-)
+}
 
 run_test_functions

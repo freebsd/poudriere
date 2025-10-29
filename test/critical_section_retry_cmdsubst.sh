@@ -5,6 +5,8 @@ set +e
 # first make sure that critical_retry_cmdsubst runs cmdsubsts appropriately.
 add_test_function test_critical_retry_cmdsubst_works
 test_critical_retry_cmdsubst_works() {
+	local x
+
 	x=
 	assert_false catch_err critical_retry_cmdsubst x "$(echo test; exit 0)"
 	assert "" "${x}"
@@ -48,6 +50,8 @@ test_critical_retry_cmdsubst_works() {
 add_test_function test_critical_retry_cmdsubst_basic
 test_critical_retry_cmdsubst_basic() {
 	foo() {
+		local x
+
 		critical_retry_cmdsubst x "\$(exit 5)"
 		return
 	}
@@ -61,6 +65,8 @@ test_critical_retry_cmdsubst_basic() {
 add_test_function test_critical_retry_cmdsubst_no_critical_section
 test_critical_retry_cmdsubst_no_critical_section() {
 	foo() {
+		local x
+
 		set -x
 		assert 0 "${_CRITSNEST:-0}"
 		ret=0
@@ -88,6 +94,8 @@ test_critical_retry_cmdsubst_no_critical_section() {
 add_test_function test_critical_section
 test_critical_section() {
 	foo() {
+		local x
+
 		set -x
 		assert 0 "${_CRITSNEST:-0}"
 		critical_start
@@ -132,6 +140,8 @@ test_critical_section() {
 add_test_function test_critical_retry_cmdsubst_critical_section
 test_critical_retry_cmdsubst_critical_section() {
 	foo() {
+		local x
+
 		set -x
 		assert 0 "${_CRITSNEST:-0}"
 		critical_start

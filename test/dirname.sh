@@ -23,4 +23,5 @@ while get_test_context; do
 	dirname=
 	dirname "${path?}" dirname
 	assert "${expected:?}" "${dirname:?}"
+	unset dirname
 done

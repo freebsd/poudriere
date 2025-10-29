@@ -2,6 +2,8 @@
 
 add_test_function test_adjust_basic
 test_adjust_basic() {
+	local timeout start_time now new_timeout
+
 	timeout=1
 	start_time=5
 	now=5
@@ -20,6 +22,8 @@ test_adjust_basic() {
 
 add_test_function test_adjust_zero
 test_adjust_zero() {
+	local timeout start_time now new_timeout
+
 	timeout=0
 	start_time=5
 	now=5
@@ -34,6 +38,8 @@ test_adjust_zero() {
 
 add_test_function test_adjust_blank
 test_adjust_blank() {
+	local timeout start_time now new_timeout
+
 	timeout=
 	start_time=5
 	now=5
@@ -49,6 +55,8 @@ test_adjust_blank() {
 
 add_test_function test_adjust_decimal
 test_adjust_decimal() {
+	local timeout start_time now new_timeout
+
 	timeout=1.5
 	start_time=5
 	now=5

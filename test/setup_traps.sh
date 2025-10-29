@@ -139,6 +139,8 @@ test_exit_handler_sets_code() {
 # Should NOT exit SIGPIPE from handler
 add_test_function test_no_sigpipe_in_handler
 test_no_sigpipe_in_handler() {
+	local FIFO writer_jobid stderr_jobid
+
 	worker_cleanup() {
 		local ret=$?
 		assert 0 "${ret}" "worker had error before entering worker_cleanup; should not SIGPIPE until here" 2>&4
