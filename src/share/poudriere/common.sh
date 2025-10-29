@@ -2618,12 +2618,25 @@ enter_interactive() {
 	mkdir -p ${MASTERMNT:?}${LOCALBASE:?}/etc/pkg/repos
 	cat > ${MASTERMNT:?}${LOCALBASE:?}/etc/pkg/repos/local.conf <<-EOF
 	FreeBSD: {
-		enabled: no
+	        enabled: no;
+	        priority: 100;
+	}
+	FreeBSD-kmods: {
+	        enabled: no;
+	        priority: 100;
+	}
+	FreeBSD-ports: {
+	        enabled: no;
+	        priority: 100;
+	}
+	FreeBSD-ports-kmods: {
+	        enabled: no;
+	        priority: 100;
 	}
 
 	local: {
-		url: "file:///packages",
-		enabled: yes
+	        url: "file:///packages";
+	        enabled: yes;
 	}
 	EOF
 	# XXX: build_repo ?
@@ -4508,12 +4521,29 @@ download_from_repo() {
 		pkg_bin="${PKG_BIN:?}"
 	else
 		# Will bootstrap
-		msg "Packge fetch: bootstrapping pkg"
+		msg "Package fetch: bootstrapping pkg"
 		pkg_bin="pkg"
 	fi
 	cat >> "${MASTERMNT:?}/etc/pkg/poudriere.conf" <<-EOF
 	FreeBSD: {
+	        enabled: no;
+	        priority: 100;
+	}
+	FreeBSD-kmods: {
+	        enabled: no;
+	        priority: 100;
+	}
+	FreeBSD-ports: {
+	        enabled: no;
+	        priority: 100;
+	}
+	FreeBSD-ports-kmods: {
+	        enabled: no;
+	        priority: 100;
+	}
+	Poudriere: {
 	        url: ${packagesite};
+	        mirror_type: $(if [ "${packagesite#pkg+}" = "${packagesite}" ]; then echo "none"; else echo "srv"; fi);
 	}
 	EOF
 
@@ -4521,8 +4551,7 @@ download_from_repo() {
 	# Bootstrapping might occur here.
 	# XXX: rquery is supposed to 'update' but it does not on first run.
 	if ! JNETNAME="n" injail env ASSUME_ALWAYS_YES=yes \
-	    PACKAGESITE="${packagesite:?}" \
-	    ${pkg_bin} update -f -r FreeBSD; then
+	    ${pkg_bin} update -f; then
 		msg "Package fetch: Not fetching as remote repository is unavailable."
 		rm -f "${missing_pkgs}"
 		return 0
