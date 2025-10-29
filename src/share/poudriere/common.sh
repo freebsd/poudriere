@@ -2165,7 +2165,7 @@ _siginfo_handler() {
 		while mapfile_read_loop_redir j tmpfs; do
 			hash_set siginfo_tmpfs "${j}" "${tmpfs}"
 		done <<-EOF
-		$(env BLOCKSIZE=512 df -t tmpfs 2>/dev/null | \
+		$(BLOCKSIZE=512 df -t tmpfs 2>/dev/null | \
 		  awk -v MASTERMNTROOT="${MASTERMNTROOT}" ' \
 		    function humanize(number) { \
 			hum[1024**4]="TiB"; \

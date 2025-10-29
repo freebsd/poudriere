@@ -222,10 +222,10 @@ _assert_list() {
 	getvar "${actual_name}" _aactual || _aactual="null"
 
 	echo "${_aexpected}" |
-	    tr ' ' '\n' | env LC_ALL=C sort |
+	    tr ' ' '\n' | LC_ALL=C sort |
             sed -e '/^$/d' > "${expected_tmp}"
 	echo "${_aactual}" |
-	    tr ' ' '\n' | env LC_ALL=C sort |
+	    tr ' ' '\n' | LC_ALL=C sort |
 	    sed -e '/^$/d' > "${have_tmp}"
 	cmp -s "${have_tmp}" "${expected_tmp}" || _al_ret=$?
 	if [ "${_al_ret}" -ne 0 ]; then
