@@ -291,58 +291,73 @@ _assert_file() {
 	local lineinfo="$1"
 	local unordered="$2"
 	local _aexpected="$3"
-	local have="$4"
+	local _ahave="$4"
 	local reason="${5-}"
 	local _af_ret=0
 	local havetmp havesave expectedtmp expectedsave
 
-	if [ ! -r "${have}" ]; then
-		aecho FAIL "${lineinfo}" "Have file is missing? ${have}"
-		assert_failure
-	fi
-
+	case "${_ahave}" in
+	-)
+		_ahave=$(mktemp -ut assert_file.have)
+		grep -v '^#' > "${_ahave}"
+		;;
+	*)
+		if [ ! -r "${_ahave}" ]; then
+			aecho FAIL "${lineinfo}" "Have file is missing?" \
+			    "${_ahave}"
+			assert_failure
+		fi
+		;;
+	esac
 	case "${_aexpected}" in
 	-)
 		_aexpected=$(mktemp -ut assert_file.expected)
-		cat | grep -v '^#' > "${_aexpected}"
+		grep -v '^#' > "${_aexpected}"
+		;;
+	*)
+		if [ ! -r "${_aexpected}" ]; then
+			aecho FAIL "${lineinfo}" "Expected file is missing?" \
+			    "${_aexpected}"
+			assert_failure
+		fi
 		;;
 	esac
 
 	if [ "${unordered}" -eq 1 ]; then
 		havetmp=$(mktemp -ut have)
-		sort -o "${havetmp}" "${have}"
-		havesave="${have}"
-		have="${havetmp}"
+		sort -o "${havetmp}" "${_ahave}"
+		havesave="${_ahave}"
+		_ahave="${havetmp}"
 		expectedtmp=$(mktemp -ut expected)
 		sort -o "${expectedtmp}" "${_aexpected}"
 		expectedsave="${_aexpected}"
 		_aexpected="${expectedtmp}"
 	fi
 
-	aecho TEST "${lineinfo}" "diff -u '${_aexpected}' '${have}'"
-	cmp -s "${have}" "${_aexpected}" || _af_ret=$?
+	aecho TEST "${lineinfo}" "diff -u '${_aexpected}' '${_ahave}'"
+	cmp -s "${_ahave}" "${_aexpected}" || _af_ret=$?
 	reason="${reason:+${reason} -}
 HAVE:
-$(cat -nvet "${have}")
+$(cat -nvet "${_ahave}")
 EXPECTED:
 $(cat -nvet "${_aexpected}")"
 	if [ "${_af_ret}" -ne 0 ]; then
 		aecho FAIL "${lineinfo}" "${reason}"
-		diff -u "${_aexpected}" "${have}" | cat -vet >&${REDIRECTED_STDERR_FD:-2}
+		diff -u "${_aexpected}" "${_ahave}" | cat -vet >&${REDIRECTED_STDERR_FD:-2}
 		if [ "${unordered}" -eq 1 ]; then
 			rm -f "${havetmp}" "${expectedtmp}"
-			have="${havesave}"
+			_ahave="${havesave}"
 			_aexpected="${expectedsave}"
 		fi
 		assert_failure
 	else
 		if [ "${unordered}" -eq 1 ]; then
 			rm -f "${havetmp}" "${expectedtmp}"
-			have="${havesave}"
+			_ahave="${havesave}"
 			_aexpected="${expectedsave}"
 		fi
 		aecho OK "${lineinfo}"
-		rm -f "${have}" "${_aexpected}"
+		rm -f "${_ahave}" "${_aexpected}"
 	fi
 }
 # This function may be called in "$@" contexts that do not use eval.
