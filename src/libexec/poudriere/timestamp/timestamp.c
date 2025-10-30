@@ -414,6 +414,7 @@ main(int argc, char **argv)
 		dlen = calculate_duration(timestamp,
 		    TIMESTAMP_BUFSIZ, &start);
 		assert(dlen < TIMESTAMP_BUFSIZ);
+		(void)dlen; // quiet compiler
 		printf("%s\n", timestamp);
 		free(dflag);
 		exit(0);
