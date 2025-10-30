@@ -1282,7 +1282,8 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 		flushall();
 #ifndef NDEBUG
 		if (suppressint > savesuppressint &&
-		    cmdentry.u.index != DOTCMD) {
+		    cmdentry.u.index != DOTCMD &&
+		    cmdentry.u.index != EVALCMD) {
 			error("leaked INTOFF/INTON %d != %ld",
 			    savesuppressint, suppressint);
 		}
