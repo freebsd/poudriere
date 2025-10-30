@@ -9899,7 +9899,7 @@ prepare_ports() {
 		if slock_acquire "logs_${MASTERNAME:?}" 60; then
 			echo " done"
 		else
-			err 1 "failed (in use by another process)"
+			err 1 "failed to acquire logs lock (in use by another process)"
 		fi
 		_log_path log
 		_log_path_jail log_jail
