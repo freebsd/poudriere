@@ -18,7 +18,7 @@ index 362fd798d..49fa3ebf6 100644
  
  	/* First expand the arguments. */
  	TRACE(("evalcommand(%p, %d) called\n", (void *)cmd, flags));
-@@ -1104,8 +1108,19 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
+@@ -1104,8 +1108,20 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
  		argptr = argv + 1;
  		nextopt_optptr = NULL;		/* initialize nextopt */
  		builtin_flags = flags;
@@ -31,6 +31,7 @@ index 362fd798d..49fa3ebf6 100644
 +		if (suppressint > savesuppressint &&
 +		    cmdentry.u.index != DOTCMD &&
 +		    cmdentry.u.index != EVALCMD) {
++			assert(savesuppressint == suppressint);
 +			error("leaked INTOFF/INTON %d != %ld",
 +			    savesuppressint, suppressint);
 +		}

@@ -1284,6 +1284,7 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 		if (suppressint > savesuppressint &&
 		    cmdentry.u.index != DOTCMD &&
 		    cmdentry.u.index != EVALCMD) {
+			assert(savesuppressint == suppressint);
 			error("leaked INTOFF/INTON %d != %ld",
 			    savesuppressint, suppressint);
 		}
