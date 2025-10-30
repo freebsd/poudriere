@@ -217,6 +217,8 @@ void verrorwithstatus(int, const char *, va_list) __printf0like(2, 0) __dead2;
 
 #undef getopt
 #define getopt pgetopt
+#define getopt_long(argc, argv, optstring, longopts, longindex) \
+    getopt(argc, argv, optstring)
 #undef opterr
 #undef optreset
 #undef optarg

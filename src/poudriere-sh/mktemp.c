@@ -83,12 +83,7 @@ main(int argc, char **argv)
 	name = NULL;
 	tmpdir = NULL;
 
-#ifdef SHELL
-	/* XXX: Need getopt_long */
-	while ((c = getopt(argc, argv, "dp:qt:u")) != -1) {
-#else
 	while ((c = getopt_long(argc, argv, "dp:qt:u", long_opts, NULL)) != -1) {
-#endif
 		switch (c) {
 		case 'd':
 			dflag++;
