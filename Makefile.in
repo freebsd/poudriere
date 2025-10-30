@@ -190,7 +190,7 @@ locked_mkdir_LDADD = $(LDADD)
 locked_mkdir_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(locked_mkdir_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_lockf_OBJECTS = external/lockf/lockf.$(OBJEXT)
+am_lockf_OBJECTS = external/freebsd/usr.bin/lockf/lockf.$(OBJEXT)
 lockf_OBJECTS = $(am_lockf_OBJECTS)
 lockf_LDADD = $(LDADD)
 am_nc_OBJECTS = src/libexec/poudriere/nc/nc.$(OBJEXT)
@@ -206,13 +206,13 @@ poudriered_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 am_ptsort_OBJECTS = external/ptsort/bin/ptsort-ptsort.$(OBJEXT)
 ptsort_OBJECTS = $(am_ptsort_OBJECTS)
 ptsort_DEPENDENCIES = libptsort.la
-am_pwait_OBJECTS = external/pwait/pwait.$(OBJEXT)
+am_pwait_OBJECTS = external/freebsd/bin/pwait/pwait.$(OBJEXT)
 pwait_OBJECTS = $(am_pwait_OBJECTS)
 pwait_LDADD = $(LDADD)
 am_rename_OBJECTS = src/libexec/poudriere/rename/rename.$(OBJEXT)
 rename_OBJECTS = $(am_rename_OBJECTS)
 rename_LDADD = $(LDADD)
-am_rm_OBJECTS = external/rm/rm.$(OBJEXT)
+am_rm_OBJECTS = external/freebsd/bin/rm/rm.$(OBJEXT)
 rm_OBJECTS = $(am_rm_OBJECTS)
 rm_LDADD = $(LDADD)
 am_setsid_OBJECTS = external/setsid/setsid-setsid.$(OBJEXT)
@@ -226,9 +226,9 @@ am__objects_2 = src/libexec/poudriere/dirempty/sh-dirempty.$(OBJEXT)
 am__objects_3 = src/libexec/poudriere/dirwatch/sh-dirwatch.$(OBJEXT)
 am__objects_4 =  \
 	src/libexec/poudriere/locked_mkdir/sh-locked_mkdir.$(OBJEXT)
-am__objects_5 = external/pwait/sh-pwait.$(OBJEXT)
+am__objects_5 = external/freebsd/bin/pwait/sh-pwait.$(OBJEXT)
 am__objects_6 = src/libexec/poudriere/rename/sh-rename.$(OBJEXT)
-am__objects_7 = external/rm/sh-rm.$(OBJEXT)
+am__objects_7 = external/freebsd/bin/rm/sh-rm.$(OBJEXT)
 am_sh_OBJECTS = external/sh/sh-alias.$(OBJEXT) \
 	external/sh/sh-arith_yacc.$(OBJEXT) \
 	external/sh/sh-arith_yylex.$(OBJEXT) \
@@ -257,19 +257,21 @@ am_sh_OBJECTS = external/sh/sh-alias.$(OBJEXT) \
 	src/poudriere-sh/sh-helpers.$(OBJEXT) \
 	src/poudriere-sh/sh-mapfile.$(OBJEXT) \
 	src/poudriere-sh/sh-traps.$(OBJEXT) \
-	src/poudriere-sh/sh-chmod.$(OBJEXT) $(am__objects_1) \
+	external/freebsd/bin/chmod/sh-chmod.$(OBJEXT) $(am__objects_1) \
 	$(am__objects_2) $(am__objects_3) $(am__objects_4) \
-	src/poudriere-sh/sh-mkdir.$(OBJEXT) \
-	src/poudriere-sh/sh-mkfifo.$(OBJEXT) \
-	src/poudriere-sh/sh-mktemp.$(OBJEXT) $(am__objects_5) \
-	src/poudriere-sh/sh-realpath.$(OBJEXT) $(am__objects_6) \
-	$(am__objects_7) src/poudriere-sh/sh-rmdir.$(OBJEXT) \
+	external/freebsd/bin/mkdir/sh-mkdir.$(OBJEXT) \
+	external/freebsd/usr.bin/mkfifo/sh-mkfifo.$(OBJEXT) \
+	external/freebsd/usr.bin/mktemp/sh-mktemp.$(OBJEXT) \
+	$(am__objects_5) \
+	external/freebsd/bin/realpath/sh-realpath.$(OBJEXT) \
+	$(am__objects_6) $(am__objects_7) \
+	external/freebsd/bin/rmdir/sh-rmdir.$(OBJEXT) \
 	src/poudriere-sh/sh-setproctitle.$(OBJEXT) \
-	src/poudriere-sh/sh-sleep.$(OBJEXT) \
-	src/poudriere-sh/sh-stat.$(OBJEXT) \
-	src/poudriere-sh/sh-touch.$(OBJEXT) \
+	external/freebsd/bin/sleep/sh-sleep.$(OBJEXT) \
+	external/freebsd/usr.bin/stat/sh-stat.$(OBJEXT) \
+	external/freebsd/usr.bin/touch/sh-touch.$(OBJEXT) \
 	src/poudriere-sh/sh-unlink.$(OBJEXT) \
-	src/poudriere-sh/sh-wc.$(OBJEXT) \
+	external/freebsd/usr.bin/wc/sh-wc.$(OBJEXT) \
 	src/poudriere-sh/sh-builtins.$(OBJEXT)
 sh_OBJECTS = $(am_sh_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -277,7 +279,7 @@ sh_DEPENDENCIES = $(am__DEPENDENCIES_1)
 sh_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(sh_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_timeout_OBJECTS = external/timeout/timeout.$(OBJEXT)
+am_timeout_OBJECTS = external/freebsd/bin/timeout/timeout.$(OBJEXT)
 timeout_OBJECTS = $(am_timeout_OBJECTS)
 timeout_LDADD = $(LDADD)
 am_timestamp_OBJECTS =  \
@@ -334,6 +336,22 @@ am__depfiles_remade = external/cpdup/src/$(DEPDIR)/cpdup-cpdup.Po \
 	external/cpdup/src/$(DEPDIR)/cpdup-hcproto.Po \
 	external/cpdup/src/$(DEPDIR)/cpdup-md5.Po \
 	external/cpdup/src/$(DEPDIR)/cpdup-misc.Po \
+	external/freebsd/bin/chmod/$(DEPDIR)/sh-chmod.Po \
+	external/freebsd/bin/mkdir/$(DEPDIR)/sh-mkdir.Po \
+	external/freebsd/bin/pwait/$(DEPDIR)/pwait.Po \
+	external/freebsd/bin/pwait/$(DEPDIR)/sh-pwait.Po \
+	external/freebsd/bin/realpath/$(DEPDIR)/sh-realpath.Po \
+	external/freebsd/bin/rm/$(DEPDIR)/rm.Po \
+	external/freebsd/bin/rm/$(DEPDIR)/sh-rm.Po \
+	external/freebsd/bin/rmdir/$(DEPDIR)/sh-rmdir.Po \
+	external/freebsd/bin/sleep/$(DEPDIR)/sh-sleep.Po \
+	external/freebsd/bin/timeout/$(DEPDIR)/timeout.Po \
+	external/freebsd/usr.bin/lockf/$(DEPDIR)/lockf.Po \
+	external/freebsd/usr.bin/mkfifo/$(DEPDIR)/sh-mkfifo.Po \
+	external/freebsd/usr.bin/mktemp/$(DEPDIR)/sh-mktemp.Po \
+	external/freebsd/usr.bin/stat/$(DEPDIR)/sh-stat.Po \
+	external/freebsd/usr.bin/touch/$(DEPDIR)/sh-touch.Po \
+	external/freebsd/usr.bin/wc/$(DEPDIR)/sh-wc.Po \
 	external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter.Plo \
 	external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_streamline.Plo \
 	external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_utils.Plo \
@@ -343,13 +361,9 @@ am__depfiles_remade = external/cpdup/src/$(DEPDIR)/cpdup-cpdup.Po \
 	external/libucl/src/$(DEPDIR)/libucl_la-ucl_schema.Plo \
 	external/libucl/src/$(DEPDIR)/libucl_la-ucl_sexp.Plo \
 	external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo \
-	external/lockf/$(DEPDIR)/lockf.Po \
 	external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po \
 	external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Plo \
 	external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Plo \
-	external/pwait/$(DEPDIR)/pwait.Po \
-	external/pwait/$(DEPDIR)/sh-pwait.Po \
-	external/rm/$(DEPDIR)/rm.Po external/rm/$(DEPDIR)/sh-rm.Po \
 	external/setsid/$(DEPDIR)/setsid-setsid.Po \
 	external/sh/$(DEPDIR)/mknodes.Po \
 	external/sh/$(DEPDIR)/mksyntax.Po \
@@ -384,7 +398,6 @@ am__depfiles_remade = external/cpdup/src/$(DEPDIR)/cpdup-cpdup.Po \
 	external/sh/bltin/$(DEPDIR)/sh-echo.Po \
 	external/sh_compat/$(DEPDIR)/sh-strchrnul.Po \
 	external/sh_compat/$(DEPDIR)/sh-utimensat.Po \
-	external/timeout/$(DEPDIR)/timeout.Po \
 	src/libexec/poudriere/clock/$(DEPDIR)/clock.Po \
 	src/libexec/poudriere/clock/$(DEPDIR)/sh-clock.Po \
 	src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po \
@@ -399,21 +412,11 @@ am__depfiles_remade = external/cpdup/src/$(DEPDIR)/cpdup-cpdup.Po \
 	src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-alarm.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-builtins.Po \
-	src/poudriere-sh/$(DEPDIR)/sh-chmod.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-helpers.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-mapfile.Po \
-	src/poudriere-sh/$(DEPDIR)/sh-mkdir.Po \
-	src/poudriere-sh/$(DEPDIR)/sh-mkfifo.Po \
-	src/poudriere-sh/$(DEPDIR)/sh-mktemp.Po \
-	src/poudriere-sh/$(DEPDIR)/sh-realpath.Po \
-	src/poudriere-sh/$(DEPDIR)/sh-rmdir.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Po \
-	src/poudriere-sh/$(DEPDIR)/sh-sleep.Po \
-	src/poudriere-sh/$(DEPDIR)/sh-stat.Po \
-	src/poudriere-sh/$(DEPDIR)/sh-touch.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-traps.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-unlink.Po \
-	src/poudriere-sh/$(DEPDIR)/sh-wc.Po \
 	src/poudriered/$(DEPDIR)/poudriered-poudriered.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -844,16 +847,16 @@ dirempty_SOURCES = src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES = src/libexec/poudriere/dirwatch/dirwatch.c
 locked_mkdir_SOURCES = src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 locked_mkdir_CFLAGS = $(AM_CFLAGS) $(SAN_CFLAGS)
-lockf_SOURCES = external/lockf/lockf.c
+lockf_SOURCES = external/freebsd/usr.bin/lockf/lockf.c
 nc_SOURCES = src/libexec/poudriere/nc/nc.c
-pwait_SOURCES = external/pwait/pwait.c
+pwait_SOURCES = external/freebsd/bin/pwait/pwait.c
 rename_SOURCES = src/libexec/poudriere/rename/rename.c
-rm_SOURCES = external/rm/rm.c
+rm_SOURCES = external/freebsd/bin/rm/rm.c
 setsid_SOURCES = external/setsid/setsid.c \
 			external/setsid/c.h
 
 setsid_CFLAGS = $(AM_CFLAGS) -DHAVE_ERR_H -DHAVE_NANOSLEEP
-timeout_SOURCES = external/timeout/timeout.c
+timeout_SOURCES = external/freebsd/bin/timeout/timeout.c
 timestamp_SOURCES = src/libexec/poudriere/timestamp/timestamp.c
 timestamp_CFLAGS = $(AM_CFLAGS) $(SAN_CFLAGS)
 timestamp_LDADD = -lpthread
@@ -896,15 +899,19 @@ sh_SOURCES = external/sh/alias.c external/sh/alias.h \
 	src/poudriere-sh/builtins-poudriere.def \
 	src/poudriere-sh/helpers.c src/poudriere-sh/helpers.h \
 	src/poudriere-sh/mapfile.c src/poudriere-sh/traps.c \
-	src/poudriere-sh/chmod.c $(clock_SOURCES) $(dirempty_SOURCES) \
-	$(dirwatch_SOURCES) $(locked_mkdir_SOURCES) \
-	src/poudriere-sh/mkdir.c src/poudriere-sh/mkfifo.c \
-	src/poudriere-sh/mktemp.c $(pwait_SOURCES) \
-	src/poudriere-sh/realpath.c $(rename_SOURCES) $(rm_SOURCES) \
-	src/poudriere-sh/rmdir.c src/poudriere-sh/setproctitle.c \
-	src/poudriere-sh/sleep.c src/poudriere-sh/stat.c \
-	src/poudriere-sh/touch.c src/poudriere-sh/unlink.c \
-	src/poudriere-sh/wc.c src/poudriere-sh/builtins.c
+	external/freebsd/bin/chmod/chmod.c $(clock_SOURCES) \
+	$(dirempty_SOURCES) $(dirwatch_SOURCES) \
+	$(locked_mkdir_SOURCES) external/freebsd/bin/mkdir/mkdir.c \
+	external/freebsd/usr.bin/mkfifo/mkfifo.c \
+	external/freebsd/usr.bin/mktemp/mktemp.c $(pwait_SOURCES) \
+	external/freebsd/bin/realpath/realpath.c $(rename_SOURCES) \
+	$(rm_SOURCES) external/freebsd/bin/rmdir/rmdir.c \
+	src/poudriere-sh/setproctitle.c \
+	external/freebsd/bin/sleep/sleep.c \
+	external/freebsd/usr.bin/stat/stat.c \
+	external/freebsd/usr.bin/touch/touch.c \
+	src/poudriere-sh/unlink.c external/freebsd/usr.bin/wc/wc.c \
+	src/poudriere-sh/builtins.c
 external_sh_mknodes_SOURCES = external/sh/mknodes.c
 external_sh_mksyntax_SOURCES = external/sh/mksyntax.c
 libucl_la_SOURCES = \
@@ -1221,14 +1228,15 @@ src/libexec/poudriere/locked_mkdir/locked_mkdir-locked_mkdir.$(OBJEXT):  \
 locked_mkdir$(EXEEXT): $(locked_mkdir_OBJECTS) $(locked_mkdir_DEPENDENCIES) $(EXTRA_locked_mkdir_DEPENDENCIES) 
 	@rm -f locked_mkdir$(EXEEXT)
 	$(AM_V_CCLD)$(locked_mkdir_LINK) $(locked_mkdir_OBJECTS) $(locked_mkdir_LDADD) $(LIBS)
-external/lockf/$(am__dirstamp):
-	@$(MKDIR_P) external/lockf
-	@: >>external/lockf/$(am__dirstamp)
-external/lockf/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) external/lockf/$(DEPDIR)
-	@: >>external/lockf/$(DEPDIR)/$(am__dirstamp)
-external/lockf/lockf.$(OBJEXT): external/lockf/$(am__dirstamp) \
-	external/lockf/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/usr.bin/lockf/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/usr.bin/lockf
+	@: >>external/freebsd/usr.bin/lockf/$(am__dirstamp)
+external/freebsd/usr.bin/lockf/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/usr.bin/lockf/$(DEPDIR)
+	@: >>external/freebsd/usr.bin/lockf/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/usr.bin/lockf/lockf.$(OBJEXT):  \
+	external/freebsd/usr.bin/lockf/$(am__dirstamp) \
+	external/freebsd/usr.bin/lockf/$(DEPDIR)/$(am__dirstamp)
 
 lockf$(EXEEXT): $(lockf_OBJECTS) $(lockf_DEPENDENCIES) $(EXTRA_lockf_DEPENDENCIES) 
 	@rm -f lockf$(EXEEXT)
@@ -1272,14 +1280,15 @@ external/ptsort/bin/ptsort-ptsort.$(OBJEXT):  \
 ptsort$(EXEEXT): $(ptsort_OBJECTS) $(ptsort_DEPENDENCIES) $(EXTRA_ptsort_DEPENDENCIES) 
 	@rm -f ptsort$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(ptsort_OBJECTS) $(ptsort_LDADD) $(LIBS)
-external/pwait/$(am__dirstamp):
-	@$(MKDIR_P) external/pwait
-	@: >>external/pwait/$(am__dirstamp)
-external/pwait/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) external/pwait/$(DEPDIR)
-	@: >>external/pwait/$(DEPDIR)/$(am__dirstamp)
-external/pwait/pwait.$(OBJEXT): external/pwait/$(am__dirstamp) \
-	external/pwait/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/pwait/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/bin/pwait
+	@: >>external/freebsd/bin/pwait/$(am__dirstamp)
+external/freebsd/bin/pwait/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/bin/pwait/$(DEPDIR)
+	@: >>external/freebsd/bin/pwait/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/pwait/pwait.$(OBJEXT):  \
+	external/freebsd/bin/pwait/$(am__dirstamp) \
+	external/freebsd/bin/pwait/$(DEPDIR)/$(am__dirstamp)
 
 pwait$(EXEEXT): $(pwait_OBJECTS) $(pwait_DEPENDENCIES) $(EXTRA_pwait_DEPENDENCIES) 
 	@rm -f pwait$(EXEEXT)
@@ -1297,14 +1306,15 @@ src/libexec/poudriere/rename/rename.$(OBJEXT):  \
 rename$(EXEEXT): $(rename_OBJECTS) $(rename_DEPENDENCIES) $(EXTRA_rename_DEPENDENCIES) 
 	@rm -f rename$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(rename_OBJECTS) $(rename_LDADD) $(LIBS)
-external/rm/$(am__dirstamp):
-	@$(MKDIR_P) external/rm
-	@: >>external/rm/$(am__dirstamp)
-external/rm/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) external/rm/$(DEPDIR)
-	@: >>external/rm/$(DEPDIR)/$(am__dirstamp)
-external/rm/rm.$(OBJEXT): external/rm/$(am__dirstamp) \
-	external/rm/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/rm/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/bin/rm
+	@: >>external/freebsd/bin/rm/$(am__dirstamp)
+external/freebsd/bin/rm/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/bin/rm/$(DEPDIR)
+	@: >>external/freebsd/bin/rm/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/rm/rm.$(OBJEXT):  \
+	external/freebsd/bin/rm/$(am__dirstamp) \
+	external/freebsd/bin/rm/$(DEPDIR)/$(am__dirstamp)
 
 rm$(EXEEXT): $(rm_OBJECTS) $(rm_DEPENDENCIES) $(EXTRA_rm_DEPENDENCIES) 
 	@rm -f rm$(EXEEXT)
@@ -1415,8 +1425,15 @@ src/poudriere-sh/sh-mapfile.$(OBJEXT):  \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/sh-traps.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
-src/poudriere-sh/sh-chmod.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
-	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/chmod/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/bin/chmod
+	@: >>external/freebsd/bin/chmod/$(am__dirstamp)
+external/freebsd/bin/chmod/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/bin/chmod/$(DEPDIR)
+	@: >>external/freebsd/bin/chmod/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/chmod/sh-chmod.$(OBJEXT):  \
+	external/freebsd/bin/chmod/$(am__dirstamp) \
+	external/freebsd/bin/chmod/$(DEPDIR)/$(am__dirstamp)
 src/libexec/poudriere/clock/sh-clock.$(OBJEXT):  \
 	src/libexec/poudriere/clock/$(am__dirstamp) \
 	src/libexec/poudriere/clock/$(DEPDIR)/$(am__dirstamp)
@@ -1429,40 +1446,102 @@ src/libexec/poudriere/dirwatch/sh-dirwatch.$(OBJEXT):  \
 src/libexec/poudriere/locked_mkdir/sh-locked_mkdir.$(OBJEXT):  \
 	src/libexec/poudriere/locked_mkdir/$(am__dirstamp) \
 	src/libexec/poudriere/locked_mkdir/$(DEPDIR)/$(am__dirstamp)
-src/poudriere-sh/sh-mkdir.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
-	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
-src/poudriere-sh/sh-mkfifo.$(OBJEXT):  \
-	src/poudriere-sh/$(am__dirstamp) \
-	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
-src/poudriere-sh/sh-mktemp.$(OBJEXT):  \
-	src/poudriere-sh/$(am__dirstamp) \
-	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
-external/pwait/sh-pwait.$(OBJEXT): external/pwait/$(am__dirstamp) \
-	external/pwait/$(DEPDIR)/$(am__dirstamp)
-src/poudriere-sh/sh-realpath.$(OBJEXT):  \
-	src/poudriere-sh/$(am__dirstamp) \
-	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/mkdir/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/bin/mkdir
+	@: >>external/freebsd/bin/mkdir/$(am__dirstamp)
+external/freebsd/bin/mkdir/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/bin/mkdir/$(DEPDIR)
+	@: >>external/freebsd/bin/mkdir/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/mkdir/sh-mkdir.$(OBJEXT):  \
+	external/freebsd/bin/mkdir/$(am__dirstamp) \
+	external/freebsd/bin/mkdir/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/usr.bin/mkfifo/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/usr.bin/mkfifo
+	@: >>external/freebsd/usr.bin/mkfifo/$(am__dirstamp)
+external/freebsd/usr.bin/mkfifo/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/usr.bin/mkfifo/$(DEPDIR)
+	@: >>external/freebsd/usr.bin/mkfifo/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/usr.bin/mkfifo/sh-mkfifo.$(OBJEXT):  \
+	external/freebsd/usr.bin/mkfifo/$(am__dirstamp) \
+	external/freebsd/usr.bin/mkfifo/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/usr.bin/mktemp/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/usr.bin/mktemp
+	@: >>external/freebsd/usr.bin/mktemp/$(am__dirstamp)
+external/freebsd/usr.bin/mktemp/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/usr.bin/mktemp/$(DEPDIR)
+	@: >>external/freebsd/usr.bin/mktemp/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/usr.bin/mktemp/sh-mktemp.$(OBJEXT):  \
+	external/freebsd/usr.bin/mktemp/$(am__dirstamp) \
+	external/freebsd/usr.bin/mktemp/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/pwait/sh-pwait.$(OBJEXT):  \
+	external/freebsd/bin/pwait/$(am__dirstamp) \
+	external/freebsd/bin/pwait/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/realpath/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/bin/realpath
+	@: >>external/freebsd/bin/realpath/$(am__dirstamp)
+external/freebsd/bin/realpath/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/bin/realpath/$(DEPDIR)
+	@: >>external/freebsd/bin/realpath/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/realpath/sh-realpath.$(OBJEXT):  \
+	external/freebsd/bin/realpath/$(am__dirstamp) \
+	external/freebsd/bin/realpath/$(DEPDIR)/$(am__dirstamp)
 src/libexec/poudriere/rename/sh-rename.$(OBJEXT):  \
 	src/libexec/poudriere/rename/$(am__dirstamp) \
 	src/libexec/poudriere/rename/$(DEPDIR)/$(am__dirstamp)
-external/rm/sh-rm.$(OBJEXT): external/rm/$(am__dirstamp) \
-	external/rm/$(DEPDIR)/$(am__dirstamp)
-src/poudriere-sh/sh-rmdir.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
-	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/rm/sh-rm.$(OBJEXT):  \
+	external/freebsd/bin/rm/$(am__dirstamp) \
+	external/freebsd/bin/rm/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/rmdir/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/bin/rmdir
+	@: >>external/freebsd/bin/rmdir/$(am__dirstamp)
+external/freebsd/bin/rmdir/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/bin/rmdir/$(DEPDIR)
+	@: >>external/freebsd/bin/rmdir/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/rmdir/sh-rmdir.$(OBJEXT):  \
+	external/freebsd/bin/rmdir/$(am__dirstamp) \
+	external/freebsd/bin/rmdir/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/sh-setproctitle.$(OBJEXT):  \
 	src/poudriere-sh/$(am__dirstamp) \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
-src/poudriere-sh/sh-sleep.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
-	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
-src/poudriere-sh/sh-stat.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
-	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
-src/poudriere-sh/sh-touch.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
-	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/sleep/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/bin/sleep
+	@: >>external/freebsd/bin/sleep/$(am__dirstamp)
+external/freebsd/bin/sleep/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/bin/sleep/$(DEPDIR)
+	@: >>external/freebsd/bin/sleep/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/sleep/sh-sleep.$(OBJEXT):  \
+	external/freebsd/bin/sleep/$(am__dirstamp) \
+	external/freebsd/bin/sleep/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/usr.bin/stat/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/usr.bin/stat
+	@: >>external/freebsd/usr.bin/stat/$(am__dirstamp)
+external/freebsd/usr.bin/stat/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/usr.bin/stat/$(DEPDIR)
+	@: >>external/freebsd/usr.bin/stat/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/usr.bin/stat/sh-stat.$(OBJEXT):  \
+	external/freebsd/usr.bin/stat/$(am__dirstamp) \
+	external/freebsd/usr.bin/stat/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/usr.bin/touch/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/usr.bin/touch
+	@: >>external/freebsd/usr.bin/touch/$(am__dirstamp)
+external/freebsd/usr.bin/touch/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/usr.bin/touch/$(DEPDIR)
+	@: >>external/freebsd/usr.bin/touch/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/usr.bin/touch/sh-touch.$(OBJEXT):  \
+	external/freebsd/usr.bin/touch/$(am__dirstamp) \
+	external/freebsd/usr.bin/touch/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/sh-unlink.$(OBJEXT):  \
 	src/poudriere-sh/$(am__dirstamp) \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
-src/poudriere-sh/sh-wc.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
-	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/usr.bin/wc/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/usr.bin/wc
+	@: >>external/freebsd/usr.bin/wc/$(am__dirstamp)
+external/freebsd/usr.bin/wc/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/usr.bin/wc/$(DEPDIR)
+	@: >>external/freebsd/usr.bin/wc/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/usr.bin/wc/sh-wc.$(OBJEXT):  \
+	external/freebsd/usr.bin/wc/$(am__dirstamp) \
+	external/freebsd/usr.bin/wc/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/sh-builtins.$(OBJEXT):  \
 	src/poudriere-sh/$(am__dirstamp) \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
@@ -1470,14 +1549,15 @@ src/poudriere-sh/sh-builtins.$(OBJEXT):  \
 sh$(EXEEXT): $(sh_OBJECTS) $(sh_DEPENDENCIES) $(EXTRA_sh_DEPENDENCIES) 
 	@rm -f sh$(EXEEXT)
 	$(AM_V_CCLD)$(sh_LINK) $(sh_OBJECTS) $(sh_LDADD) $(LIBS)
-external/timeout/$(am__dirstamp):
-	@$(MKDIR_P) external/timeout
-	@: >>external/timeout/$(am__dirstamp)
-external/timeout/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) external/timeout/$(DEPDIR)
-	@: >>external/timeout/$(DEPDIR)/$(am__dirstamp)
-external/timeout/timeout.$(OBJEXT): external/timeout/$(am__dirstamp) \
-	external/timeout/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/timeout/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/bin/timeout
+	@: >>external/freebsd/bin/timeout/$(am__dirstamp)
+external/freebsd/bin/timeout/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/freebsd/bin/timeout/$(DEPDIR)
+	@: >>external/freebsd/bin/timeout/$(DEPDIR)/$(am__dirstamp)
+external/freebsd/bin/timeout/timeout.$(OBJEXT):  \
+	external/freebsd/bin/timeout/$(am__dirstamp) \
+	external/freebsd/bin/timeout/$(DEPDIR)/$(am__dirstamp)
 
 timeout$(EXEEXT): $(timeout_OBJECTS) $(timeout_DEPENDENCIES) $(EXTRA_timeout_DEPENDENCIES) 
 	@rm -f timeout$(EXEEXT)
@@ -1569,19 +1649,29 @@ uninstall-dist_rcSCRIPTS:
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f external/cpdup/src/*.$(OBJEXT)
+	-rm -f external/freebsd/bin/chmod/*.$(OBJEXT)
+	-rm -f external/freebsd/bin/mkdir/*.$(OBJEXT)
+	-rm -f external/freebsd/bin/pwait/*.$(OBJEXT)
+	-rm -f external/freebsd/bin/realpath/*.$(OBJEXT)
+	-rm -f external/freebsd/bin/rm/*.$(OBJEXT)
+	-rm -f external/freebsd/bin/rmdir/*.$(OBJEXT)
+	-rm -f external/freebsd/bin/sleep/*.$(OBJEXT)
+	-rm -f external/freebsd/bin/timeout/*.$(OBJEXT)
+	-rm -f external/freebsd/usr.bin/lockf/*.$(OBJEXT)
+	-rm -f external/freebsd/usr.bin/mkfifo/*.$(OBJEXT)
+	-rm -f external/freebsd/usr.bin/mktemp/*.$(OBJEXT)
+	-rm -f external/freebsd/usr.bin/stat/*.$(OBJEXT)
+	-rm -f external/freebsd/usr.bin/touch/*.$(OBJEXT)
+	-rm -f external/freebsd/usr.bin/wc/*.$(OBJEXT)
 	-rm -f external/libucl/src/*.$(OBJEXT)
 	-rm -f external/libucl/src/*.lo
-	-rm -f external/lockf/*.$(OBJEXT)
 	-rm -f external/ptsort/bin/*.$(OBJEXT)
 	-rm -f external/ptsort/lib/*.$(OBJEXT)
 	-rm -f external/ptsort/lib/*.lo
-	-rm -f external/pwait/*.$(OBJEXT)
-	-rm -f external/rm/*.$(OBJEXT)
 	-rm -f external/setsid/*.$(OBJEXT)
 	-rm -f external/sh/*.$(OBJEXT)
 	-rm -f external/sh/bltin/*.$(OBJEXT)
 	-rm -f external/sh_compat/*.$(OBJEXT)
-	-rm -f external/timeout/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/clock/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/dirempty/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/dirwatch/*.$(OBJEXT)
@@ -1600,6 +1690,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@external/cpdup/src/$(DEPDIR)/cpdup-hcproto.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/cpdup/src/$(DEPDIR)/cpdup-md5.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/cpdup/src/$(DEPDIR)/cpdup-misc.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/freebsd/bin/chmod/$(DEPDIR)/sh-chmod.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/freebsd/bin/mkdir/$(DEPDIR)/sh-mkdir.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/freebsd/bin/pwait/$(DEPDIR)/pwait.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/freebsd/bin/pwait/$(DEPDIR)/sh-pwait.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/freebsd/bin/realpath/$(DEPDIR)/sh-realpath.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/freebsd/bin/rm/$(DEPDIR)/rm.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/freebsd/bin/rm/$(DEPDIR)/sh-rm.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/freebsd/bin/rmdir/$(DEPDIR)/sh-rmdir.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/freebsd/bin/sleep/$(DEPDIR)/sh-sleep.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/freebsd/bin/timeout/$(DEPDIR)/timeout.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/freebsd/usr.bin/lockf/$(DEPDIR)/lockf.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/freebsd/usr.bin/mkfifo/$(DEPDIR)/sh-mkfifo.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/freebsd/usr.bin/mktemp/$(DEPDIR)/sh-mktemp.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/freebsd/usr.bin/stat/$(DEPDIR)/sh-stat.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/freebsd/usr.bin/touch/$(DEPDIR)/sh-touch.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/freebsd/usr.bin/wc/$(DEPDIR)/sh-wc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_streamline.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_utils.Plo@am__quote@ # am--include-marker
@@ -1609,14 +1715,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_schema.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_sexp.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/lockf/$(DEPDIR)/lockf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/pwait/$(DEPDIR)/pwait.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/pwait/$(DEPDIR)/sh-pwait.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/rm/$(DEPDIR)/rm.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/rm/$(DEPDIR)/sh-rm.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/setsid/$(DEPDIR)/setsid-setsid.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/mknodes.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/mksyntax.Po@am__quote@ # am--include-marker
@@ -1651,7 +1752,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/bltin/$(DEPDIR)/sh-echo.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh_compat/$(DEPDIR)/sh-strchrnul.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh_compat/$(DEPDIR)/sh-utimensat.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/timeout/$(DEPDIR)/timeout.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/clock/$(DEPDIR)/clock.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/clock/$(DEPDIR)/sh-clock.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po@am__quote@ # am--include-marker
@@ -1666,21 +1766,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-alarm.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-builtins.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-chmod.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-helpers.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-mapfile.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-mkdir.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-mkfifo.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-mktemp.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-realpath.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-rmdir.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-sleep.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-stat.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-touch.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-traps.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-unlink.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-wc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriered/$(DEPDIR)/poudriered-poudriered.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
@@ -2406,19 +2496,19 @@ src/poudriere-sh/sh-traps.obj: src/poudriere-sh/traps.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-traps.obj `if test -f 'src/poudriere-sh/traps.c'; then $(CYGPATH_W) 'src/poudriere-sh/traps.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/traps.c'; fi`
 
-src/poudriere-sh/sh-chmod.o: src/poudriere-sh/chmod.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-chmod.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-chmod.Tpo -c -o src/poudriere-sh/sh-chmod.o `test -f 'src/poudriere-sh/chmod.c' || echo '$(srcdir)/'`src/poudriere-sh/chmod.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-chmod.Tpo src/poudriere-sh/$(DEPDIR)/sh-chmod.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/chmod.c' object='src/poudriere-sh/sh-chmod.o' libtool=no @AMDEPBACKSLASH@
+external/freebsd/bin/chmod/sh-chmod.o: external/freebsd/bin/chmod/chmod.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/bin/chmod/sh-chmod.o -MD -MP -MF external/freebsd/bin/chmod/$(DEPDIR)/sh-chmod.Tpo -c -o external/freebsd/bin/chmod/sh-chmod.o `test -f 'external/freebsd/bin/chmod/chmod.c' || echo '$(srcdir)/'`external/freebsd/bin/chmod/chmod.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/bin/chmod/$(DEPDIR)/sh-chmod.Tpo external/freebsd/bin/chmod/$(DEPDIR)/sh-chmod.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/bin/chmod/chmod.c' object='external/freebsd/bin/chmod/sh-chmod.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-chmod.o `test -f 'src/poudriere-sh/chmod.c' || echo '$(srcdir)/'`src/poudriere-sh/chmod.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/bin/chmod/sh-chmod.o `test -f 'external/freebsd/bin/chmod/chmod.c' || echo '$(srcdir)/'`external/freebsd/bin/chmod/chmod.c
 
-src/poudriere-sh/sh-chmod.obj: src/poudriere-sh/chmod.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-chmod.obj -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-chmod.Tpo -c -o src/poudriere-sh/sh-chmod.obj `if test -f 'src/poudriere-sh/chmod.c'; then $(CYGPATH_W) 'src/poudriere-sh/chmod.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/chmod.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-chmod.Tpo src/poudriere-sh/$(DEPDIR)/sh-chmod.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/chmod.c' object='src/poudriere-sh/sh-chmod.obj' libtool=no @AMDEPBACKSLASH@
+external/freebsd/bin/chmod/sh-chmod.obj: external/freebsd/bin/chmod/chmod.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/bin/chmod/sh-chmod.obj -MD -MP -MF external/freebsd/bin/chmod/$(DEPDIR)/sh-chmod.Tpo -c -o external/freebsd/bin/chmod/sh-chmod.obj `if test -f 'external/freebsd/bin/chmod/chmod.c'; then $(CYGPATH_W) 'external/freebsd/bin/chmod/chmod.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/bin/chmod/chmod.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/bin/chmod/$(DEPDIR)/sh-chmod.Tpo external/freebsd/bin/chmod/$(DEPDIR)/sh-chmod.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/bin/chmod/chmod.c' object='external/freebsd/bin/chmod/sh-chmod.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-chmod.obj `if test -f 'src/poudriere-sh/chmod.c'; then $(CYGPATH_W) 'src/poudriere-sh/chmod.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/chmod.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/bin/chmod/sh-chmod.obj `if test -f 'external/freebsd/bin/chmod/chmod.c'; then $(CYGPATH_W) 'external/freebsd/bin/chmod/chmod.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/bin/chmod/chmod.c'; fi`
 
 src/libexec/poudriere/clock/sh-clock.o: src/libexec/poudriere/clock/clock.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/clock/sh-clock.o -MD -MP -MF src/libexec/poudriere/clock/$(DEPDIR)/sh-clock.Tpo -c -o src/libexec/poudriere/clock/sh-clock.o `test -f 'src/libexec/poudriere/clock/clock.c' || echo '$(srcdir)/'`src/libexec/poudriere/clock/clock.c
@@ -2476,75 +2566,75 @@ src/libexec/poudriere/locked_mkdir/sh-locked_mkdir.obj: src/libexec/poudriere/lo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/locked_mkdir/sh-locked_mkdir.obj `if test -f 'src/libexec/poudriere/locked_mkdir/locked_mkdir.c'; then $(CYGPATH_W) 'src/libexec/poudriere/locked_mkdir/locked_mkdir.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/locked_mkdir/locked_mkdir.c'; fi`
 
-src/poudriere-sh/sh-mkdir.o: src/poudriere-sh/mkdir.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-mkdir.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-mkdir.Tpo -c -o src/poudriere-sh/sh-mkdir.o `test -f 'src/poudriere-sh/mkdir.c' || echo '$(srcdir)/'`src/poudriere-sh/mkdir.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-mkdir.Tpo src/poudriere-sh/$(DEPDIR)/sh-mkdir.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/mkdir.c' object='src/poudriere-sh/sh-mkdir.o' libtool=no @AMDEPBACKSLASH@
+external/freebsd/bin/mkdir/sh-mkdir.o: external/freebsd/bin/mkdir/mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/bin/mkdir/sh-mkdir.o -MD -MP -MF external/freebsd/bin/mkdir/$(DEPDIR)/sh-mkdir.Tpo -c -o external/freebsd/bin/mkdir/sh-mkdir.o `test -f 'external/freebsd/bin/mkdir/mkdir.c' || echo '$(srcdir)/'`external/freebsd/bin/mkdir/mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/bin/mkdir/$(DEPDIR)/sh-mkdir.Tpo external/freebsd/bin/mkdir/$(DEPDIR)/sh-mkdir.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/bin/mkdir/mkdir.c' object='external/freebsd/bin/mkdir/sh-mkdir.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-mkdir.o `test -f 'src/poudriere-sh/mkdir.c' || echo '$(srcdir)/'`src/poudriere-sh/mkdir.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/bin/mkdir/sh-mkdir.o `test -f 'external/freebsd/bin/mkdir/mkdir.c' || echo '$(srcdir)/'`external/freebsd/bin/mkdir/mkdir.c
 
-src/poudriere-sh/sh-mkdir.obj: src/poudriere-sh/mkdir.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-mkdir.obj -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-mkdir.Tpo -c -o src/poudriere-sh/sh-mkdir.obj `if test -f 'src/poudriere-sh/mkdir.c'; then $(CYGPATH_W) 'src/poudriere-sh/mkdir.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/mkdir.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-mkdir.Tpo src/poudriere-sh/$(DEPDIR)/sh-mkdir.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/mkdir.c' object='src/poudriere-sh/sh-mkdir.obj' libtool=no @AMDEPBACKSLASH@
+external/freebsd/bin/mkdir/sh-mkdir.obj: external/freebsd/bin/mkdir/mkdir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/bin/mkdir/sh-mkdir.obj -MD -MP -MF external/freebsd/bin/mkdir/$(DEPDIR)/sh-mkdir.Tpo -c -o external/freebsd/bin/mkdir/sh-mkdir.obj `if test -f 'external/freebsd/bin/mkdir/mkdir.c'; then $(CYGPATH_W) 'external/freebsd/bin/mkdir/mkdir.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/bin/mkdir/mkdir.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/bin/mkdir/$(DEPDIR)/sh-mkdir.Tpo external/freebsd/bin/mkdir/$(DEPDIR)/sh-mkdir.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/bin/mkdir/mkdir.c' object='external/freebsd/bin/mkdir/sh-mkdir.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-mkdir.obj `if test -f 'src/poudriere-sh/mkdir.c'; then $(CYGPATH_W) 'src/poudriere-sh/mkdir.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/mkdir.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/bin/mkdir/sh-mkdir.obj `if test -f 'external/freebsd/bin/mkdir/mkdir.c'; then $(CYGPATH_W) 'external/freebsd/bin/mkdir/mkdir.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/bin/mkdir/mkdir.c'; fi`
 
-src/poudriere-sh/sh-mkfifo.o: src/poudriere-sh/mkfifo.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-mkfifo.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-mkfifo.Tpo -c -o src/poudriere-sh/sh-mkfifo.o `test -f 'src/poudriere-sh/mkfifo.c' || echo '$(srcdir)/'`src/poudriere-sh/mkfifo.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-mkfifo.Tpo src/poudriere-sh/$(DEPDIR)/sh-mkfifo.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/mkfifo.c' object='src/poudriere-sh/sh-mkfifo.o' libtool=no @AMDEPBACKSLASH@
+external/freebsd/usr.bin/mkfifo/sh-mkfifo.o: external/freebsd/usr.bin/mkfifo/mkfifo.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/usr.bin/mkfifo/sh-mkfifo.o -MD -MP -MF external/freebsd/usr.bin/mkfifo/$(DEPDIR)/sh-mkfifo.Tpo -c -o external/freebsd/usr.bin/mkfifo/sh-mkfifo.o `test -f 'external/freebsd/usr.bin/mkfifo/mkfifo.c' || echo '$(srcdir)/'`external/freebsd/usr.bin/mkfifo/mkfifo.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/usr.bin/mkfifo/$(DEPDIR)/sh-mkfifo.Tpo external/freebsd/usr.bin/mkfifo/$(DEPDIR)/sh-mkfifo.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/usr.bin/mkfifo/mkfifo.c' object='external/freebsd/usr.bin/mkfifo/sh-mkfifo.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-mkfifo.o `test -f 'src/poudriere-sh/mkfifo.c' || echo '$(srcdir)/'`src/poudriere-sh/mkfifo.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/usr.bin/mkfifo/sh-mkfifo.o `test -f 'external/freebsd/usr.bin/mkfifo/mkfifo.c' || echo '$(srcdir)/'`external/freebsd/usr.bin/mkfifo/mkfifo.c
 
-src/poudriere-sh/sh-mkfifo.obj: src/poudriere-sh/mkfifo.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-mkfifo.obj -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-mkfifo.Tpo -c -o src/poudriere-sh/sh-mkfifo.obj `if test -f 'src/poudriere-sh/mkfifo.c'; then $(CYGPATH_W) 'src/poudriere-sh/mkfifo.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/mkfifo.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-mkfifo.Tpo src/poudriere-sh/$(DEPDIR)/sh-mkfifo.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/mkfifo.c' object='src/poudriere-sh/sh-mkfifo.obj' libtool=no @AMDEPBACKSLASH@
+external/freebsd/usr.bin/mkfifo/sh-mkfifo.obj: external/freebsd/usr.bin/mkfifo/mkfifo.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/usr.bin/mkfifo/sh-mkfifo.obj -MD -MP -MF external/freebsd/usr.bin/mkfifo/$(DEPDIR)/sh-mkfifo.Tpo -c -o external/freebsd/usr.bin/mkfifo/sh-mkfifo.obj `if test -f 'external/freebsd/usr.bin/mkfifo/mkfifo.c'; then $(CYGPATH_W) 'external/freebsd/usr.bin/mkfifo/mkfifo.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/usr.bin/mkfifo/mkfifo.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/usr.bin/mkfifo/$(DEPDIR)/sh-mkfifo.Tpo external/freebsd/usr.bin/mkfifo/$(DEPDIR)/sh-mkfifo.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/usr.bin/mkfifo/mkfifo.c' object='external/freebsd/usr.bin/mkfifo/sh-mkfifo.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-mkfifo.obj `if test -f 'src/poudriere-sh/mkfifo.c'; then $(CYGPATH_W) 'src/poudriere-sh/mkfifo.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/mkfifo.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/usr.bin/mkfifo/sh-mkfifo.obj `if test -f 'external/freebsd/usr.bin/mkfifo/mkfifo.c'; then $(CYGPATH_W) 'external/freebsd/usr.bin/mkfifo/mkfifo.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/usr.bin/mkfifo/mkfifo.c'; fi`
 
-src/poudriere-sh/sh-mktemp.o: src/poudriere-sh/mktemp.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-mktemp.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-mktemp.Tpo -c -o src/poudriere-sh/sh-mktemp.o `test -f 'src/poudriere-sh/mktemp.c' || echo '$(srcdir)/'`src/poudriere-sh/mktemp.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-mktemp.Tpo src/poudriere-sh/$(DEPDIR)/sh-mktemp.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/mktemp.c' object='src/poudriere-sh/sh-mktemp.o' libtool=no @AMDEPBACKSLASH@
+external/freebsd/usr.bin/mktemp/sh-mktemp.o: external/freebsd/usr.bin/mktemp/mktemp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/usr.bin/mktemp/sh-mktemp.o -MD -MP -MF external/freebsd/usr.bin/mktemp/$(DEPDIR)/sh-mktemp.Tpo -c -o external/freebsd/usr.bin/mktemp/sh-mktemp.o `test -f 'external/freebsd/usr.bin/mktemp/mktemp.c' || echo '$(srcdir)/'`external/freebsd/usr.bin/mktemp/mktemp.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/usr.bin/mktemp/$(DEPDIR)/sh-mktemp.Tpo external/freebsd/usr.bin/mktemp/$(DEPDIR)/sh-mktemp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/usr.bin/mktemp/mktemp.c' object='external/freebsd/usr.bin/mktemp/sh-mktemp.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-mktemp.o `test -f 'src/poudriere-sh/mktemp.c' || echo '$(srcdir)/'`src/poudriere-sh/mktemp.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/usr.bin/mktemp/sh-mktemp.o `test -f 'external/freebsd/usr.bin/mktemp/mktemp.c' || echo '$(srcdir)/'`external/freebsd/usr.bin/mktemp/mktemp.c
 
-src/poudriere-sh/sh-mktemp.obj: src/poudriere-sh/mktemp.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-mktemp.obj -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-mktemp.Tpo -c -o src/poudriere-sh/sh-mktemp.obj `if test -f 'src/poudriere-sh/mktemp.c'; then $(CYGPATH_W) 'src/poudriere-sh/mktemp.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/mktemp.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-mktemp.Tpo src/poudriere-sh/$(DEPDIR)/sh-mktemp.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/mktemp.c' object='src/poudriere-sh/sh-mktemp.obj' libtool=no @AMDEPBACKSLASH@
+external/freebsd/usr.bin/mktemp/sh-mktemp.obj: external/freebsd/usr.bin/mktemp/mktemp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/usr.bin/mktemp/sh-mktemp.obj -MD -MP -MF external/freebsd/usr.bin/mktemp/$(DEPDIR)/sh-mktemp.Tpo -c -o external/freebsd/usr.bin/mktemp/sh-mktemp.obj `if test -f 'external/freebsd/usr.bin/mktemp/mktemp.c'; then $(CYGPATH_W) 'external/freebsd/usr.bin/mktemp/mktemp.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/usr.bin/mktemp/mktemp.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/usr.bin/mktemp/$(DEPDIR)/sh-mktemp.Tpo external/freebsd/usr.bin/mktemp/$(DEPDIR)/sh-mktemp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/usr.bin/mktemp/mktemp.c' object='external/freebsd/usr.bin/mktemp/sh-mktemp.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-mktemp.obj `if test -f 'src/poudriere-sh/mktemp.c'; then $(CYGPATH_W) 'src/poudriere-sh/mktemp.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/mktemp.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/usr.bin/mktemp/sh-mktemp.obj `if test -f 'external/freebsd/usr.bin/mktemp/mktemp.c'; then $(CYGPATH_W) 'external/freebsd/usr.bin/mktemp/mktemp.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/usr.bin/mktemp/mktemp.c'; fi`
 
-external/pwait/sh-pwait.o: external/pwait/pwait.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/pwait/sh-pwait.o -MD -MP -MF external/pwait/$(DEPDIR)/sh-pwait.Tpo -c -o external/pwait/sh-pwait.o `test -f 'external/pwait/pwait.c' || echo '$(srcdir)/'`external/pwait/pwait.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/pwait/$(DEPDIR)/sh-pwait.Tpo external/pwait/$(DEPDIR)/sh-pwait.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/pwait/pwait.c' object='external/pwait/sh-pwait.o' libtool=no @AMDEPBACKSLASH@
+external/freebsd/bin/pwait/sh-pwait.o: external/freebsd/bin/pwait/pwait.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/bin/pwait/sh-pwait.o -MD -MP -MF external/freebsd/bin/pwait/$(DEPDIR)/sh-pwait.Tpo -c -o external/freebsd/bin/pwait/sh-pwait.o `test -f 'external/freebsd/bin/pwait/pwait.c' || echo '$(srcdir)/'`external/freebsd/bin/pwait/pwait.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/bin/pwait/$(DEPDIR)/sh-pwait.Tpo external/freebsd/bin/pwait/$(DEPDIR)/sh-pwait.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/bin/pwait/pwait.c' object='external/freebsd/bin/pwait/sh-pwait.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/pwait/sh-pwait.o `test -f 'external/pwait/pwait.c' || echo '$(srcdir)/'`external/pwait/pwait.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/bin/pwait/sh-pwait.o `test -f 'external/freebsd/bin/pwait/pwait.c' || echo '$(srcdir)/'`external/freebsd/bin/pwait/pwait.c
 
-external/pwait/sh-pwait.obj: external/pwait/pwait.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/pwait/sh-pwait.obj -MD -MP -MF external/pwait/$(DEPDIR)/sh-pwait.Tpo -c -o external/pwait/sh-pwait.obj `if test -f 'external/pwait/pwait.c'; then $(CYGPATH_W) 'external/pwait/pwait.c'; else $(CYGPATH_W) '$(srcdir)/external/pwait/pwait.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/pwait/$(DEPDIR)/sh-pwait.Tpo external/pwait/$(DEPDIR)/sh-pwait.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/pwait/pwait.c' object='external/pwait/sh-pwait.obj' libtool=no @AMDEPBACKSLASH@
+external/freebsd/bin/pwait/sh-pwait.obj: external/freebsd/bin/pwait/pwait.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/bin/pwait/sh-pwait.obj -MD -MP -MF external/freebsd/bin/pwait/$(DEPDIR)/sh-pwait.Tpo -c -o external/freebsd/bin/pwait/sh-pwait.obj `if test -f 'external/freebsd/bin/pwait/pwait.c'; then $(CYGPATH_W) 'external/freebsd/bin/pwait/pwait.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/bin/pwait/pwait.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/bin/pwait/$(DEPDIR)/sh-pwait.Tpo external/freebsd/bin/pwait/$(DEPDIR)/sh-pwait.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/bin/pwait/pwait.c' object='external/freebsd/bin/pwait/sh-pwait.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/pwait/sh-pwait.obj `if test -f 'external/pwait/pwait.c'; then $(CYGPATH_W) 'external/pwait/pwait.c'; else $(CYGPATH_W) '$(srcdir)/external/pwait/pwait.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/bin/pwait/sh-pwait.obj `if test -f 'external/freebsd/bin/pwait/pwait.c'; then $(CYGPATH_W) 'external/freebsd/bin/pwait/pwait.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/bin/pwait/pwait.c'; fi`
 
-src/poudriere-sh/sh-realpath.o: src/poudriere-sh/realpath.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-realpath.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-realpath.Tpo -c -o src/poudriere-sh/sh-realpath.o `test -f 'src/poudriere-sh/realpath.c' || echo '$(srcdir)/'`src/poudriere-sh/realpath.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-realpath.Tpo src/poudriere-sh/$(DEPDIR)/sh-realpath.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/realpath.c' object='src/poudriere-sh/sh-realpath.o' libtool=no @AMDEPBACKSLASH@
+external/freebsd/bin/realpath/sh-realpath.o: external/freebsd/bin/realpath/realpath.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/bin/realpath/sh-realpath.o -MD -MP -MF external/freebsd/bin/realpath/$(DEPDIR)/sh-realpath.Tpo -c -o external/freebsd/bin/realpath/sh-realpath.o `test -f 'external/freebsd/bin/realpath/realpath.c' || echo '$(srcdir)/'`external/freebsd/bin/realpath/realpath.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/bin/realpath/$(DEPDIR)/sh-realpath.Tpo external/freebsd/bin/realpath/$(DEPDIR)/sh-realpath.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/bin/realpath/realpath.c' object='external/freebsd/bin/realpath/sh-realpath.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-realpath.o `test -f 'src/poudriere-sh/realpath.c' || echo '$(srcdir)/'`src/poudriere-sh/realpath.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/bin/realpath/sh-realpath.o `test -f 'external/freebsd/bin/realpath/realpath.c' || echo '$(srcdir)/'`external/freebsd/bin/realpath/realpath.c
 
-src/poudriere-sh/sh-realpath.obj: src/poudriere-sh/realpath.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-realpath.obj -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-realpath.Tpo -c -o src/poudriere-sh/sh-realpath.obj `if test -f 'src/poudriere-sh/realpath.c'; then $(CYGPATH_W) 'src/poudriere-sh/realpath.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/realpath.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-realpath.Tpo src/poudriere-sh/$(DEPDIR)/sh-realpath.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/realpath.c' object='src/poudriere-sh/sh-realpath.obj' libtool=no @AMDEPBACKSLASH@
+external/freebsd/bin/realpath/sh-realpath.obj: external/freebsd/bin/realpath/realpath.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/bin/realpath/sh-realpath.obj -MD -MP -MF external/freebsd/bin/realpath/$(DEPDIR)/sh-realpath.Tpo -c -o external/freebsd/bin/realpath/sh-realpath.obj `if test -f 'external/freebsd/bin/realpath/realpath.c'; then $(CYGPATH_W) 'external/freebsd/bin/realpath/realpath.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/bin/realpath/realpath.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/bin/realpath/$(DEPDIR)/sh-realpath.Tpo external/freebsd/bin/realpath/$(DEPDIR)/sh-realpath.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/bin/realpath/realpath.c' object='external/freebsd/bin/realpath/sh-realpath.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-realpath.obj `if test -f 'src/poudriere-sh/realpath.c'; then $(CYGPATH_W) 'src/poudriere-sh/realpath.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/realpath.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/bin/realpath/sh-realpath.obj `if test -f 'external/freebsd/bin/realpath/realpath.c'; then $(CYGPATH_W) 'external/freebsd/bin/realpath/realpath.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/bin/realpath/realpath.c'; fi`
 
 src/libexec/poudriere/rename/sh-rename.o: src/libexec/poudriere/rename/rename.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/rename/sh-rename.o -MD -MP -MF src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Tpo -c -o src/libexec/poudriere/rename/sh-rename.o `test -f 'src/libexec/poudriere/rename/rename.c' || echo '$(srcdir)/'`src/libexec/poudriere/rename/rename.c
@@ -2560,33 +2650,33 @@ src/libexec/poudriere/rename/sh-rename.obj: src/libexec/poudriere/rename/rename.
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/rename/sh-rename.obj `if test -f 'src/libexec/poudriere/rename/rename.c'; then $(CYGPATH_W) 'src/libexec/poudriere/rename/rename.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/rename/rename.c'; fi`
 
-external/rm/sh-rm.o: external/rm/rm.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/rm/sh-rm.o -MD -MP -MF external/rm/$(DEPDIR)/sh-rm.Tpo -c -o external/rm/sh-rm.o `test -f 'external/rm/rm.c' || echo '$(srcdir)/'`external/rm/rm.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/rm/$(DEPDIR)/sh-rm.Tpo external/rm/$(DEPDIR)/sh-rm.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/rm/rm.c' object='external/rm/sh-rm.o' libtool=no @AMDEPBACKSLASH@
+external/freebsd/bin/rm/sh-rm.o: external/freebsd/bin/rm/rm.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/bin/rm/sh-rm.o -MD -MP -MF external/freebsd/bin/rm/$(DEPDIR)/sh-rm.Tpo -c -o external/freebsd/bin/rm/sh-rm.o `test -f 'external/freebsd/bin/rm/rm.c' || echo '$(srcdir)/'`external/freebsd/bin/rm/rm.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/bin/rm/$(DEPDIR)/sh-rm.Tpo external/freebsd/bin/rm/$(DEPDIR)/sh-rm.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/bin/rm/rm.c' object='external/freebsd/bin/rm/sh-rm.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/rm/sh-rm.o `test -f 'external/rm/rm.c' || echo '$(srcdir)/'`external/rm/rm.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/bin/rm/sh-rm.o `test -f 'external/freebsd/bin/rm/rm.c' || echo '$(srcdir)/'`external/freebsd/bin/rm/rm.c
 
-external/rm/sh-rm.obj: external/rm/rm.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/rm/sh-rm.obj -MD -MP -MF external/rm/$(DEPDIR)/sh-rm.Tpo -c -o external/rm/sh-rm.obj `if test -f 'external/rm/rm.c'; then $(CYGPATH_W) 'external/rm/rm.c'; else $(CYGPATH_W) '$(srcdir)/external/rm/rm.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/rm/$(DEPDIR)/sh-rm.Tpo external/rm/$(DEPDIR)/sh-rm.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/rm/rm.c' object='external/rm/sh-rm.obj' libtool=no @AMDEPBACKSLASH@
+external/freebsd/bin/rm/sh-rm.obj: external/freebsd/bin/rm/rm.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/bin/rm/sh-rm.obj -MD -MP -MF external/freebsd/bin/rm/$(DEPDIR)/sh-rm.Tpo -c -o external/freebsd/bin/rm/sh-rm.obj `if test -f 'external/freebsd/bin/rm/rm.c'; then $(CYGPATH_W) 'external/freebsd/bin/rm/rm.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/bin/rm/rm.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/bin/rm/$(DEPDIR)/sh-rm.Tpo external/freebsd/bin/rm/$(DEPDIR)/sh-rm.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/bin/rm/rm.c' object='external/freebsd/bin/rm/sh-rm.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/rm/sh-rm.obj `if test -f 'external/rm/rm.c'; then $(CYGPATH_W) 'external/rm/rm.c'; else $(CYGPATH_W) '$(srcdir)/external/rm/rm.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/bin/rm/sh-rm.obj `if test -f 'external/freebsd/bin/rm/rm.c'; then $(CYGPATH_W) 'external/freebsd/bin/rm/rm.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/bin/rm/rm.c'; fi`
 
-src/poudriere-sh/sh-rmdir.o: src/poudriere-sh/rmdir.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-rmdir.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-rmdir.Tpo -c -o src/poudriere-sh/sh-rmdir.o `test -f 'src/poudriere-sh/rmdir.c' || echo '$(srcdir)/'`src/poudriere-sh/rmdir.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-rmdir.Tpo src/poudriere-sh/$(DEPDIR)/sh-rmdir.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/rmdir.c' object='src/poudriere-sh/sh-rmdir.o' libtool=no @AMDEPBACKSLASH@
+external/freebsd/bin/rmdir/sh-rmdir.o: external/freebsd/bin/rmdir/rmdir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/bin/rmdir/sh-rmdir.o -MD -MP -MF external/freebsd/bin/rmdir/$(DEPDIR)/sh-rmdir.Tpo -c -o external/freebsd/bin/rmdir/sh-rmdir.o `test -f 'external/freebsd/bin/rmdir/rmdir.c' || echo '$(srcdir)/'`external/freebsd/bin/rmdir/rmdir.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/bin/rmdir/$(DEPDIR)/sh-rmdir.Tpo external/freebsd/bin/rmdir/$(DEPDIR)/sh-rmdir.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/bin/rmdir/rmdir.c' object='external/freebsd/bin/rmdir/sh-rmdir.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-rmdir.o `test -f 'src/poudriere-sh/rmdir.c' || echo '$(srcdir)/'`src/poudriere-sh/rmdir.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/bin/rmdir/sh-rmdir.o `test -f 'external/freebsd/bin/rmdir/rmdir.c' || echo '$(srcdir)/'`external/freebsd/bin/rmdir/rmdir.c
 
-src/poudriere-sh/sh-rmdir.obj: src/poudriere-sh/rmdir.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-rmdir.obj -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-rmdir.Tpo -c -o src/poudriere-sh/sh-rmdir.obj `if test -f 'src/poudriere-sh/rmdir.c'; then $(CYGPATH_W) 'src/poudriere-sh/rmdir.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/rmdir.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-rmdir.Tpo src/poudriere-sh/$(DEPDIR)/sh-rmdir.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/rmdir.c' object='src/poudriere-sh/sh-rmdir.obj' libtool=no @AMDEPBACKSLASH@
+external/freebsd/bin/rmdir/sh-rmdir.obj: external/freebsd/bin/rmdir/rmdir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/bin/rmdir/sh-rmdir.obj -MD -MP -MF external/freebsd/bin/rmdir/$(DEPDIR)/sh-rmdir.Tpo -c -o external/freebsd/bin/rmdir/sh-rmdir.obj `if test -f 'external/freebsd/bin/rmdir/rmdir.c'; then $(CYGPATH_W) 'external/freebsd/bin/rmdir/rmdir.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/bin/rmdir/rmdir.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/bin/rmdir/$(DEPDIR)/sh-rmdir.Tpo external/freebsd/bin/rmdir/$(DEPDIR)/sh-rmdir.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/bin/rmdir/rmdir.c' object='external/freebsd/bin/rmdir/sh-rmdir.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-rmdir.obj `if test -f 'src/poudriere-sh/rmdir.c'; then $(CYGPATH_W) 'src/poudriere-sh/rmdir.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/rmdir.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/bin/rmdir/sh-rmdir.obj `if test -f 'external/freebsd/bin/rmdir/rmdir.c'; then $(CYGPATH_W) 'external/freebsd/bin/rmdir/rmdir.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/bin/rmdir/rmdir.c'; fi`
 
 src/poudriere-sh/sh-setproctitle.o: src/poudriere-sh/setproctitle.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-setproctitle.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Tpo -c -o src/poudriere-sh/sh-setproctitle.o `test -f 'src/poudriere-sh/setproctitle.c' || echo '$(srcdir)/'`src/poudriere-sh/setproctitle.c
@@ -2602,47 +2692,47 @@ src/poudriere-sh/sh-setproctitle.obj: src/poudriere-sh/setproctitle.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-setproctitle.obj `if test -f 'src/poudriere-sh/setproctitle.c'; then $(CYGPATH_W) 'src/poudriere-sh/setproctitle.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/setproctitle.c'; fi`
 
-src/poudriere-sh/sh-sleep.o: src/poudriere-sh/sleep.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-sleep.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-sleep.Tpo -c -o src/poudriere-sh/sh-sleep.o `test -f 'src/poudriere-sh/sleep.c' || echo '$(srcdir)/'`src/poudriere-sh/sleep.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-sleep.Tpo src/poudriere-sh/$(DEPDIR)/sh-sleep.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/sleep.c' object='src/poudriere-sh/sh-sleep.o' libtool=no @AMDEPBACKSLASH@
+external/freebsd/bin/sleep/sh-sleep.o: external/freebsd/bin/sleep/sleep.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/bin/sleep/sh-sleep.o -MD -MP -MF external/freebsd/bin/sleep/$(DEPDIR)/sh-sleep.Tpo -c -o external/freebsd/bin/sleep/sh-sleep.o `test -f 'external/freebsd/bin/sleep/sleep.c' || echo '$(srcdir)/'`external/freebsd/bin/sleep/sleep.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/bin/sleep/$(DEPDIR)/sh-sleep.Tpo external/freebsd/bin/sleep/$(DEPDIR)/sh-sleep.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/bin/sleep/sleep.c' object='external/freebsd/bin/sleep/sh-sleep.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-sleep.o `test -f 'src/poudriere-sh/sleep.c' || echo '$(srcdir)/'`src/poudriere-sh/sleep.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/bin/sleep/sh-sleep.o `test -f 'external/freebsd/bin/sleep/sleep.c' || echo '$(srcdir)/'`external/freebsd/bin/sleep/sleep.c
 
-src/poudriere-sh/sh-sleep.obj: src/poudriere-sh/sleep.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-sleep.obj -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-sleep.Tpo -c -o src/poudriere-sh/sh-sleep.obj `if test -f 'src/poudriere-sh/sleep.c'; then $(CYGPATH_W) 'src/poudriere-sh/sleep.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/sleep.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-sleep.Tpo src/poudriere-sh/$(DEPDIR)/sh-sleep.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/sleep.c' object='src/poudriere-sh/sh-sleep.obj' libtool=no @AMDEPBACKSLASH@
+external/freebsd/bin/sleep/sh-sleep.obj: external/freebsd/bin/sleep/sleep.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/bin/sleep/sh-sleep.obj -MD -MP -MF external/freebsd/bin/sleep/$(DEPDIR)/sh-sleep.Tpo -c -o external/freebsd/bin/sleep/sh-sleep.obj `if test -f 'external/freebsd/bin/sleep/sleep.c'; then $(CYGPATH_W) 'external/freebsd/bin/sleep/sleep.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/bin/sleep/sleep.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/bin/sleep/$(DEPDIR)/sh-sleep.Tpo external/freebsd/bin/sleep/$(DEPDIR)/sh-sleep.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/bin/sleep/sleep.c' object='external/freebsd/bin/sleep/sh-sleep.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-sleep.obj `if test -f 'src/poudriere-sh/sleep.c'; then $(CYGPATH_W) 'src/poudriere-sh/sleep.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/sleep.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/bin/sleep/sh-sleep.obj `if test -f 'external/freebsd/bin/sleep/sleep.c'; then $(CYGPATH_W) 'external/freebsd/bin/sleep/sleep.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/bin/sleep/sleep.c'; fi`
 
-src/poudriere-sh/sh-stat.o: src/poudriere-sh/stat.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-stat.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-stat.Tpo -c -o src/poudriere-sh/sh-stat.o `test -f 'src/poudriere-sh/stat.c' || echo '$(srcdir)/'`src/poudriere-sh/stat.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-stat.Tpo src/poudriere-sh/$(DEPDIR)/sh-stat.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/stat.c' object='src/poudriere-sh/sh-stat.o' libtool=no @AMDEPBACKSLASH@
+external/freebsd/usr.bin/stat/sh-stat.o: external/freebsd/usr.bin/stat/stat.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/usr.bin/stat/sh-stat.o -MD -MP -MF external/freebsd/usr.bin/stat/$(DEPDIR)/sh-stat.Tpo -c -o external/freebsd/usr.bin/stat/sh-stat.o `test -f 'external/freebsd/usr.bin/stat/stat.c' || echo '$(srcdir)/'`external/freebsd/usr.bin/stat/stat.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/usr.bin/stat/$(DEPDIR)/sh-stat.Tpo external/freebsd/usr.bin/stat/$(DEPDIR)/sh-stat.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/usr.bin/stat/stat.c' object='external/freebsd/usr.bin/stat/sh-stat.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-stat.o `test -f 'src/poudriere-sh/stat.c' || echo '$(srcdir)/'`src/poudriere-sh/stat.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/usr.bin/stat/sh-stat.o `test -f 'external/freebsd/usr.bin/stat/stat.c' || echo '$(srcdir)/'`external/freebsd/usr.bin/stat/stat.c
 
-src/poudriere-sh/sh-stat.obj: src/poudriere-sh/stat.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-stat.obj -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-stat.Tpo -c -o src/poudriere-sh/sh-stat.obj `if test -f 'src/poudriere-sh/stat.c'; then $(CYGPATH_W) 'src/poudriere-sh/stat.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/stat.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-stat.Tpo src/poudriere-sh/$(DEPDIR)/sh-stat.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/stat.c' object='src/poudriere-sh/sh-stat.obj' libtool=no @AMDEPBACKSLASH@
+external/freebsd/usr.bin/stat/sh-stat.obj: external/freebsd/usr.bin/stat/stat.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/usr.bin/stat/sh-stat.obj -MD -MP -MF external/freebsd/usr.bin/stat/$(DEPDIR)/sh-stat.Tpo -c -o external/freebsd/usr.bin/stat/sh-stat.obj `if test -f 'external/freebsd/usr.bin/stat/stat.c'; then $(CYGPATH_W) 'external/freebsd/usr.bin/stat/stat.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/usr.bin/stat/stat.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/usr.bin/stat/$(DEPDIR)/sh-stat.Tpo external/freebsd/usr.bin/stat/$(DEPDIR)/sh-stat.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/usr.bin/stat/stat.c' object='external/freebsd/usr.bin/stat/sh-stat.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-stat.obj `if test -f 'src/poudriere-sh/stat.c'; then $(CYGPATH_W) 'src/poudriere-sh/stat.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/stat.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/usr.bin/stat/sh-stat.obj `if test -f 'external/freebsd/usr.bin/stat/stat.c'; then $(CYGPATH_W) 'external/freebsd/usr.bin/stat/stat.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/usr.bin/stat/stat.c'; fi`
 
-src/poudriere-sh/sh-touch.o: src/poudriere-sh/touch.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-touch.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-touch.Tpo -c -o src/poudriere-sh/sh-touch.o `test -f 'src/poudriere-sh/touch.c' || echo '$(srcdir)/'`src/poudriere-sh/touch.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-touch.Tpo src/poudriere-sh/$(DEPDIR)/sh-touch.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/touch.c' object='src/poudriere-sh/sh-touch.o' libtool=no @AMDEPBACKSLASH@
+external/freebsd/usr.bin/touch/sh-touch.o: external/freebsd/usr.bin/touch/touch.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/usr.bin/touch/sh-touch.o -MD -MP -MF external/freebsd/usr.bin/touch/$(DEPDIR)/sh-touch.Tpo -c -o external/freebsd/usr.bin/touch/sh-touch.o `test -f 'external/freebsd/usr.bin/touch/touch.c' || echo '$(srcdir)/'`external/freebsd/usr.bin/touch/touch.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/usr.bin/touch/$(DEPDIR)/sh-touch.Tpo external/freebsd/usr.bin/touch/$(DEPDIR)/sh-touch.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/usr.bin/touch/touch.c' object='external/freebsd/usr.bin/touch/sh-touch.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-touch.o `test -f 'src/poudriere-sh/touch.c' || echo '$(srcdir)/'`src/poudriere-sh/touch.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/usr.bin/touch/sh-touch.o `test -f 'external/freebsd/usr.bin/touch/touch.c' || echo '$(srcdir)/'`external/freebsd/usr.bin/touch/touch.c
 
-src/poudriere-sh/sh-touch.obj: src/poudriere-sh/touch.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-touch.obj -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-touch.Tpo -c -o src/poudriere-sh/sh-touch.obj `if test -f 'src/poudriere-sh/touch.c'; then $(CYGPATH_W) 'src/poudriere-sh/touch.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/touch.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-touch.Tpo src/poudriere-sh/$(DEPDIR)/sh-touch.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/touch.c' object='src/poudriere-sh/sh-touch.obj' libtool=no @AMDEPBACKSLASH@
+external/freebsd/usr.bin/touch/sh-touch.obj: external/freebsd/usr.bin/touch/touch.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/usr.bin/touch/sh-touch.obj -MD -MP -MF external/freebsd/usr.bin/touch/$(DEPDIR)/sh-touch.Tpo -c -o external/freebsd/usr.bin/touch/sh-touch.obj `if test -f 'external/freebsd/usr.bin/touch/touch.c'; then $(CYGPATH_W) 'external/freebsd/usr.bin/touch/touch.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/usr.bin/touch/touch.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/usr.bin/touch/$(DEPDIR)/sh-touch.Tpo external/freebsd/usr.bin/touch/$(DEPDIR)/sh-touch.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/usr.bin/touch/touch.c' object='external/freebsd/usr.bin/touch/sh-touch.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-touch.obj `if test -f 'src/poudriere-sh/touch.c'; then $(CYGPATH_W) 'src/poudriere-sh/touch.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/touch.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/usr.bin/touch/sh-touch.obj `if test -f 'external/freebsd/usr.bin/touch/touch.c'; then $(CYGPATH_W) 'external/freebsd/usr.bin/touch/touch.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/usr.bin/touch/touch.c'; fi`
 
 src/poudriere-sh/sh-unlink.o: src/poudriere-sh/unlink.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-unlink.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-unlink.Tpo -c -o src/poudriere-sh/sh-unlink.o `test -f 'src/poudriere-sh/unlink.c' || echo '$(srcdir)/'`src/poudriere-sh/unlink.c
@@ -2658,19 +2748,19 @@ src/poudriere-sh/sh-unlink.obj: src/poudriere-sh/unlink.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-unlink.obj `if test -f 'src/poudriere-sh/unlink.c'; then $(CYGPATH_W) 'src/poudriere-sh/unlink.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/unlink.c'; fi`
 
-src/poudriere-sh/sh-wc.o: src/poudriere-sh/wc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-wc.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-wc.Tpo -c -o src/poudriere-sh/sh-wc.o `test -f 'src/poudriere-sh/wc.c' || echo '$(srcdir)/'`src/poudriere-sh/wc.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-wc.Tpo src/poudriere-sh/$(DEPDIR)/sh-wc.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/wc.c' object='src/poudriere-sh/sh-wc.o' libtool=no @AMDEPBACKSLASH@
+external/freebsd/usr.bin/wc/sh-wc.o: external/freebsd/usr.bin/wc/wc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/usr.bin/wc/sh-wc.o -MD -MP -MF external/freebsd/usr.bin/wc/$(DEPDIR)/sh-wc.Tpo -c -o external/freebsd/usr.bin/wc/sh-wc.o `test -f 'external/freebsd/usr.bin/wc/wc.c' || echo '$(srcdir)/'`external/freebsd/usr.bin/wc/wc.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/usr.bin/wc/$(DEPDIR)/sh-wc.Tpo external/freebsd/usr.bin/wc/$(DEPDIR)/sh-wc.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/usr.bin/wc/wc.c' object='external/freebsd/usr.bin/wc/sh-wc.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-wc.o `test -f 'src/poudriere-sh/wc.c' || echo '$(srcdir)/'`src/poudriere-sh/wc.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/usr.bin/wc/sh-wc.o `test -f 'external/freebsd/usr.bin/wc/wc.c' || echo '$(srcdir)/'`external/freebsd/usr.bin/wc/wc.c
 
-src/poudriere-sh/sh-wc.obj: src/poudriere-sh/wc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-wc.obj -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-wc.Tpo -c -o src/poudriere-sh/sh-wc.obj `if test -f 'src/poudriere-sh/wc.c'; then $(CYGPATH_W) 'src/poudriere-sh/wc.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/wc.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-wc.Tpo src/poudriere-sh/$(DEPDIR)/sh-wc.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/wc.c' object='src/poudriere-sh/sh-wc.obj' libtool=no @AMDEPBACKSLASH@
+external/freebsd/usr.bin/wc/sh-wc.obj: external/freebsd/usr.bin/wc/wc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/freebsd/usr.bin/wc/sh-wc.obj -MD -MP -MF external/freebsd/usr.bin/wc/$(DEPDIR)/sh-wc.Tpo -c -o external/freebsd/usr.bin/wc/sh-wc.obj `if test -f 'external/freebsd/usr.bin/wc/wc.c'; then $(CYGPATH_W) 'external/freebsd/usr.bin/wc/wc.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/usr.bin/wc/wc.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/freebsd/usr.bin/wc/$(DEPDIR)/sh-wc.Tpo external/freebsd/usr.bin/wc/$(DEPDIR)/sh-wc.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/freebsd/usr.bin/wc/wc.c' object='external/freebsd/usr.bin/wc/sh-wc.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-wc.obj `if test -f 'src/poudriere-sh/wc.c'; then $(CYGPATH_W) 'src/poudriere-sh/wc.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/wc.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/usr.bin/wc/sh-wc.obj `if test -f 'external/freebsd/usr.bin/wc/wc.c'; then $(CYGPATH_W) 'external/freebsd/usr.bin/wc/wc.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/usr.bin/wc/wc.c'; fi`
 
 src/poudriere-sh/sh-builtins.o: src/poudriere-sh/builtins.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-builtins.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-builtins.Tpo -c -o src/poudriere-sh/sh-builtins.o `test -f 'src/poudriere-sh/builtins.c' || echo '$(srcdir)/'`src/poudriere-sh/builtins.c
@@ -3388,18 +3478,40 @@ distclean-generic:
 	-test . = "$(srcdir)" || $(am__rm_f) $(CONFIG_CLEAN_VPATH_FILES)
 	-$(am__rm_f) external/cpdup/src/$(DEPDIR)/$(am__dirstamp)
 	-$(am__rm_f) external/cpdup/src/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/bin/chmod/$(DEPDIR)/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/bin/chmod/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/bin/mkdir/$(DEPDIR)/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/bin/mkdir/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/bin/pwait/$(DEPDIR)/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/bin/pwait/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/bin/realpath/$(DEPDIR)/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/bin/realpath/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/bin/rm/$(DEPDIR)/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/bin/rm/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/bin/rmdir/$(DEPDIR)/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/bin/rmdir/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/bin/sleep/$(DEPDIR)/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/bin/sleep/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/bin/timeout/$(DEPDIR)/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/bin/timeout/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/usr.bin/lockf/$(DEPDIR)/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/usr.bin/lockf/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/usr.bin/mkfifo/$(DEPDIR)/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/usr.bin/mkfifo/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/usr.bin/mktemp/$(DEPDIR)/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/usr.bin/mktemp/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/usr.bin/stat/$(DEPDIR)/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/usr.bin/stat/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/usr.bin/touch/$(DEPDIR)/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/usr.bin/touch/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/usr.bin/wc/$(DEPDIR)/$(am__dirstamp)
+	-$(am__rm_f) external/freebsd/usr.bin/wc/$(am__dirstamp)
 	-$(am__rm_f) external/libucl/src/$(DEPDIR)/$(am__dirstamp)
 	-$(am__rm_f) external/libucl/src/$(am__dirstamp)
-	-$(am__rm_f) external/lockf/$(DEPDIR)/$(am__dirstamp)
-	-$(am__rm_f) external/lockf/$(am__dirstamp)
 	-$(am__rm_f) external/ptsort/bin/$(DEPDIR)/$(am__dirstamp)
 	-$(am__rm_f) external/ptsort/bin/$(am__dirstamp)
 	-$(am__rm_f) external/ptsort/lib/$(DEPDIR)/$(am__dirstamp)
 	-$(am__rm_f) external/ptsort/lib/$(am__dirstamp)
-	-$(am__rm_f) external/pwait/$(DEPDIR)/$(am__dirstamp)
-	-$(am__rm_f) external/pwait/$(am__dirstamp)
-	-$(am__rm_f) external/rm/$(DEPDIR)/$(am__dirstamp)
-	-$(am__rm_f) external/rm/$(am__dirstamp)
 	-$(am__rm_f) external/setsid/$(DEPDIR)/$(am__dirstamp)
 	-$(am__rm_f) external/setsid/$(am__dirstamp)
 	-$(am__rm_f) external/sh/$(DEPDIR)/$(am__dirstamp)
@@ -3408,8 +3520,6 @@ distclean-generic:
 	-$(am__rm_f) external/sh/bltin/$(am__dirstamp)
 	-$(am__rm_f) external/sh_compat/$(DEPDIR)/$(am__dirstamp)
 	-$(am__rm_f) external/sh_compat/$(am__dirstamp)
-	-$(am__rm_f) external/timeout/$(DEPDIR)/$(am__dirstamp)
-	-$(am__rm_f) external/timeout/$(am__dirstamp)
 	-$(am__rm_f) src/libexec/poudriere/clock/$(DEPDIR)/$(am__dirstamp)
 	-$(am__rm_f) src/libexec/poudriere/clock/$(am__dirstamp)
 	-$(am__rm_f) src/libexec/poudriere/dirempty/$(DEPDIR)/$(am__dirstamp)
@@ -3444,6 +3554,22 @@ distclean: distclean-recursive
 	-rm -f external/cpdup/src/$(DEPDIR)/cpdup-hcproto.Po
 	-rm -f external/cpdup/src/$(DEPDIR)/cpdup-md5.Po
 	-rm -f external/cpdup/src/$(DEPDIR)/cpdup-misc.Po
+	-rm -f external/freebsd/bin/chmod/$(DEPDIR)/sh-chmod.Po
+	-rm -f external/freebsd/bin/mkdir/$(DEPDIR)/sh-mkdir.Po
+	-rm -f external/freebsd/bin/pwait/$(DEPDIR)/pwait.Po
+	-rm -f external/freebsd/bin/pwait/$(DEPDIR)/sh-pwait.Po
+	-rm -f external/freebsd/bin/realpath/$(DEPDIR)/sh-realpath.Po
+	-rm -f external/freebsd/bin/rm/$(DEPDIR)/rm.Po
+	-rm -f external/freebsd/bin/rm/$(DEPDIR)/sh-rm.Po
+	-rm -f external/freebsd/bin/rmdir/$(DEPDIR)/sh-rmdir.Po
+	-rm -f external/freebsd/bin/sleep/$(DEPDIR)/sh-sleep.Po
+	-rm -f external/freebsd/bin/timeout/$(DEPDIR)/timeout.Po
+	-rm -f external/freebsd/usr.bin/lockf/$(DEPDIR)/lockf.Po
+	-rm -f external/freebsd/usr.bin/mkfifo/$(DEPDIR)/sh-mkfifo.Po
+	-rm -f external/freebsd/usr.bin/mktemp/$(DEPDIR)/sh-mktemp.Po
+	-rm -f external/freebsd/usr.bin/stat/$(DEPDIR)/sh-stat.Po
+	-rm -f external/freebsd/usr.bin/touch/$(DEPDIR)/sh-touch.Po
+	-rm -f external/freebsd/usr.bin/wc/$(DEPDIR)/sh-wc.Po
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_streamline.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_utils.Plo
@@ -3453,14 +3579,9 @@ distclean: distclean-recursive
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_schema.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_sexp.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo
-	-rm -f external/lockf/$(DEPDIR)/lockf.Po
 	-rm -f external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po
 	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Plo
 	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Plo
-	-rm -f external/pwait/$(DEPDIR)/pwait.Po
-	-rm -f external/pwait/$(DEPDIR)/sh-pwait.Po
-	-rm -f external/rm/$(DEPDIR)/rm.Po
-	-rm -f external/rm/$(DEPDIR)/sh-rm.Po
 	-rm -f external/setsid/$(DEPDIR)/setsid-setsid.Po
 	-rm -f external/sh/$(DEPDIR)/mknodes.Po
 	-rm -f external/sh/$(DEPDIR)/mksyntax.Po
@@ -3495,7 +3616,6 @@ distclean: distclean-recursive
 	-rm -f external/sh/bltin/$(DEPDIR)/sh-echo.Po
 	-rm -f external/sh_compat/$(DEPDIR)/sh-strchrnul.Po
 	-rm -f external/sh_compat/$(DEPDIR)/sh-utimensat.Po
-	-rm -f external/timeout/$(DEPDIR)/timeout.Po
 	-rm -f src/libexec/poudriere/clock/$(DEPDIR)/clock.Po
 	-rm -f src/libexec/poudriere/clock/$(DEPDIR)/sh-clock.Po
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po
@@ -3510,21 +3630,11 @@ distclean: distclean-recursive
 	-rm -f src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-alarm.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-builtins.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-chmod.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-helpers.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-mapfile.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-mkdir.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-mkfifo.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-mktemp.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-realpath.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-rmdir.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-sleep.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-stat.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-touch.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-traps.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-unlink.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-wc.Po
 	-rm -f src/poudriered/$(DEPDIR)/poudriered-poudriered.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
@@ -3585,6 +3695,22 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f external/cpdup/src/$(DEPDIR)/cpdup-hcproto.Po
 	-rm -f external/cpdup/src/$(DEPDIR)/cpdup-md5.Po
 	-rm -f external/cpdup/src/$(DEPDIR)/cpdup-misc.Po
+	-rm -f external/freebsd/bin/chmod/$(DEPDIR)/sh-chmod.Po
+	-rm -f external/freebsd/bin/mkdir/$(DEPDIR)/sh-mkdir.Po
+	-rm -f external/freebsd/bin/pwait/$(DEPDIR)/pwait.Po
+	-rm -f external/freebsd/bin/pwait/$(DEPDIR)/sh-pwait.Po
+	-rm -f external/freebsd/bin/realpath/$(DEPDIR)/sh-realpath.Po
+	-rm -f external/freebsd/bin/rm/$(DEPDIR)/rm.Po
+	-rm -f external/freebsd/bin/rm/$(DEPDIR)/sh-rm.Po
+	-rm -f external/freebsd/bin/rmdir/$(DEPDIR)/sh-rmdir.Po
+	-rm -f external/freebsd/bin/sleep/$(DEPDIR)/sh-sleep.Po
+	-rm -f external/freebsd/bin/timeout/$(DEPDIR)/timeout.Po
+	-rm -f external/freebsd/usr.bin/lockf/$(DEPDIR)/lockf.Po
+	-rm -f external/freebsd/usr.bin/mkfifo/$(DEPDIR)/sh-mkfifo.Po
+	-rm -f external/freebsd/usr.bin/mktemp/$(DEPDIR)/sh-mktemp.Po
+	-rm -f external/freebsd/usr.bin/stat/$(DEPDIR)/sh-stat.Po
+	-rm -f external/freebsd/usr.bin/touch/$(DEPDIR)/sh-touch.Po
+	-rm -f external/freebsd/usr.bin/wc/$(DEPDIR)/sh-wc.Po
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_streamline.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_utils.Plo
@@ -3594,14 +3720,9 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_schema.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_sexp.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo
-	-rm -f external/lockf/$(DEPDIR)/lockf.Po
 	-rm -f external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po
 	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Plo
 	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Plo
-	-rm -f external/pwait/$(DEPDIR)/pwait.Po
-	-rm -f external/pwait/$(DEPDIR)/sh-pwait.Po
-	-rm -f external/rm/$(DEPDIR)/rm.Po
-	-rm -f external/rm/$(DEPDIR)/sh-rm.Po
 	-rm -f external/setsid/$(DEPDIR)/setsid-setsid.Po
 	-rm -f external/sh/$(DEPDIR)/mknodes.Po
 	-rm -f external/sh/$(DEPDIR)/mksyntax.Po
@@ -3636,7 +3757,6 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f external/sh/bltin/$(DEPDIR)/sh-echo.Po
 	-rm -f external/sh_compat/$(DEPDIR)/sh-strchrnul.Po
 	-rm -f external/sh_compat/$(DEPDIR)/sh-utimensat.Po
-	-rm -f external/timeout/$(DEPDIR)/timeout.Po
 	-rm -f src/libexec/poudriere/clock/$(DEPDIR)/clock.Po
 	-rm -f src/libexec/poudriere/clock/$(DEPDIR)/sh-clock.Po
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po
@@ -3651,21 +3771,11 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-alarm.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-builtins.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-chmod.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-helpers.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-mapfile.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-mkdir.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-mkfifo.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-mktemp.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-realpath.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-rmdir.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-sleep.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-stat.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-touch.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-traps.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-unlink.Po
-	-rm -f src/poudriere-sh/$(DEPDIR)/sh-wc.Po
 	-rm -f src/poudriered/$(DEPDIR)/poudriered-poudriered.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic

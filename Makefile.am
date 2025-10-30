@@ -190,15 +190,15 @@ dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
 locked_mkdir_SOURCES=	src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 locked_mkdir_CFLAGS=	$(AM_CFLAGS) $(SAN_CFLAGS)
 noinst_PROGRAMS+=	@USE_LOCKF@
-lockf_SOURCES=		external/lockf/lockf.c
+lockf_SOURCES=		external/freebsd/usr.bin/lockf/lockf.c
 nc_SOURCES=		src/libexec/poudriere/nc/nc.c
-pwait_SOURCES=		external/pwait/pwait.c
+pwait_SOURCES=		external/freebsd/bin/pwait/pwait.c
 rename_SOURCES=		src/libexec/poudriere/rename/rename.c
-rm_SOURCES=		external/rm/rm.c
+rm_SOURCES=		external/freebsd/bin/rm/rm.c
 setsid_SOURCES=		external/setsid/setsid.c \
 			external/setsid/c.h
 setsid_CFLAGS=		$(AM_CFLAGS) -DHAVE_ERR_H -DHAVE_NANOSLEEP
-timeout_SOURCES=	external/timeout/timeout.c
+timeout_SOURCES=	external/freebsd/bin/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 timestamp_CFLAGS=	$(AM_CFLAGS) $(SAN_CFLAGS)
 timestamp_LDADD=	-lpthread
@@ -232,25 +232,25 @@ sh_SOURCES+=		\
 			src/poudriere-sh/mapfile.c \
 			src/poudriere-sh/traps.c
 # external builtins
-sh_SOURCES+=		src/poudriere-sh/chmod.c
+sh_SOURCES+=		external/freebsd/bin/chmod/chmod.c
 sh_SOURCES+=		$(clock_SOURCES)
 sh_SOURCES+=		$(dirempty_SOURCES)
 sh_SOURCES+=		$(dirwatch_SOURCES)
 sh_SOURCES+=		$(locked_mkdir_SOURCES)
-sh_SOURCES+=		src/poudriere-sh/mkdir.c
-sh_SOURCES+=		src/poudriere-sh/mkfifo.c
-sh_SOURCES+=		src/poudriere-sh/mktemp.c
+sh_SOURCES+=		external/freebsd/bin/mkdir/mkdir.c
+sh_SOURCES+=		external/freebsd/usr.bin/mkfifo/mkfifo.c
+sh_SOURCES+=		external/freebsd/usr.bin/mktemp/mktemp.c
 sh_SOURCES+=		$(pwait_SOURCES)
-sh_SOURCES+=		src/poudriere-sh/realpath.c
+sh_SOURCES+=		external/freebsd/bin/realpath/realpath.c
 sh_SOURCES+=		$(rename_SOURCES)
 sh_SOURCES+=		$(rm_SOURCES)
-sh_SOURCES+=		src/poudriere-sh/rmdir.c
+sh_SOURCES+=		external/freebsd/bin/rmdir/rmdir.c
 sh_SOURCES+=		src/poudriere-sh/setproctitle.c
-sh_SOURCES+=		src/poudriere-sh/sleep.c
-sh_SOURCES+=		src/poudriere-sh/stat.c
-sh_SOURCES+=		src/poudriere-sh/touch.c
+sh_SOURCES+=		external/freebsd/bin/sleep/sleep.c
+sh_SOURCES+=		external/freebsd/usr.bin/stat/stat.c
+sh_SOURCES+=		external/freebsd/usr.bin/touch/touch.c
 sh_SOURCES+=		src/poudriere-sh/unlink.c
-sh_SOURCES+=		src/poudriere-sh/wc.c
+sh_SOURCES+=		external/freebsd/usr.bin/wc/wc.c
 noinst_PROGRAMS+=	external/sh/mknodes
 external_sh_mknodes_SOURCES= external/sh/mknodes.c
 external/sh/nodes.c: external/sh/mknodes \
