@@ -802,14 +802,16 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 	setup_traps cleanup
 	exec 9>/dev/null
 	for fd in 9 2; do
-		if TEST_CONTEXTS_TOTAL="$(env \
+		ret=0
+		TEST_CONTEXTS_TOTAL="$(env \
 		    TEST_CONTEXTS_NUM_CHECK=yes \
 		    THISDIR="${THISDIR}" \
 		    SH="${SH}" \
 		    VERBOSE=0 \
-		    "${SH}" "${TEST}" 2>&"${fd}")"; then
-			break
-		fi
+		    "${SH}" "${TEST}" 2>&"${fd}")" || ret="$?"
+		case "${ret}" in
+		77) exit 77 ;;
+		esac
 	done
 	exec 9>&-
 	case "${TEST_CONTEXTS_TOTAL}" in
