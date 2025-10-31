@@ -917,8 +917,8 @@ safe_builtin(int idx, int argc, char **argv)
 	/* Generated from builtins.def. */
 	if (safe_builtin_always(idx))
 		return (1);
-	if (idx == EXPORTCMD || idx == TRAPCMD || idx == ULIMITCMD ||
-	    idx == UMASKCMD)
+	if (idx == ALIASCMD || idx == EXPORTCMD || idx == TRAPCMD ||
+	    idx == ULIMITCMD || idx == UMASKCMD)
 		return (argc <= 1 || (argc == 2 && argv[1][0] == '-'));
 	if (idx == SETCMD)
 		return (argc <= 1 || (argc == 2 && (argv[1][0] == '-' ||
