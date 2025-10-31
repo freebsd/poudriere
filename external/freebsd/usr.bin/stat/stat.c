@@ -247,11 +247,7 @@ main(int argc, char *argv[])
 	statfmt = NULL;
 	timefmt = NULL;
 
-#ifdef SHELL
-	if (strcmp(argv[0], "readlink") == 0) {
-#else
 	if (strcmp(getprogname(), "readlink") == 0) {
-#endif
 		am_readlink = 1;
 		options = "fn";
 		synopsis = "[-fn] [file ...]";

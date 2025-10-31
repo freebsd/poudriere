@@ -254,4 +254,12 @@ pgetpid(void)
 	return (shpid);
 }
 
+#define getprogname pgetprogname
+extern char *commandname;
+inline static const char *
+getprogname() {
+
+	return (commandname);
+}
+
 #endif
