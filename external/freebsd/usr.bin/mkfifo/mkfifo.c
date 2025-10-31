@@ -105,7 +105,7 @@ main(int argc, char *argv[])
 		fifomode = getmode(modep, BASEMODE);
 #ifdef SHELL
 		free(__DECONST(char *, modep));
-		INTOFF;
+		INTON;
 #endif
 	} else {
 		fifomode = BASEMODE;
