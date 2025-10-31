@@ -241,4 +241,17 @@ pgetopt(const int argc, char *argv[], const char *optstring)
 	return ((optopt = ch));
 }
 
+#define getpid	pgetpid
+extern long shpid;
+#ifndef NDEBUG
+pid_t __sys_getpid(void);
+#endif
+inline static pid_t
+pgetpid(void)
+{
+
+	assert(__sys_getpid() == shpid);
+	return (shpid);
+}
+
 #endif

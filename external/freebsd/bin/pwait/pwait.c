@@ -163,11 +163,7 @@ main(int argc, char *argv[])
 		err(EX_OSERR, "malloc");
 	}
 	nleft = 0;
-#ifndef SHELL
 	mypid = getpid();
-#else
-	mypid = -1;
-#endif
 	for (n = 0; n < argc; n++) {
 		s = argv[n];
 		/* Undocumented Solaris compat */
