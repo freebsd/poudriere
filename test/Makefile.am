@@ -24,8 +24,12 @@ TESTS=\
 	alarm.sh \
 	array.sh \
 	builtins.sh \
+	builtins-cp.sh \
 	builtins-cut.sh \
+	builtins-mv.sh \
 	builtins-paste.sh \
+	builtins-sed.sh \
+	builtins-tr.sh \
 	builtins-wc.sh \
 	cache.sh \
 	cache_pipe.sh \

@@ -481,8 +481,9 @@ XFAIL_TESTS = \
 
 
 # Depend bulk tests on jail setup
-TESTS = adjust_timeout.sh alarm.sh array.sh builtins.sh \
-	builtins-cut.sh builtins-paste.sh builtins-wc.sh cache.sh \
+TESTS = adjust_timeout.sh alarm.sh array.sh builtins.sh builtins-cp.sh \
+	builtins-cut.sh builtins-mv.sh builtins-paste.sh \
+	builtins-sed.sh builtins-tr.sh builtins-wc.sh cache.sh \
 	cache_pipe.sh calculate_duration.sh count_lines.sh \
 	critical_section_inherit.sh critical_section_retry.sh \
 	critical_section_retry_cmdsubst.sh display.sh dirname.sh \
@@ -877,6 +878,13 @@ builtins.sh.log: builtins.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+builtins-cp.sh.log: builtins-cp.sh
+	@p='builtins-cp.sh'; \
+	b='builtins-cp.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 builtins-cut.sh.log: builtins-cut.sh
 	@p='builtins-cut.sh'; \
 	b='builtins-cut.sh'; \
@@ -884,9 +892,30 @@ builtins-cut.sh.log: builtins-cut.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+builtins-mv.sh.log: builtins-mv.sh
+	@p='builtins-mv.sh'; \
+	b='builtins-mv.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 builtins-paste.sh.log: builtins-paste.sh
 	@p='builtins-paste.sh'; \
 	b='builtins-paste.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+builtins-sed.sh.log: builtins-sed.sh
+	@p='builtins-sed.sh'; \
+	b='builtins-sed.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+builtins-tr.sh.log: builtins-tr.sh
+	@p='builtins-tr.sh'; \
+	b='builtins-tr.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

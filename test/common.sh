@@ -884,8 +884,8 @@ expect_error_on_stderr() {
 	# get 'Error:' with SH=/bin/sh. It's not that important to ensure
 	# stderr has stuff, it's more about causing a FAIL if 'Error:' is
 	# unexpectedly seen in a log.
-	sed -i '' -e 's,Error:,ExpectedError:,' "${tmpfile}"
-	cat "${tmpfile}" >&2
+	/usr/bin/sed -i '' -e 's,Error:,ExpectedError:,' "${tmpfile}"
+	/bin/cat "${tmpfile}" >&2
 	rm -f "${tmpfile}"
 	return "${ret}"
 }

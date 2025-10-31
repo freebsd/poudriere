@@ -4,7 +4,22 @@ if ! have_builtin paste; then
 	exit 77;
 fi
 
+add_test_function test_paste_usage_exit
+test_paste_usage_exit()
 {
+	# Run in sub-shell to check if it exits early.
+	foo() (
+		expect_error_on_stderr assert_ret 1 paste --foo
+		exit 42
+	)
+	assert_ret 42 foo
+}
+
+add_test_function test_paste_reads_stdin
+test_paste_reads_stdin()
+{
+	local TMPFILE
+
 	TMPFILE=$(mktemp -ut paste)
 	assert_true seq 1 10 > "${TMPFILE}"
 
@@ -25,3 +40,5 @@ fi
 
 	rm -f "${TMPFILE}" "${TMPFILE}.out"
 }
+
+run_test_functions
