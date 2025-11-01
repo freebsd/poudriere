@@ -3693,7 +3693,7 @@ poudriere: src/bin/poudriere.in
 	$(AM_V_GEN)if test -e $(top_srcdir)/.git && \
 	    which git >/dev/null 2>&1 && \
 	    [ -d "$$(git -C "$(top_srcdir)" rev-parse --git-dir)" ]; then \
-	    gitver=$$(git -C "$(top_srcdir)" describe --tags HEAD); \
+	    gitver=$$(git -C "$(top_srcdir)" describe --always --tags HEAD); \
 	    sed \
 	      -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
 	      -e "s,^\(USE_DEBUG\)=.*,\1='@USE_DEBUG@'," \
