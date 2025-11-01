@@ -160,6 +160,7 @@ rm() {
 	command rm "$@"
 }
 
+FORCE_COLORS=1
 . ${SCRIPTPREFIX}/common.sh
 post_getopts
 
@@ -936,12 +937,12 @@ cleanup() {
 	set)
 		# Mimic build-aux/test-driver for TEST_CONTEXTS_PARALLEL
 		case "${ret}" in
-		0) res="PASS" ;;
-		77) res="SKIP" ;;
-		99) res="ERROR" ;;
-		*) res="FAIL" ;;
+		0) res="${COLOR_SUCCESS:?}PASS" ;;
+		77) res="${COLOR_SKIP}SKIP" ;;
+		99) res="${COLOR_ERROR}ERROR" ;;
+		*) res="${COLOR_WARN}FAIL" ;;
 		esac
-		echo "${res} ${SCRIPTNAME} TEST_NUMS=${TEST_NUMS} (exit status: ${ret})" >&2
+		echo "${res}${COLOR_RESET} ${SCRIPTNAME} TEST_NUMS=${TEST_NUMS} (exit status: ${ret})" >&2
 	esac
 	return "${ret}"
 }
