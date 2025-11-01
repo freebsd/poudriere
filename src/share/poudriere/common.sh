@@ -2790,7 +2790,6 @@ enter_interactive() {
 	EOF
 	case "${one_package:+set}" in
 	set)
-		local NL=$'\n'
 		cat >> "${MASTERMNT:?}/etc/motd" <<-EOF
 		ORIGIN:			${port:?}
 		PORTDIR:		${portdir:?}
