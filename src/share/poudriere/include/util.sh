@@ -2979,6 +2979,34 @@ sleep() {
 }
 fi
 
+fp_sleep() {
+	[ $# -eq 1 ] || eargs fp_varname
+	local fps_varname="$1"
+	local fps_value
+
+	getvar "${fps_varname}" fps_value || return 0
+	case "${fps_value:+set}" in
+	set) ;;
+	*) return 0 ;;
+	esac
+
+	msg_warn "${fps_varname} sleeping" \
+	    "${fps_value}"
+	case "${fps_value}" in
+	random) sleep_random ;;
+	random:*) sleep_random "${fps_value#*:}" ;;
+	*) sleep "${fps_value:?}" ;;
+	esac
+}
+
+sleep_random() {
+	local int
+
+	int="$(randint "${1:-2}").$(randint 2)$(randint 2)"
+	msg_warn "${FUNCNAMESTACK} sleep ${int}"
+	sleep "${int}"
+}
+
 _lock_read_pid() {
 	[ $# -eq 2 ] || eargs _lock_read_pid pidfile pid_var_return
 	local _lrp_pidfile="$1"

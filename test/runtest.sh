@@ -364,7 +364,7 @@ runtest() {
 		if [ "${ret}" -eq 0 ]; then
 			case "${TEST##*/}" in
 			bulk-bad-dep-pkgname.sh|\
-			bulk-build-skips-crashed-builder.sh|\
+			bulk-build-*crashed-builder*.sh|\
 			bulk-build-specific-bad-flavor.sh|\
 			bulk-flavor-nonexistent.sh|\
 			bulk-flavor-specific-dep-and-specific-listed-nonexistent.sh|\

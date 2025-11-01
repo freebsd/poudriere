@@ -197,10 +197,6 @@ _err() {
 	0)
 		bset ${MY_BUILDER_ID:+"${MY_BUILDER_ID}"} status \
 		    "crashed:err:${msg}" || :
-		# Ensure build_queue() sees this failure.
-		case "${MY_BUILDER_ID:+set}" in
-		set) echo "${MY_BUILDER_ID:?}" >&6 || : ;;
-		esac
 		;;
 	esac
 	case "${exit_status}" in
@@ -1299,7 +1295,7 @@ run_hook_file() {
 		    POUDRIERE_DATA="${POUDRIERE_DATA-}" \
 		    MASTERNAME="${MASTERNAME-}" \
 		    MASTERMNT="${MASTERMNT-}" \
-		    MY_JOB_ID="${MY_BUILDER_ID-}" \
+		    MY_JOBID="${MY_BUILDER_ID-}" \
 		    MY_BUILDER_ID="${MY_BUILDER_ID-}" \
 		    BUILDNAME="${BUILDNAME-}" \
 		    JAILNAME="${JAILNAME-}" \
@@ -1487,6 +1483,7 @@ buildlog_start() {
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
 	echo "Jail OSVERSION: ${JAIL_OSVERSION}"
 	echo "Builder Id: ${MY_BUILDER_ID}"
+	echo "Job Idx: ${MY_JOB_IDX}"
 	echo "Jail Id (no networking)  : $(jls -j ${jname} jid || :)"
 	echo "Jail Name (no networking): ${jname}"
 	echo "Jail Id (networking)     : $(jls -j ${jname}-n jid || :)"
@@ -2127,7 +2124,7 @@ _siginfo_handler() {
 	now=$(clock -monotonic)
 
 	# Skip if stopping or starting jobs or stopped.
-	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" \
+	if [ -n "${BUILDERS:+set}" -a "${status#starting_jobs:}" = "${status}" \
 	    -a "${status}" != "stopping_jobs:" -a -n "${MASTERMNT}" ] && \
 	    ! status_is_stopped "${status}"; then
 		# Some of the \b and empty field hacks here are for adding [] in
@@ -2191,7 +2188,7 @@ _siginfo_handler() {
 			} \
 		    }')
 		EOF
-		for j in ${JOBS}; do
+		for j in ${BUILDERS}; do
 			# Ignore error here as the zfs dataset may not be cloned yet.
 			_bget status ${j} status || status=
 			# Skip builders not started yet
@@ -5879,10 +5876,10 @@ start_builders() {
 	bset status "starting_jobs:"
 	run_hook start_builders start
 
-	bset builders "${JOBS}"
+	bset builders "${BUILDERS:?}"
 	bset status "starting_builders:"
 	parallel_start || err 1 "parallel_start"
-	for builder_id in ${JOBS}; do
+	for builder_id in ${BUILDERS:?}; do
 		parallel_run start_builder "${builder_id}" \
 		    "${jname}" "${ptname}" "${setname}"
 	done
@@ -5910,13 +5907,26 @@ stop_builders() {
 	local PARALLEL_JOBS real_parallel_jobs pid
 	local - ret
 
-	case "${BUILDER_JOBNOS:+set}" in
+	case "${BUILDER_JOBS:+set}" in
 	set)
-		set -f
+		# Same as parallel_shutdown(), BUILDER_JOBS may be inconsistent
+		# and kill_jobs() asserts only known jobs.
+		local job builder_jobs
+
+		unset builder_jobs
+		for job in ${BUILDER_JOBS}; do
+			if ! jobid "${job:?}"; then
+				continue
+			fi
+			builder_jobs="${builder_jobs:+${builder_jobs} }${job:?}"
+		done >/dev/null 2>&1
+		set -o noglob
 		ret=0
-		kill_jobs 0 ${BUILDER_JOBNOS} || ret="$?"
+		# shellcheck disable=SC2086
+		kill_jobs 10 ${builder_jobs} || ret="$?"
+		set +o noglob
 		case "${ret}" in
-		143|0) ;;
+		0|143|130) ;;
 		*)
 			msg_warn "Build jobs did not exit cleanly: ${ret}"
 			EXIT_STATUS=$((${EXIT_STATUS:-0} + 1))
@@ -5931,7 +5941,7 @@ stop_builders() {
 
 		real_parallel_jobs=${PARALLEL_JOBS}
 		parallel_start || err 1 "parallel_start"
-		for j in ${JOBS-$(jot -w %02d ${real_parallel_jobs})}; do
+		for j in ${BUILDERS-$(jot -w %02d ${real_parallel_jobs})}; do
 			parallel_run stop_builder "${j}"
 		done
 		if ! parallel_stop; then
@@ -5953,24 +5963,30 @@ stop_builders() {
 		esac
 	fi
 
-	# No builders running, unset JOBS
-	JOBS=""
+	# No builders running, unset BUILDERS
+	BUILDERS=""
 }
 
 job_done() {
-	[ $# -eq 1 ] || eargs job_done builder_id
-	local builder_id="$1"
-	local job_name job_type status jobno ret MY_BUILDER_ID
+	[ $# -eq 1 ] || eargs job_done job_idx
+	local job_idx="$1"
+	local job_name job_type status builder_id ret MY_BUILDER_ID job
 
 	# Failure to find this indicates the job is already done.
-	hash_remove builder_job_type "${builder_id}" job_type || return 1
-	hash_remove builder_job_name "${builder_id}" job_name || return 1
-	hash_remove builder_jobs "${builder_id}" jobno || return 1
-	list_remove BUILDER_JOBNOS "${jobno}"
-	_bget status "${builder_id:?}" status
+	hash_remove job_idx_job "${job_idx:?}" job || return 2
+	dev_assert_true kill -0 "${job}"
+	hash_remove job_idx_job_type "${job_idx:?}" job_type || return 3
+	hash_remove job_idx_job_name "${job_idx:?}" job_name || return 4
+	hash_remove job_idx_builder_id "${job_idx:?}" builder_id || return 5
+	list_remove BUILDER_JOBS "${job:?}" || return 6
+	list_remove BUILDER_JOB_IDXS "${job_idx:?}" || return 7
+	dev_assert_true hash_isset builder_busy "${builder_id:?}"
+	hash_unset builder_busy "${builder_id:?}"
+	_bget status "${builder_id:?}" status ||
+	    err 1 "job_done: Failed to grab status for builder_id=${builder_id}"
 	pkgqueue_job_done "${job_type}" "${job_name}"
 	ret=0
-	_wait "${jobno}" || ret="$?"
+	_wait "${job}" || ret="$?"
 	case "${status}:" in
 	"done:"*)
 		dev_assert 0 "${ret}"
@@ -5982,6 +5998,60 @@ job_done() {
 		    "${job_name}" "${status%%:*}"
 		;;
 	esac
+	return "${ret}"
+}
+
+_build_queue_runner_exit() {
+	local ret="$?"
+
+	echo "${MY_JOB_IDX:?}" >&6
+	fp_sleep FP_BUILD_QUEUE_RUNNER_EXIT_SLEEP
+	return "${ret}"
+}
+
+build_queue_runner() {
+	[ $# -ge 1 ] || eargs build_queue_runner cmd '[args...]'
+
+	setup_traps _build_queue_runner_exit
+	fp_sleep FP_BUILD_QUEUE_RUNNER_ENTER_SLEEP
+	"$@"
+}
+
+_build_queue_check_orphans() {
+	[ $# -eq 0 ] || eargs _build_queue_check_orphans
+	local job_idx jret job job_status
+
+	case "${FP_BUILD_QUEUE_NO_CRASHED_COLLECTION:-}" in
+	1) return 0 ;;
+	esac
+	for job_idx in ${BUILDER_JOB_IDXS}; do
+		hash_get job_idx_job "${job_idx:?}" job ||
+		    err "${EX_SOFTWARE:-70}" "_build_queue_check_orphans:" \
+			"failed to find job" \
+			"job_idx=${job_idx}"
+		dev_assert_true kill -0 "${job}"
+		get_job_status "${job:?}" job_status ||
+		    err "${EX_SOFTWARE:-70}" "_build_queue_check_orphans:" \
+			"get_job_status ${job}"
+		case "${job_status:?}" in
+		"Running") continue ;;
+		esac
+		# The job is Done or Terminated.
+		msg_dev "_build_queue_check_orphans: discovered" \
+		    "job_idx=${job_idx:?}" \
+		    "job=${job}" \
+		    "was Done/Terminated: $(jobs -l)"
+		jret=0
+		job_done "${job_idx:?}" || jret="$?"
+		case "${jret}" in
+		0) ;;
+		*)
+			err 1 "_build_queue_check_orphans: job_done failed" \
+			    "job_idx=${job_idx}" \
+			    "ret=${jret}"
+			;;
+		esac
+	done
 }
 
 build_queue() {
@@ -5990,10 +6060,12 @@ build_queue() {
 	local jname="$1"
 	local ptname="$2"
 	local setname="$3"
-	# builder_id is analgous to MY_BUILDER_ID: builder number 0..$JOBS
-	# jobno is from $(jobs)
-	local builder_id jobno job_name builders_active queue_empty
-	local job_type job_status job_finished timeout
+	# builder_id is analgous to MY_BUILDER_ID: builder number 0..$BUILDERS
+	# job is from $(jobs)
+	# job_idx is a unique id for the job
+	local builder_id job job_name builders_active queue_empty
+	local next_job_idx job_idx job_type job_status check_orphans timeout
+	local BUILDER_JOB_IDXS
 
 	run_hook build_queue start
 
@@ -6003,53 +6075,44 @@ build_queue() {
 	queue_empty=0
 
 	msg "Hit CTRL+t at any time to see build progress and stats"
-	msg_dev "build_queue: JOBS=${JOBS}"
+	msg_dev "build_queue: BUILDERS=${BUILDERS}"
 
-	job_finished=0
+	check_orphans=0
+	next_job_idx=0
+	BUILDER_JOB_IDXS=
+	BUILDER_JOBS=
+	# Mark all builders idle
+	for builder_id in ${BUILDERS:?}; do
+		hash_unset builder_busy "${builder_id}" || :
+	done
+	# Timeout indicates how often we check for dead jobs or
+	# a stuck queue.
+	timeout="${BUILD_QUEUE_TIMEOUT:-30}"
 	while :; do
-		builders_active=0
-		# Timeout indicates how often we check for dead jobs or
-		# a stuck queue.
-		timeout=30
-		for builder_id in ${JOBS}; do
-			# Collect dead jobs
-			if hash_get builder_jobs "${builder_id}" jobno; then
-				# If a job just finished we skip checking status of
-				# other jobs. We focus on filling empty slots.
-				case "${job_finished}" in
-				1)
-					builders_active=1
-					continue
-					;;
-				esac
-				dev_assert_true kill -0 "${jobno}"
-				get_job_status "${jobno}" job_status ||
-				    err "${EX_SOFTWARE:-70}" "build_queue: get_job_status ${jobno}"
-				case "${job_status}" in
-				"Running")
-					builders_active=1
-					continue
-					;;
-				esac
-				msg_dev "build_queue: loop discovered" \
-				    "job=${jobno} builder_id=${builder_id}" \
-				    "was Done: $(jobs -l)"
-				# The job is Done or Terminated.
-				job_done "${builder_id}"
-			fi
-
-			# This builder is idle and needs work.
-
+		local -
+		case "${check_orphans}" in
+		1)
+			# First check for crashed jobs. We may pick up
+			# successful jobs here too.
+			_build_queue_check_orphans
+			check_orphans=0
+			;;
+		esac
+		# Then check for idle builders to dispatch jobs to.
+		for builder_id in ${BUILDERS:?}; do
+			# If the queue is empty, there is nothing to do here.
 			case "${queue_empty:?}" in
-			# Continue until we collect all jobs.
-			1) continue ;;
+			1) break ;;
 			esac
-
+			if hash_isset builder_busy "${builder_id}"; then
+				continue
+			fi
+			# This builder is idle and needs work.
+			# Get the next item from the queue.
 			pkgqueue_get_next job_type job_name ||
 			    err 1 "Failed to find a package from the queue."
 			msg_dev "build_queue: pkgqueue_get_next got" \
 			    "job=${job_type-}${job_name:+:${job_name}}"
-
 			case "${job_name}" in
 			"")
 				# Check if the ready-to-run pool and
@@ -6058,6 +6121,8 @@ build_queue() {
 					queue_empty=1
 					msg_dev "build_queue: queue empty"
 				else
+					# The queue is blocked until we finish
+					# some work.
 					msg_dev "build_queue: queue idle"
 				fi
 				continue
@@ -6066,24 +6131,41 @@ build_queue() {
 			case "${job_type}" in
 			"build") ;;
 			*)
-				err ${EX_SOFTWARE} "Found job '${job_name}' with unsupported type '${job_type}'."
+				err ${EX_SOFTWARE} "Found job '${job_name}'" \
+				    "with unsupported type '${job_type}'."
 				;;
 			esac
-			builders_active=1
+			dev_assert_false hash_isset builder_busy \
+			    "${builder_id:?}"
+			next_job_idx="$((next_job_idx + 1))"
+			job_idx="${next_job_idx:?}"
 			# Opportunistically start the builder in a subproc
-			MY_BUILDER_ID="${builder_id:?}" spawn_job_protected \
+			MY_BUILDER_ID="${builder_id:?}" \
+			    MY_JOB_IDX="${job_idx:?}" \
+			    spawn_job_protected \
 			    maybe_start_builder "${builder_id}" "${jname}" \
 			        "${ptname}" "${setname}" \
-			    reset_funcstack \
+			    build_queue_runner \
 			    build_pkg "${job_name}"
-			jobno="%${spawn_jobid:?}"
-			hash_set builder_jobs "${builder_id}" "${jobno}"
-			hash_set builder_job_type "${builder_id}" "${job_type}"
-			hash_set builder_job_name "${builder_id}" "${job_name}"
-			list_add BUILDER_JOBNOS "${jobno}"
-			msg_dev "build_queue: launched jobno=${jobno}" \
-			    "job=${job_type}:${job_name}"
+			job="${spawn_job:?}"
+			hash_set job_idx_job "${job_idx:?}" "${job:?}"
+			hash_set job_idx_job_type "${job_idx:?}" "${job_type}"
+			hash_set job_idx_job_name "${job_idx:?}" "${job_name}"
+			hash_set job_idx_builder_id "${job_idx:?}" \
+			    "${builder_id:?}"
+			list_add BUILDER_JOBS "${job:?}"
+			list_add BUILDER_JOB_IDXS "${job_idx:?}"
+			hash_set builder_busy "${builder_id:?}" 1
+			msg_dev "build_queue: launched job=${job}" \
+			    "job_idx=${job_idx}" \
+			    "builder_id=${builder_id}" \
+			    "runjob=${job_type}:${job_name}"
 		done
+
+		case "${BUILDER_JOB_IDXS:+set}" in
+		set) builders_active=1 ;;
+		*)   builders_active=0 ;;
+		esac
 
 		case "${queue_empty:?}" in
 		1)
@@ -6104,37 +6186,32 @@ build_queue() {
 
 		# If builders are idle then there is a problem.
 		case "${builders_active:?}" in
-		0)
-			msg_dev "build_queue: pkgqueue_sanity_check on idle" \
-			    "$(clock -monotonic)"
-			pkgqueue_sanity_check 1
-			msg_dev "build_queue: pkgqueue_sanity_check return" \
-			    "$(clock -monotonic)"
-			;;
+		0) pkgqueue_sanity_check 1 ;;
 		esac
 
 		update_remaining
 
 		# Wait for an event from a child. All builders are busy.
-		builder_id=
-		read_blocking -t "${timeout}" builder_id <&6 || :
-		case "${builder_id:+set}" in
+		job_idx=
+		read_blocking -t "${timeout:?}" job_idx <&6 || :
+		fp_sleep FP_BUILD_QUEUE_POST_READ
+		case "${job_idx:+set}" in
 		set)
-			msg_dev "build_queue: jobpipe read" \
-			    "builder_id=${builder_id}"
+			msg_dev "build_queue: jobpipe read job_idx=${job_idx}"
 			# A job just finished.
-			if job_done "${builder_id}"; then
-				# Do a quick scan to try dispatching
-				# ready-to-build to idle builders.
-				job_finished=1
+			if job_done "${job_idx:?}"; then
 				msg_dev "build_queue:" \
-				    "builder_id=${builder_id} job_done success"
+				    "builder_id=${builder_id}" \
+				    "job_idx=${job_idx}" \
+				    "job_done success"
 			else
 				# The job is already done. It was found to be
 				# done by a kill -0 check in a scan.
 				:
 				msg_dev "build_queue:" \
-				    "builder_id=${builder_id} was already done"
+				    "builder_id=${builder_id}" \
+				    "job_idx=${job_idx}" \
+				    "was already done"
 			fi
 			;;
 		"")
@@ -6142,7 +6219,7 @@ build_queue() {
 			# No event found. The next scan will check for
 			# crashed builders and deadlocks by validating
 			# every builder is really non-idle.
-			job_finished=0
+			check_orphans=1
 			;;
 		esac
 	done
@@ -6234,7 +6311,7 @@ parallel_build() {
 	    "${log:?}/.poudriere.pkg_pool_trimmed%" || :
 
 	msg "Building ${nremaining} packages using up to ${PARALLEL_JOBS} builders"
-	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
+	BUILDERS="$(jot -w %02d ${PARALLEL_JOBS})"
 
 	# Ensure rollback for builders doesn't copy schg files.
 	if schg_immutable_base; then
@@ -6271,7 +6348,7 @@ parallel_build() {
 
 	coprocess_start pkg_cacher
 
-	bset builders "${JOBS}"
+	bset builders "${BUILDERS:?}"
 	bset status "parallel_build:"
 
 	case "${PROFILING:-no}" in
@@ -6466,6 +6543,26 @@ fp_pkgname() {
 	return 1
 }
 
+_build_pkg_fp() {
+	[ $# -eq 1 ] || eargs _build_pkg_fp pkgname
+	local _bpf_pkgname="$1"
+
+	if fp_pkgname FP_BUILD_PKG_SETE_PKGNAMES "${_bpf_pkgname:?}"; then
+		false
+		# If set -e was not respected then pretend like no crash
+		# happened to cause the test to fail.
+		msg_error "set -e failure not respected"
+	fi
+	if fp_pkgname FP_BUILD_PKG_TRAP_PKGNAMES "${_bpf_pkgname:?}"; then
+		raise SIGTERM
+		msg_error "trap SIGTERM not respected"
+	fi
+	if fp_pkgname FP_BUILD_PKG_ERR_PKGNAMES "${_bpf_pkgname:?}"; then
+		err 1 "build_pkg: FP_BUILD_PKG_ERR_PKGNAME match on" \
+		    "${_bpf_pkgname:?}"
+	fi
+}
+
 build_pkg() {
 	[ "$#" -eq 1 ] || eargs build_pkg pkgname
 	local pkgname="$1"
@@ -6480,7 +6577,7 @@ build_pkg() {
 	local ret=0
 	local tmpfs_blacklist_dir JEXEC_LIMITS
 	local elapsed now jpkg_glob originspec status
-	local PORTTESTING
+	local PORTTESTING build_reason
 	local -
 
 	_my_path mnt
@@ -6501,6 +6598,8 @@ build_pkg() {
 
 	ensure_pkg_installed || :
 
+	bset_job_status "starting" "${originspec}" "${pkgname}"
+	_build_pkg_fp "${pkgname:?}"
 	if [ -f "${PACKAGES:?}/All/${pkgname:?}.${PKG_EXT}" ]; then
 		job_msg_status "Inspecting" "${port}${FLAVOR:+@${FLAVOR}}" \
 		    "${pkgname}" "determining shlib requirements"
@@ -6523,17 +6622,17 @@ build_pkg() {
 			clean_pool "build" "${pkgname}" "${originspec}" \
 			    "${clean_rdepends}"
 			bset "${MY_BUILDER_ID:?}" status "done:"
-			echo "${MY_BUILDER_ID:?}" >&6
 			return 0
 		fi
-		bset_job_status "starting" "${originspec}" "${pkgname}"
-		job_msg_status "Building" "${port}${FLAVOR:+@${FLAVOR}}${subpkg:+~${subpkg}}" \
-		    "${pkgname}" "missed shlib PORTREVISION chase"
+		build_reason="missed shlib PORTREVISION chase"
 	else
-		bset_job_status "starting" "${originspec}" "${pkgname}"
-		job_msg_status "Building" "${port}${FLAVOR:+@${FLAVOR}}${subpkg:+~${subpkg}}" \
-		    "${pkgname}"
+		unset build_reason
 	fi
+	bset_job_status "building" "${originspec}" "${pkgname}"
+	job_msg_status "Building" \
+	    "${port}${FLAVOR:+@${FLAVOR}}${subpkg:+~${subpkg}}" \
+	    "${pkgname}" \
+	    ${build_reason:+"${build_reason}"}
 
 	get_porttesting "${pkgname}" PORTTESTING
 	MAKE_ARGS="${FLAVOR:+ FLAVOR=${FLAVOR}}"
@@ -6723,8 +6822,6 @@ build_pkg() {
 	log_stop
 
 	bset "${MY_BUILDER_ID:?}" status "done:"
-
-	echo "${MY_BUILDER_ID:?}" >&6
 }
 
 stop_build() {

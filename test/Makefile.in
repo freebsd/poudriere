@@ -548,6 +548,11 @@ JAIL_TESTS = \
 	bulk-build-multiple-eligible-in-queue.sh \
 	bulk-build-origin_has_pkgbase.sh \
 	bulk-build-porttesting.sh \
+	bulk-build-queue-race-double-job_done.sh \
+	bulk-build-quick-1-dep.sh \
+	bulk-build-quick-crashed-builder-err.sh \
+	bulk-build-quick-crashed-builder-sete.sh \
+	bulk-build-quick-crashed-builder-trap.sh \
 	bulk-build-quick-pkg.sh \
 	bulk-build-self-immutable-base-no.sh \
 	bulk-build-self-immutable-base-nullfs.sh \
@@ -1819,6 +1824,41 @@ bulk-build-origin_has_pkgbase.sh.log: bulk-build-origin_has_pkgbase.sh
 bulk-build-porttesting.sh.log: bulk-build-porttesting.sh
 	@p='bulk-build-porttesting.sh'; \
 	b='bulk-build-porttesting.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-queue-race-double-job_done.sh.log: bulk-build-queue-race-double-job_done.sh
+	@p='bulk-build-queue-race-double-job_done.sh'; \
+	b='bulk-build-queue-race-double-job_done.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-quick-1-dep.sh.log: bulk-build-quick-1-dep.sh
+	@p='bulk-build-quick-1-dep.sh'; \
+	b='bulk-build-quick-1-dep.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-quick-crashed-builder-err.sh.log: bulk-build-quick-crashed-builder-err.sh
+	@p='bulk-build-quick-crashed-builder-err.sh'; \
+	b='bulk-build-quick-crashed-builder-err.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-quick-crashed-builder-sete.sh.log: bulk-build-quick-crashed-builder-sete.sh
+	@p='bulk-build-quick-crashed-builder-sete.sh'; \
+	b='bulk-build-quick-crashed-builder-sete.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-quick-crashed-builder-trap.sh.log: bulk-build-quick-crashed-builder-trap.sh
+	@p='bulk-build-quick-crashed-builder-trap.sh'; \
+	b='bulk-build-quick-crashed-builder-trap.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

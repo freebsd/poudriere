@@ -162,6 +162,11 @@ JAIL_TESTS= \
 	bulk-build-multiple-eligible-in-queue.sh \
 	bulk-build-origin_has_pkgbase.sh \
 	bulk-build-porttesting.sh \
+	bulk-build-queue-race-double-job_done.sh \
+	bulk-build-quick-1-dep.sh \
+	bulk-build-quick-crashed-builder-err.sh \
+	bulk-build-quick-crashed-builder-sete.sh \
+	bulk-build-quick-crashed-builder-trap.sh \
 	bulk-build-quick-pkg.sh \
 	bulk-build-self-immutable-base-no.sh \
 	bulk-build-self-immutable-base-nullfs.sh \
