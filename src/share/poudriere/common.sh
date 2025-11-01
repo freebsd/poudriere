@@ -3951,12 +3951,14 @@ jail_start() {
 		    \( -depth 1 -name wrkdirs -prune \) -o \
 		    \( -type d -o -type f -o -type l \) \
 		    -exec chflags -fh schg {} +
+		[ -d "${tomnt:?}/boot/modules" ] &&
+		    chflags -R noschg "${tomnt:?}/boot/modules"
+		[ -d "${tomnt:?}/boot/firmware" ] &&
+		    chflags -R noschg "${tomnt:?}/boot/firmware"
 		chflags -R noschg \
 		    "${tomnt:?}${LOCALBASE:-/usr/local}" \
 		    "${tomnt:?}${PREFIX:-/usr/local}" \
 		    "${tomnt:?}/usr/home" \
-		    "${tomnt:?}/boot/modules" \
-		    "${tomnt:?}/boot/firmware" \
 		    "${tomnt:?}/boot"
 		if [ -n "${CCACHE_STATIC_PREFIX-}" ] && \
 			[ -x "${CCACHE_STATIC_PREFIX}/bin/ccache" ]; then
