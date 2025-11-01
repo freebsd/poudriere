@@ -267,11 +267,13 @@ _assert_file_reg() {
 	aecho TEST "${lineinfo}" "awk -f ${AWKPREFIX:?}/file_cmp_reg.awk '${_aexpected}' '${have}'"
 	awk -f "${AWKPREFIX:?}/file_cmp_reg.awk" "${_aexpected}" "${have}" ||
 	    _afg_ret="$?"
-	reason="${reason:+${reason} -}
-HAVE:
-$(cat -nvet "${have}")
-EXPECTED:
-$(cat -nvet "${_aexpected}")"
+	reason="$(\
+	    printf "%s%s\nHAVE:\n%s\nEXPECTED:\n%s\n" \
+	    "${reason}" \
+	    "${reason:+ -}" \
+	    "$(cat -nvet "${have}")" \
+	    "$(cat -nvet "${_aexpected}")" \
+	)"
 	if [ "${_afg_ret}" -ne 0 ]; then
 		aecho FAIL "${lineinfo}" "${reason}"
 		#diff -u "${_aexpected}" "${have}" | cat -vet >&${REDIRECTED_STDERR_FD:-2}
