@@ -426,75 +426,117 @@ expand_test_contexts() {
 	-) unset test_contexts_file ;;
 	esac
 	awk '
-	function printperlines() {
-		for (n = 0; n < varn; n++) {
-			var = varsd[n]
-			if (!perlineidx[var]) {
-				continue
-			}
-			for (i = 0; i < perlineidx[var]; i++) {
-				if (have_combos) {
-					nest(0, 0, perline[var, i])
-				} else {
-					print perline[var, i]
+	function printperlinesvar(group, var) {
+		for (i = 0; i < values_perline_cnt[group, var]; i++) {
+			printed = 0
+			for (inner_group in groups) {
+				# Loop on each of my values
+				output = values_perline[group, var, i]
+				if (have_combos[inner_group]) {
+					printed = 1
+					nest(inner_group, 0, 0, output)
 				}
+			}
+			if (printed == 0) {
+				print output
 			}
 		}
 	}
-	function nest(varidx, nestlevel, combostr, n, i, pvar) {
-		pvar = combovars[varidx]
-		if (combostr && varidx == have_combos && nestlevel == have_combos) {
+	function printperlines(group) {
+		for (n = 0; n < perlinesgroupsvars_cnt[group]; n++) {
+			var = perlinesgroupsvars[group, n]
+			printperlinesvar(group, var)
+		}
+	}
+	function nest(group, varidx, nestlevel, combostr, n, i, pvar) {
+		pvar = combovars[group, varidx]
+		if (combostr && varidx == have_combos[group] &&
+		    nestlevel == have_combos[group]) {
 			print combostr
 			return
 		}
 		# nest pure combos
-		for (n = varidx + 1; n <= have_combos; n++) {
-			for (i = 0; i < combocount[pvar]; i++) {
-				nest(n, nestlevel + 1,
+		for (n = varidx + 1; n <= have_combos[group]; n++) {
+			for (i = 0; i < combocount[group, pvar]; i++) {
+				nest(group, n, nestlevel + 1,
 				    combostr ? \
-				    (combostr " " combos[pvar, i]) : \
-				    combos[pvar, i])
+				    (combostr " " values_combos[group, pvar, i]) : \
+				    values_combos[group, pvar, i])
 			}
 		}
 	}
-	function processline(var, first_arg, do_combo) {
-		varsd[varn] = var
-		varn++
+	function process_value(var, argn) {
+		if ($argn ~ /^".*"$/) {
+			value = substr($argn, 2, length($argn) - 2)
+		} else if ($argn ~ /^"/) {
+			value = substr($argn, 2, length($argn) - 1)
+			while (argn != NF) {
+				argn++
+				if ($argn ~ /"$/) {
+					value = value FS substr($argn, 1,
+					    length($argn) - 1)
+					    break
+				} else {
+					value = value FS $argn
+				}
+			}
+		} else {
+			value = $argn
+		}
+		result[0] = sprintf("%s=\"%s\";", var, value)
+		result[1] = argn
+	}
+	function processline(group, var, first_arg, do_combo) {
+		groups[group] = 1
+		if (!varn[group]) {
+			varn[group] = 0
+		}
+		varsd[group, varn[group]] = var
+		varn[group]++
+		# This _matches_ old vard/varn usage.
+		allvars[allvars_cnt] = var
+		allvars_cnt++
 		if (do_combo) {
-			combovars[have_combos] = var
-			have_combos++
+			if (!have_combos[group]) {
+				have_combos[group] = 0
+			}
+			combovars[group, have_combos[group]] = var
+			have_combos[group]++
+			if (!values_combos_cnt[group, var]) {
+				values_combos_cnt[group, var] = 0
+			}
+		} else {
+			if (!perlinesgroupsvars_cnt[group]) {
+			    perlinesgroupsvars_cnt[group] = 0
+			}
+			perlinesgroupsvars[group,
+			    perlinesgroupsvars_cnt[group]] = var
+			perlinesgroupsvars_cnt[group]++
+			if (!values_perline_cnt[group, var]) {
+				values_perline_cnt[group, var] = 0
+			}
 		}
 		for (i = first_arg; i <= NF; i++) {
-			if ($i ~ /^".*"$/) {
-				value = substr($i, 2, length($i) - 2)
-			} else if ($i ~ /^"/) {
-				value = substr($i, 2, length($i) - 1)
-				while (i != NF) {
-					i++
-					if ($i ~ /"$/) {
-						value = value FS substr($i, 1,
-						    length($i) - 1)
-						    break
-					} else {
-						value = value FS $i
-					}
-				}
-			} else {
-				value = $i
-			}
-			output = sprintf("%s=\"%s\";", var, value)
+			process_value(var, i)
+			output = result[0]
+			i = result[1]
 			if (do_combo) {
-				combos[var, combosidx] = output
-				combosidx++
+				values_combos[group, var,
+				    values_combos_cnt[group, var]] = output
+				values_combos_cnt[group, var]++
 			} else {
-				perline[var, perlineidx[var]] = output
-				perlineidx[var]++
+				values_perline[group, var,
+				    values_perline_cnt[group, var]] = output
+				values_perline_cnt[group, var]++
 			}
+		}
+		if (do_combo) {
+			combocount[group, var] = values_combos_cnt[group, var]
 		}
 	}
 	BEGIN {
-		varn = 0
-		have_combos = 0
+		unique_groups = 0
+		allvars_cnt = 0
 	}
 	/^#/ { next }
 	/=.*;/ {
@@ -502,29 +544,60 @@ expand_test_contexts() {
 		print
 		next
 	}
-	# pre-line context
-	$1 == "-" {
+	# Outer loop vars; they combinatorially expand over each group.
+	# These lines will never combine with another "-" line regardless of
+	# trying to name it a group.
+	# One level above the group expansions.
+	# Like "copying" the test into another file and changing how the
+	# test is ran rather than the values being tested.
+	# see test_expand_everything() for clear example.
+	/^-/ {
+		group = $1
 		var = $2
-		perlineidx[var] = 0
 		have_perlines = 1
-		processline(var, 3, 0)
+		processline(group, var, 3, 0)
 		next
 	}
-	# matrix context
+	# Groups are sets that combinatorially expand.
+	# All "+$groupname" lines are grouped by group named "$groupname".
+	# All "+" lines will be treated as individual unique groups.
+	# Using different groups can make sense if you want to logically group
+	# independent test variables that do not need to expand against
+	# other variables.
+	# See test_expand_2_groups() for a clear example.
+	/^\+/ {
+		group = $1
+		# If there is no group name specified then it creates a new
+		# unique group.
+		if (group == "+") {
+			group = "+unique" unique_groups
+			unique_groups++
+		}
+		var = $2
+		processline(group, var, 3, 1)
+		next
+	}
+	# Same as "+_default"
 	{
 		var = $1
-		combosidx = 0
-		processline(var, 2, 1)
-		combocount[var] = combosidx
+		group = "_default"
+		processline(group, var, 2, 1)
 	}
 	END {
 		if (have_perlines == 0) {
-			nest(0, 0)
+			for (group in groups) {
+				nest(group, 0, 0)
+			}
 		} else {
-			printperlines()
+			for (group in groups) {
+				if (!perlinesgroupsvars_cnt[group]) {
+					continue
+				}
+				printperlines(group)
+			}
 		}
 	}
-	' ${test_contexts_file:+"${test_contexts_file}"}
+	' ${test_contexts_file:+"${test_contexts_file}"} | sort -u
 }
 
 add_test_function() {
