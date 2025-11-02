@@ -965,6 +965,7 @@ expect_error_on_stderr() {
 }
 
 setup_traps cleanup
+set -T
 
 msg_debug "getpid: $$"
 case "${TEST_CONTEXTS_NUM_CHECK:+set}" in
