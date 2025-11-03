@@ -3951,10 +3951,12 @@ jail_start() {
 		    \( -depth 1 -name wrkdirs -prune \) -o \
 		    \( -type d -o -type f -o -type l \) \
 		    -exec chflags -fh schg {} +
-		[ -d "${tomnt:?}/boot/modules" ] &&
+		if [ -d "${tomnt:?}/boot/modules" ]; then
 		    chflags -R noschg "${tomnt:?}/boot/modules"
-		[ -d "${tomnt:?}/boot/firmware" ] &&
+		fi
+		if [ -d "${tomnt:?}/boot/firmware" ]; then
 		    chflags -R noschg "${tomnt:?}/boot/firmware"
+		fi
 		chflags -R noschg \
 		    "${tomnt:?}${LOCALBASE:-/usr/local}" \
 		    "${tomnt:?}${PREFIX:-/usr/local}" \
