@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd October 3, 2025
+.Dd November 4, 2025
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -60,6 +60,15 @@ and
 for more information.
 .It Fl N
 Disable color support.
+.It Fl s Ar var
+Inherit the default for
+.Ar var
+from the environment.
+.It Fl s Ar var=value
+Set the default for
+.Ar var
+to the given
+.Ar value .
 .It Fl v
 This will show more information during the build.
 Specify twice to enable debug output.
@@ -117,7 +126,17 @@ Show version of
 .Nm .
 .El
 .Sh ENVIRONMENT
-.Bl -tag -width "HTTP_PROXY FTP_PROXY"
+The environment is cleared of variables not listed in this section, the
+.Sx ENVIRONMENT
+section of a subcommand, specified with
+.Fl s Ar var
+or
+.Fl s Ar var=value ,
+or listed in
+.Ev POUDRIERE_ENV_INHERIT .
+.Bl -tag -width "POUDRIERE_ENV_INHERIT"
+.It Ev POUDRIERE_ENV_INHERIT
+A list of variable names that will be inherited from the environment.
 .It Ev POUDRIERE_ETC
 If specified, the path to poudriere's config directory.
 Defaults to
