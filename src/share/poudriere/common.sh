@@ -6443,6 +6443,33 @@ print_phase_footer() {
 	echo "==========================================================================="
 }
 
+fp_pkgname() {
+	[ $# -eq 2 ] || eargs fp_pkgname fp_var pkgname
+	local fp_fp_var="$1"
+	local fp_pkgname="$2"
+	local fp_value fp_pkg_glob fp_pkgbase
+	local -
+
+	if ! getvar "${fp_fp_var}" fp_value; then
+		return 1
+	fi
+	fp_pkgbase="${fp_pkgname%-*}"
+	set -o noglob
+	for fp_pkg_glob in ${fp_value}; do
+		# shellcheck disable=SC2254
+		case "${fp_pkgbase}" in
+		${fp_pkg_glob})
+			msg_error "${fp_fp_var:?} failpoint match" \
+			    "pkgbase='${fp_pkgbase}'" \
+			    "fp_pkg_glob='${fp_pkg_glob}'"
+			return 0
+			;;
+		esac
+	done
+	set +o noglob
+	return 1
+}
+
 build_pkg() {
 	[ "$#" -eq 1 ] || eargs build_pkg pkgname
 	local pkgname="$1"
@@ -6688,25 +6715,10 @@ build_pkg() {
 		;;
 	esac
 
-	case "${FP_BUILD_PKG_EXIT_PKGNAMES:+set}" in
-	set)
-		local fp_pkg_glob
-
-		set -o noglob
-		for fp_pkg_glob in ${FP_BUILD_PKG_EXIT_PKGNAMES}; do
-			# shellcheck disable=SC2254
-			case "${pkgbase}" in
-			${fp_pkg_glob})
-				msg_error "FP_BUILD_PKG_EXIT_PKGNAMES failpoint match pkgbase='${pkgbase}' fp_pkg_glob='${fp_pkg_glob}'"
-				# exit immediately rather than go through
-				# err() cleanup.
-				exit 1
-				;;
-			esac
-		done
-		set +o noglob
-		;;
-	esac
+	if fp_pkgname FP_BUILD_PKG_EXIT_PKGNAMES "${pkgname}"; then
+		# exit immediately rather than go through err() cleanup.
+		exit 1
+	fi
 
 	clean_pool "build" "${pkgname}" "${originspec}" "${clean_rdepends}"
 
