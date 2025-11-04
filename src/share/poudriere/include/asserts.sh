@@ -593,12 +593,14 @@ setup_runtime_asserts() {
 			# not use eval.
 			eval "dev_${aliasname}() { local DEV_ASSERT=1; ${aliasname} \"\$@\"; }"
 			alias "dev_${aliasname}=DEV_ASSERT=1 ${aliasname} "
+			use_debug() { return 0; }
 			;;
 		*)
 			# This function may be called in "$@" contexts that do
 			# not use eval.
 			eval "dev_${aliasname}() { :; }"
 			alias "dev_${aliasname}=# "
+			use_debug() { return 1; }
 			;;
 		esac
 	done <<-EOF

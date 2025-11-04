@@ -206,11 +206,9 @@ _err() {
 	case "${exit_status}" in
 	0) msg "${msg}" ;;
 	*)
-		case "${USE_DEBUG:-no}" in
-		yes)
+		if use_debug; then
 			lineinfo="${COLOR_ERROR}[$(getpid)${PROC_TITLE:+:${PROC_TITLE}}]${lineinfo:+ ${lineinfo}}${COLOR_RESET}"
-			;;
-		esac
+		fi
 		# hack for tests using SH=/bin/sh. See critical_retry().
 		local msg_type
 		case "${_CRITICAL_RETRY:-0}.${exit_status}" in
@@ -255,13 +253,11 @@ _err() {
 dev_err() {
 	DEV_ERROR=1 err "$@"
 }
-case "${USE_DEBUG:-no}" in
-yes) ;;
-*)
+if ! use_debug; then
 	# This function may be called in "$@" contexts that do not use eval.
 	dev_err() { :; }
-	alias dev_err='# ' ;;
-esac
+	alias dev_err='# '
+fi
 
 # Extract key type from PKG_REPO_SIGNING_KEY.
 repo_key_type() {
