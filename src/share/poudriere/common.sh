@@ -1241,6 +1241,7 @@ run_hook_file() {
 		    SETNAME="${SETNAME-}" \
 		    PACKAGES="${PACKAGES-}" \
 		    PACKAGES_ROOT="${PACKAGES_ROOT-}" \
+		    VERBOSE="${VERBOSE:-0}" \
 		    /bin/sh "${hookfile:?}" "${event}" "$@"
 	) || err 1 "Hook ${hookfile} for '${hook}:${event}' returned non-zero"
 	return 0
