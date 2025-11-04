@@ -35,7 +35,7 @@ fi
 
 # Duplicated from src/share/poudriere/util.sh because it is too early to
 # include that file.
-write_atomic_cmp() {
+local_write_atomic_cmp() {
 	local dest="$1"
 	local tmp ret
 
@@ -90,7 +90,7 @@ ERR_CHECK="$(mktemp -ut err)"
 
 mkdir -p ${POUDRIERE_ETC}/poudriere.d ${POUDRIERE_ETC}/run
 rm -f "${POUDRIERE_ETC}/poudriere.conf"
-write_atomic_cmp "${POUDRIERE_ETC}/poudriere.d/poudriere.conf" << EOF
+local_write_atomic_cmp "${POUDRIERE_ETC}/poudriere.d/poudriere.conf" << EOF
 NO_ZFS=yes
 BASEFS=${BASEFS}
 DISTFILES_CACHE=${DISTFILES_CACHE:?}
@@ -107,7 +107,7 @@ HTML_JSON_UPDATE_INTERVAL=${HTML_JSON_UPDATE_INTERVAL:?}
 ${URL_BASE:+URL_BASE="${URL_BASE}"}
 $(env | grep -q 'CCACHE_STATIC_PREFIX' && { env | awk '/^CCACHE/ {print "export " $0}'; } || :)
 EOF
-write_atomic_cmp "${POUDRIERE_ETC}/poudriere.d/make.conf" << EOF
+local_write_atomic_cmp "${POUDRIERE_ETC}/poudriere.d/make.conf" << EOF
 # For tests
 PKG_NOCOMPRESS=		t
 PKG_COMPRESSION_FORMAT=	tar
