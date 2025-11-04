@@ -56,6 +56,10 @@ env_set() {
 # Exporting saved until last to not impact any tests between env_set and
 # env -S.
 env_export() {
+	local -
+
+	set -o noglob
+	# shellcheck disable=SC2086
 	export ${_EXPORT_LIST}
 }
 
