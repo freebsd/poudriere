@@ -93,15 +93,15 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = @USE_LOCKF@ external/sh/mknodes$(EXEEXT) \
+noinst_PROGRAMS = external/sh/mknodes$(EXEEXT) \
 	external/sh/mksyntax$(EXEEXT)
 @MAINTAINER_MODE_TRUE@am__append_1 = -Wextra -Werror
 pkglibexec_PROGRAMS = clock$(EXEEXT) cpdup$(EXEEXT) dirempty$(EXEEXT) \
-	dirwatch$(EXEEXT) locked_mkdir$(EXEEXT) nc$(EXEEXT) \
-	poudriered$(EXEEXT) ptsort$(EXEEXT) pwait$(EXEEXT) \
+	dirwatch$(EXEEXT) locked_mkdir$(EXEEXT) lockf$(EXEEXT) \
+	nc$(EXEEXT) poudriered$(EXEEXT) ptsort$(EXEEXT) pwait$(EXEEXT) \
 	rename$(EXEEXT) @USE_RM@ setsid$(EXEEXT) timeout$(EXEEXT) \
 	timestamp$(EXEEXT) @BUILD_SH@
-EXTRA_PROGRAMS = lockf$(EXEEXT) rm$(EXEEXT) sh$(EXEEXT)
+EXTRA_PROGRAMS = rm$(EXEEXT) sh$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -629,7 +629,6 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 USE_DEBUG = @USE_DEBUG@
-USE_LOCKF = @USE_LOCKF@
 USE_RM = @USE_RM@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@

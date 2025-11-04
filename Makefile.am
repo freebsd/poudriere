@@ -153,6 +153,7 @@ pkglibexec_PROGRAMS= \
 		     dirempty \
 		     dirwatch \
 		     locked_mkdir \
+		     lockf \
 		     nc \
 		     poudriered \
 		     ptsort \
@@ -163,9 +164,7 @@ pkglibexec_PROGRAMS= \
 		     timeout \
 		     timestamp \
 		     @BUILD_SH@
-
 EXTRA_PROGRAMS= \
-		lockf \
 		rm \
 		sh
 
@@ -189,7 +188,6 @@ dirempty_SOURCES=	src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
 locked_mkdir_SOURCES=	src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 locked_mkdir_CFLAGS=	$(AM_CFLAGS) $(SAN_CFLAGS)
-noinst_PROGRAMS+=	@USE_LOCKF@
 lockf_SOURCES=		external/freebsd/usr.bin/lockf/lockf.c
 nc_SOURCES=		src/libexec/poudriere/nc/nc.c
 pwait_SOURCES=		external/freebsd/bin/pwait/pwait.c

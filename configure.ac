@@ -59,23 +59,6 @@ AC_CHECK_HEADERS_ONCE([float.h])
 AC_CHECK_HEADERS_ONCE([math.h])
 AC_CHECK_HEADERS_ONCE([fcntl.h])
 
-# Look for lockf -T support for test/runtest.
-AC_CACHE_CHECK([whether lockf -T works], [ac_cv_lockf_T_works],
-               [ac_cv_lockf_T_works=no
-                tmpfile=$(mktemp)
-                ret=0
-                lockf -T "${tmpfile}" true 2>/dev/null || ret=$?
-                rm -f "${tmpfile}"
-                test "${ret}" -eq 0 && ac_cv_lockf_T_works=yes])
-if test "$ac_cv_lockf_T_works" = yes; then
-  USE_LOCKF=
-else
-  # Need bundled
-  USE_LOCKF=lockf
-fi
-AC_SUBST([USE_LOCKF])
-
-
 # Look for rm -x support.  Exit status 64 is bad argument, 1 is
 # bad file.  So as long as it is not 64 it should be fine.
 AC_CACHE_CHECK([whether rm -x works], [ac_cv_rm_x_works],
