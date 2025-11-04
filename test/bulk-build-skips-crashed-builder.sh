@@ -33,7 +33,7 @@ EXPECTED_FAILED="misc/foo@default:build_port_done"
 EXPECTED_CRASHED="foo-20161010"
 EXPECTED_SKIPPED="misc/freebsd-release-manifests@foo:foo-20161010"
 
-expect_error_on_stderr do_bulk -c "${LISTPORTS}"
+do_bulk -c "${LISTPORTS}"
 assert 70 "$?" "Bulk should exit EX_SOFTWARE"
 
 # Don't check stats as they are going to be wrong on a success+crash.

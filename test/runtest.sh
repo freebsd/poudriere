@@ -364,21 +364,25 @@ runtest() {
 		if [ "${ret}" -eq 0 ]; then
 			case "${TEST##*/}" in
 			bulk-bad-dep-pkgname.sh|\
+			bulk-build-skips-crashed-builder.sh|\
 			bulk-build-specific-bad-flavor.sh|\
 			bulk-flavor-nonexistent.sh|\
 			bulk-flavor-specific-dep-and-specific-listed-nonexistent.sh|\
 			bulk-flavor-specific-dep-nonexistent.sh|\
 			distclean-badorigin.sh|\
+			err_catch.sh|\
+			err_catch_framework.sh|\
+			logging.sh|\
 			options-badorigin.sh|\
 			testport-all-flavors-failure.sh|\
+			testport-build-porttesting.sh|\
 			testport-default-all-flavors-failure.sh|\
 			testport-specific-bad-flavor-failure.sh|\
-			err_catch.sh|\
 			"END") ;;
 			*)
 				echo -n "Checking for unhandled errors... "
 				if egrep \
-				    ' Error: (\([0-9]+\) [a-zA-Z0-9]*|\[[0-9]+\])' \
+				    ' Error: ' \
 				    "$(get_log_name)" |
 				    sed -e 's,Error:,UnhandledError:,' |
 				    grep -v 'sleep:.*about.*second' |

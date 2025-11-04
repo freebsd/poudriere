@@ -19,7 +19,7 @@ set_pipefail
 	TMP2=$(mktemp -t mapfile)
 	TMP3=$(mktemp -ut mapfile)
 
-	ps uaxwd > "${TMP}"
+	generate_data > "${TMP}"
 
 	# This pattern is testing that the file is not written until close.
 	# And that teeing does not happen.
@@ -43,7 +43,7 @@ set_pipefail
 	TMP=$(mktemp -t mapfile)
 	TMP2=$(mktemp -t mapfile)
 
-	ps uaxwd > "${TMP}"
+	generate_data > "${TMP}"
 
 	echo "noclobber" > "${TMP2}"
 
@@ -62,7 +62,7 @@ set_pipefail
 	TMP2=$(mktemp -t mapfile)
 	TMP3=$(mktemp -t mapfile)
 
-	ps uaxwd > "${TMP}"
+	generate_data > "${TMP}"
 
 	# This pattern is testing that the file is not written until close.
 	# And that teeing does happen.

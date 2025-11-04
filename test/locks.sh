@@ -164,7 +164,7 @@ false &&
 	# Try to drop the lock - should not work
 	catch_err lock_release TEST
 	assert_not 0 "$?" "Can't release lock not owned"
-	(lock_release TEST)
+	(catch_err lock_release TEST)
 	assert_not 0 "$?" "Can't release lock not owned"
 
 	write_pipe "${SYNC_FIFO}" done

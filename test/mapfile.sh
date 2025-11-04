@@ -789,7 +789,7 @@ fi
 	TMP=$(mktemp -t mapfile)
 	TMP2=$(mktemp -t mapfile)
 
-	ps uaxwd > "${TMP}"
+	generate_data > "${TMP}"
 
 	:>"${TMP2}"
 	assert_ret 0 mapfile handle "${TMP2}" "we"
@@ -815,7 +815,7 @@ fi
 	TMP=$(mktemp -t mapfile)
 	TMP2=$(mktemp -t mapfile)
 
-	ps uaxwd > "${TMP}"
+	generate_data > "${TMP}"
 
 	:>"${TMP2}"
 	assert_ret 0 mapfile read_handle "${TMP}" "re"
@@ -830,7 +830,7 @@ fi
 	TMP2=$(mktemp -t mapfile)
 	TMP3=$(mktemp -t mapfile)
 
-	ps uaxwd > "${TMP}"
+	generate_data > "${TMP}"
 
 	:>"${TMP2}"
 	:>"${TMP3}"
@@ -846,7 +846,7 @@ fi
 	TMP=$(mktemp -t mapfile)
 	TMP2=$(mktemp -t mapfile)
 
-	ps uaxwd > "${TMP}"
+	generate_data > "${TMP}"
 
 	:>"${TMP2}"
 	assert_ret 0 mapfile_cat_file "${TMP}" > "${TMP2}"
@@ -861,7 +861,7 @@ fi
 	TMP2=$(mktemp -t mapfile)
 	TMP3=$(mktemp -t mapfile)
 
-	ps uaxwd > "${TMP}"
+	generate_data > "${TMP}"
 
 	:>"${TMP2}"
 	:>"${TMP3}"
@@ -875,7 +875,7 @@ fi
 	TMP=$(mktemp -t mapfile)
 	TMP2=$(mktemp -t mapfile)
 
-	ps uaxwd > "${TMP}"
+	generate_data > "${TMP}"
 
 	:>"${TMP2}"
 	assert_ret 0 mapfile read_handle "${TMP}" "re"
@@ -904,7 +904,7 @@ fi
 	TMP=$(mktemp -t mapfile)
 	TMP2=$(mktemp -t mapfile)
 
-	ps uaxwd > "${TMP}"
+	generate_data > "${TMP}"
 
 	:>"${TMP2}"
 	assert_ret 0 mapfile handle "${TMP2}" "we"
@@ -1107,7 +1107,7 @@ fi
 {
 	rm -f "${TMP}"
 	TMP=$(mktemp -ut mapfile)
-	ps uaxwd > "${TMP}"
+	generate_data > "${TMP}"
 	assert_ret 0 mapfile_read_proc ps_handle cat "${TMP}"
 	assert_not "" "${ps_handle}"
 	#assert_ret 0 kill -0 "$!"

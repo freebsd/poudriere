@@ -13,7 +13,7 @@ _test_framework_err() {
 	shift 2
 	case "${ERRORS_ARE_FATAL:-1}" in
 	1)
-		echo "Test Framework Error: ${lineinfo:+${lineinfo}:}$*" |
+		echo "Test FrameworkError: ${lineinfo:+${lineinfo}:}$*" |
 		    tee "${ERR_CHECK}" >&${REDIRECTED_STDERR_FD:-2}
 		case "${TEST_HARD_ERROR:-1}" in
 		1) exit "99" ;;
@@ -53,6 +53,10 @@ write_atomic_cmp() {
 	else
 		unlink "${tmp}"
 	fi
+}
+
+generate_data() {
+	ps uaxwd | egrep -v '(grep|Error)'
 }
 
 CMD="${0##*/}"
