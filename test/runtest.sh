@@ -349,6 +349,13 @@ runtest() {
 		echo "Test started: $(date)"
 		# hide set -x
 	} >&2 2>/dev/null
+	case "${AM_TESTS_FD_STDERR}" in
+	4) ;;
+	*)
+		echo "runtest: Expected ${AM_TESTS_FD_STDERR} == 4" >&2
+		exit 99
+		;;
+	esac
 	lockf -T -t 0 -k "$(get_log_name).lock" \
 	    ${TIMEOUT_BIN:?} -v ${TIMEOUT_FOREGROUND} ${TIMEOUT_KILL} ${TIMEOUT} \
 	    ${TIMESTAMP} \
@@ -357,7 +364,7 @@ runtest() {
 	    THISDIR="${THISDIR}" \
 	    SH="${SH}" \
 	    ${TRUSS:+truss -ae -f -s256 -o "$(get_log_name).truss"} \
-	    "${SH}" "${TEST}" || ret="$?"
+	    "${SH}" "${TEST}" 4>&- || ret="$?"
 	{
 		# "Error: (pid) cmd" is an sh command error.
 		# "Error: [pid] ..." is err().
