@@ -9831,6 +9831,10 @@ git_get_hash_and_dirty() {
 	local gghd_git_modified_var="$4"
 	local gghd_git_hash gghd_git_modified
 
+	case "${NO_GIT:+set}" in
+	set) return 0 ;;
+	esac
+
 	if [ ! -x "${GIT_CMD}" ]; then
 		return 1
 	fi
