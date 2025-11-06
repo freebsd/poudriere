@@ -1002,8 +1002,8 @@ function do_resize(win) {
   }
   /* Resize padding for navbar/footer heights */
   $("body")
-    .css("padding-top", $("#header").outerHeight(true))
-    .css("padding-bottom", $("footer").outerHeight(true));
+    .css("padding-top", $("nav.navbar.fixed-top").outerHeight(true))
+    .css("padding-bottom", $("nav.navbar.fixed-bottom").outerHeight(true));
 }
 
 /* Force minimum width on mobile, will zoom to fit. */
