@@ -10100,11 +10100,15 @@ prepare_ports() {
 		fi
 
 		show_log_info
-		if [ ${HTML_JSON_UPDATE_INTERVAL} -ne 0 ]; then
+		case "${HTML_JSON_UPDATE_INTERVAL}" in
+		0)
+			msg "HTML UI updates are disabled by" \
+			    "HTML_JSON_UPDATE_INTERVAL being 0"
+			;;
+		*)
 			coprocess_start html_json
-		else
-			msg "HTML UI updates are disabled by HTML_JSON_UPDATE_INTERVAL being 0"
-		fi
+			;;
+		esac
 	fi
 
 	case "${PKG_REPO_SIGNING_KEY:+set}" in
