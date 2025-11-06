@@ -349,6 +349,14 @@ time_bounded_loop() {
 	hash_set tbl_timeout "${tbl_idx}" "${tbl_timeout}"
 }
 
+_teer() {
+	[ $# -eq 2 ] || eargs _teer tee_file stdin_fifo
+	local tee_file="$1"
+	local stdin_fifo="$2"
+
+	tee "${tee_file:?}" < "${stdin_fifo:?}"
+}
+
 capture_output_simple() {
 	local my_stdout_return="$1"
 	local my_stderr_return="$2"
@@ -367,10 +375,8 @@ capture_output_simple() {
 		echo "Capture stdout logs to ${_my_stdout_log}" >&2
 		exec 6>&1
 		mkfifo "${_my_stdout}"
-		set -m
-		_spawn_wrapper tee "${_my_stdout_log}" >&6 < "${_my_stdout}" &
-		get_job_id "$!" my_stdout_job
-		set +m
+		spawn_job _teer "${_my_stdout_log}" "${_my_stdout}" >&6
+		my_stdout_job="${spawn_jobid:?}"
 		exec > "${_my_stdout}"
 		unlink "${_my_stdout}"
 		setvar "${my_stdout_return}" "${_my_stdout_log}"
@@ -387,10 +393,8 @@ capture_output_simple() {
 		exec 7>&2
 		REDIRECTED_STDERR_FD=7
 		mkfifo "${_my_stderr}"
-		set -m
-		_spawn_wrapper tee "${_my_stderr_log}" >&7 < "${_my_stderr}" &
-		get_job_id "$!" my_stderr_job
-		set +m
+		spawn_job _teer "${_my_stderr_log}" "${_my_stderr}" >&7
+		my_stderr_job="${spawn_jobid:?}"
 		exec 2> "${_my_stderr}"
 		unlink "${_my_stderr}"
 		setvar "${my_stderr_return}" "${_my_stderr_log}"

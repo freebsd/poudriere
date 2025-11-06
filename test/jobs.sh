@@ -10,7 +10,9 @@ TMP="$(mktemp -ut jobs)"
 get_jobs() {
 	[ "$#" -eq 1 ] || eargs getjobs file
 	local file="$1"
+	local -
 
+	set +m
 	jobs -l > "${file}"
 	sed -i '' -e 's, *$,,' "${file}"
 }
@@ -18,6 +20,7 @@ get_jobs() {
 pwait_racy() {
 	local allpids pid state pids IFS -
 
+	set +m
 	# pwait uses kevent to watch for exiting processes. If it attaches
 	# during process exit, it sends the event immediately. Then it is
 	# possible for wait(WNOHANG) to not reap the process yet since it
@@ -52,6 +55,8 @@ pwait_racy() {
 }
 
 noterm() {
+	local -
+	set +m
 	trap '' TERM
 	"$@"
 }

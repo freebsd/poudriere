@@ -991,6 +991,9 @@ _spawn_wrapper() {
 		esac
 		;;
 	esac
+	# No need to keep job control on.
+	# It also would block vfork if left on.
+	set +m
 
 	"$@"
 }

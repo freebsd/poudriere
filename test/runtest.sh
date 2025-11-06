@@ -611,6 +611,7 @@ _spawn_wrapper() {
 		fi
 		;;
 	esac
+	set +m
 
 	"$@"
 }
@@ -621,6 +622,7 @@ spawn() {
 
 spawn_job() {
 	local -
+
 	set -m
 	spawn "$@"
 }
