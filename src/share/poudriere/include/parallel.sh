@@ -231,7 +231,7 @@ kill_job() {
 	# Wait $timeout
 	# kill -KILL
 	_kill_job kill_job "${jobid}" \
-	    TERM ":${timeout}" KILL
+	    TERM ":${timeout}" "${KILL_JOB_FINAL_SIGNAL:-KILL}"
 }
 
 # _kill_job funcname jobid :${wait-timeout} SIG :${wait-timeout} SIG
