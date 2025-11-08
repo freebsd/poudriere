@@ -828,23 +828,6 @@ fi
 {
 	TMP=$(mktemp -t mapfile)
 	TMP2=$(mktemp -t mapfile)
-	TMP3=$(mktemp -t mapfile)
-
-	generate_data > "${TMP}"
-
-	:>"${TMP2}"
-	:>"${TMP3}"
-	assert_ret 0 mapfile read_handle "${TMP}" "re"
-	assert_ret 0 mapfile_cat -T3 "${read_handle}" > "${TMP2}" 3>"${TMP3}"
-	assert_ret 0 mapfile_close "${read_handle}"
-	assert_ret 0 diff -u "${TMP}" "${TMP2}"
-	assert_ret 0 diff -u "${TMP}" "${TMP3}"
-	rm -f "${TMP}" "${TMP2}" "${TMP3}"
-}
-
-{
-	TMP=$(mktemp -t mapfile)
-	TMP2=$(mktemp -t mapfile)
 
 	generate_data > "${TMP}"
 
@@ -854,21 +837,6 @@ fi
 	assert "${lines}" "${_mapfile_cat_file_lines_read}"
 	assert_ret 0 diff -u "${TMP}" "${TMP2}"
 	rm -f "${TMP}" "${TMP2}"
-}
-
-{
-	TMP=$(mktemp -t mapfile)
-	TMP2=$(mktemp -t mapfile)
-	TMP3=$(mktemp -t mapfile)
-
-	generate_data > "${TMP}"
-
-	:>"${TMP2}"
-	:>"${TMP3}"
-	assert_ret 0 mapfile_cat_file -T3 "${TMP}" > "${TMP2}" 3>"${TMP3}"
-	assert_ret 0 diff -u "${TMP}" "${TMP2}"
-	assert_ret 0 diff -u "${TMP}" "${TMP3}"
-	rm -f "${TMP}" "${TMP2}" "${TMP3}"
 }
 
 {
