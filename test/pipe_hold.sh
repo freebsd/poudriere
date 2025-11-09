@@ -9,9 +9,10 @@ reader() {
 
 	exec > "${stdout}"
 	exec < "${stdin}"
-
+	assert_true cond_signal setup
 	while IFS= read -r line; do
 		echo "${line}"
+		assert_true cond_signal -f readline
 	done
 }
 
@@ -27,8 +28,10 @@ reader() {
 	assert_true kill -0 "%${reader_job}"
 	echo "Blah1" > "${FIFO}"
 	assert 0 "$?"
+	assert_true cond_timedwait 5 setup
 	# Having closed the pipe the child will die.
 	assert_true _wait "%${reader_job}"
+	assert_true cond_timedwait 5 readline
 	assert_file - "${OUTPUT}" <<-EOF
 	Blah1
 	EOF
@@ -50,14 +53,21 @@ reader() {
 	assert "Running" "${status}"
 	echo "Blah1" > "${FIFO}"
 	assert 0 "$?"
+	assert_true cond_timedwait 5 setup
 	assert_true kill -0 "%${reader_job}"
 	assert_true get_job_status "%${reader_job}" status
 	assert "Running" "${status}"
+	assert_true cond_timedwait 5 readline
+	assert_true cp -f "${OUTPUT}" "${OUTPUT}.copy"
+	assert_file - "${OUTPUT}.copy" <<-EOF
+	Blah1
+	EOF
 	echo "Blah2" > "${FIFO}"
 	assert 0 "$?"
 	assert_true kill -0 "%${reader_job}"
 	assert_true get_job_status "%${reader_job}" status
 	assert "Running" "${status}"
+	assert_true cond_timedwait 5 readline
 	assert_file - "${OUTPUT}" <<-EOF
 	Blah1
 	Blah2
