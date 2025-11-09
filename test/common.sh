@@ -290,6 +290,18 @@ cond_timedwait() {
 }
 
 cond_signal() {
+	[ $# -ge 0 ] || eargs cond_signal '[-f]' '[which]' '[reason]'
+	local noclobber flag OPTIND=1
+
+	noclobber=1
+	while getopts "f" flag; do
+		case "${flag}" in
+		f) noclobber= ;;
+		*) err "${EX_USAGE:-64}" "cond_signal: Invalid flag" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ $# -ge 0 ] || eargs cond_signal '[-f]' '[which]' '[reason]'
 	local which="${1-}"
 	local reason="${2-}"
 	local file dir
@@ -304,13 +316,17 @@ cond_signal() {
 	set)
 		# Likely noclobber failure if this fails.
 		# Using 'noclobber' to make log clearer.
-		assert_true noclobber \
+		assert_true ${noclobber:+noclobber} \
 		    write_atomic "${file:?}" "${reason}"
 		;;
 	*)
 		local -
 
-		set -C # noclobber
+		case "${noclobber:+set}" in
+		set)
+			set -C # noclobber
+			;;
+		esac
 		: > "${file:?}" || return
 		;;
 	esac
