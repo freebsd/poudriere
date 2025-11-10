@@ -680,7 +680,8 @@ repo_key_path() {
 }
 
 build_repo() {
-	local origin pkg_repo_list_files hashcmd
+	local origin pkg_repo_list_files hashcmd pkg_meta_mastermnt
+	local pkg_meta
 
 	msg "Creating pkg repository"
 	if [ ${DRY_RUN} -eq 1 ]; then
@@ -704,10 +705,13 @@ build_repo() {
 	run_hook pkgrepo sign "${PACKAGES:?}" "${PKG_REPO_SIGNING_KEY}" \
 	    "${PKG_REPO_FROM_HOST:-no}" "${PKG_REPO_META_FILE}"
 	if [ -r "${PKG_REPO_META_FILE:-/nonexistent}" ]; then
-		PKG_META="-m /tmp/pkgmeta"
-		PKG_META_MASTERMNT="-m ${MASTERMNT:?}/tmp/pkgmeta"
+		pkg_meta="-m /tmp/pkgmeta"
+		pkg_meta_mastermnt="-m ${MASTERMNT:?}/tmp/pkgmeta"
 		install -m 0400 "${PKG_REPO_META_FILE}" \
 		    "${MASTERMNT:?}/tmp/pkgmeta"
+	else
+		pkg_meta=
+		pkg_meta_mastermnt=
 	fi
 
 	remount_packages -o rw
@@ -727,7 +731,7 @@ build_repo() {
 			${PKG_REPO_FLAGS-} \
 			${pkg_repo_list_files:+"${pkg_repo_list_files}"} \
 			-o /tmp/packages \
-			${PKG_META} \
+			${pkg_meta} \
 			/packages "${repokeyprefix}"/tmp/repo.key ||
 		    err "$?" "Failed to sign pkg repository"
 		unlink "${MASTERMNT:?}/tmp/repo.key"
@@ -743,7 +747,7 @@ build_repo() {
 		${MASTERMNT:?}${PKG_BIN:?} repo \
 		    ${PKG_REPO_FLAGS-} \
 		    ${pkg_repo_list_files:+"${pkg_repo_list_files}"} \
-		    -o "${MASTERMNT:?}/tmp/packages" ${PKG_META_MASTERMNT} \
+		    -o "${MASTERMNT:?}/tmp/packages" ${pkg_meta_mastermnt} \
 		    "${MASTERMNT:?}/packages" \
 		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}} ||
 		    err "$?" "Failed to sign pkg repository"
@@ -756,7 +760,7 @@ build_repo() {
 		JNETNAME="n" injail ${PKG_BIN:?} repo \
 		    ${PKG_REPO_FLAGS-} \
 		    ${pkg_repo_list_files:+"${pkg_repo_list_files}"} \
-		    -o /tmp/packages ${PKG_META} /packages \
+		    -o /tmp/packages ${pkg_meta} /packages \
 		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}} ||
 		    err "$?" "Failed to sign pkg repository"
 	fi
