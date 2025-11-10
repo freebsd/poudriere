@@ -25,7 +25,7 @@
 # SUCH DAMAGE.
 
 stress_snapshot() {
-	local loadavg swapinfo elapsed now min_load loadpct ncpu
+	local loadavg swapinfo elapsed now min_load loaddec loadpct ncpu
 
 	loadavg=$(/sbin/sysctl -n vm.loadavg|/usr/bin/awk '{print $2,$3,$4}')
 	min_load="${loadavg%% *}"
@@ -35,7 +35,8 @@ stress_snapshot() {
 	if [ "${ncpu:?}" -gt "${NCPU:?}" ]; then
 		ncpu="${NCPU}"
 	fi
-	loadpct="$(printf "%2.0f%%" "$(echo "scale=20; 100 * (${min_load} / ${ncpu})" | bc)")"
+	loaddec="$(echo "scale=20; 100 * (${min_load} / ${ncpu})" | bc)"
+	loadpct="$(printf "%2.0f%%" "${loaddec}")"
 	swapinfo=$(/usr/sbin/swapinfo -k|/usr/bin/awk '/\// {sum+=$2; X+=$3} END {if (sum) {printf "%1.2f%%\n", X*100/sum}}')
 	now=$(clock -monotonic)
 	elapsed=$((now - TIME_START))
