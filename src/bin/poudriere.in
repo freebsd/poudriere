@@ -89,6 +89,7 @@ Commands:
     pkgclean     -- Remove packages that are no longer needed
     options      -- Configure ports options
     queue        -- Queue a build request
+    repo         -- Regenerate repository
     status       -- Get the status of builds
     testport     -- Launch a test build of a given port
     version      -- Show the version of poudriere
@@ -178,9 +179,10 @@ ports|\
 options|\
 pkgclean|\
 queue|\
+repo|\
 status|\
-testport\
-)
+testport|\
+$'\x00')
 	;;
 jails)
 	CMD="jail"

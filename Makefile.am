@@ -48,6 +48,7 @@ dist_man_MANS=	src/man/poudriere.8 \
 		src/man/poudriere-pkgclean.8 \
 		src/man/poudriere-ports.8 \
 		src/man/poudriere-queue.8 \
+		src/man/poudriere-repo.8 \
 		src/man/poudriere-status.8 \
 		src/man/poudriere-testport.8 \
 		src/man/poudriere-version.8
@@ -89,6 +90,7 @@ dist_pkgdata_DATA=	\
 			src/share/poudriere/ports.sh \
 			src/share/poudriere/processonelog.sh \
 			src/share/poudriere/queue.sh \
+			src/share/poudriere/repo.sh \
 			src/share/poudriere/status.sh \
 			src/share/poudriere/testport.sh
 

@@ -29,11 +29,12 @@
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
 .Dd November 10, 2025
-.Dt POUDRIERE-PKGCLEAN 8
+.Dt POUDRIERE-REPO 8
 .Os
 .Sh NAME
-.Nm "poudriere pkgclean"
-.Nd cleanup old or unwanted packages
+.Nm "poudriere repo"
+.Nd regenerate repository with
+.Xr pkg-repo 8 .
 .Sh SYNOPSIS
 .Nm
 .Ar subcommand
@@ -43,86 +44,103 @@
 .Ar origin
 .Op Ar origin2 Op Ar ...
 .Sh DESCRIPTION
-This command is used to delete all packages not specified to build.
-By default packages
-.Em not listed
-will be deleted;
-Listed packages, and their dependencies, will be kept.
+This command is used to run
+.Xr pkg-repo 8
+after manual modification of the
+.Sy PACKAGES
+directory, or modifying the repository configuration.
 .Pp
-If
-.Fl C
-is specified then packages listed on the command line will be deleted
-rather than kept.
-Their orphaned dependencies will not be deleted.
-A second run with a full list of wanted packages is needed to
-cleanup orphaned dependencies.
+This is normally ran automatically by every other command.
 .Pp
-Either a subcommand or a list of port origins must be supplied.
-.Sh SUBCOMMANDS
-.Bl -tag -width "-f conffile"
-.It Fl A
-Remove all packages.
-.It Fl a
-Keep all known ports in the tree.
-.It Fl f Ar file
-Absolute path to a file which contains the list of ports to keep.
-Ports must be specified in the form
-.Ar category/port
-and shell-style comments are allowed.
-Multiple
-.Fl f Ar file
-arguments may be specified at once.
-.El
+This requires that
+.Sy ports-mgmt/pkg
+has already been built by
+.Xr poudriere-bulk 8 .
+.Pp
+The
+.Cm pkgrepo Cm publish
+hook will be executed unless
+.Fl NN
+is given.
+Note that if
+.Sy ATOMIC_PACKAGE_REPOSITORY
+is not set to
+.Sy yes
+(default), or
+.Sy COMMIT_PACKAGES_ON_FAILURE
+is set to
+.Sy yes (default),
+then a failed build may be published.
+.Sy That is, by default a failed build may be published.
 .Sh OPTIONS
 .Bl -tag -width "-f conffile"
-.It Fl C
-Delete the listed packages rather than keep them.
-This can be used to delete specific packages that need to be rebuilt
-while keeping them in the port list file.
-.Fl r
-can be specified to delete reverse dependencies as well.
-.It Fl J Ar number
-This argument specifies how many
-.Ar number
-jobs will run in parallel for gathering package information.
 .It Fl j Ar name
 Jail to use for the packages to inspect.
-.It Fl N
-Do not build package repository when done cleaning.
 .It Fl NN
-Do not commit, or publish, the repository after it is cleaned.
-.It Fl n
-Dry run, do not actually delete anything.
-.It Fl O Ar overlay
-Specify an extra ports tree to use as an overlay.
-Multiple
-.Fl O Ar overlay
-arguments may be specified to stack them.
-.Pp
-These overlays should be setup with
-.Xr poudriere-ports 8 .
+Do not publish the package repository.
 .It Fl p Ar tree
 Specifies which ports
 .Ar tree
 to use.
 .Pq Default: Dq Li default
-.It Fl r
-When
-.Fl C
-is specified then all reverse dependencies will be deleted as well.
-This can be used to later force rebuild anything depending on the listed
-packages.
-.It Fl R
-Also clean restricted packages.
-.It Fl u
-Force rebuilding and signing the repo, even if no change was made.
-.It Fl v
-This will show more information during the build.
-Specify twice to enable debug output.
-.It Fl y
-Assume yes, do not confirm and just delete the files.
 .It Fl z Ar set
 SET to use for the packages to inspect.
+.El
+.Sh CONFIG
+The following options in
+.Pa poudriere.conf
+affect building the repository.
+They are not read from the environment automatically, but may be with
+.Nm poudriere Fl s .
+See
+.Xr poudriere 8 .
+.Pp
+See
+.Pa poudriere.conf.sample
+for details on each of these.
+.Bl -tag -width "PKG_REPO_SIGNING_KEY"
+.It Sy PKG_HASH
+Enable
+.Xr pkg-repo 8
+hashed mode using
+.Nm pkg Nm repo Fl -hash Fl -symlink .
+Useful for CDNs and making remote sync more atomic.
+.It Sy PKG_REPO_FLAGS
+Arbitrary flags to pass to
+.Nm pkg Cm repo .
+.It Sy PKG_REPO_FROM_HOST
+Use host
+.Xr pkg 8
+rather than the jailed version.
+May be required depending on
+.Sy SIGNING_COMMAND .
+.It Sy PKG_REPO_LIST_FILES
+If
+.Sy yes
+then generates
+.Pa filesite.pkg
+with
+.Nm pkg Cm repo Fl -list-files .
+Nothing currently uses this file.
+.It Sy PKG_REPO_META_FILE
+The
+.Pa meta-file
+file passed to
+.Nm pkg Nm repo Fl -meta-file Ar meta-file .
+If not specified then
+.Xr pkg-repo 8
+will use default settings.
+.It Sy PKG_REPO_SIGNING_KEY
+The key used to sign the repository.
+See
+.Xr pkg-repo 8
+for more information.
+.It Sy SIGNING_COMMAND
+An optional external command to sign the repository, rather than specifying a
+.Sy PKG_REPO_SIGNING_KEY .
+See
+.Xr pkg-repo 8
+for more information.
 .El
 .Sh SEE ALSO
 .Xr poudriere 8 ,
@@ -131,12 +149,12 @@ SET to use for the packages to inspect.
 .Xr poudriere-image 8 ,
 .Xr poudriere-jail 8 ,
 .Xr poudriere-logclean 8 ,
+.Xr poudriere-pkgclean 8 ,
 .Xr poudriere-ports 8 ,
 .Xr poudriere-queue 8 ,
-.Xr poudriere-repo 8 ,
 .Xr poudriere-status 8 ,
 .Xr poudriere-testport 8 ,
 .Xr poudriere-version 8
 .Sh AUTHORS
-.An Baptiste Daroussin Aq bapt@FreeBSD.org
-.An Bryan Drewery Aq bdrewery@FreeBSD.org
+This page was written by
+.An Bryan Drewery Aq bdrewery@FreeBSD.org .

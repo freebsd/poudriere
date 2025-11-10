@@ -160,6 +160,13 @@ _ports=(
 	'-v[show more verbose output]'
 )
 
+_repo=(
+	'-j[run only on the given jail]::jail name:_poudriere_jail'
+	'-NN[do not publish package repository]'
+	'-p[specify which ports tree to use]::tree:_poudriere_pt'
+	'-z[specify which SET to use]::'
+)
+
 _status=(
         '-a[show all builds, not just latest]'
 	'-f[show finished builds as well]'
@@ -209,6 +216,7 @@ _poudriere () {
 		'options:configure ports options'
 		'pkgclean:remove packages that are no longer needed'
 		'ports:create, update or delete the portstrees used by poudriere'
+		'repo:regenerate repository'
 		'queue:queue a build request'
 		'status:get the status of builds'
 		'testport:launch a test build of a given port'
@@ -249,6 +257,9 @@ _poudriere () {
 			;;
 			ports)
 			_arguments : $_ports "::" && return
+			;;
+			repo)
+			_arguments : $_repo "::" && return
 			;;
 			status)
 			_arguments : $_status "::" && return

@@ -111,8 +111,10 @@ was_a_jail_run() {
 		return 0
 	fi
 	case "${SCRIPTNAME:?}" in
+	foreachport.sh|\
 	pkgclean.sh|\
-	foreachport.sh) return 0 ;;
+	repo.sh|\
+	:) return 0 ;;
 	esac
 	return 1
 }
