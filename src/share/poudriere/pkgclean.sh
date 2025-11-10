@@ -191,8 +191,8 @@ else
 fi
 jail_start "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 prepare_ports
-case "${LISTPORTS+set}" in
-set)
+case "${DO_ALL}" in
+0)
 	if ! ensure_pkg_installed; then
 		err 1 "pkg must be built before this command can be used"
 	fi
@@ -222,6 +222,10 @@ should_delete() {
 	pkgname="${pkgfile##*/}"
 	pkgname="${pkgname%.*}"
 	ret=0
+
+	case "${DO_ALL}" in
+	1) return 0 ;;
+	esac
 
 	originspec=
 	if ! pkg_get_originspec originspec "${pkgfile}"; then
