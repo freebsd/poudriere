@@ -420,6 +420,8 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #PKG_HASH="no"
 
 # Use an immutable base in the jail.
-# Options: no, yes
-# Default: yes
-#IMMUTABLE_BASE=yes
+# This feature is evolving and subject to change.
+# Options: "no", "yes", "nullfs", or "schg".
+# "yes" uses "schg".
+# Default: "no"
+#IMMUTABLE_BASE="no"
