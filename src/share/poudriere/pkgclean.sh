@@ -499,7 +499,10 @@ if [ "${ret}" -eq 1 ] || [ "${FORCE_BUILD_REPO}" -eq 1 ]; then
 	if [ ${BUILD_REPO} -eq 1 ]; then
 		if [ ${DO_ALL} -eq 1 ]; then
 			msg "Removing pkg repository files"
-			rm -f "${PACKAGES:?}/meta.txz" \
+			rm -f \
+				"${PACKAGES:?}/data.txz" \
+				"${PACKAGES:?}/data.${PKG_EXT}" \
+				"${PACKAGES:?}/meta.txz" \
 				"${PACKAGES:?}/meta.${PKG_EXT}" \
 				"${PACKAGES:?}/digests.txz" \
 				"${PACKAGES:?}/digests.${PKG_EXT}" \

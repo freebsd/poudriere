@@ -3227,6 +3227,7 @@ commit_packages() {
 		if [ -e "${PACKAGES_ROOT:?}/${name:?}" ]; then
 			case "${name}" in
 			.buildname|.jailversion|\
+			"data.${PKG_EXT}"|data.txz|\
 			"meta.${PKG_EXT}"|meta.txz|\
 			"digests.${PKG_EXT}"|digests.txz|\
 			"filesite.${PKG_EXT}"|filesite.txz|\
