@@ -6566,7 +6566,7 @@ _build_pkg_fp() {
 build_pkg() {
 	[ "$#" -eq 1 ] || eargs build_pkg pkgname
 	local pkgname="$1"
-	local port portdir subpkg
+	local pkgfile port portdir subpkg
 	local build_failed=0
 	local name pkgbase
 	local mnt
@@ -6600,7 +6600,8 @@ build_pkg() {
 
 	bset_job_status "starting" "${originspec}" "${pkgname}"
 	_build_pkg_fp "${pkgname:?}"
-	if [ -f "${PACKAGES:?}/All/${pkgname:?}.${PKG_EXT}" ]; then
+	pkgfile="${PACKAGES:?}/All/${pkgname:?}.${PKG_EXT:?}"
+	if [ -f "${pkgfile:?}" ]; then
 		job_msg_status "Inspecting" "${port}${FLAVOR:+@${FLAVOR}}" \
 		    "${pkgname}" "determining shlib requirements"
 		if ! shash_exists pkgname-check_shlibs "${pkgname}"; then
@@ -6625,6 +6626,7 @@ build_pkg() {
 			return 0
 		fi
 		build_reason="missed shlib PORTREVISION chase"
+		delete_pkg "${pkgfile:?}"
 	else
 		unset build_reason
 	fi

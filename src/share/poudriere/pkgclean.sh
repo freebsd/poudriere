@@ -357,6 +357,35 @@ check_keep_old_packages() {
 
 check_keep_old_packages
 
+check_orphaned_hashed_packages() {
+	local expected have diff file
+
+	case "${PKG_HASH:-}" in
+	no) return 0 ;;
+	esac
+	if [ ! -d "${PACKAGES:?}/All/Hashed" ]; then
+		return
+	fi
+	have="$(mktemp -t have)"
+	find "$(realpath "${PACKAGES:?}/All/Hashed")" -mindepth 1 -maxdepth 1 |
+	    sort -o "${have:?}"
+	expected="$(mktemp -t expected)"
+	find "${PACKAGES:?}/All" -mindepth 1 -maxdepth 1 -type l \
+	    -name "*.${PKG_EXT:?}" -exec realpath {} + |
+	    sort -o "${expected:?}"
+	diff="$(mktemp -t diff)"
+	comm -13 "${expected:?}" "${have:?}" > "${diff:?}" ||
+	    err 1 "check_orphaned_hashed_packages: comm"
+	if [ -s "${diff:?}" ]; then
+		while mapfile_read_loop "${diff}" file; do
+			msg_verbose "Found orphaned hashed package: ${file}"
+		done
+		cat "${diff:?}" >> "${BADFILES_LIST:?}"
+	fi
+	rm -f "${expected:?}" "${have:?}" "${diff:?}"
+}
+check_orphaned_hashed_packages
+
 check_pkg_cache() {
 	local file
 
