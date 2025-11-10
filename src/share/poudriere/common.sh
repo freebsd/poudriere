@@ -3581,6 +3581,7 @@ setup_ports_env() {
 			    SCRIPTSDIR=${PORTSDIR}/Mk/Scripts \
 			    PORTSDIR=${PORTSDIR} \
 			    MAKE=${make} \
+			    MAKE_OBJDIR_CHECK_WRITABLE=0 \
 			    /bin/sh ${PORTSDIR}/Mk/Scripts/ports_env.sh | \
 			    grep '^export [^;&]*' | \
 			    sed -e 's,^export ,,' -e 's,=",=,' -e 's,"$,,'
