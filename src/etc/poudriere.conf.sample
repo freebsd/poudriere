@@ -261,6 +261,8 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # packages fail to build. Ignored ports are considered successful.
 # This can be set to 'no' to only commit the packages once no failures
 # are encountered.
+# This also controls whether hook 'pkgrepo publish' is called regardless of
+# ATOMIC_PACKAGE_REPOSITORY.
 # Default: yes
 #COMMIT_PACKAGES_ON_FAILURE=yes
 

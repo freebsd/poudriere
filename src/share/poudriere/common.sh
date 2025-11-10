@@ -1205,7 +1205,18 @@ pkgbuild_done() {
 
 run_hook() {
 	local -; set +x
-	[ $# -ge 2 ] || eargs run_hook hook event args
+	[ $# -ge 2 ] || eargs run_hook '[-v]' hook event args
+	local flag OPTIND=1 vflag
+
+	vflag=
+	while getopts "v" flag; do
+		case "${flag}" in
+		v) vflag=1 ;;
+		*) err "${EX_USAGE:-64}" "run_hook: Invalid flag" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ $# -ge 2 ] || eargs run_hook '[-v]' hook event args
 	local hook="$1"
 	local event="$2"
 	local build_url log log_url plugin_dir
@@ -1220,7 +1231,8 @@ run_hook() {
 		;;
 	esac
 
-	run_hook_file "${HOOKDIR:?}/${hook}.sh" "${hook}" "${event}" \
+	run_hook_file ${vflag:+-v} \
+	    "${HOOKDIR:?}/${hook}.sh" "${hook}" "${event}" \
 	    "${build_url}" "${log_url}" "${log}" "$@"
 
 	if [ -d "${HOOKDIR}/plugins" ]; then
@@ -1229,15 +1241,52 @@ run_hook() {
 			case "${plugin_dir}" in
 			"${HOOKDIR}/plugins/*") break ;;
 			esac
-			run_hook_file "${plugin_dir:?}/${hook}.sh" "${hook}" \
+			run_hook_file ${vflag:+-v} \
+			    "${plugin_dir:?}/${hook}.sh" "${hook}" \
 			    "${event}" "${build_url}" "${log_url}" "${log}" \
 			    "$@"
 		done
 	fi
 }
 
+have_hook() {
+	[ $# -eq 1 ] || eargs have_hook hookname
+	local hook="$1"
+	local plugin_dir
+
+	if [ -r "${HOOKDIR:?}/${hook:?}.sh" ]; then
+		return 0
+	fi
+	if [ -d "${HOOKDIR:?}/plugins" ]; then
+		for plugin_dir in ${HOOKDIR:?}/plugins/*; do
+			# Check empty dir
+			case "${plugin_dir:?}" in
+			"${HOOKDIR:?}/plugins/*") break ;;
+			esac
+			if [ -r "${plugin_dir:?}/${hook:?}.sh" ]; then
+				return 0
+			fi
+		done
+	fi
+	return 1
+}
+
 run_hook_file() {
-	[ $# -ge 6 ] || eargs run_hook_file hookfile hook event build_url \
+	[ $# -ge 6 ] ||
+	    eargs run_hook_file '[-v]' hookfile hook event build_url \
+	    log_url log args
+	local flag OPTIND=1 vflag
+
+	vflag=
+	while getopts "v" flag; do
+		case "${flag}" in
+		v) vflag=1 ;;
+		*) err "${EX_USAGE:-64}" "run_hook_file: Invalid flag" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ $# -ge 6 ] ||
+	    eargs run_hook_file '[-v]' hookfile hook event build_url \
 	    log_url log args
 	local hookfile="$1"
 	local hook="$2"
@@ -1248,6 +1297,12 @@ run_hook_file() {
 	[ -f "${hookfile}" ] || return 0
 
 	shift 6
+
+	case "${vflag}" in
+	1)
+		msg "Running hook ${hookfile} for event '${hook}:${event}'"
+		;;
+	esac
 
 	job_msg_dev "Running ${hookfile} for event '${hook}:${event}' args:" \
 	    "$@"
@@ -3164,20 +3219,34 @@ commit_packages() {
 		    unlink_many_pipe
 	fi
 
-	case "${ATOMIC_PACKAGE_REPOSITORY-}" in
-	yes) ;;
-	*)
-		install -lsr "${PACKAGES:?}/" "${log:?}/packages"
-		return 0
-		;;
-	esac
 	case "${COMMIT_PACKAGES_ON_FAILURE-}" in
 	no)
 		if _bget stats_failed stats_failed &&
-		    [ ${stats_failed} -gt 0 ]; then
-			msg_warn "Not committing packages to repository as failures were encountered"
+		    [ "${stats_failed}" -gt 0 ]; then
+			case "${ATOMIC_PACKAGE_REPOSITORY-}" in
+			yes)
+				msg_warn "Not committing, or publishing," \
+				    "packages to repository as failures" \
+				    "were encountered"
+				;;
+			*)
+				if have_hook pkgrepo; then
+					msg_warn "Not publishing packages" \
+					    "as failures were encountered"
+				fi
+				;;
+			esac
+			install -lsr "${PACKAGES:?}/" "${log:?}/packages"
 			return 0
 		fi
+	esac
+	case "${ATOMIC_PACKAGE_REPOSITORY-}" in
+	yes) ;;
+	*)
+		run_hook -v pkgrepo publish "${PACKAGES:?}"
+		install -lsr "${PACKAGES:?}/" "${log:?}/packages"
+		return 0
+		;;
 	esac
 
 	pkgdir_new=.real_$(clock -epoch)
@@ -3264,6 +3333,7 @@ symlink to .latest/${name}"
 		esac
 		;;
 	esac
+	run_hook -v pkgrepo publish "${PACKAGES:?}"
 }
 
 show_build_results() {

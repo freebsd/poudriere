@@ -44,6 +44,7 @@ Options:
     -n          -- Do not actually remove anything, just show what would be
                    removed
     -N          -- Do not build the package repository when clean completed
+    -NN         -- Do not commit/publish package repository when clean completed
     -O overlays -- Specify extra ports trees to overlay
     -p tree     -- Which ports tree to use for packages
     -r          -- With -C delete reverse dependencies too
@@ -66,6 +67,7 @@ FORCE_BUILD_REPO=0
 OVERLAYS=""
 CLEAN_LISTED=0
 CLEAN_RDEPS=0
+COMMIT=1
 
 [ $# -eq 0 ] && usage
 
@@ -98,7 +100,12 @@ while getopts "AaCj:J:f:nNO:p:rRuvyz:" FLAG; do
 			DRY_RUN=1
 			;;
 		N)
+			: ${NFLAG:=0}
+			NFLAG=$((NFLAG + 1))
 			BUILD_REPO=0
+			if [ "${NFLAG}" -eq 2 ]; then
+				COMMIT=0
+			fi
 			;;
 		O)
 			porttree_exists ${OPTARG} ||
@@ -512,6 +519,25 @@ if [ "${ret}" -eq 1 ] || [ "${FORCE_BUILD_REPO}" -eq 1 ]; then
 				"${PACKAGES:?}/packagesite.${PKG_EXT}"
 		else
 			build_repo
+			case "${PACKAGES:?}" in
+			*"/.building")
+				msg_warn "build_repo: Not executing publish hook for" \
+				    ".building directory"
+				;;
+			*)
+				# This assumes that COMMIT_PACKAGES_ON_FAILURE
+				# has been handled by the build.
+				case "${COMMIT}" in
+				1)
+					run_hook -v pkgrepo publish \
+					    "${PACKAGES:?}"
+					;;
+				*)
+					msg "(-NN) Skipping repository publish"
+					;;
+				esac
+				;;
+			esac
 		fi
 	fi
 	delete_stale_symlinks_and_empty_dirs
