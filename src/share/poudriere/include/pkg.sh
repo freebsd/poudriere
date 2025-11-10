@@ -771,5 +771,21 @@ build_repo() {
 		fi
 	fi
 
+	# Check for stale pkg-repo files.
+	case "${PKG_EXT}" in
+	txz) ;;
+	*)
+		local file
+
+		for file in "${PACKAGES:?}/"*.txz; do
+			case "${file:?}" in
+			"${PACKAGES:?}/*.txz") break ;;
+			esac
+			msg "Removing obsolete pkg-repo file: ${file:?}"
+			unlink "${file:?}"
+		done
+		;;
+	esac
+
 	remount_packages -o ro
 }
