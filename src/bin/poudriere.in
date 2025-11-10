@@ -165,7 +165,22 @@ fi
 
 # Valid command list.
 case "${CMD}" in
-api|audit|bulk|distclean|daemon|image|jail|foreachport|logclean|ports|options|pkgclean|queue|status|testport)
+api|\
+audit|\
+bulk|\
+distclean|\
+daemon|\
+image|\
+jail|\
+foreachport|\
+logclean|\
+ports|\
+options|\
+pkgclean|\
+queue|\
+status|\
+testport\
+)
 	;;
 jails)
 	CMD="jail"
