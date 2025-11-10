@@ -141,7 +141,7 @@ _poudriere()
     local cur prev words cword
     _init_completion || return
 
-    local command_list=(bulk distclean daemon help image jail logclean \
+    local command_list=(audit bulk distclean daemon help image jail logclean \
         ports pkgclean options queue status testport version)
 
     # Is the command already selected?
@@ -175,6 +175,25 @@ _poudriere()
         esac
     else
         case "$selected_command" in
+            audit)
+                case "$prev" in
+                    -j)
+                        _poudriere_jails_list
+                        ;;
+                    -p)
+                        _poudriere_ports_list
+                        ;;
+                    -z)
+                        _poudriere_set_list
+                        ;;
+                    *)
+                        if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
+                            COMPREPLY=($(compgen -W "$(_parse_help poudriere $selected_command)" -- "$cur"))
+                        fi
+                        ;;
+                esac
+                ;;
+
             bulk)
                 case "$prev" in
                     -B)

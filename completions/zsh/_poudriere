@@ -8,6 +8,12 @@ _poudriere_pt() {
 	_values "poudriere portstrees" ${${(f)"$(${service} ports -lq)"}%% *}
 }
 
+_audit=(
+	'-j[run only on the given jail]::jail name:_poudriere_jail'
+	'-p[specify which ports tree to use]::tree:_poudriere_pt'
+	'-z[specify which SET to use]::'
+)
+
 _bulk=(
 	'-a[build the whole ports tree]'
 	'-f[get the list of ports to build from a file]:name of file:_files'
@@ -190,6 +196,7 @@ _poudriere () {
 	local context state line
 	typeset -A val_args
 	cmds=(
+		'audit:audit packages in repository'
 		'bulk:generate packages for given ports'
 		'daemon:launch the poudriere daemon'
 		'distclean:remove old distfiles'
@@ -211,6 +218,9 @@ _poudriere () {
 	# the main command has been typed, now we take care of the action
 	elif ((CURRENT >= 3)); then
 		case $words[2] in
+			audit)
+			_arguments : $_audit "::" && return
+			;;
 			bulk)
 			_arguments : $_bulk "::" && return
 			;;
