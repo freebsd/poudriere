@@ -1989,13 +1989,18 @@ exit_handler() {
 }
 
 build_url() {
+	local buildname
+
 	case "${URL_BASE-}" in
 	"")
 		setvar "$1" ""
 		return 1
 		;;
 	esac
-	setvar "$1" "${URL_BASE}/build.html?mastername=${MASTERNAME}&build=${BUILDNAME}"
+
+	# URL encode '+' which may come in for tz.
+	_gsub "${BUILDNAME}" "+" "%2b" buildname
+	setvar "$1" "${URL_BASE}/build.html?mastername=${MASTERNAME}&build=${buildname}"
 }
 
 log_url() {
