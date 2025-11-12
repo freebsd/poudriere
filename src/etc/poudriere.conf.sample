@@ -63,7 +63,7 @@ USE_TMPFS=yes
 # (default: none)
 #TMPFS_LIMIT=8
 
-# List of package globs that are not allowed to use tmpfs for their WRKDIR
+# List of package patterns that are not allowed to use tmpfs for their WRKDIR
 # Note that you *must* set TMPFS_BLACKLIST_TMPDIR
 # EXAMPLE: TMPFS_BLACKLIST="rust"
 
@@ -226,12 +226,12 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Use the following to allow it anyway
 # ALLOW_MAKE_JOBS=yes
 
-# List of package name globs that will always be allowed to use MAKE_JOBS
+# List of package name patterns that will always be allowed to use MAKE_JOBS
 # regardless of ALLOW_MAKE_JOBS. This is useful for allowing ports
 # which holdup the rest of the queue to build more quickly.
 #ALLOW_MAKE_JOBS_PACKAGES="pkg ccache py*"
 
-# List of package name globs that should never build at the same time.
+# List of package name patterns that should never build at the same time.
 # Default: none
 #MUTUALLY_EXCLUSIVE_BUILD_PACKAGES="llvm* rust* gcc*"
 
@@ -316,7 +316,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #PORTBUILD_UID=65534
 #PORTBUILD_GID=65534
 
-# Define pkgname globs to boost priority for
+# Define pkgname patterns to boost priority for
 # Default: none
 #PRIORITY_BOOST="pypy openoffice*"
 
@@ -392,7 +392,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #PACKAGE_FETCH_BLACKLIST=""
 # Alternatively a whitelist can be created to only allow specific packages to
 # be fetched.
-# Default: everything
+# Default: "*"
 #PACKAGE_FETCH_WHITELIST="gcc* rust llvm*"
 
 # If the ports tree is a git checkout then it is inspected for whether it

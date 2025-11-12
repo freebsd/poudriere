@@ -162,22 +162,18 @@ pkgqueue_job_done() {
 pkgqueue_job_is_mutually_exclusive() {
 	[ $# -eq 1 ] || eargs pkgqueue_job_is_mutually_exclusive pkgqueue_job
 	local pkgqueue_job="$1"
-	local job_type job_name pkgname pkgbase pkgglob
+	local job_type job_name pkgname pkgbase
 	local -
 
 	pkgqueue_job_decode "${pkgqueue_job}" job_type job_name
 	case "${job_type}.${IN_TEST:-0}" in
 	"build".*)
-		pkgname="${job_name}"
+		pkgname="${job_name:?}"
 		pkgbase="${pkgname%-*}"
-		set -o noglob
-		for pkgglob in ${MUTUALLY_EXCLUSIVE_BUILD_PACKAGES-}; do
-			# shellcheck disable=SC2254
-			case "${pkgbase}" in
-			${pkgglob}) return 0 ;;
-			esac
-		done
-		set +o noglob
+		if patternlist_match "${MUTUALLY_EXCLUSIVE_BUILD_PACKAGES-}" \
+		    "${pkgbase:?}"; then
+			return 0
+		fi
 		;;
 	"run".*) ;;
 	"test".1) ;;

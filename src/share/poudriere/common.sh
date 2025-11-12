@@ -4437,7 +4437,7 @@ download_from_repo_check_pkg() {
 	local remote_all_prefix="$8"
 	local remote_all_cats="$9"
 	local output="${10}"
-	local pkgbase bpkg_glob selected_options remote_options found
+	local pkgbase selected_options remote_options found
 	local run_deps lib_deps raw_deps dep dep_pkgname
 	local local_deps local_deps_vers remote_deps
 	local remote_abi remote_osversion remote_prefix prefix no_arch
@@ -4448,21 +4448,12 @@ download_from_repo_check_pkg() {
 
 	# Skip blacklisted packages
 	# pkg is always blacklisted so it is built locally
-	#
-	# Disabling globs for this loop or wildcards will
-	# expand to files in the current directory instead of
-	# being passed to the case statement as a pattern
-	set -o noglob
-	for bpkg_glob in ${PACKAGE_FETCH_BLACKLIST-} ${P_PKG_PKGBASE:?}; do
-		# shellcheck disable=SC2254
-		case "${pkgbase}" in
-		${bpkg_glob})
-			msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: blacklisted"
-			return
-			;;
-		esac
-	done
-	set +o noglob
+	if patternlist_match "${PACKAGE_FETCH_BLACKLIST-} ${P_PKG_PKGBASE:?}" \
+	    "${pkgbase:?}"; then
+		msg_verbose "Package fetch: Skipping" \
+		    "${COLOR_PORT}${pkgname}${COLOR_RESET}: blacklisted"
+		return
+	fi
 
 	found=$(awk -v pkgname="${pkgname}" -vpkgbase="${pkgbase}" \
 	    '$1 == pkgbase {print $2; exit}' "${remote_all_pkgs}")
@@ -4609,8 +4600,8 @@ download_from_repo() {
 	local packagesite_resolved
 	local remote_all_pkgs remote_all_options wantedpkgs remote_all_deps
 	local remote_all_annotations remote_all_abi remote_all_prefix
-	local remote_all_cats missing_pkgs pkg_glob pkgbase cnt
-	local remote_pkg_ver local_pkg_name local_pkg_ver found
+	local remote_all_cats missing_pkgs pkgbase cnt
+	local remote_pkg_ver local_pkg_name local_pkg_ver
 	local packages_rel
 	local -
 
@@ -4660,24 +4651,8 @@ download_from_repo() {
 			continue
 		fi
 		pkgbase="${pkgname%-*}"
-		found=0
-
-		# Disabling globs for this loop or wildcards will
-		# expand to files in the current directory instead of
-		# being passed to the case statement as a pattern
-		set -o noglob
-		for pkg_glob in ${PACKAGE_FETCH_WHITELIST-"*"}; do
-			# shellcheck disable=SC2254
-			case "${pkgbase}" in
-			${pkg_glob})
-				found=1
-				break
-				;;
-			esac
-		done
-		set +o noglob
-
-		if [ "${found}" -eq 0 ]; then
+		if ! patternlist_match "${PACKAGE_FETCH_WHITELIST-}" \
+		    "${pkgbase}"; then
 			msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: not in whitelist" >&2
 			continue
 		fi
@@ -5348,7 +5323,7 @@ build_port() {
 	local log
 	local network
 	local hangstatus
-	local pkgenv phaseenv jpkg_glob
+	local pkgenv phaseenv
 	local targets
 	local jailuser JUSER
 	local testfailure=0
@@ -5384,23 +5359,18 @@ build_port() {
 
 	allownetworking=0
 
-	# Disabling globs for this loop or wildcards will
-	# expand to files in the current directory instead of
-	# being passed to the case statement as a pattern
-	set -o noglob
-	for jpkg_glob in ${ALLOW_NETWORKING_PACKAGES}; do
-		# shellcheck disable=SC2254
-		case "${pkgbase}" in
-		${jpkg_glob})
-			job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}"
-			msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}"
-			allownetworking=1
-			JNETNAME="n"
-			break
-			;;
-		esac
-	done
-	set +o noglob
+	if patternlist_match "${ALLOW_NETWORKING_PACKAGES-}" \
+	    "${pkgbase:?}"; then
+		job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing" \
+		    "full network access for" \
+		    "${COLOR_PORT}${port}${flavor:+@${flavor}} |" \
+		    "${pkgname}${COLOR_RESET}"
+		msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network" \
+		    "access for ${COLOR_PORT}${port}${flavor:+@${flavor}} |" \
+		    "${pkgname}${COLOR_RESET}"
+		allownetworking=1
+		JNETNAME="n"
+	fi
 
 	# Must install run-depends as 'actual-package-depends' and autodeps
 	# only consider installed packages as dependencies
@@ -6567,27 +6537,18 @@ fp_pkgname() {
 	[ $# -eq 2 ] || eargs fp_pkgname fp_var pkgname
 	local fp_fp_var="$1"
 	local fp_pkgname="$2"
-	local fp_value fp_pkg_glob fp_pkgbase
+	local fp_value fp_pkgbase
 	local -
 
 	if ! getvar "${fp_fp_var}" fp_value; then
 		return 1
 	fi
 	fp_pkgbase="${fp_pkgname%-*}"
-	set -o noglob
-	for fp_pkg_glob in ${fp_value}; do
-		# shellcheck disable=SC2254
-		case "${fp_pkgbase}" in
-		${fp_pkg_glob})
-			msg_error "${fp_fp_var:?} failpoint match" \
-			    "pkgbase='${fp_pkgbase}'" \
-			    "fp_pkg_glob='${fp_pkg_glob}'"
-			return 0
-			;;
-		esac
-	done
-	set +o noglob
-	return 1
+	if ! patternlist_match "${fp_value}" "${fp_pkgbase:?}"; then
+		return 1
+	fi
+	msg_error "${fp_fp_var:?} failpoint match pkgname='${fp_pkgname}'"
+	return 0
 }
 
 _build_pkg_fp() {
@@ -6623,7 +6584,7 @@ build_pkg() {
 	local errortype="???"
 	local ret=0
 	local tmpfs_blacklist_dir JEXEC_LIMITS
-	local elapsed now jpkg_glob originspec status
+	local elapsed now originspec status
 	local PORTTESTING build_reason
 	local -
 
@@ -6722,45 +6683,32 @@ build_pkg() {
 	fi
 	:> "${mnt:?}/.need_rollback"
 
-	set -f
-	for jpkg_glob in ${TMPFS_BLACKLIST-}; do
-		# shellcheck disable=SC2254
-		case "${pkgbase}" in
-		${jpkg_glob})
-			local tmpfs_blacklist_tmpdir
+	if patternlist_match "${TMPFS_BLACKLIST-}" "${pkgbase:?}"; then
+		local tmpfs_blacklist_tmpdir
 
-			_tmpfs_blacklist_tmpdir tmpfs_blacklist_tmpdir
-			mkdir -p "${tmpfs_blacklist_tmpdir:?}"
-			tmpfs_blacklist_dir="$(\
-				TMPDIR="${tmpfs_blacklist_tmpdir:?}" \
-				mktemp -dt "${pkgname:?}")"
-			${NULLMOUNT} "${tmpfs_blacklist_dir:?}" "${mnt:?}/wrkdirs"
-			echo "${tmpfs_blacklist_dir:?}" \
-			    > "${mnt:?}/.tmpfs_blacklist_dir"
-			break
-			;;
-		esac
-	done
-	set +f
+		_tmpfs_blacklist_tmpdir tmpfs_blacklist_tmpdir
+		mkdir -p "${tmpfs_blacklist_tmpdir:?}"
+		tmpfs_blacklist_dir="$(\
+			TMPDIR="${tmpfs_blacklist_tmpdir:?}" \
+			mktemp -dt "${pkgname:?}")"
+		${NULLMOUNT} "${tmpfs_blacklist_dir:?}" "${mnt:?}/wrkdirs"
+		echo "${tmpfs_blacklist_dir:?}" \
+		    > "${mnt:?}/.tmpfs_blacklist_dir"
+	fi
 
 	rm -rfx "${mnt:?}"/wrkdirs/* || :
 
 	log_start "${pkgname}" 0
 	msg "Building ${port}"
 
-	set -f
-	for jpkg_glob in ${ALLOW_MAKE_JOBS_PACKAGES}; do
-		# shellcheck disable=SC2254
-		case "${pkgbase}" in
-		${jpkg_glob})
-			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_RESET}"
-			sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' \
-			    "${mnt:?}/etc/make.conf"
-			break
-			;;
-		esac
-	done
-	set +f
+	if patternlist_match "${ALLOW_MAKE_JOBS_PACKAGES-}" \
+	    "${pkgbase:?}"; then
+		job_msg_verbose "Allowing MAKE_JOBS for" \
+		    "${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} |" \
+		    "${pkgname}${COLOR_RESET}"
+		sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' \
+		    "${mnt:?}/etc/make.conf"
+	fi
 
 	buildlog_start "${pkgname}" "${originspec}"
 
@@ -7338,24 +7286,18 @@ _delete_old_pkg() {
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor
 	local ignore new_originspec stale_pkg
 	local pkg_arch no_arch arch is_sym
-	local fpkg_glob -
+	local -
 
 	pkgfile="${pkg##*/}"
 	pkgname="${pkgfile%.*}"
 	pkgbase="${pkgname%-*}"
 
-	set -f
-	for fpkg_glob in ${FORCE_REBUILD_PACKAGES-}; do
-		# shellcheck disable=SC2254
-		case "${pkgbase}" in
-		${fpkg_glob})
-			msg_warn "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: In FORCE_REBUILD_PACKAGES"
-			delete_pkg "${pkg}"
-			return 0
-			;;
-		esac
-	done
-	set +f
+	if patternlist_match "${FORCE_REBUILD_PACKAGES-}" "${pkgbase:?}"; then
+		msg_warn "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}:" \
+		    "In FORCE_REBUILD_PACKAGES"
+		delete_pkg "${pkg}"
+		return 0
+	fi
 
 	case "${DELETE_UNKNOWN_FILES}" in
 	"yes")
@@ -10384,7 +10326,7 @@ prepare_ports() {
 
 load_priorities_ptsort() {
 	local priority pkgname originspec origin flavor _rdep
-	local log pkgbase pkg_boost_glob job_type
+	local log pkgbase job_type
 	local -
 
 	_log_path log
@@ -10396,35 +10338,25 @@ load_priorities_ptsort() {
 	    pkgname originspec _rdep; do
 		pkgbase="${pkgname%-*}"
 		# Does this pkg have an override?
-
-		# Disabling globs for this loop or wildcards will
-		# expand to files in the current directory instead of
-		# being passed to the case statement as a pattern
-		set -o noglob
-		for pkg_boost_glob in ${PRIORITY_BOOST}; do
-			# shellcheck disable=SC2254
-			case ${pkgbase#*:} in
-			${pkg_boost_glob})
-				originspec_decode "${originspec}" origin \
-				    flavor subpkg
-				msg "Boosting priority: ${COLOR_PORT}${origin}${flavor:+@${flavor}}${subpkg:+~${subpkg}} | ${pkgname}"
-				case "${pkgname}" in
-				*:*)
-					job_type="${pkgname%:*}"
-					pkgname="${pkgname#*:}"
-					;;
-				*)
-					job_type="build"
-					;;
-				esac
-				echo "${job_type}:${pkgname}" \
-				    "${PRIORITY_BOOST_VALUE}" >> \
-				    "${MASTER_DATADIR:?}/pkg_deps.ptsort"
-				break
-				;;
-			esac
-		done
-		set +o noglob
+		if ! patternlist_match "${PRIORITY_BOOST-}" \
+		    "${pkgbase#*:}"; then
+			continue
+		fi
+		originspec_decode "${originspec}" origin \
+		    flavor subpkg
+		msg "Boosting priority: ${COLOR_PORT}${origin}${flavor:+@${flavor}}${subpkg:+~${subpkg}} | ${pkgname}"
+		case "${pkgname}" in
+		*:*)
+			job_type="${pkgname%:*}"
+			pkgname="${pkgname#*:}"
+			;;
+		*)
+			job_type="build"
+			;;
+		esac
+		echo "${job_type}:${pkgname}" \
+		    "${PRIORITY_BOOST_VALUE}" >> \
+		    "${MASTER_DATADIR:?}/pkg_deps.ptsort"
 	done
 
 	cp -f "${MASTER_DATADIR:?}/pkg_deps.ptsort" \
@@ -11092,6 +11024,7 @@ esac
 : ${FLAVOR_DEFAULT_ALL:=no}
 : ${NULLFS_PATHS:="/rescue /usr/share /usr/tests /usr/lib32"}
 : ${PACKAGE_FETCH_URL:="pkg+http://pkg.FreeBSD.org/\${ABI}"}
+: "${PACKAGE_FETCH_WHITELIST="*"}"
 : ${DEVFS_RULESET:=4}
 : ${PKG_HASH:=no}
 
