@@ -9885,8 +9885,9 @@ git_get_hash_and_dirty() {
 	*)
 		${GIT_CMD} -C "${git_dir:?}" rev-parse --show-toplevel \
 		    >/dev/null 2>&1 || return
-		gghd_git_hash=$(${GIT_CMD} -C "${git_dir:?}" log -1 \
-		    --format=%h .)
+		gghd_git_hash=$(${GIT_CMD} -C "${git_dir:?}" \
+		    -c core.abbrev=no \
+		    log -1 --format=%h .)
 		setvar "${gghd_git_hash_var}" "${gghd_git_hash}"
 		;;
 	esac
