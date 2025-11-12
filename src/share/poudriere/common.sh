@@ -4379,7 +4379,7 @@ jail_stop() {
 	# cause EBUSY from umount.
 	cd /tmp
 
-	stop_builders >/dev/null || :
+	stop_builders || :
 	run_hook jail stop
 	jstop || :
 	msg "Unmounting file systems"
@@ -5955,12 +5955,13 @@ stop_builders() {
 	esac
 
 	if [ ${PARALLEL_JOBS} -ne 0 ]; then
-		msg "Stopping ${PARALLEL_JOBS} builders"
+		msg "Stopping up to ${PARALLEL_JOBS} builders"
 
 		real_parallel_jobs=${PARALLEL_JOBS}
 		parallel_start || err 1 "parallel_start"
 		for j in ${BUILDERS-$(jot -w %02d ${real_parallel_jobs})}; do
-			parallel_run stop_builder "${j}"
+			parallel_run stop_builder "${j}" ||
+			    msg_error "stop_builder ret=$?"
 		done
 		if ! parallel_stop; then
 			err 1 "Errors stopping builders"
