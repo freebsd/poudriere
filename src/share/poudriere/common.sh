@@ -931,7 +931,8 @@ buildlog_start() {
 	if [ -x "${GIT_CMD}" ] && \
 	    ${GIT_CMD} -C "${mnt}/${portdir}" rev-parse \
 	    --show-toplevel >/dev/null 2>&1; then
-		git_hash=$(${GIT_CMD} -C "${mnt}/${portdir}" log -1 --format=%h .)
+		git_hash=$(${GIT_CMD} -C "${mnt}/${portdir}" \
+		    -c core.abbrev=no log -1 --format=%h .)
 		echo "Port dir last git commit: ${git_hash}"
 		pkg_note_add "${pkgname}" port_git_hash "${git_hash}"
 		git_modified=no
@@ -7722,8 +7723,9 @@ fetch_global_port_vars() {
 	if was_a_bulk_run && [ -x "${GIT_CMD}" ] &&
 	    ${GIT_CMD} -C "${MASTERMNT}/${PORTSDIR}" rev-parse \
 	    --show-toplevel >/dev/null 2>&1; then
-		git_hash=$(${GIT_CMD} -C "${MASTERMNT}/${PORTSDIR}" log -1 \
-		    --format=%h .)
+		git_hash=$(${GIT_CMD} -C "${MASTERMNT}/${PORTSDIR}" \
+		    -c core.abbrev=no \
+		    log -1 --format=%h .)
 		shash_set ports_metadata top_git_hash "${git_hash}"
 		git_modified=no
 		msg_n "Inspecting ports tree for modifications to git checkout..."
