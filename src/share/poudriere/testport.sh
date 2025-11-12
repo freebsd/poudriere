@@ -377,10 +377,8 @@ ret=0
 
 # Don't show timestamps in msg() which goes to logs, only job_msg()
 # which goes to master
-NO_ELAPSED_IN_MSG=1
 TIME_START_JOB=$(clock -monotonic)
-build_port "${ORIGINSPEC}" "${PKGNAME}" || ret=$?
-unset NO_ELAPSED_IN_MSG
+NO_ELAPSED_IN_MSG=1 build_port "${ORIGINSPEC}" "${PKGNAME}" || ret=$?
 now=$(clock -monotonic)
 elapsed=$((now - TIME_START_JOB))
 

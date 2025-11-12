@@ -136,7 +136,7 @@ should_show_elapsed() {
 	case "${TIME_START-}" in
 	"") return 1 ;;
 	esac
-	if [ "${NO_ELAPSED_IN_MSG:-0}" -eq 1 ]; then
+	if [ "${NO_ELAPSED_IN_MSG:-0}" -ge 1 ]; then
 		return 1
 	fi
 	case "${SCRIPTNAME}" in
@@ -436,7 +436,7 @@ job_msg() {
 	set)
 		elapsed=
 		if [ "${IN_TEST:-0}" -eq 0 ]; then
-			NO_ELAPSED_IN_MSG=0
+			NO_ELAPSED_IN_MSG="$((NO_ELAPSED_IN_MSG - 1))"
 			now=$(clock -monotonic)
 			calculate_duration elapsed "$((now - ${TIME_START_JOB:-${TIME_START:-0}}))"
 		fi
@@ -5845,7 +5845,7 @@ start_builder() {
 	MY_BUILDER_ID="${id}"
 	_my_path mnt
 
-	NO_ELAPSED_IN_MSG=1
+	NO_ELAPSED_IN_MSG="$((NO_ELAPSED_IN_MSG + 1))"
 	TIME_START_JOB=$(clock -monotonic)
 	colorize_job_id COLOR_JOBID "${MY_BUILDER_ID:?}"
 	job_msg "Builder starting"
@@ -6598,7 +6598,7 @@ build_pkg() {
 
 	# Don't show timestamps in msg() which goes to logs, only job_msg()
 	# which goes to master
-	NO_ELAPSED_IN_MSG=1
+	NO_ELAPSED_IN_MSG="$((NO_ELAPSED_IN_MSG + 1))"
 	TIME_START_JOB=$(clock -monotonic)
 	colorize_job_id COLOR_JOBID "${MY_BUILDER_ID}"
 
