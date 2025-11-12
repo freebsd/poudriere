@@ -324,7 +324,7 @@ main(int argc, char **argv)
 	FILE *fp_in_stdout, *fp_in_stderr;
 	pthread_t *thr_stdout, *thr_stderr;
 	struct kdata kdata_stdout = {0}, kdata_stderr = {0};
-	char *prefix_stdout, *prefix_stderr, *time_start;
+	const char *prefix_stdout, *prefix_stderr, *time_start;
 	char *dflag;
 	int child_stdout[2], child_stderr[2];
 	int ch, status, ret, uflag, tflag, Tflag;
