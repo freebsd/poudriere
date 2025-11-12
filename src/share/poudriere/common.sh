@@ -5620,6 +5620,7 @@ build_port() {
 
 			job_build_status "stage-qa" "${originspec}" "${pkgname}"
 			if ! cleanenv injail /usr/bin/env DEVELOPER=1 \
+			    PROXYDEPS_FATAL=1 \
 			    ${PORT_FLAGS:=-S "${PORT_FLAGS}"} \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    stage-qa; then
