@@ -101,7 +101,10 @@ pkg_get_generic_list() {
 		shash_read_mapfile 'pkg' "${name}" "${_pggl_mapfile_var}"
 		;;
 	esac ||
-	    err "${EX_SOFTWARE}" "pkg_get_generic_list: Failed to read cache just written"
+	    err "${EX_SOFTWARE}" "pkg_get_generic_list: Failed to read cache" \
+	        "just written name='${name}' pkg='${_pkg}'" \
+		"SHASH_VAR_PATH='${SHASH_VAR_PATH}'" \
+		"mapfile_handle_var='${_pggl_mapfile_var}'"
 }
 
 pkg_get_shlib_required_count() {
