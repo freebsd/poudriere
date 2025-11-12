@@ -1862,6 +1862,11 @@ exit_handler() {
 	exec </dev/null
 
 	if was_a_bulk_run; then
+		# MY_BUILDER_ID may incorrectly be set if we got here
+		# via crashed_build() in main process.
+		case "$$" in
+		"$(getpid)") unset MY_BUILDER_ID ;;
+		esac
 		# build_queue may have done cd MASTER_DATADIR/pool,
 		# but some of the cleanup here assumes we are
 		# PWD=MASTER_DATADIR.  Switch back if possible.
