@@ -425,3 +425,13 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # "yes" uses "schg".
 # Default: "no"
 #IMMUTABLE_BASE="no"
+
+# Packages which should not be force rebuilt if it uses a shared library
+# which no dependency provides. It is likely failing stage-qa.
+# This likely indicates a bug with the port, and possibly Poudriere. Please
+# do report any cases to the port maintainer.
+# In the meantime you can avoid the forced rebuild and only do so if
+# another incremental decision does it. For example, version update.
+# patterns can be used.
+# Default: ""
+#ORPHAN_SHLIB_REBUILD_IGNORELIST="bootstrap-openjdk*"

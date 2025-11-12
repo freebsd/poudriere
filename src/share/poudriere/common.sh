@@ -4552,7 +4552,7 @@ download_from_repo_check_pkg() {
 	raw_deps="${run_deps:+${run_deps} }${lib_deps}"
 	local_deps=$(for dep in ${raw_deps}; do
 		get_pkgname_from_originspec "${dep#*:}" dep_pkgname || continue
-		case "${PKG_NO_VERSION_FOR_DEPS}" in
+		case "${PKG_NO_VERSION_FOR_DEPS:?}" in
 		"no") echo "${dep_pkgname}" ;;
 		*) echo "${dep_pkgname%-*}" ;;
 		esac
@@ -4853,7 +4853,7 @@ download_from_repo_post_delete() {
 	parallel_start || err 1 "parallel_start"
 	while mapfile_read_loop "${MASTER_DATADIR:?}/pkg_fetch" fpkgname; do
 		if [ ! -e "${PACKAGES}/All/${fpkgname}.${PKG_EXT}" ]; then
-			case "${PKG_NO_VERSION_FOR_DEPS}" in
+			case "${PKG_NO_VERSION_FOR_DEPS:?}" in
 			"no")
 				# Due to not recursively validating a package
 				# will be used, we still may fetch a package
@@ -4992,7 +4992,7 @@ sanity_check_pkg() {
 				displayed_warning=1
 				;;
 			esac
-			case "${PKG_NO_VERSION_FOR_DEPS}" in
+			case "${PKG_NO_VERSION_FOR_DEPS:?}" in
 			"no")
 				# This package format is no longer acceptable
 				msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: unwanted unversioned dependency: ${COLOR_PORT}${dep_pkgname}${COLOR_RESET}"
@@ -5008,7 +5008,7 @@ sanity_check_pkg() {
 		if [ -e "${PACKAGES:?}/All/${dep_pkgname}.${PKG_EXT}" ]; then
 			continue
 		fi
-		case "${PKG_NO_VERSION_FOR_DEPS}" in
+		case "${PKG_NO_VERSION_FOR_DEPS:?}" in
 		"no")
 			reason="missing dependency"
 			;;
@@ -5527,7 +5527,7 @@ build_port() {
 			# Only set PKGENV during 'package' to prevent
 			# testport-built packages from going into the main repo
 			pkg_notes_get "${pkgname}" pkgenv
-			case "${PKG_NO_VERSION_FOR_DEPS}" in
+			case "${PKG_NO_VERSION_FOR_DEPS:?}" in
 			"no") ;;
 			*)
 				pkgenv="${pkgenv:+${pkgenv} }PKG_NO_VERSION_FOR_DEPS=1"
@@ -6610,19 +6610,21 @@ build_pkg() {
 	_build_pkg_fp "${pkgname:?}"
 	pkgfile="${PACKAGES:?}/All/${pkgname:?}.${PKG_EXT:?}"
 	if [ -f "${pkgfile:?}" ]; then
+		dev_assert_not "no" "${PKG_NO_VERSION_FOR_DEPS:?}"
 		job_msg_status "Inspecting" "${port}${FLAVOR:+@${FLAVOR}}" \
 		    "${pkgname}" "determining shlib requirements"
 		if ! shash_exists pkgname-check_shlibs "${pkgname}"; then
 			err ${EX_SOFTWARE} "build_pkg: Trying to build ${COLOR_PORT}${pkgname}${COLOR_RESET} when the package is already present"
 		fi
 		bset_job_status "inspecting" "${originspec}" "${pkgname}"
-		if package_libdeps_satisfied "${pkgname}"; then
+		unset build_reason
+		if package_libdeps_satisfied "${pkgname}" build_reason; then
 			local ignore
 
 			ignore="no rebuild needed for shlib chase"
 			badd ports.inspected "${originspec} ${pkgname} ${ignore}"
-			COLOR_ARROW="${COLOR_SUCCESS}" \
-			    job_msg_status_debug "Finished" \
+			COLOR_ARROW="${COLOR_IGNORE}" \
+			    job_msg_status "Finished" \
 			    "${port}${FLAVOR:+@${FLAVOR}}" "${pkgname}" \
 			    "Nothing to do"
 			pkgbuild_done "${pkgname}"
@@ -6633,7 +6635,6 @@ build_pkg() {
 			bset "${MY_BUILDER_ID:?}" status "done:"
 			return 0
 		fi
-		build_reason="missed shlib PORTREVISION chase"
 		delete_pkg "${pkgfile:?}"
 	else
 		unset build_reason
@@ -7743,7 +7744,7 @@ delete_old_pkg() {
 	fi
 	# The package is kept.
 
-	case "${PKG_NO_VERSION_FOR_DEPS-}" in
+	case "${PKG_NO_VERSION_FOR_DEPS:?}" in
 	"no") ;;
 	*)
 		# If the package has shlib dependencies then we need to
@@ -7969,38 +7970,58 @@ package_deps_provided_libs() {
 # a PORTREVISION chase was missed by a committer or from a change
 # of quarterly branch.
 package_libdeps_satisfied() {
-	[ $# -eq 1 ] || eargs package_libdeps_satisfied pkgname
+	[ $# -eq 2 ] || eargs package_libdeps_satisfied pkgname reasonvar
 	local pkgname="$1"
-	local pkgfile
+	local pls_reasonvar="$2"
+	local pkgfile pkgbase
 	local mapfile_handle ret
-	local shlib shlibs_required shlibs_provided shlib_name
+	local shlib shlibs_required deps_provided_shlibs shlib_name
+	local pls_reason
 
+	unset -v "${pls_reasonvar:?}" || return
+	unset pls_reason
 	if ! ensure_pkg_installed; then
 		# Probably building pkg right now
 		return 0
 	fi
-
+	ret=0
+	pkgbase="${pkgname%-*}"
 	pkgfile="${PACKAGES:?}/All/${pkgname:?}.${PKG_EXT:?}"
 	# Compare the dependencies in the file to what its dep *packages*
 	# provide. The metadata in ports is not relevant here.
-	shlibs_provided="$(package_deps_provided_libs "${pkgfile:?}" |
+	deps_provided_shlibs="$(package_deps_provided_libs "${pkgfile:?}" |
 	    paste -d ' ' -s -)"
-	msg_debug "${COLOR_PORT}${pkgname}${COLOR_RESET}: provides: ${shlibs_provided}"
-	case "${shlibs_provided:+set}" in
+	msg_debug "${COLOR_PORT}${pkgname}${COLOR_RESET}: provides:" \
+	    "${deps_provided_shlibs}"
+	case "${deps_provided_shlibs:+set}" in
 	"")
-		msg_debug "${COLOR_PORT}${pkgname}${COLOR_RESET} misses all its shlibs"
-		return 1
+		if patternlist_match \
+		    "${ORPHAN_SHLIB_REBUILD_IGNORELIST-}" \
+		    "${pkgbase:?}"; then
+			job_msg_warn "${COLOR_PORT}${pkgname}${COLOR_RESET}" \
+			    "will NOT be rebuilt (ignorelisted) but it" \
+			    "misses all of its" \
+			    "shlibs. May need SHLIB_REQUIRE_IGNORE_GLOB."
+		else
+			ret=1
+			job_msg_warn "${COLOR_PORT}${pkgname}${COLOR_RESET}" \
+			    "will be rebuilt as it" \
+			    "misses all of its" \
+			    "shlibs. May need SHLIB_REQUIRE_IGNORE_GLOB."
+		fi
+		pls_reason="misses all of its shlibs (may need SHLIB_REQUIRE_IGNORE_GLOB)"
+		setvar "${pls_reasonvar:?}" "${pls_reason:?}" || return
+		return "${ret}"
 		;;
 	esac
 	shash_read_mapfile pkgname-shlibs_required "${pkgname:?}" \
 	    mapfile_handle ||
 	    err "${EX_SOFTWARE}" "package_libdeps_satisfied: Failed to lookup shlib_requires from ${pkgname} ret=$?"
-	ret=0
 	unset shlibs_required
 	while mapfile_read "${mapfile_handle}" shlib; do
 		shlibs_required="${shlibs_required:+${shlibs_required} }${shlib}"
 		shlib_name="${shlib%.so*}"
-		case " ${shlibs_provided} " in
+		case " ${deps_provided_shlibs} " in
 		# Success
 		*" ${shlib} "*) ;;
 		# A different version! We need to rebuild to use it.
@@ -8065,7 +8086,9 @@ package_libdeps_satisfied() {
 		*" ${shlib_name}.so."[0-9][0-9][0-9][0-9].[0-9][0-9][0-9].[0-9][0-9][0-9]" "*|\
 		EOL)
 			ret=1
-			job_msg_warn "${COLOR_PORT}${pkgname}${COLOR_RESET} will be rebuilt as it misses ${shlib}"
+			job_msg_warn "${COLOR_PORT}${pkgname}${COLOR_RESET}" \
+			    "will be rebuilt as it misses ${shlib}"
+			pls_reason="misses shlib ${shlib:?} (likely missed PORTREVISION chase)"
 			break
 			;;
 		# Nothing similar. Bogus dependency. Avoid rebuilding
@@ -8074,12 +8097,32 @@ package_libdeps_satisfied() {
 		# The port should be fixed to properly track the library.
 		# It likely is failing the QA check for leaked libraries.
 		*)
-			ret=1
-			job_msg_warn "${COLOR_PORT}${pkgname}${COLOR_RESET} will be rebuilt as it misses ${shlib} which no dependency provides. This may be a port bug if it repeats next build."
+			if patternlist_match \
+			    "${ORPHAN_SHLIB_REBUILD_IGNORELIST-}" \
+			    "${pkgbase:?}"; then
+				job_msg_warn "${COLOR_PORT}${pkgname}${COLOR_RESET}" \
+				    "will NOT be rebuilt (ignorelisted) but" \
+				    "it misses ${shlib} which no" \
+				    "dependency provides. It is likely" \
+				    "failing testport/stage-qa." \
+				    "Report to maintainer."
+			else
+				ret=1
+				job_msg_warn "${COLOR_PORT}${pkgname}${COLOR_RESET}" \
+				    "will be rebuilt as" \
+				    "it misses ${shlib} which no" \
+				    "dependency provides. It is likely" \
+				    "failing testport/stage-qa." \
+				    "Report to maintainer."
+			fi
+			pls_reason="misses undeclared shlib ${shlib:?}"
 			break
 			;;
 		esac
 	done
+	case "${pls_reason:+set}" in
+	set) setvar "${pls_reasonvar:?}" "${pls_reason:?}" || return ;;
+	esac
 	mapfile_close "${mapfile_handle}" || :
 	shash_unset pkgname-shlibs_required "${pkgname:?}"
 	msg_debug "${COLOR_PORT}${pkgname}${COLOR_RESET}: required: ${shlibs_required}"
