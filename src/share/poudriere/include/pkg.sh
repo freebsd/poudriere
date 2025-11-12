@@ -275,7 +275,7 @@ get_pkg_cache_dir() {
 	fi
 
 	if [ "${use_mtime}" -eq 1 ]; then
-		pkg_mtime=$(stat -f %m "${pkg}")
+		pkg_mtime=$(stat -L -f %m "${pkg}")
 	fi
 
 	pkg_dir="${cache_dir}/${pkg_file}/${pkg_mtime}"
