@@ -154,6 +154,7 @@ pkglibexec_PROGRAMS= \
 		     cpdup \
 		     dirempty \
 		     dirwatch \
+		     getpid \
 		     locked_mkdir \
 		     lockf \
 		     nc \
@@ -188,6 +189,8 @@ cpdup_LDADD=	-lcrypto
 cpdup_CFLAGS=	$(AM_CFLAGS) -D_ST_FLAGS_PRESENT_=1 -Wno-deprecated-declarations
 dirempty_SOURCES=	src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
+getpid_SOURCES=		src/libexec/poudriere/getpid/getpid.c
+getpid_CFLAGS=		--static
 locked_mkdir_SOURCES=	src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 locked_mkdir_CFLAGS=	$(AM_CFLAGS) $(SAN_CFLAGS)
 lockf_SOURCES=		external/freebsd/usr.bin/lockf/lockf.c
