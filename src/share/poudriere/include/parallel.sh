@@ -293,6 +293,8 @@ _kill_job() {
 					pwait -t "${timeout}" "${pgid}" || ret="$?"
 					;;
 				esac
+				msg_dev "Pwait -t ${timeout} on ${status}" \
+				    "job=${jobid} pgid=${pgid-} ret=${ret}"
 				case "${ret}" in
 				124)
 					# Timeout. Keep going on the
