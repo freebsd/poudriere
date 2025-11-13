@@ -1060,6 +1060,7 @@ raise() {
 }
 
 # Need to cleanup some stuff before calling traps.
+# This is ran with 2>/dev/null
 _trap_pre_handler() {
 	_ERET="$?"
 	unset IFS
@@ -1080,8 +1081,16 @@ _trap_pre_handler() {
 	esac
 	set +x
 }
-# {} is used to avoid set -x SIGPIPE
-alias trap_pre_handler='{ _trap_pre_handler; } 2>/dev/null; (exit "${_ERET}")'
+_trap_pre_handler2() {
+	case "$-" in
+	*x*) err 1 "_trap_pre_handler2: set -x should not be on here" ;;
+	esac
+	# Fix stderr
+	redirect_to_real_tty exec
+}
+# {} 2>/dev/null is used to avoid set -x SIGPIPE; set +x done in there.
+# after set +x is done we call _trap_pre_handler2 to redirect stderr.
+alias trap_pre_handler='{ _trap_pre_handler; } 2>/dev/null; _trap_pre_handler2; (exit "${_ERET}")'
 
 sig_handler() {
 	local -
