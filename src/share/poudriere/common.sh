@@ -1342,6 +1342,7 @@ log_start() {
 
 	_logfile logfile "${pkgname}"
 
+	critical_start
 	# Save stdout/stderr for restoration later for bulk/testport -i
 	exec 3>&1 4>&2
 	export OUTPUT_REDIRECTED=1
@@ -1385,6 +1386,7 @@ log_start() {
 		unset log_start_job
 		exec > ${logfile} 2>&1
 	fi
+	critical_end
 }
 
 _lookup_portdir() {
@@ -1589,7 +1591,10 @@ buildlog_stop() {
 }
 
 log_stop() {
+	critical_start
 	if [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
+		dev_assert 3 "${OUTPUT_REDIRECTED_STDOUT}"
+		dev_assert 4 "${OUTPUT_REDIRECTED_STDERR}"
 		exec 1>&3 3>&- 2>&4 4>&-
 		OUTPUT_REDIRECTED=0
 		unset OUTPUT_REDIRECTED_STDOUT
@@ -1601,6 +1606,7 @@ log_stop() {
 		unset log_start_job
 		;;
 	esac
+	critical_end
 }
 
 attr_set() {
