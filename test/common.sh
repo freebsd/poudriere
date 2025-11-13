@@ -921,8 +921,8 @@ cleanup() {
 	case $(jobs) in
 	"") ;;
 	*)
+		echo "Jobs are still running!" >&2
 		jobs -l >&2
-		echo "Jobs are still running!" >&1
 		EXITVAL=$((EXITVAL + 1))
 		;;
 	esac
