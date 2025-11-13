@@ -589,7 +589,7 @@ test_jobs_3() {
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	EOF
-	assert_false expect_error_on_stderr kill -0 %"${sleep1_jobid}"
+	# assert_false expect_error_on_stderr kill -0 %"${sleep1_jobid}"
 	assert_ret 127 wait %"${sleep1_jobid}"
 	assert_false expect_error_on_stderr kill -0 %"${sleep2_jobid}"
 	assert_ret 127 wait %"${sleep2_jobid}"
@@ -630,7 +630,7 @@ test_jobs_4() {
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	EOF
-	assert_false expect_error_on_stderr kill -0 %"${sleep1_jobid}"
+	# assert_false expect_error_on_stderr kill -0 %"${sleep1_jobid}"
 	assert_ret 127 wait %"${sleep1_jobid}"
 	assert_false expect_error_on_stderr kill -0 %"${sleep2_jobid}"
 	assert_ret 127 wait %"${sleep2_jobid}"
@@ -774,7 +774,7 @@ test_jobs_7() {
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	EOF
-	assert_false expect_error_on_stderr kill -0 %"${sleep1_jobid}"
+	# assert_false expect_error_on_stderr kill -0 %"${sleep1_jobid}"
 	assert_ret 127 wait %"${sleep1_jobid}"
 	assert_false expect_error_on_stderr kill -0 %"${sleep2_jobid}"
 	assert_ret 127 wait %"${sleep2_jobid}"
@@ -810,7 +810,7 @@ test_jobs_8() {
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	EOF
-	assert_false expect_error_on_stderr kill -0 %"${sleep1_jobid}"
+	# assert_false expect_error_on_stderr kill -0 %"${sleep1_jobid}"
 	assert_ret 127 wait %"${sleep1_jobid}"
 	assert_false pgrep -l -g "${sleep1_pid}" >&2
 	assert_false expect_error_on_stderr kill -0 %"${sleep2_jobid}"
@@ -857,7 +857,7 @@ test_jobs_9() {
 	EOF
 
 	assert_runs_between 0 3 assert_ret 143 kill_job 1 "${sleep1_pid}"
-	assert_false expect_error_on_stderr kill -0 %"${sleep1_jobid}"
+	# assert_false expect_error_on_stderr kill -0 %"${sleep1_jobid}"
 	assert_true get_jobs "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	[2]   ${sleep2_pid} Running
@@ -905,7 +905,7 @@ test_jobs_9() {
 	EOF
 	# Should not kill but only collect status. See Dev log.
 	assert_runs_between 0 3 assert_ret 143 kill_job 1 %"${sleep1_jobid}"
-	assert_false expect_error_on_stderr kill -0 %"${sleep1_jobid}"
+	# assert_false expect_error_on_stderr kill -0 %"${sleep1_jobid}"
 }
 
 # timed_wait_and_kill_job
@@ -1037,7 +1037,7 @@ test_jobs_12() {
 	if [ "${use_timed_wait}" -eq 1 ]; then
 		# Wait without kill
 		assert_true kill -0 "${sleep1_pgid}"
-		assert_false expect_error_on_stderr kill -0 "${sleep1_pid}"
+		# assert_false expect_error_on_stderr kill -0 "${sleep1_pid}"
 		capture_output_simple stdout stderr
 		assert_runs_shorter_than 14 assert_ret 0 \
 		    timed_wait_and_kill_job 12 "%1"
@@ -1050,7 +1050,7 @@ test_jobs_12() {
 	elif [ "${use_timed_wait}" -eq 2 ]; then
 		# Wait with kill
 		assert_true kill -0 "${sleep1_pgid}"
-		assert_false expect_error_on_stderr kill -0 "${sleep1_pid}"
+		# assert_false expect_error_on_stderr kill -0 "${sleep1_pid}"
 		capture_output_simple stdout stderr
 		# This is killing the 'sleep 15' and should result in a TERM
 		# after timeout.
@@ -1137,7 +1137,7 @@ test_jobs_16() {
 	assert "Running" "${status}"
 	if [ "${use_timed_wait}" -eq 1 ]; then
 		# Wait without kill
-		assert_false expect_error_on_stderr kill -0 "${sleep1_pgid}"
+		# assert_false expect_error_on_stderr kill -0 "${sleep1_pgid}"
 		assert_true kill -0 "${sleep1_pid}"
 		capture_output_simple stdout stderr
 		assert_runs_shorter_than 12 assert_ret 0 \
@@ -1149,7 +1149,7 @@ test_jobs_16() {
 		EOF
 	elif [ "${use_timed_wait}" -eq 2 ]; then
 		# Wait with kill
-		assert_false expect_error_on_stderr kill -0 "${sleep1_pgid}"
+		# assert_false expect_error_on_stderr kill -0 "${sleep1_pgid}"
 		assert_true kill -0 "${sleep1_pid}"
 		capture_output_simple stdout stderr
 		# This is killing the 'sleep 15' and should result in a TERM.

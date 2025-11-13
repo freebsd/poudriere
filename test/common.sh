@@ -376,6 +376,8 @@ _teer() {
 capture_output_simple() {
 	local my_stdout_return="$1"
 	local my_stderr_return="$2"
+	local cmd="${3:-_teer}"
+	shift 2
 	local _my_stdout _my_stdout_log
 	local _my_stderr _my_stderr_log
 	local -
@@ -389,9 +391,9 @@ capture_output_simple() {
 		_my_stdout=$(mktemp -ut stdout.pipe)
 		_my_stdout_log=$(mktemp -ut stdout)
 		echo "Capture stdout logs to ${_my_stdout_log}" >&2
-		exec 6>&1
+		exec 5>&1
 		mkfifo "${_my_stdout}"
-		spawn_job _teer "${_my_stdout_log}" "${_my_stdout}" >&6
+		spawn_job "${cmd:?}" "${_my_stdout_log}" "${_my_stdout}" >&5
 		my_stdout_job="${spawn_jobid:?}"
 		exec > "${_my_stdout}"
 		unlink "${_my_stdout}"
@@ -406,10 +408,10 @@ capture_output_simple() {
 		_my_stderr=$(mktemp -ut stderr.pipe)
 		_my_stderr_log=$(mktemp -ut stderr)
 		echo "Capture stderr logs to ${_my_stderr_log}" >&2
-		exec 7>&2
-		REDIRECTED_STDERR_FD=7
+		exec 6>&2
+		REDIRECTED_STDERR_FD=6
 		mkfifo "${_my_stderr}"
-		spawn_job _teer "${_my_stderr_log}" "${_my_stderr}" >&7
+		spawn_job "${cmd:?}" "${_my_stderr_log}" "${_my_stderr}" >&6
 		my_stderr_job="${spawn_jobid:?}"
 		exec 2> "${_my_stderr}"
 		unlink "${_my_stderr}"
@@ -428,14 +430,14 @@ capture_output_simple_stop() {
 	unset REDIRECTED_STDERR_FD
 	case "${my_stdout_job:+set}" in
 	set)
-		exec 1>&6 6>&-
+		exec 1>&5 5>&-
 		timed_wait_and_kill_job 1 "%${my_stdout_job:?}" || :
 		unset my_stdout_job
 		;;
 	esac
 	case "${my_stderr_job:+set}" in
 	set)
-		exec 2>&7 7>&-
+		exec 2>&6 6>&-
 		timed_wait_and_kill_job 1 "%${my_stderr_job:?}" || :
 		unset my_stderr_job
 		;;
@@ -976,22 +978,29 @@ cleanup() {
 	return "${ret}"
 }
 
+_sed_error() {
+	[ $# -ge 2 ] || eargs _sed_error _ignored stdin_fifo
+	local stdin_fifo="$2"
+
+	exec < "${stdin_fifo:?}"
+	sed -e 's,Error:,ExpectedError:,'
+}
+
+
 expect_error_on_stderr() {
 	local -; set +e
-	local tmpfile ret
+	local ret _hack
 
-	tmpfile="$(mktemp -ut expect_error_on_stderr)"
 	ret=0
+	# This hacks capture_output_simple to redirect stderr to _sed_error
+	capture_output_simple "" _hack _sed_error
 	# allow vfork
-	{ "$@"; } 2>"${tmpfile}" || ret="$?"
+	{ "$@"; } || ret="$?"
 	# We can't _assert_ that there is an error as some calls won't actually
 	# get 'Error:' with SH=/bin/sh. It's not that important to ensure
 	# stderr has stuff, it's more about causing a FAIL if 'Error:' is
 	# unexpectedly seen in a log.
-	/usr/bin/sed -i '' -e 's,Error:,ExpectedError:,' "${tmpfile}"
-	# allow vfork
-	{ /bin/cat "${tmpfile}"; } >&2
-	rm -f "${tmpfile}"
+	capture_output_simple_stop
 	return "${ret}"
 }
 
