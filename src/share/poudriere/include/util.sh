@@ -588,7 +588,8 @@ unlink() {
 	[ $# -eq 2 ] || [ $# -eq 1 ] || eargs unlink '[--]' file
 
 	# The builtin one ignores errors for ENOENT.
-	command unlink "$@" 2>/dev/null || :
+	# allow vfork
+	{ command unlink "$@"; } 2>/dev/null || :
 }
 fi
 
@@ -2660,7 +2661,8 @@ _write_atomic() {
 	*C*) # noclobber
 		# If comparing, we can only succeed if there is no file
 		# so no need to compare.
-		ln "${tmpfile}" "${dest}" 2>/dev/null || ret="$?"
+		# allow vfork
+		{ ln "${tmpfile}" "${dest}"; } 2>/dev/null || ret="$?"
 		case "${ret}" in
 		0) ;;
 		*)
@@ -3274,7 +3276,8 @@ lock_have() {
 
 # This is mostly for tests to assert without having the assert hidden.
 hide_stderr() {
-	"$@" 2>/dev/null
+	# allow vfork
+	{ "$@"; } 2>/dev/null
 }
 
 if ! type nproc >/dev/null 2>&1; then

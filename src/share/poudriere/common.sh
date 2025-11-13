@@ -2593,7 +2593,7 @@ markfs() {
 				esac
 			} | write_atomic "${mtreefile}"
 		fi
-		mtree -X "${mtreefile}" -cn -k uid,gid,flags,mode,size -p . \
+		{ mtree -X "${mtreefile}" -cn -k uid,gid,flags,mode,size -p .; } \
 		    > "${MNT_DATADIR}/mtree.${name}"
 	)
 	echo " done"
@@ -5734,9 +5734,9 @@ build_port() {
 			else
 				:> "${mod1:?}"
 			fi
-			comm -12 "${add1:?}" "${del1:?}" >> "${mod1:?}"
-			comm -23 "${add1:?}" "${del1:?}" > "${add:?}"
-			comm -13 "${add1:?}" "${del1:?}" > "${del:?}"
+			{ comm -12 "${add1:?}" "${del1:?}"; } >> "${mod1:?}"
+			{ comm -23 "${add1:?}" "${del1:?}"; } > "${add:?}"
+			{ comm -13 "${add1:?}" "${del1:?}"; } > "${del:?}"
 			if [ -s "${add:?}" ]; then
 				msg "Error: Files or directories left over:"
 				die=1
@@ -9183,7 +9183,7 @@ generate_queue() {
 
 	bset status "computingrdeps:"
 	pkgqueue_compute_rdeps
-	find deps rdeps > "pkg_pool"
+	{ find deps rdeps; } > "pkg_pool"
 
 	run_hook compute_deps stop
 	run_hook generate_queue stop
@@ -10381,7 +10381,7 @@ load_priorities_ptsort() {
 	local -
 
 	_log_path log
-	awk '{print $2 " " $1}' "${MASTER_DATADIR:?}/pkg_deps" \
+	{ awk '{print $2 " " $1}' "${MASTER_DATADIR:?}/pkg_deps"; } \
 	    > "${MASTER_DATADIR:?}/pkg_deps.ptsort"
 
 	# Add in boosts before running ptsort

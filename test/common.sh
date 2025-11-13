@@ -370,7 +370,7 @@ _teer() {
 	local tee_file="$1"
 	local stdin_fifo="$2"
 
-	tee "${tee_file:?}" < "${stdin_fifo:?}"
+	{ tee "${tee_file:?}"; } < "${stdin_fifo:?}"
 }
 
 capture_output_simple() {
@@ -648,9 +648,11 @@ list_test_functions() {
 _pre_test_env_compare() {
 	_PRE_TEST_ENV="$(mktemp -t set)"
 	_DID_ASSERTS=0
-	set | awk -F= '{print $1}' > "${_PRE_TEST_ENV:?}"
+	# allow vfork
+	set | { awk -F= '{print $1}'; } > "${_PRE_TEST_ENV:?}"
 	_PRE_TEST_TMPFILES="$(mktemp -t tmpfile)"
-	find "${POUDRIERE_TMPDIR:?}" > "${_PRE_TEST_TMPFILES:?}"
+	# allow vfork
+	{ find "${POUDRIERE_TMPDIR:?}"; } > "${_PRE_TEST_TMPFILES:?}"
 }
 
 _post_test_env_compare() {
@@ -894,7 +896,8 @@ cleanup() {
 	if [ "${ret}" -ne 0 ] && [ -n "${LOG_START_LASTFILE-}" ] &&
 	    [ -s "${LOG_START_LASTFILE}" ]; then
 		echo "Log captured data not seen:" >&2
-		cat "${LOG_START_LASTFILE}" >&2
+		# allow vfork
+		{ cat "${LOG_START_LASTFILE}"; } >&2
 	fi
 	case "${TEST_CONTEXTS:+set}" in
 	set)
@@ -927,12 +930,14 @@ cleanup() {
 		clean_allowed_tmpfiles
 		if [ -d "${TMPDIR}" ] && ! dirempty "${TMPDIR}"; then
 			echo "${TMPDIR} was not empty on exit!" >&2
-			find "${TMPDIR}" -ls >&2
+			# allow vfork
+			{ find "${TMPDIR}" -ls; } >&2
 			case "${EXITVAL:-0}" in
 			0) ret=1 ;;
 			esac
 			if [ -e "${ERR_CHECK-}" ]; then
-				cat "${ERR_CHECK}" >&2
+				# allow vfork
+				{ cat "${ERR_CHECK}"; } >&2
 			fi
 		else
 			rm -rf "${TMPDIR}"
@@ -977,13 +982,15 @@ expect_error_on_stderr() {
 
 	tmpfile="$(mktemp -ut expect_error_on_stderr)"
 	ret=0
-	"$@" 2>"${tmpfile}" || ret="$?"
+	# allow vfork
+	{ "$@"; } 2>"${tmpfile}" || ret="$?"
 	# We can't _assert_ that there is an error as some calls won't actually
 	# get 'Error:' with SH=/bin/sh. It's not that important to ensure
 	# stderr has stuff, it's more about causing a FAIL if 'Error:' is
 	# unexpectedly seen in a log.
 	/usr/bin/sed -i '' -e 's,Error:,ExpectedError:,' "${tmpfile}"
-	/bin/cat "${tmpfile}" >&2
+	# allow vfork
+	{ /bin/cat "${tmpfile}"; } >&2
 	rm -f "${tmpfile}"
 	return "${ret}"
 }

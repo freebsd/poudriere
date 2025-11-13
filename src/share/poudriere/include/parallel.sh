@@ -131,10 +131,13 @@ pwait() {
 			    "$@" || ret="$?"
 			;;
 		*)
-			command pwait \
-			    ${tflag:+-t "${timeout}"} \
-			    ${vflag:+-v} ${oflag:+-o} \
-			    "$@" 2>/dev/null || ret="$?"
+			# allow vfork
+			{
+				command pwait \
+				    ${tflag:+-t "${timeout}"} \
+				    ${vflag:+-v} ${oflag:+-o} \
+				    "$@" || ret="$?"
+			} 2>/dev/null
 			;;
 		esac
 		case "${ret}" in
@@ -758,11 +761,13 @@ madvise_protect() {
 	case "${pid}" in
 	-*)
 		msg_debug "Protecting PGID ${pid}"
-		${PROTECT} -g "${pid#-}" 2>/dev/null || :
+		# allow vfork
+		{ ${PROTECT} -g "${pid#-}"; } 2>/dev/null || :
 		;;
 	*)
 		msg_debug "Protecting process ${pid}"
-		${PROTECT} -p "${pid}" 2>/dev/null || :
+		# allow vfork
+		{ ${PROTECT} -p "${pid}"; } 2>/dev/null || :
 		;;
 	esac
 }

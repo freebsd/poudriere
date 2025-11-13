@@ -405,7 +405,8 @@ _pkgqueue_clean_rdeps() {
 		;;
 	esac
 
-	rm -rf "${rdep_dir}" 2>/dev/null &
+	# allow vfork
+	{ rm -rf "${rdep_dir}"; } 2>/dev/null
 
 	return 0
 }
@@ -447,7 +448,8 @@ _pkgqueue_clean_deps() {
 		;;
 	esac
 
-	rm -rf "${dep_dir}" 2>/dev/null &
+	# allow vfork
+	{ rm -rf "${dep_dir}"; } 2>/dev/null
 
 	return 0
 }
@@ -756,7 +758,7 @@ pkgqueue_sanity_check() {
 		find deps -mindepth 3 | \
 		sed -e "s,^deps/[^/]*/,," -e 's:/: :' | \
 		# Only cycle errors are wanted
-		tsort 2>&1 >/dev/null | \
+		{ tsort; } 2>&1 >/dev/null | \
 		sed -e 's/tsort: //' | \
 		awk -f ${AWKPREFIX}/dependency_loop.awk \
 	)
@@ -880,7 +882,7 @@ pkgqueue_find_dead_packages() {
 	dead_all="$(mktemp -t dead_packages.all)"
 	dead_deps="$(mktemp -t dead_packages.deps)"
 	dead_top="$(mktemp -t dead_packages.top)"
-	find deps -mindepth 2 > "${dead_all}"
+	{ find deps -mindepth 2; } > "${dead_all}"
 	# All packages in the queue
 	cut -d / -f 3 "${dead_all}" | sort -u -o "${dead_top}"
 	# All packages with dependencies

@@ -221,15 +221,20 @@ _assert_list() {
 	getvar "${expected_name}" _aexpected || _aexpected="null"
 	getvar "${actual_name}" _aactual || _aactual="null"
 
-	echo "${_aexpected}" |
-	    tr ' ' '\n' | LC_ALL=C sort |
-            sed -e '/^$/d' > "${expected_tmp}"
-	echo "${_aactual}" |
-	    tr ' ' '\n' | LC_ALL=C sort |
-	    sed -e '/^$/d' > "${have_tmp}"
+	{
+		echo "${_aexpected}" |
+		    tr ' ' '\n' | LC_ALL=C sort |
+		    sed -e '/^$/d'
+	} > "${expected_tmp}"
+	{
+		echo "${_aactual}" |
+		    tr ' ' '\n' | LC_ALL=C sort |
+		    sed -e '/^$/d'
+	} > "${have_tmp}"
 	cmp -s "${have_tmp}" "${expected_tmp}" || _al_ret=$?
 	if [ "${_al_ret}" -ne 0 ]; then
-		diff -u "${expected_tmp}" "${have_tmp}" >&${REDIRECTED_STDERR_FD:-2}
+		{ diff -u "${expected_tmp}" "${have_tmp}"; } \
+		    >&${REDIRECTED_STDERR_FD:-2}
 	fi
 
 	rm -f "${have_tmp}" "${expected_tmp}"
@@ -260,7 +265,7 @@ _assert_file_reg() {
 	case "${_aexpected}" in
 	-)
 		_aexpected=$(mktemp -ut assert_file.expected)
-		cat > "${_aexpected}"
+		{ cat; } > "${_aexpected}"
 		;;
 	esac
 
@@ -301,7 +306,7 @@ _assert_file() {
 	case "${_ahave}" in
 	-)
 		_ahave=$(mktemp -ut assert_file.have)
-		grep -v '^#' > "${_ahave}"
+		{ grep -v '^#'; } > "${_ahave}"
 		;;
 	*)
 		if [ ! -r "${_ahave}" ]; then
@@ -314,7 +319,7 @@ _assert_file() {
 	case "${_aexpected}" in
 	-)
 		_aexpected=$(mktemp -ut assert_file.expected)
-		grep -v '^#' > "${_aexpected}"
+		{ grep -v '^#'; } > "${_aexpected}"
 		;;
 	*)
 		if [ ! -r "${_aexpected}" ]; then
@@ -345,7 +350,8 @@ EXPECTED:
 $(cat -nvet "${_aexpected}")"
 	if [ "${_af_ret}" -ne 0 ]; then
 		aecho FAIL "${lineinfo}" "${reason}"
-		diff -u "${_aexpected}" "${_ahave}" | cat -vet >&${REDIRECTED_STDERR_FD:-2}
+		{ diff -u "${_aexpected}" "${_ahave}" | cat -vet; } \
+		    >&${REDIRECTED_STDERR_FD:-2}
 		if [ "${unordered}" -eq 1 ]; then
 			rm -f "${havetmp}" "${expectedtmp}"
 			_ahave="${havesave}"
@@ -476,12 +482,12 @@ _assert_stack() {
 	local val
 
 	val="$(getvar "${stack_var}")"
-	echo "${val}" | tr ' ' '\n' | sort | sed -e '/^$/d' > "${have_tmp}"
-	echo "${_aexpected}" | tr ' ' '\n' | sort | sed -e '/^$/d' > \
+	{ echo "${val}" | tr ' ' '\n' | sort | sed -e '/^$/d'; } > "${have_tmp}"
+	{ echo "${_aexpected}" | tr ' ' '\n' | sort | sed -e '/^$/d'; } > \
 	    "${expected_tmp}"
 	cmp -s "${have_tmp}" "${expected_tmp}" || _as_ret=$?
 	if [ ${_as_ret} -ne 0 ]; then
-		comm "${have_tmp}" "${expected_tmp}" >&2
+		{ comm "${have_tmp}" "${expected_tmp}"; } >&2
 	fi
 
 	rm -f "${have_tmp}" "${expected_tmp}"
