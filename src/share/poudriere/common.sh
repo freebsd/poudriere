@@ -4012,29 +4012,31 @@ jail_start() {
 		;;
 	esac
 
-	cat >> "${tomnt:?}/etc/make.conf" <<-EOF
-	USE_PACKAGE_DEPENDS=yes
-	BATCH=yes
-	WRKDIRPREFIX=/wrkdirs
-	PORTSDIR=${PORTSDIR:?}
-	PACKAGES=/packages
-	DISTDIR=/distfiles
-	EOF
-	for o in ${OVERLAYS}; do
-		echo "OVERLAYS+=${OVERLAYSDIR:?}/${o:?}"
-	done >> "${tomnt:?}/etc/make.conf"
-	case "${NO_FORCE_PACKAGE}" in
-	"")
-		echo "FORCE_PACKAGE=yes" >> "${tomnt:?}/etc/make.conf"
-		;;
-	esac
-	case "${NO_PACKAGE_BUILDING}" in
-	"")
-		echo "PACKAGE_BUILDING=yes" >> "${tomnt:?}/etc/make.conf"
-		export PACKAGE_BUILDING=yes
-		echo "PACKAGE_BUILDING_FLAVORS=yes" >> "${tomnt:?}/etc/make.conf"
-		;;
-	esac
+	{
+		cat <<-EOF
+		USE_PACKAGE_DEPENDS=yes
+		BATCH=yes
+		WRKDIRPREFIX=/wrkdirs
+		PORTSDIR=${PORTSDIR:?}
+		PACKAGES=/packages
+		DISTDIR=/distfiles
+		EOF
+		for o in ${OVERLAYS}; do
+			echo "OVERLAYS+=${OVERLAYSDIR:?}/${o:?}"
+		done
+		case "${NO_FORCE_PACKAGE}" in
+		"")
+			echo "FORCE_PACKAGE=yes"
+			;;
+		esac
+		case "${NO_PACKAGE_BUILDING}" in
+		"")
+			echo "PACKAGE_BUILDING=yes"
+			export PACKAGE_BUILDING=yes
+			echo "PACKAGE_BUILDING_FLAVORS=yes"
+			;;
+		esac
+	} >> "${tomnt:?}/etc/make.conf"
 
 	setup_makeconf "${tomnt:?}/etc/make.conf" "${name}" "${ptname}" \
 	    "${setname}"
