@@ -17,6 +17,24 @@ get_jobs() {
 	sed -i '' -e 's, *$,,' "${file}"
 }
 
+jobs_with_statuses_stdout() {
+	local jobs job status
+
+	unset jobs
+	while jobs_with_statuses jobs job status -- "$@"; do
+		echo "${job:?} ${status:?}"
+	done
+}
+
+jobs_with_statuses_pids_stdout() {
+	local jobs job status pids
+
+	unset jobs
+	while jobs_with_statuses jobs job status pids -- "$@"; do
+		echo "${job:?} ${status:?} ${pids:?}"
+	done
+}
+
 pwait_racy() {
 	local allpids pid state pids IFS -
 
@@ -167,41 +185,33 @@ test_jobs_1() {
 	[3] + ${sleep3_pid} Running
 	EOF
 
-	jobs_with_statuses "$(jobs)" > "${TMP}"
+	assert_true jobs_with_statuses_stdout > "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	%1 Done
 	%2 Running
 	%3 Running
 	EOF
-	cat > "${TMP}" <<-EOF
-	$(jobs_with_statuses "$(jobs)")
-	EOF
+	assert_true jobs_with_statuses_pids_stdout > "${TMP}"
 	assert_file - "${TMP}" <<-EOF
-	%1 Done
-	%2 Running
-	%3 Running
+	%1 Done ${sleep1_pid}
+	%2 Running ${sleep2_pid}
+	%3 Running ${sleep3_pid}
 	EOF
 
-	cat > "${TMP}" <<-EOF
-	$(jobs_with_statuses "$(jobs)" %1 %2 %3)
-	EOF
+	assert_true jobs_with_statuses_stdout %1 %2 %3 > "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	%1 Done
 	%2 Running
 	%3 Running
 	EOF
 
-	cat > "${TMP}" <<-EOF
-	$(jobs_with_statuses "$(jobs)" %1 %3)
-	EOF
+	assert_true jobs_with_statuses_stdout %1 %3 > "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	%1 Done
 	%3 Running
 	EOF
 
-	cat > "${TMP}" <<-EOF
-	$(jobs_with_statuses "$(jobs)" %2)
-	EOF
+	assert_true jobs_with_statuses_stdout %2 > "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	%2 Running
 	EOF
@@ -432,19 +442,22 @@ _test_jobs_2() {
 	      ${sleep3_pid}
 	EOF
 
-	jobs_with_statuses "$(jobs)" > "${TMP}"
+	assert_true jobs_with_statuses_stdout > "${TMP}"
 	assert_file - "${TMP}" <<-EOF
 	%1 Done
 	%2 Running
 	%3 Running
 	EOF
-	cat > "${TMP}" <<-EOF
-	$(jobs_with_statuses "$(jobs)")
-	EOF
+	local job1_pids job2_pids job3_pids
+
+	job1_pids="$(jobid %1)"
+	job2_pids="$(jobid %2)"
+	job3_pids="$(jobid %3)"
+	assert_true jobs_with_statuses_pids_stdout > "${TMP}"
 	assert_file - "${TMP}" <<-EOF
-	%1 Done
-	%2 Running
-	%3 Running
+	%1 Done ${job1_pids}
+	%2 Running ${job2_pids}
+	%3 Running ${job3_pids}
 	EOF
 
 	assert_true get_job_status "%1" status

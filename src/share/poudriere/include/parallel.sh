@@ -340,9 +340,11 @@ _kill_job() {
 
 pwait_jobs() {
 	[ "$#" -ge 0 ] || eargs pwait_jobs '[pwait flags]' '%job...'
-	local jobno pid pids allpids job_status
+	local job pid pids allpids job_status
 	local OPTIND=1 flag
 	local oflag timeout vflag
+	# shellcheck disable=SC2034
+	local jobs_it
 	local -
 
 	while getopts "ot:v" flag; do
@@ -359,40 +361,22 @@ pwait_jobs() {
 	0) return 0 ;;
 	esac
 
-	for jobno in "$@"; do
-		case "${jobno}" in
-		"%"*) ;;
-		*) err "${EX_SOFTWARE}" "pwait_jobs: invalid job spec: ${jobno}" ;;
-		esac
-	done
-
 	allpids=
-	# Each $(jobs) calls (wait4(2)) so rather than fetch status from
-	# $(jobs) for each pid just fetch it once and then check each
-	# pid for what we care about.
-	while mapfile_read_loop_redir jobno job_status; do
-		case "${jobno-}" in
-		# no jobs
-		"") break ;;
-		esac
-		case "${job_status}" in
+	pids=
+	unset jobs_it
+	while jobs_with_statuses jobs_it job job_status pids -- "$@"; do
+		# Unless the job is *Running* there is nothing to do.
+		case "${job_status:?}" in
 		"Running") ;;
-		*)
-			# Unless the job is *Running* there is nothing to do.
-			continue
-			;;
+		*) continue ;;
 		esac
-		pids="$(jobid "${jobno}")" ||
-		    err "${EX_SOFTWARE}" "kill_jobs: jobid"
 		for pid in ${pids}; do
-			if ! kill -0 "${pid}" 2>&5; then
+			if ! kill -0 "${pid:?}" 2>&5; then
 				continue
 			fi
-			allpids="${allpids:+${allpids} }${pid}"
+			allpids="${allpids:+${allpids} }${pid:?}"
 		done
-	done 5>/dev/null <<-EOF
-	$(jobs_with_statuses "$(jobs)" "$@")
-	EOF
+	done 5>/dev/null
 	case "${allpids:+set}" in
 	set) ;;
 	*)
@@ -528,28 +512,28 @@ parallel_start() {
 # if any have non-zero return, and then remove them from the PARALLEL_JOBNOS
 # list.
 _reap_children() {
-	local jobno jobs_status ret
+	local job job_status ret
+	# shellcheck disable=SC2034
+	local jobs_it
 	local -
-	set -o noglob
 
 	ret=0
-	while mapfile_read_loop_redir jobno jobs_status; do
-		case "${jobno-}" in
-		"") err 1 "_reap_children called with no running jobs" ;;
-		esac
-		case "${jobs_status}" in
+	case "${PARALLEL_JOBNOS:+set}" in
+	set) ;;
+	*) return 0 ;;
+	esac
+	set -o noglob
+	unset jobs_it
+	# shellcheck disable=SC2086
+	while jobs_with_statuses jobs_it job job_status -- \
+	    ${PARALLEL_JOBNOS}; do
+		case "${job_status:?}" in
 		"Running") continue ;;
 		esac
-		_wait "${jobno}" || ret="$?"
-		list_remove PARALLEL_JOBNOS "${jobno}" ||
-		    err 1 "_reap_children did not find ${jobno} in PARALLEL_JOBNOS"
-	done <<-EOF
-	$({
-		# shellcheck disable=SC2086
-		jobs_with_statuses "$(jobs)" ${PARALLEL_JOBNOS-}
-	})
-	EOF
-
+		_wait "${job:?}" || ret="$?"
+		list_remove PARALLEL_JOBNOS "${job:?}" ||
+		    err 1 "_reap_children did not find ${job} in PARALLEL_JOBNOS"
+	done
 	return "${ret}"
 }
 
@@ -596,11 +580,11 @@ parallel_shutdown() {
 	# known.
 	unset parallel_jobnos
 	for jobno in ${PARALLEL_JOBNOS-}; do
-		if ! jobid "${jobno}" >/dev/null 2>&1; then
+		if ! jobid "${jobno}"; then
 			continue
 		fi
 		parallel_jobnos="${parallel_jobnos:+${parallel_jobnos} }${jobno}"
-	done
+	done >/dev/null 2>&1
 	# shellcheck disable=SC2086
 	kill_jobs 30 ${parallel_jobnos-} || ret="$?"
 	parallel_stop 0 || ret="$?"
@@ -772,58 +756,125 @@ madvise_protect() {
 	esac
 }
 
-# Output $(jobs) in a simpler format and optional filtering.
+# while jobs_with_statuses jobs_it job status -- %1 ...; do
+# 	echo "${job} ${status}"
+# done
 jobs_with_statuses() {
-	[ "$#" -eq 1 ] || [ "$#" -gt 1 ] ||
-	    eargs jobs_with_statuses "\$(jobs)" '%job..'
-	local jobs_output="$1"
+	[ "$#" -ge 4 ] ||
+	    eargs jobs_with_statuses tmpvar job_var status_var \
+	    '[pids_var]' '--' '%job...'
+	local jws_stackvar="$1"
+	local jws_stack
+	[ "$#" -ge 3 ] ||
+	    eargs jobs_with_statuses tmpvar job_var status_var \
+	    '[pids_var]' '--' '%job...'
 	shift
-	local jobs_jobid jobs_rest
-	local jws_jobid jws_status
-	local - jws_arg
-	local jobs_filter
+	local jws_job_var="$1"
+	local jws_status_var="$2"
+	shift 2
+	[ "$#" -ge 1 ] ||
+	    eargs jobs_with_statuses tmpvar job_var status_var \
+	    '[pids_var]' '--' '%job...'
+	local jws_pids_var=
+	case "$1" in
+	"--") shift ;;
+	*)
+		[ "$#" -ge 1 ] ||
+		    eargs jobs_with_statuses tmpvar job_var status_var \
+		    '[pids_var]' '--' '%job...'
+		jws_pids_var="$1"
+		shift
+		case "$1" in
+		"--") shift ;;
+		*) err "${EX_USAGE:-64}" \
+		    "jobs_with_statuses: Expected '--' after vars" ;;
+		esac
+		;;
+	esac
+	if ! getvar "${jws_stackvar:?}" jws_stack; then
+		jws_stack="JWS_STACK"
+		setvar "${jws_stackvar:?}" "${jws_stack:?}" || return
+		if ! _jobs_with_statuses "${jws_stack:?}" "$@"; then
+			return 1
+		fi
+	fi
+	local jws_line
 
-	case "${jobs_output:+set}" in
+	jws_line=
+	if ! stack_pop "${jws_stack:?}" jws_line; then
+		return 1
+	fi
+	local -
+	set -o noglob
+	# shellcheck disable=SC2086
+	set -- ${jws_line}
+	set +o noglob
+	setvar "${jws_job_var:?}" "${1:?}" || return
+	setvar "${jws_status_var:?}" "${2:?}" || return
+	case "${jws_pids_var:+set}" in
+	set)
+		shift 2
+		setvar "${jws_pids_var:?}" "$*" || return
+		;;
+	esac
+}
+
+_jobs_with_statuses() {
+	[ "$#" -ge 1 ] ||
+	    eargs _jobs_with_statuses jobs_stackvar '%job..'
+	local _jws_stackvar="$1"
+	shift
+	local _jws_jobs_jobid _jws_jobs_rest
+	local _jws_jobid _jws_status _jws_pids
+	local _jws_arg _jws_filter _jws_jobs
+	local -
+
+	_jws_jobs="$(jobs)"
+	case "${_jws_jobs:+set}" in
 	set) ;;
-	*) return 0 ;;
+	*)
+		stack_unset "${_jws_stackvar:?}" || return
+		return 0
+		;;
 	esac
 	case "$#" in
-	0) jobs_filter= ;;
+	0) _jws_filter= ;;
 	*)
-		for jobs_jobid in "$@"; do
-			case "${jobs_jobid}" in
+		for _jws_jobs_jobid in "$@"; do
+			case "${_jws_jobs_jobid}" in
 			"%"*) ;;
 			*)
-				err "${EX_USAGE}" "jobs_with_statuses:" \
+				err "${EX_USAGE}" "_jobs_with_statuses:" \
 				    "Only %jobid is supported."
 				;;
 			esac
-			jobs_filter="${jobs_filter:+${jobs_filter} }[${jobs_jobid#%}]"
+			_jws_filter="${_jws_filter:+${_jws_filter} }[${_jws_jobs_jobid#%}]"
 		done
 		;;
 	esac
-	while mapfile_read_loop_redir jobs_jobid jobs_rest; do
-		case "${jobs_filter:+set}" in
+	stack_unset "${_jws_stackvar:?}" || return
+	while mapfile_read_loop_redir _jws_jobs_jobid _jws_jobs_rest; do
+		case "${_jws_filter:+set}" in
 		set)
-			case " ${jobs_filter} " in
-			*" ${jobs_jobid} "*) ;;
+			case " ${_jws_filter} " in
+			*" ${_jws_jobs_jobid} "*) ;;
 			*) continue ;;
 			esac
 			;;
 		esac
-		case "${jobs_jobid}" in
+		case "${_jws_jobs_jobid}" in
 		"["*"]")
-			jws_jobid="${jobs_jobid#"["}"
-			jws_jobid="${jws_jobid%%"]"*}"
+			_jws_jobid="${_jws_jobs_jobid#"["}"
+			_jws_jobid="${_jws_jobid%%"]"*}"
 			;;
 		*) continue ;;
 		esac
 		set -o noglob
 		# shellcheck disable=SC2086
-		set -- ${jobs_rest}
+		set -- ${_jws_jobs_rest}
 		set +o noglob
-		for jws_arg in "$@"; do
-			case "${jws_arg}" in
+		for _jws_arg in "$@"; do
+			case "${_jws_arg}" in
 			"+"|"-") continue ;;
 			[0-9][0-9]|\
 			[0-9][0-9][0-9]|\
@@ -833,14 +884,16 @@ jobs_with_statuses() {
 			[0-9][0-9][0-9][0-9][0-9][0-9][0-9]|\
 			[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]) continue ;;
 			*)
-				jws_status="${jws_arg}"
+				_jws_status="${_jws_arg}"
 				break
 				;;
 			esac
 		done
-		echo "%${jws_jobid} ${jws_status}"
+		_jws_pids="$(jobid "%${_jws_jobid:?}")"
+		stack_push_back "${_jws_stackvar:?}" \
+		    "%${_jws_jobid:?} ${_jws_status:?} ${_jws_pids:?}"
 	done <<-EOF
-	${jobs_output:?}
+	${_jws_jobs:?}
 	EOF
 }
 
