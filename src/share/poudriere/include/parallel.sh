@@ -991,6 +991,8 @@ _spawn_wrapper() {
 		# Reset SIGINT to the default to undo POSIX's SIG_IGN in
 		# 2.11 "Signals and Error Handling". This will ensure no
 		# foreground process is left around on SIGINT.
+		# This is only relevant for asynchronous lists, &, which
+		# _spawn_wrapper is expected to be used in.
 		case "${SUPPRESS_INT:-0}" in
 		0)
 			trap - INT
