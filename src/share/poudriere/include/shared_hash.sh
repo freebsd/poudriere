@@ -218,14 +218,9 @@ shash_remove_var() {
 	local -; set +x
 	[ $# -eq 1 ] || eargs shash_remove_var var
 	local srv_var="$1"
-	local _shash_var_name
 
-	# This assumes globbing works for shash, which it does for now
-	# due to using find.
-	_shash_var_name "${srv_var}" "*"
-	find -x "${SHASH_VAR_PATH:?}" \
-	    -name "${SHASH_VAR_PREFIX}${_shash_var_name}" \
-	    -delete || :
+	# This assumes globbing works for shash.
+	shash_unset "${srv_var:?}" "*"
 }
 
 shash_remove() {
