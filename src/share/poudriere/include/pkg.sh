@@ -77,7 +77,14 @@ pkg_get_generic_list() {
 	local _pggl_mapfile_var="$3"
 	local _pkg="$4"
 	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
+	local Tflag
 
+	# If outputting the value to stdout then tee it on cache miss,
+	# and shash_read it on cache hit.
+	case "${_pggl_mapfile_var}" in
+	-) Tflag=1 ;;
+	*) unset Tflag ;;
+	esac
 	get_pkg_cache_dir SHASH_VAR_PATH "${_pkg}"
 	if ! shash_exists 'pkg' "${name}"; then
 		local -; set_pipefail
@@ -86,17 +93,19 @@ pkg_get_generic_list() {
 		ret=0
 		injail "${PKG_BIN:?}" query -F "/packages/All/${_pkg##*/}" \
 		    "${flags}" | sort |
-		    shash_write 'pkg' "${name}" || ret="$?"
+		    shash_write ${Tflag:+-T} 'pkg' "${name}" || ret="$?"
 		if [ "${ret}" -ne 0 ]; then
 			shash_unset 'pkg' "${name}"
 			return "${ret}"
 		fi
+	else
+		case "${_pggl_mapfile_var}" in
+		-) shash_read 'pkg' "${name}" ;;
+		esac
 	fi
 	case "${_pggl_mapfile_var}" in
 	"") ;;
-	-)
-		shash_read 'pkg' "${name}"
-		;;
+	-) : ;;
 	*)
 		shash_read_mapfile 'pkg' "${name}" "${_pggl_mapfile_var}"
 		;;
