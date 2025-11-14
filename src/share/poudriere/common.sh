@@ -1481,7 +1481,7 @@ buildlog_start() {
 	echo "maintained by: ${mk_MAINTAINER}"
 	echo "port version: ${mk_PORTVERSION}"
 	echo "port revision: ${mk_PORTREVISION}"
-	echo "Makefile datestamp: $(injail ls -l "${portdir}/Makefile")"
+	echo "Makefile datestamp: $(stat -f %Sm "${mnt:?}/${portdir}/Makefile")"
 
 	case "${NO_GIT:+set}" in
 	"")
