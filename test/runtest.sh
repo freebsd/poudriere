@@ -176,6 +176,7 @@ while read var; do
 	TESTS_SKIP_LONG|\
 	TESTS_SKIP_BULK|\
 	TMPDIR|\
+	MALLOC_CONF|\
 	SH) ;;
 	*)
 		unset "${var}"
