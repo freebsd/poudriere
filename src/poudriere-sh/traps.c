@@ -213,7 +213,7 @@ trap_pushcmd(int argc, char **argv)
 	sd = calloc(1, sizeof(*sd));
 	trap_push_sh(signo, sd);
 
-	snprintf(buf, sizeof(buf), "%d", nextidx);
+	fmtstr(buf, sizeof(buf), "%d", nextidx);
 
 	signals[nextidx] = sd;
 	INTON;

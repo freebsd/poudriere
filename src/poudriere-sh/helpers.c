@@ -92,7 +92,7 @@ randintcmd(int argc, char **argv)
 	value = min_val + arc4random_uniform((max_val - min_val) + 1);
 	INTON;
 	if (outvar != NULL) {
-		snprintf(valstr, sizeof(valstr), "%u", value);
+		fmtstr(valstr, sizeof(valstr), "%u", value);
 		if (setvarsafe(outvar, valstr, 0))
 			ret = 1;
 	} else
@@ -218,7 +218,7 @@ _gsub_shell(struct sbuf *newstr, char *string, const char *pattern,
 	int ret;
 
 	char pattern_r[pattern_len + 2];
-	snprintf(pattern_r, sizeof(pattern_r), "%s*", pattern);
+	fmtstr(pattern_r, sizeof(pattern_r), "%s*", pattern);
 
 	ret = 0;
 	INTOFF;

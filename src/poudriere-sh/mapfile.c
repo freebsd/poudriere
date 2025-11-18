@@ -340,7 +340,7 @@ mapfilecmd(int argc, char **argv)
 	}
 	assert(md != NULL);
 
-	snprintf(handle, sizeof(handle), "%d", md->handle);
+	fmtstr(handle, sizeof(handle), "%d", md->handle);
 	if (setvarsafe(var_return, handle, 0)) {
 		md_close(md);
 		ret = 1;
@@ -737,7 +737,7 @@ mapfile_catcmd(int argc, char **argv)
 		assert(is_int_on());
 		INTON;
 	}
-	snprintf(liness, sizeof(liness), "%zd", lines);
+	fmtstr(liness, sizeof(liness), "%zd", lines);
 	setvarsafe("_mapfile_cat_lines_read", liness, 0);
 
 	return (ret);
@@ -803,7 +803,7 @@ mapfile_cat_filecmd(int argc, char **argv)
 		md_close(md);
 		INTON;
 	}
-	snprintf(liness, sizeof(liness), "%zd", lines);
+	fmtstr(liness, sizeof(liness), "%zd", lines);
 	setvarsafe("_mapfile_cat_file_lines_read", liness, 0);
 	return (ret);
 }
