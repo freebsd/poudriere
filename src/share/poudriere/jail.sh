@@ -64,8 +64,8 @@ Options:
     -m method     -- When used with -c, overrides the default method for
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
-                       'ftp-archive', 'ftp', 'freebsdci', 'http',
-		       'null', 'src=PATH', 'tar=PATH', 'url=URL', 'pkgbase=repo' or
+                       'ftp-archive', 'ftp', 'freebsdci', 'http', 'null',
+		       'src=PATH', 'tar=PATH', 'url=URL', 'pkgbase[=repo]' or
 		       '{git,svn}{,+http,+https,+file,+ssh}' (e.g., 'git+https').
                      The default is '${METHOD_DEF}'.
     -P patch      -- Specify a patch to apply to the source before building.
@@ -1056,6 +1056,14 @@ create_jail() {
 		esac
 		METHOD="${METHOD%%=*}"
 		;;
+	pkgbase)
+		FCT=install_from_pkgbase
+		[ -z "${SOURCES_URL}" ] ||
+		    err 1 "Cannot specify -U with -m pkgbase"
+		SOURCES_URL="pkg+https://pkgbase.freebsd.org/"
+		PKGBASEREPO='base_release_${VERSION_MINOR}'
+		PKGBASEMIRROR="srv"
+		;;
 	null)
 		JAILFS=none
 		FCT=
@@ -1394,6 +1402,7 @@ if ! svn_git_checkout_method "${SOURCES_URL}" "${METHOD}" \
 	http) ;;
 	null) ;;
 	pkgbase=*) ;;
+	pkgbase) ;;
 	src=*) ;;
 	tar=*) ;;
 	url=*) ;;

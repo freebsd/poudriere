@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd October 8, 2025
+.Dd November 18, 2025
 .Dt POUDRIERE-JAIL 8
 .Os
 .Sh NAME
@@ -225,11 +225,19 @@ It is expected that this directory be installed to with the following:
 It will not be copied at the time of running
 .Dq Li poudriere jail .
 Deleting the jail will attempt to revert any files changed by poudriere.
-.It Cm pkgbase= Ns Ar repository_path
+.It Cm pkgbase Ns Oo = Ns Ar repository_path Oc
 Install from the given pkgbase repository at
 .Ar path
 from the given
 .Fl U Ar url .
+If no
+.Ar path
+is specified, defaults to the official FreeBSD pkgbase server, in
+which case
+.Fl U
+must
+.Em not
+be provided.
 .Pp
 Note that building kernel module will not be possible as there is no
 package with the source code.
