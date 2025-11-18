@@ -624,6 +624,7 @@ jobidcmd(int argc __unused, char **argv __unused)
 	return 0;
 }
 
+#include <pjobs.c>
 
 
 /*

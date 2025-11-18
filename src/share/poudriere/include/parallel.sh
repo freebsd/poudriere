@@ -759,6 +759,7 @@ madvise_protect() {
 # while jobs_with_statuses jobs_it job status -- %1 ...; do
 # 	echo "${job} ${status}"
 # done
+if ! have_builtin jobs_with_statuses; then
 jobs_with_statuses() {
 	[ "$#" -ge 4 ] ||
 	    eargs jobs_with_statuses tmpvar job_var status_var \
@@ -896,7 +897,9 @@ _jobs_with_statuses() {
 	${_jws_jobs:?}
 	EOF
 }
+fi
 
+if ! have_builtin get_job_status; then
 get_job_status() {
 	[ "$#" -eq 2 ] || eargs get_job_status '%job|pid' var_return
 	local gjs_pid="$1"
@@ -987,7 +990,9 @@ get_job_status() {
 	setvar "${gjs_var_return}" "" || return
 	return 1
 }
+fi
 
+if ! have_builtin get_job_id; then
 get_job_id() {
 	[ "$#" -eq 2 ] || eargs get_job_id pid var_return
 	local gji_pid="$1"
@@ -1014,6 +1019,7 @@ get_job_id() {
 	gji_jobid="${gji_jobid%%"]"*}"
 	setvar "${gji_var_return}" "${gji_jobid}"
 }
+fi
 
 spawn_job() {
 	local -
