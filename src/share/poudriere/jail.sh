@@ -852,6 +852,7 @@ install_from_pkgbase() {
 	cat <<EOF > "${JAILMNT}/etc/pkg/pkgbase.conf"
 pkgbase: {
   url: "${SOURCES_URL}/FreeBSD:${VERSION}:${ARCH}/${PKGBASEREPO}"
+  mirror_type: "${PKGBASEMIRROR}"
   enabled: yes
 }
 EOF
@@ -973,6 +974,10 @@ create_jail() {
 		    err 1 "Must specify repository to use -m pkgbase=repodir"
 		[ -n "${SOURCES_URL}" ] ||
 		    err 1 "Must specify URL to use -m pkgbase=repodir with -U"
+		case "${SOURCES_URL}" in
+		pkg+https://*) PKGBASEMIRROR="srv" ;;
+		*) PKGBASEMIRROR="none" ;;
+		esac
 		METHOD="${METHOD%%=*}"
 		;;
 	null)
