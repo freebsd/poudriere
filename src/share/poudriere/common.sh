@@ -10232,6 +10232,7 @@ svn_git_checkout_method() {
 			http://*) ;;
 			https://*) ;;
 			file://*) ;;
+			pkg+https://*) ;;
 			*)
 				msg_error "Invalid pkgbase url"
 				return 1
