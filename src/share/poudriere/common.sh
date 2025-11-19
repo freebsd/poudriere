@@ -6003,15 +6003,17 @@ job_done() {
 	[ $# -eq 1 ] || eargs job_done job_idx
 	local job_idx="$1"
 	local job_name job_type status builder_id ret MY_BUILDER_ID job
+	local job_job_idx
 
 	# Failure to find this indicates the job is already done.
 	hash_remove job_idx_job "${job_idx:?}" job || return 2
 	dev_assert_true kill -0 "${job}"
-	hash_remove job_idx_job_type "${job_idx:?}" job_type || return 3
-	hash_remove job_idx_job_name "${job_idx:?}" job_name || return 4
-	hash_remove job_idx_builder_id "${job_idx:?}" builder_id || return 5
-	list_remove BUILDER_JOBS "${job:?}" || return 6
-	list_remove BUILDER_JOB_IDXS "${job_idx:?}" || return 7
+	hash_remove job_job_idx "${job:?}" job_job_idx || return 3
+	dev_assert "${job_idx:?}" "${job_job_idx:?}"
+	hash_remove job_idx_job_type "${job_idx:?}" job_type || return 4
+	hash_remove job_idx_job_name "${job_idx:?}" job_name || return 5
+	hash_remove job_idx_builder_id "${job_idx:?}" builder_id || return 6
+	list_remove BUILDER_JOBS "${job:?}" || return 7
 	dev_assert_true hash_isset builder_busy "${builder_id:?}"
 	hash_unset builder_busy "${builder_id:?}"
 	_bget status "${builder_id:?}" status ||
@@ -6051,28 +6053,32 @@ build_queue_runner() {
 
 _build_queue_check_orphans() {
 	[ $# -eq 0 ] || eargs _build_queue_check_orphans
-	local job_idx jret job job_status
+	local jobs_it job job_status job_idx jret
 
 	case "${FP_BUILD_QUEUE_NO_CRASHED_COLLECTION:-}" in
 	1) return 0 ;;
 	esac
-	for job_idx in ${BUILDER_JOB_IDXS}; do
-		hash_get job_idx_job "${job_idx:?}" job ||
-		    err "${EX_SOFTWARE:-70}" "_build_queue_check_orphans:" \
-			"failed to find job" \
-			"job_idx=${job_idx}"
-		dev_assert_true kill -0 "${job}"
-		get_job_status "${job:?}" job_status ||
-		    err "${EX_SOFTWARE:-70}" "_build_queue_check_orphans:" \
-			"get_job_status ${job}"
+	case "${BUILDER_JOBS:+set}" in
+	set) ;;
+	*) return 0 ;;
+	esac
+	unset jobs_it
+	while jobs_with_statuses jobs_it job job_status -- \
+	    ${BUILDER_JOBS}; do
 		case "${job_status:?}" in
 		"Running") continue ;;
 		esac
 		# The job is Done or Terminated.
-		msg_dev "_build_queue_check_orphans: discovered" \
-		    "job_idx=${job_idx:?}" \
-		    "job=${job}" \
-		    "was Done/Terminated: $(jobs -l)"
+		hash_get job_job_idx "${job:?}" job_idx ||
+		    err "${EX_SOFTWARE:-70}" "_build_queue_check_orphans:" \
+			"failed to find job_idx" \
+			"job=${job}"
+		if msg_level dev; then
+			msg_dev "_build_queue_check_orphans: discovered" \
+			    "job=${job}" \
+			    "job_idx=${job_idx:?}" \
+			    "was Done/Terminated: $(jobs -l)"
+		fi
 		jret=0
 		job_done "${job_idx:?}" || jret="$?"
 		case "${jret}" in
@@ -6097,7 +6103,6 @@ build_queue() {
 	# job_idx is a unique id for the job
 	local builder_id job job_name builders_active queue_empty
 	local next_job_idx job_idx job_type job_status check_orphans timeout
-	local BUILDER_JOB_IDXS
 
 	run_hook build_queue start
 
@@ -6111,7 +6116,6 @@ build_queue() {
 
 	check_orphans=0
 	next_job_idx=0
-	BUILDER_JOB_IDXS=
 	BUILDER_JOBS=
 	# Mark all builders idle
 	for builder_id in ${BUILDERS:?}; do
@@ -6181,12 +6185,12 @@ build_queue() {
 			    build_pkg "${job_name}"
 			job="${spawn_job:?}"
 			hash_set job_idx_job "${job_idx:?}" "${job:?}"
+			hash_set job_job_idx "${job:?}" "${job_idx:?}"
 			hash_set job_idx_job_type "${job_idx:?}" "${job_type}"
 			hash_set job_idx_job_name "${job_idx:?}" "${job_name}"
 			hash_set job_idx_builder_id "${job_idx:?}" \
 			    "${builder_id:?}"
 			list_add BUILDER_JOBS "${job:?}"
-			list_add BUILDER_JOB_IDXS "${job_idx:?}"
 			hash_set builder_busy "${builder_id:?}" 1
 			msg_dev "build_queue: launched job=${job}" \
 			    "job_idx=${job_idx}" \
@@ -6194,7 +6198,7 @@ build_queue() {
 			    "runjob=${job_type}:${job_name}"
 		done
 
-		case "${BUILDER_JOB_IDXS:+set}" in
+		case "${BUILDER_JOBS:+set}" in
 		set) builders_active=1 ;;
 		*)   builders_active=0 ;;
 		esac
