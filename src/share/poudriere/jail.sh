@@ -851,7 +851,7 @@ install_from_pkgbase() {
 	mkdir -p "${JAILMNT}/etc/pkg"
 	cat <<EOF > "${JAILMNT}/etc/pkg/pkgbase.conf"
 pkgbase: {
-  url: "${SOURCES_URL}/FreeBSD:${VERSION}:${ARCH}/${PKGBASEREPO}"
+  url: "${SOURCES_URL%/}/FreeBSD:${VERSION}:${ARCH}/${PKGBASEREPO#/}"
   mirror_type: "${PKGBASEMIRROR}"
   enabled: yes
 }
