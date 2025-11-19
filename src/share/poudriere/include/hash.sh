@@ -636,7 +636,7 @@ stack_isset() {
 
 stack_size() {
 	local -; set +x
-	[ "$#" -eq 1 ] || eargs [ "$#" -eq 2 ] || eargs stack_size stack_var \
+	[ "$#" -eq 1 ] || [ "$#" -eq 2 ] || eargs stack_size stack_var \
 	    count_var_return
 	local ss_var="$1"
 	local ss_var_return="${2-}"
