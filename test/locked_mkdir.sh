@@ -65,7 +65,7 @@ assert 0 $? "children should exit cleanly"
 # Stale pid without dir
 rmdir "${LOCK1}"
 assert 0 $? "rmdir should succeed"
-echo -n 999999 > "${LOCK1}.pid"
+echo 999999 > "${LOCK1}.pid"
 assert 0 $? "Writing to pid should succeed"
 time=$(clock -monotonic)
 locked_mkdir 10 ${LOCK1} $$
@@ -81,7 +81,7 @@ assert 0 $? "Lock dir should exist"
 # Stale pid with dir
 [ -d "${LOCK1}" ]
 assert 0 $? "Lock dir should exist"
-echo -n 999999 > "${LOCK1}.pid"
+echo 999999 > "${LOCK1}.pid"
 assert 0 $? "Writing to pid should succeed"
 time=$(clock -monotonic)
 locked_mkdir 10 ${LOCK1} $$
@@ -98,7 +98,7 @@ assert 0 $? "Lock dir should exist"
 [ -d "${LOCK1}" ]
 assert 0 $? "Lock dir should exist"
 time=$(clock -monotonic)
-echo -n 1 > "${LOCK1}.pid"
+echo 1 > "${LOCK1}.pid"
 assert 0 $? "Writing to pid should succeed"
 assert_pid "$0:$LINENO" "${LOCK1}" "1"
 locked_mkdir 5 ${LOCK1} $$
@@ -115,7 +115,7 @@ assert 0 $? "Lock dir should exist"
 rmdir "${LOCK1}"
 assert 0 $? "rmdir should succeed"
 time=$(clock -monotonic)
-echo -n 1 > "${LOCK1}.pid"
+echo 1 > "${LOCK1}.pid"
 assert 0 $? "Writing to pid should succeed"
 assert_pid "$0:$LINENO" "${LOCK1}" "1"
 locked_mkdir 5 ${LOCK1} $$
