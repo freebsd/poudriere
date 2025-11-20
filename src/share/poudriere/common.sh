@@ -1337,6 +1337,7 @@ log_start() {
 	local pkgname="$1"
 	local need_tee="$2"
 	local logfile
+	local -
 
 	_logfile logfile "${pkgname}"
 
@@ -1351,6 +1352,7 @@ log_start() {
 		if [ ! -e ${logfile}.pipe ]; then
 			mkfifo ${logfile}.pipe
 		fi
+		set -m
 		if [ ${need_tee} -eq 1 ]; then
 			if [ "${TIMESTAMP_LOGS}" = "yes" ]; then
 				# Unbuffered for 'echo -n' support.
@@ -1371,6 +1373,9 @@ log_start() {
 			    timestamp ${TIMESTAMP_FLAGS-} \
 			    > ${logfile} < ${logfile}.pipe &
 		fi
+		set +m
+		madvise_protect "-$!" ||
+		    err "1" "log_start: madvise_protect"
 		get_job_id "$!" log_start_job
 		msg_dev "log_start: spawned job %${log_start_job} pid=$!"
 		exec > ${logfile}.pipe 2>&1
