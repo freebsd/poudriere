@@ -57,6 +57,7 @@
 #undef FILE	/* Avoid sh version */
 #undef fwrite	/* Avoid sh version */
 #undef fputc	/* Avoid sh version */
+#undef fflush
 #include "eval.h"
 #include "redir.h"
 #include "trap.h"
@@ -702,6 +703,10 @@ _mapfile_cat(struct mapped_data *md, size_t *lines)
 		out1c('\n');
 		INTOFF;
 	}
+	/* There may be leftover without EOL newline. */
+	if (linelen > 0) {
+		outbin(line, linelen, out1);
+	}
 	/* 1 == EOF */
 	if (rret != 1) {
 		ret = rret;
@@ -1077,7 +1082,20 @@ mapfile_writecmd(int argc, char **argv)
 			}
 			assert(is_int_on());
 		}
-
+		/* There may be leftover without EOL newline. */
+		if (linelen > 0) {
+			ret = _mapfile_write(md, handle, nflag,
+			    Tflag, line, linelen);
+			if (ret == 0) {
+				ret = fflush(md->fp);
+			}
+			if (ret != 0) {
+				assert(is_int_on());
+				md_close(md_read);
+				INTON;
+				err(ret, "mapfile_write");
+			}
+		}
 		/* 1 == EOF */
 		if (rret != 1) {
 			ret = rret;

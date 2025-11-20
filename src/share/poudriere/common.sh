@@ -76,8 +76,6 @@ BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
 SHFLAGS="$-"
 
 # Use builtin if possible.
-# note that only lines ending in newline will be read/printed with the builtin,
-# unlike cat which reads/prints everything by default.
 cat() {
 	# no flags are compat
 	case "${1-}" in

@@ -1112,4 +1112,54 @@ fi
 	assert_true hash_assert_no_vars "mapfile*"
 }
 
+# Check for no EOL newline reads.
+{
+	TMP="$(mktemp)"
+	echo -n "1234" > "${TMP}"
+	{
+		assert_true mapfile_cat_file "${TMP}"
+		echo
+	} > "${TMP}.2"
+	assert_file - "${TMP}.2" <<-EOF
+	1234
+	EOF
+	rm -f "${TMP}"
+}
+
+{
+	TMP="$(mktemp)"
+	echo -n "1234" > "${TMP}"
+	assert_true mapfile handle "${TMP}" "re"
+	unset data
+	assert_ret 1 mapfile_read "${handle}" data
+	assert_true mapfile_close "${handle}"
+	assert "1234" "${data}"
+	rm -f "${TMP}"
+}
+
+{
+	TMP="$(mktemp -u)"
+	assert_true mapfile whandle "${TMP}" "we"
+	echo -n "1234" | mapfile_write "${whandle}" -n
+	assert_true mapfile_close "${whandle}"
+	assert "1234" "$(cat -ve "${TMP}")"
+	unset data
+	assert_ret 1 read data < "${TMP}"
+	assert "1234" "${data}"
+	rm -f "${TMP}"
+}
+
+# Same but without mapfile_write -n flag
+{
+	TMP="$(mktemp -u)"
+	assert_true mapfile whandle "${TMP}" "we"
+	echo -n "1234" | mapfile_write "${whandle}"
+	assert_true mapfile_close "${whandle}"
+	assert "1234\$" "$(cat -ve "${TMP}")"
+	unset data
+	assert_ret 0 read data < "${TMP}"
+	assert "1234" "${data}"
+	rm -f "${TMP}"
+}
+
 exit 0

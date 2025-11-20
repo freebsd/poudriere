@@ -1051,6 +1051,35 @@ readlines_file() {
 				;;
 			esac
 		done
+		# Deal with leftover without newline at EOF
+		case "${rlf_line:+set}" in
+		set)
+			_readlines_lines_read="$((_readlines_lines_read + 1))"
+			case "${rlf_Tflag}" in
+			1)
+				echo -n "${rlf_line}"
+				;;
+			esac
+			case "${rlf_var_count}" in
+			0)
+				;;
+			1)
+				rlf_rest="${rlf_rest:+${rlf_rest}${rlf_nl}}${rlf_line}"
+				;;
+			*)
+				rlf_var_count="$((rlf_var_count - 1))"
+				rlf_var="${1?}"
+				shift
+				case "${rlf_var:+set}" in
+				set)
+					setvar "${rlf_var}" "${rlf_line}" ||
+					    rlf_ret="$?"
+					;;
+				esac
+				;;
+			esac
+			;;
+		esac
 		mapfile_close "${rlf_handle}" || rlf_ret="$?"
 	else
 		rlf_ret="${EX_NOINPUT:-66}"
@@ -1905,6 +1934,10 @@ mapfile_cat() {
 			# shellcheck disable=SC2320
 			echo "${line}" || ret=$?
 		done
+		# There may be leftover without EOL newline.
+		case "${line:+set}" in
+		set) echo -n "${line}" ;;
+		esac
 	done
 }
 

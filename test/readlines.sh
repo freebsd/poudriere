@@ -211,3 +211,15 @@ set +e
 	assert_file "${TMP}" "${TMP}.2" "readlines -T should tee"
 	rm -f "${TMP}" "${TMP}.2"
 }
+
+# No newline at EOF
+{
+	TMP="$(mktemp -ut readlines)"
+	echo "first" >> "${TMP}"
+	echo -n "last" >> "${TMP}"
+	assert_true readlines one two < "${TMP}"
+	assert "first" "${one}"
+	assert "last" "${two}"
+	assert 2 "${_readlines_lines_read}"
+	rm -f "${TMP}"
+}
