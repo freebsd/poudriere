@@ -1162,7 +1162,7 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 		    cmd->ncmd.redirect == NULL &&
 		    varlist.count == 0 &&
 		    (mode == FORK_FG || mode == FORK_NOJOB) &&
-		    !disvforkset() && !iflag && !mflag) {
+		    !disvforkset() && !iflag && !(rootshell && mflag)) {
 			vforkexecshell(jp, argv, environment(), path,
 			    cmdentry.u.index, flags & EV_BACKCMD ? pip : NULL);
 			goto parent;
