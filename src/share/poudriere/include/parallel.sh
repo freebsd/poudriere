@@ -462,30 +462,15 @@ kill_all_jobs() {
 	return "${ret}"
 }
 
-_parallel_exec() {
-	local ret=0
-	local - # Make `set +e` local
-	local errexit=0
+_parallel_exec_exit() {
+	local ret="$?"
+	echo . >&8
+	return "${ret}"
+}
 
-	# Disable -e so that the actual execution failing does not
-	# return early and prevent notifying the FIFO that the
-	# exec is done
-	case $- in *e*) errexit=1;; esac
-	set +e
-	(
-		# Do still cause the actual command to return
-		# non-zero if it has any failures, if caller
-		# was set -e as well. Using 'if cmd' or 'cmd || '
-		# here would disable set -e in the cmd execution
-		if [ "${errexit}" -eq 1 ]; then
-			set -e
-		fi
-		"$@"
-	)
-	ret=$?
-	echo . >&8 || :
-	exit ${ret}
-	# set -e will be restored by 'local -'
+_parallel_exec() {
+	setup_traps _parallel_exec_exit
+	"$@"
 }
 
 parallel_start() {
