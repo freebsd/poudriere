@@ -2618,9 +2618,10 @@ enter_interactive() {
 	msg "Installing local Pkg repository to ${LOCALBASE}/etc/pkg/repos"
 	mkdir -p ${MASTERMNT:?}${LOCALBASE:?}/etc/pkg/repos
 	cat > ${MASTERMNT:?}${LOCALBASE:?}/etc/pkg/repos/local.conf <<-EOF
-	FreeBSD: {
-		enabled: no
-	}
+	FreeBSD: { enabled: no }
+	FreeBSD-ports: { enabled: no }
+	FreeBSD-ports-kmods: { enabled: no }
+	FreeBSD-base: { enabled: no }
 
 	local: {
 		url: "file:///packages",
@@ -10232,6 +10233,7 @@ svn_git_checkout_method() {
 			http://*) ;;
 			https://*) ;;
 			file://*) ;;
+			pkg+https://*) ;;
 			*)
 				msg_error "Invalid pkgbase url"
 				return 1

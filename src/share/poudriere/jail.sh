@@ -64,8 +64,8 @@ Options:
     -m method     -- When used with -c, overrides the default method for
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
-                       'ftp-archive', 'ftp', 'freebsdci', 'http',
-		       'null', 'src=PATH', 'tar=PATH', 'url=URL', 'pkgbase=repo' or
+                       'ftp-archive', 'ftp', 'freebsdci', 'http', 'null',
+		       'src=PATH', 'tar=PATH', 'url=URL', 'pkgbase[=repo]' or
 		       '{git,svn}{,+http,+https,+file,+ssh}' (e.g., 'git+https').
                      The default is '${METHOD_DEF}'.
     -P patch      -- Specify a patch to apply to the source before building.
@@ -917,14 +917,16 @@ install_from_pkgbase() {
 	mkdir -p "${JAILMNT}/etc/pkg"
 	cat <<EOF > "${JAILMNT}/etc/pkg/pkgbase.conf"
 pkgbase: {
-  url: "${SOURCES_URL}/FreeBSD:${VERSION}:${ARCH}/${PKGBASEREPO}"
+  url: "${SOURCES_URL%/}/FreeBSD:${VERSION}:${ARCH}/${PKGBASEREPO#/}"
+  mirror_type: "${PKGBASEMIRROR}"
   enabled: yes
 }
 EOF
 	cat <<EOF > "${JAILMNT}/etc/pkg/FreeBSD2.conf"
-FreeBSD: {
-  enabled: no
-}
+FreeBSD: { enabled: no }
+FreeBSD-ports: { enabled: no }
+FreeBSD-ports-kmods: { enabled: no }
+FreeBSD-base: { enabled: no }
 EOF
 
 	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH}" -r ${JAILMNT}/ update
@@ -1049,7 +1051,19 @@ create_jail() {
 		    err 1 "Must specify repository to use -m pkgbase=repodir"
 		[ -n "${SOURCES_URL}" ] ||
 		    err 1 "Must specify URL to use -m pkgbase=repodir with -U"
+		case "${SOURCES_URL}" in
+		pkg+https://*) PKGBASEMIRROR="srv" ;;
+		*) PKGBASEMIRROR="none" ;;
+		esac
 		METHOD="${METHOD%%=*}"
+		;;
+	pkgbase)
+		FCT=install_from_pkgbase
+		[ -z "${SOURCES_URL}" ] ||
+		    err 1 "Cannot specify -U with -m pkgbase"
+		SOURCES_URL="pkg+https://pkgbase.freebsd.org/"
+		PKGBASEREPO='base_release_${VERSION_MINOR}'
+		PKGBASEMIRROR="srv"
 		;;
 	null)
 		JAILFS=none
@@ -1389,6 +1403,7 @@ if ! svn_git_checkout_method "${SOURCES_URL}" "${METHOD}" \
 	http) ;;
 	null) ;;
 	pkgbase=*) ;;
+	pkgbase) ;;
 	src=*) ;;
 	tar=*) ;;
 	url=*) ;;
