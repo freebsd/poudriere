@@ -1105,8 +1105,20 @@ raise() {
 	kill -"${sig}" "$(getpid)"
 }
 
+setreturnstatus() {
+	[ $# -eq 1 ] || eargs setreturnstatus ret
+	local ret="$1"
+
+	# This case is because the callers cannot do any conditional checks.
+	case "${ret-}" in
+	[0-9]*) return "${ret}" ;;
+	esac
+	return 0
+}
+
 # Need to cleanup some stuff before calling traps.
 # This is ran with 2>/dev/null
+# _ERET is done to chain exitstatus down to all handlers.
 _trap_pre_handler() {
 	_ERET="$?"
 	unset IFS
@@ -1126,19 +1138,22 @@ _trap_pre_handler() {
 	*x*) _trap_x=x ;;
 	esac
 	set +x
+	return "${_ERET}"
 }
 _trap_pre_handler2() {
+	_ERET="$?"
 	case "$-" in
 	*x*) err 1 "_trap_pre_handler2: set -x should not be on here" ;;
 	esac
 	# Fix stderr
 	redirect_to_real_tty exec
+	return "${_ERET}"
 }
 # {} 2>/dev/null is used to avoid set -x SIGPIPE; set +x done in there.
 # after set +x is done we call _trap_pre_handler2 to redirect stderr.
-alias trap_pre_handler='{ _trap_pre_handler; } 2>/dev/null; _trap_pre_handler2; (exit "${_ERET}")'
-
+alias trap_pre_handler='{ _trap_pre_handler; } 2>/dev/null; _trap_pre_handler2'
 sig_handler() {
+	local ret
 	local -
 
 	case "${SHFLAGS-$-}${_trap_x-}${SETX_EXIT:-0}" in
@@ -1178,15 +1193,21 @@ sig_handler() {
 	local tmp
 
 	TRAPSVAR="TRAPS$(getpid)"
+	ret="${sig_ret}"
 	unset tmp
 	while stack_foreach "${TRAPSVAR}" exit_handler tmp; do
-		case "${sig_ret:+set}" in
-		set) (exit "${sig_ret}") ;;
-		esac
-		"${exit_handler}" || :
+		# Ensure the handler sees the real status.
+		# Don't wrap around if/case/etc.
+		setreturnstatus "${sig_ret-}"
+		"${exit_handler}" || ret="$?"
 	done
 	trap - "${sig}"
-	raise "${sig}"
+	# A handler may have changed the status, but if not raise.
+	if [ "${ret}" -gt 128 ]; then
+		raise "$(kill -l "${ret}")"
+	else
+		exit "${ret}"
+	fi
 }
 
 # Take "return" value from real exit handler and exit with it.
@@ -1213,7 +1234,8 @@ exit_return() {
 	unset tmp
 	while stack_foreach "${TRAPSVAR}" exit_handler tmp; do
 		# Ensure the real handler sees the real status
-		(exit "${ret}")
+		# Don't wrap around if/case/etc.
+		setreturnstatus "${ret-}"
 		"${exit_handler}" || ret="$?"
 	done
 	exit "${ret}"

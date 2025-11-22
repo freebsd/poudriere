@@ -1996,9 +1996,7 @@ exit_handler() {
 		echo "Exiting with status ${EXIT_STATUS}" >&2 || :
 		;;
 	esac
-	# return is not handled by exit traps but the *real* handler of
-	# exit_return() is used to support a return while also supporting
-	# signal raising in sig_handler().
+	# return rather than exit as this function is called by exit_return().
 	return "${EXIT_STATUS}"
 }
 

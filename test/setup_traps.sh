@@ -106,6 +106,29 @@ test_exit_in_exit_handler() {
 	EOF
 }
 
+# Should exit 41 from cleanup changing exit code
+add_test_function test_return_in_exit_handler
+test_return_in_exit_handler() {
+	worker_cleanup() {
+		local ret=$?
+		echo "in here $ret" >&2
+		assert_true cond_signal child
+		echo "${ret}" > "${EXIT_FILE}"
+		return 41
+	}
+	worker() {
+		echo "I AM $(getpid)" >&2
+		setup_traps worker_cleanup
+		exit 42
+	}
+	assert_true spawn_job worker
+	assert_not '' "${spawn_jobid}"
+	assert_true cond_timedwait 5 child
+	assert_ret 41 kill_job 2 "%${spawn_jobid}"
+	assert_file - "${EXIT_FILE}" <<-EOF
+	42
+	EOF
+}
 
 # Should show handler got $?=143 but then exit 41
 add_test_function test_exit_handler_sets_code
@@ -115,6 +138,35 @@ test_exit_handler_sets_code() {
 		echo "in here $ret" >&2
 		echo "${ret}" > "${EXIT_FILE}"
 		exit 41
+	}
+	worker() {
+		local tmp
+
+		echo "I AM $(getpid)" >&2
+		setup_traps worker_cleanup
+		assert_true cond_signal child
+		unset tmp
+		while time_bounded_loop tmp 10; do
+			sleep 0.01
+		done
+	}
+	assert_true spawn_job worker
+	assert_not '' "${spawn_jobid}"
+	assert_true cond_timedwait 5 child
+	assert_ret 41 kill_job 7 "%${spawn_jobid}"
+	assert_file - "${EXIT_FILE}" <<-EOF
+	143
+	EOF
+}
+
+# Should show handler got $?=143 but then exit 41
+add_test_function test_exit_handler_sets_code_with_return
+test_exit_handler_sets_code_with_return() {
+	worker_cleanup() {
+		local ret=$?
+		echo "in here $ret" >&2
+		echo "${ret}" > "${EXIT_FILE}"
+		return 41
 	}
 	worker() {
 		local tmp

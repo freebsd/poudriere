@@ -690,6 +690,17 @@ raise() {
 	kill -"${sig}" "$(getpid)"
 }
 
+setreturnstatus() {
+	[ $# -eq 1 ] || eargs setreturnstatus ret
+	local ret="$1"
+
+	# This case is because the callers cannot do any conditional checks.
+	case "${ret-}" in
+	[0-9]*) return "${ret}" ;;
+	esac
+	return 0
+}
+
 # Need to cleanup some stuff before calling traps.
 _trap_pre_handler() {
 	_ERET="$?"
@@ -697,10 +708,10 @@ _trap_pre_handler() {
 	set +u
 	set +e
 	trap '' PIPE INT INFO HUP TERM
+	return "${_ERET}"
 }
 # {} is used to avoid set -x SIGPIPE
-alias trap_pre_handler='{ _trap_pre_handler; } 2>/dev/null; (exit "${_ERET}")'
-
+alias trap_pre_handler='{ _trap_pre_handler; } 2>/dev/null'
 setup_traps() {
 	[ "$#" -eq 0 ] || [ "$#" -eq 1 ] || eargs setup_traps '[exit_handler]'
 	local exit_handler="${1-}"
@@ -758,8 +769,10 @@ siginfo_handler() {
 sig_handler() {
 	local sig="$1"
 	local exit_handler="${2-}"
+	local ret
 
 	trap - EXIT
+	ret="${sig_ret}"
 	case "${exit_handler:+set}" in
 	set)
 		local sig_ret
@@ -771,14 +784,20 @@ sig_handler() {
 		PIPE) sig_ret=$((128 + 13)) ;;
 		*)    sig_ret= ;;
 		esac
-		case "${sig_ret:+set}" in
-		set) (exit "${sig_ret}") ;;
-		esac
-		"${exit_handler}"
+		sig_ret="$(($(kill -l "${sig}") + 128))"
+		# Ensure the handler sees the real status
+		# Don't wrap around if/case/etc.
+		setreturnstatus "${sig_ret-}"
+		"${exit_handler}" || ret="$?"
 		;;
 	esac
 	trap - "${sig}"
-	raise "${sig}"
+	# A handler may have changed the status, but if not raise.
+	if [ "${ret}" -gt 128 ]; then
+		raise "$(kill -l "${ret}")"
+	else
+		exit "${ret}"
+	fi
 }
 
 set_job_title() {
