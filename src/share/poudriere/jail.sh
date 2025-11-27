@@ -1068,7 +1068,7 @@ create_jail() {
 		FCT=install_from_pkgbase
 		[ -z "${SOURCES_URL}" ] ||
 		    err 1 "Cannot specify -U with -m pkgbase"
-		SOURCES_URL="pkg+https://pkgbase.freebsd.org/"
+		SOURCES_URL="pkg+https://pkg.freebsd.org/"
 		PKGBASEREPO='base_release_${VERSION_MINOR}'
 		PKGBASEMIRROR="srv"
 		;;
