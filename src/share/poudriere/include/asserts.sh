@@ -605,7 +605,8 @@ setup_runtime_asserts() {
 			# This function may be called in "$@" contexts that do
 			# not use eval.
 			eval "dev_${aliasname}() { :; }"
-			alias "dev_${aliasname}=# "
+			# See post_getopts() for use of nop().
+			alias "dev_${aliasname}=nop "
 			use_debug() { return 1; }
 			;;
 		esac
