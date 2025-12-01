@@ -184,13 +184,9 @@ external_sh_mknodes_LDADD = $(LDADD)
 am_external_sh_mksyntax_OBJECTS = external/sh/mksyntax.$(OBJEXT)
 external_sh_mksyntax_OBJECTS = $(am_external_sh_mksyntax_OBJECTS)
 external_sh_mksyntax_LDADD = $(LDADD)
-am_getpid_OBJECTS =  \
-	src/libexec/poudriere/getpid/getpid-getpid.$(OBJEXT)
+am_getpid_OBJECTS = src/libexec/poudriere/getpid/getpid.$(OBJEXT)
 getpid_OBJECTS = $(am_getpid_OBJECTS)
 getpid_LDADD = $(LDADD)
-getpid_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(getpid_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_locked_mkdir_OBJECTS = src/libexec/poudriere/locked_mkdir/locked_mkdir-locked_mkdir.$(OBJEXT)
 locked_mkdir_OBJECTS = $(am_locked_mkdir_OBJECTS)
 locked_mkdir_LDADD = $(LDADD)
@@ -411,7 +407,7 @@ am__depfiles_remade = external/cpdup/src/$(DEPDIR)/cpdup-cpdup.Po \
 	src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po \
 	src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po \
 	src/libexec/poudriere/dirwatch/$(DEPDIR)/sh-dirwatch.Po \
-	src/libexec/poudriere/getpid/$(DEPDIR)/getpid-getpid.Po \
+	src/libexec/poudriere/getpid/$(DEPDIR)/getpid.Po \
 	src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Po \
 	src/libexec/poudriere/locked_mkdir/$(DEPDIR)/sh-locked_mkdir.Po \
 	src/libexec/poudriere/nc/$(DEPDIR)/nc.Po \
@@ -855,7 +851,6 @@ cpdup_CFLAGS = $(AM_CFLAGS) -D_ST_FLAGS_PRESENT_=1 -Wno-deprecated-declarations
 dirempty_SOURCES = src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES = src/libexec/poudriere/dirwatch/dirwatch.c
 getpid_SOURCES = src/libexec/poudriere/getpid/getpid.c
-getpid_CFLAGS = --static
 locked_mkdir_SOURCES = src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 locked_mkdir_CFLAGS = $(AM_CFLAGS) $(SAN_CFLAGS)
 lockf_SOURCES = external/freebsd/usr.bin/lockf/lockf.c
@@ -1232,13 +1227,13 @@ src/libexec/poudriere/getpid/$(am__dirstamp):
 src/libexec/poudriere/getpid/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) src/libexec/poudriere/getpid/$(DEPDIR)
 	@: >>src/libexec/poudriere/getpid/$(DEPDIR)/$(am__dirstamp)
-src/libexec/poudriere/getpid/getpid-getpid.$(OBJEXT):  \
+src/libexec/poudriere/getpid/getpid.$(OBJEXT):  \
 	src/libexec/poudriere/getpid/$(am__dirstamp) \
 	src/libexec/poudriere/getpid/$(DEPDIR)/$(am__dirstamp)
 
 getpid$(EXEEXT): $(getpid_OBJECTS) $(getpid_DEPENDENCIES) $(EXTRA_getpid_DEPENDENCIES) 
 	@rm -f getpid$(EXEEXT)
-	$(AM_V_CCLD)$(getpid_LINK) $(getpid_OBJECTS) $(getpid_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) $(getpid_OBJECTS) $(getpid_LDADD) $(LIBS)
 src/libexec/poudriere/locked_mkdir/$(am__dirstamp):
 	@$(MKDIR_P) src/libexec/poudriere/locked_mkdir
 	@: >>src/libexec/poudriere/locked_mkdir/$(am__dirstamp)
@@ -1783,7 +1778,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirwatch/$(DEPDIR)/sh-dirwatch.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/getpid/$(DEPDIR)/getpid-getpid.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/getpid/$(DEPDIR)/getpid.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/locked_mkdir/$(DEPDIR)/sh-locked_mkdir.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/nc/$(DEPDIR)/nc.Po@am__quote@ # am--include-marker
@@ -1975,20 +1970,6 @@ external/cpdup/src/cpdup-misc.obj: external/cpdup/src/misc.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/cpdup/src/misc.c' object='external/cpdup/src/cpdup-misc.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o external/cpdup/src/cpdup-misc.obj `if test -f 'external/cpdup/src/misc.c'; then $(CYGPATH_W) 'external/cpdup/src/misc.c'; else $(CYGPATH_W) '$(srcdir)/external/cpdup/src/misc.c'; fi`
-
-src/libexec/poudriere/getpid/getpid-getpid.o: src/libexec/poudriere/getpid/getpid.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(getpid_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/getpid/getpid-getpid.o -MD -MP -MF src/libexec/poudriere/getpid/$(DEPDIR)/getpid-getpid.Tpo -c -o src/libexec/poudriere/getpid/getpid-getpid.o `test -f 'src/libexec/poudriere/getpid/getpid.c' || echo '$(srcdir)/'`src/libexec/poudriere/getpid/getpid.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/getpid/$(DEPDIR)/getpid-getpid.Tpo src/libexec/poudriere/getpid/$(DEPDIR)/getpid-getpid.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/getpid/getpid.c' object='src/libexec/poudriere/getpid/getpid-getpid.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(getpid_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/getpid/getpid-getpid.o `test -f 'src/libexec/poudriere/getpid/getpid.c' || echo '$(srcdir)/'`src/libexec/poudriere/getpid/getpid.c
-
-src/libexec/poudriere/getpid/getpid-getpid.obj: src/libexec/poudriere/getpid/getpid.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(getpid_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/getpid/getpid-getpid.obj -MD -MP -MF src/libexec/poudriere/getpid/$(DEPDIR)/getpid-getpid.Tpo -c -o src/libexec/poudriere/getpid/getpid-getpid.obj `if test -f 'src/libexec/poudriere/getpid/getpid.c'; then $(CYGPATH_W) 'src/libexec/poudriere/getpid/getpid.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/getpid/getpid.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/getpid/$(DEPDIR)/getpid-getpid.Tpo src/libexec/poudriere/getpid/$(DEPDIR)/getpid-getpid.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/getpid/getpid.c' object='src/libexec/poudriere/getpid/getpid-getpid.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(getpid_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/getpid/getpid-getpid.obj `if test -f 'src/libexec/poudriere/getpid/getpid.c'; then $(CYGPATH_W) 'src/libexec/poudriere/getpid/getpid.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/getpid/getpid.c'; fi`
 
 src/libexec/poudriere/locked_mkdir/locked_mkdir-locked_mkdir.o: src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(locked_mkdir_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/locked_mkdir/locked_mkdir-locked_mkdir.o -MD -MP -MF src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Tpo -c -o src/libexec/poudriere/locked_mkdir/locked_mkdir-locked_mkdir.o `test -f 'src/libexec/poudriere/locked_mkdir/locked_mkdir.c' || echo '$(srcdir)/'`src/libexec/poudriere/locked_mkdir/locked_mkdir.c
@@ -3664,7 +3645,7 @@ distclean: distclean-recursive
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po
 	-rm -f src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po
 	-rm -f src/libexec/poudriere/dirwatch/$(DEPDIR)/sh-dirwatch.Po
-	-rm -f src/libexec/poudriere/getpid/$(DEPDIR)/getpid-getpid.Po
+	-rm -f src/libexec/poudriere/getpid/$(DEPDIR)/getpid.Po
 	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Po
 	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/sh-locked_mkdir.Po
 	-rm -f src/libexec/poudriere/nc/$(DEPDIR)/nc.Po
@@ -3806,7 +3787,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po
 	-rm -f src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po
 	-rm -f src/libexec/poudriere/dirwatch/$(DEPDIR)/sh-dirwatch.Po
-	-rm -f src/libexec/poudriere/getpid/$(DEPDIR)/getpid-getpid.Po
+	-rm -f src/libexec/poudriere/getpid/$(DEPDIR)/getpid.Po
 	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir-locked_mkdir.Po
 	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/sh-locked_mkdir.Po
 	-rm -f src/libexec/poudriere/nc/$(DEPDIR)/nc.Po
