@@ -3134,7 +3134,7 @@ lock_acquire() {
 		;;
 	esac
 	lockname="$1"
-	waittime="$2"
+	waittime="${2-}"
 
 	lockpath="${POUDRIERE_TMPDIR:?}/lock-${MASTERNAME:+${MASTERNAME}-}${lockname:?}"
 	_lock_acquire "${quiet}" "${lockname}" "${lockpath}" "${waittime}"

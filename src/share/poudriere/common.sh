@@ -2142,8 +2142,6 @@ _siginfo_handler() {
 	local tmpfs cpu mem nbq
 	local -
 
-	set +e
-
 	_bget status status || status=unknown
 	case "${status}" in
 	"index:"|"crashed:"*|"stopped:crashed:"*)
@@ -2300,7 +2298,10 @@ _siginfo_handler() {
 
 siginfo_handler() {
 	local -; set +x
+
+	# Reset state that this trap doesn't expect.
 	unset IFS
+	set +e +u
 
 	trap '' INFO
 	if ! was_a_bulk_run; then
