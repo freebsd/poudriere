@@ -693,9 +693,13 @@ repo_key_path() {
 
 build_repo() {
 	local origin pkg_repo_list_files hashcmd pkg_meta_mastermnt
-	local pkg_meta
+	local pkg_meta PKG_EXT
 
 	msg "Creating pkg repository"
+	if ! PKG_EXT='*' package_dir_exists_and_has_packages; then
+		msg "No packages present"
+		return 0
+	fi
 	if [ ${DRY_RUN} -eq 1 ]; then
 		return 0
 	fi

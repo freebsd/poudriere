@@ -13,7 +13,7 @@ OVERLAYS="omnibus"
 do_pkgclean -y -A
 assert 0 "$?" "Pkgclean should pass"
 
-EXPECTED_IGNORED="misc/foo-FLAVORS-unsorted@ignored misc/foo-FLAVORS-unsorted@depignored misc/foo@ignored misc/foo-dep-FLAVORS-unsorted@depignored"
+EXPECTED_IGNORED="misc/foo-FLAVORS-unsorted@ignored misc/foo-FLAVORS-unsorted@depignored misc/foo@broken misc/foo@ignored misc/foo-dep-FLAVORS-unsorted@depignored"
 EXPECTED_SKIPPED=""
 EXPECTED_TOBUILD="misc/foo@default misc/foo-FLAVORS-unsorted@default misc/foo-FLAVORS-unsorted@flav misc/foo@flav misc/freebsd-release-manifests@default misc/freebsd-release-manifests@bar misc/freebsd-release-manifests@foo ports-mgmt/pkg ports-mgmt/poudriere-devel misc/foo-dep-FLAVORS-unsorted@default misc/foo-dep-FLAVORS-unsorted@flav"
 EXPECTED_QUEUED="${EXPECTED_TOBUILD} ${EXPECTED_IGNORED}"

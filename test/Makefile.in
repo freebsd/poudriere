@@ -528,6 +528,8 @@ JAIL_TESTS = \
 	bulk-build-MOVED-default.sh \
 	bulk-build-MOVED-flavor-all.sh \
 	bulk-build-MOVED-flavor.sh \
+	bulk-build-broken.sh \
+	bulk-build-ignored.sh \
 	bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh \
@@ -618,12 +620,15 @@ JAIL_TESTS = \
 	testport-build-MOVED-flavor.sh \
 	testport-build-MOVED-to-default-flavor.sh \
 	testport-build-MOVED-to-different-flavor.sh \
+	testport-build-broken.sh \
+	testport-build-custom-PREFIX.sh \
 	testport-build-default-flavor-default.sh \
 	testport-build-default-flavor.sh \
+	testport-build-ignored.sh \
 	testport-build-no-deps.sh \
 	testport-build-porttesting.sh \
-	testport-build-quick-pkg.sh \
 	testport-build-quick-1-dep.sh \
+	testport-build-quick-pkg.sh \
 	testport-build-specific-flavor.sh \
 	testport-build-specific-port.sh \
 	testport-default-all-flavors-failure.sh \
@@ -1694,6 +1699,20 @@ bulk-build-MOVED-flavor.sh.log: bulk-build-MOVED-flavor.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-broken.sh.log: bulk-build-broken.sh
+	@p='bulk-build-broken.sh'; \
+	b='bulk-build-broken.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-ignored.sh.log: bulk-build-ignored.sh
+	@p='bulk-build-ignored.sh'; \
+	b='bulk-build-ignored.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh.log: bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh
 	@p='bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh'; \
 	b='bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh'; \
@@ -2282,6 +2301,20 @@ testport-build-MOVED-to-different-flavor.sh.log: testport-build-MOVED-to-differe
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-build-broken.sh.log: testport-build-broken.sh
+	@p='testport-build-broken.sh'; \
+	b='testport-build-broken.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-build-custom-PREFIX.sh.log: testport-build-custom-PREFIX.sh
+	@p='testport-build-custom-PREFIX.sh'; \
+	b='testport-build-custom-PREFIX.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 testport-build-default-flavor-default.sh.log: testport-build-default-flavor-default.sh
 	@p='testport-build-default-flavor-default.sh'; \
 	b='testport-build-default-flavor-default.sh'; \
@@ -2292,6 +2325,13 @@ testport-build-default-flavor-default.sh.log: testport-build-default-flavor-defa
 testport-build-default-flavor.sh.log: testport-build-default-flavor.sh
 	@p='testport-build-default-flavor.sh'; \
 	b='testport-build-default-flavor.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-build-ignored.sh.log: testport-build-ignored.sh
+	@p='testport-build-ignored.sh'; \
+	b='testport-build-ignored.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -2310,16 +2350,16 @@ testport-build-porttesting.sh.log: testport-build-porttesting.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-testport-build-quick-pkg.sh.log: testport-build-quick-pkg.sh
-	@p='testport-build-quick-pkg.sh'; \
-	b='testport-build-quick-pkg.sh'; \
+testport-build-quick-1-dep.sh.log: testport-build-quick-1-dep.sh
+	@p='testport-build-quick-1-dep.sh'; \
+	b='testport-build-quick-1-dep.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-testport-build-quick-1-dep.sh.log: testport-build-quick-1-dep.sh
-	@p='testport-build-quick-1-dep.sh'; \
-	b='testport-build-quick-1-dep.sh'; \
+testport-build-quick-pkg.sh.log: testport-build-quick-pkg.sh
+	@p='testport-build-quick-pkg.sh'; \
+	b='testport-build-quick-pkg.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

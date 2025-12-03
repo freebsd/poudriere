@@ -199,6 +199,8 @@ originspec_decode "${ORIGINSPEC}" ORIGIN FLAVOR SUBPKG
 ORIGIN="${ORIGIN#/}"
 ORIGIN="${ORIGIN%/}"
 originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
+# Avoid the port-to-test being marked IGNORED as it breaks dependency lookups.
+shash_set originspec-port_flags "${ORIGINSPEC}" "TRYBROKEN=yes"
 if have_ports_feature FLAVORS; then
 	case "${FLAVOR}" in
 	"${FLAVOR_ALL}")
@@ -272,7 +274,7 @@ testport_post_gather_port_vars() {
 	fi
 	get_pkgname_from_originspec "${ORIGINSPEC:?}" PKGNAME ||
 	    err "${EX_SOFTWARE}" "Failed to find PKGNAME for ${ORIGINSPEC}"
-	shash_get pkgname-ignore "${PKGNAME:?}" IGNORE || :
+	shash_get pkgname-ignore "${PKGNAME:?}" IGNORE || IGNORE=
 	if have_ports_feature FLAVORS; then
 		shash_get origin-flavors "${ORIGIN:?}" FLAVORS || FLAVORS=
 		case "${FLAVORS:+set}" in
@@ -344,12 +346,20 @@ if [ "${USE_PORTLINT}" = "yes" ]; then
 	) || :
 fi
 if [ ${NOPREFIX} -ne 1 ]; then
-	PREFIX="${BUILDROOT:-/prefix}/`echo ${PKGNAME} | tr '[,+]' _`"
+	# /prefix-PKGNAME/ will automatically get a @dir entry added for it
+	# but if BUILDROOT is used it requires that there is separate handling
+	# for that in the mtree file or check_leftovers.sh or port.
+	PREFIX="${BUILDROOT:-/prefix}-`echo ${PKGNAME} | tr '[,+]' _`"
 fi
+PORT_FLAGS=
 if [ "${PREFIX}" != "${LOCALBASE}" ]; then
 	PORT_FLAGS="PREFIX=${PREFIX}"
 fi
-msg "Building with flags: ${PORT_FLAGS}"
+case "${PORT_FLAGS:+set}" in
+set)
+	msg "Building with flags: ${PORT_FLAGS}"
+	;;
+esac
 
 if [ -d "${MASTERMNT:?}${PREFIX:?}" -a "${PREFIX:?}" != "/usr" ]; then
 	msg "Removing existing ${PREFIX}"
@@ -401,7 +411,17 @@ if [ ${ret} -ne 0 ]; then
 		"${log:?}/logs/errors/${PKGNAME:?}.log" \
 		2> /dev/null)" || :
 	bset_job_status "${status%%:*}" "${ORIGINSPEC}" "${PKGNAME}"
-	badd ports.failed "${ORIGINSPEC} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
+	case "${IGNORE:+set}.${failed_phase}" in
+	set.check-sanity)
+		# This is the expected failure from an IGNORE. Don't
+		# modify stats to call it a failure.
+		:
+		;;
+	*)
+		badd ports.failed \
+		    "${ORIGINSPEC} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
+		;;
+	esac
 	update_stats || :
 
 	if [ ${INTERACTIVE_MODE} -eq 0 ]; then

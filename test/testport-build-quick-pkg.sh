@@ -34,4 +34,12 @@ while get_test_context; do
 	assert_bulk_queue_and_stats
 	assert_bulk_build_results
 	echo "-----" | tee /dev/stderr
+
+	_log_path log || err 99 "Unable to determine logdir"
+	assert_true [ -e "${log:?}/logs/built/pkg-"*.log ]
+	set_pipefail
+	assert_true grep -w PREFIX= "${log:?}/logs/built/pkg-"*.log |
+	    tail -n 1 |
+	    grep -w "PREFIX=/usr/local"
+	assert 0 "$?" "testport PREFIX should match /usr/local"
 done

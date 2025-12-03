@@ -393,6 +393,7 @@ runtest() {
 				    ' Error: ' \
 				    "$(get_log_name)" |
 				    sed -e 's,Error:,UnhandledError:,' |
+				    grep -v 'Build failed' |
 				    grep -v 'sleep:.*about.*second' |
 				    grep -v 'Another logclean is busy'; then
 					ret=99

@@ -3,13 +3,15 @@
 PORTNAME=	foo
 DISTVERSION=	20161010
 PORTREVISION=	0
-FLAVORS=	default flav ignored
+FLAVORS=	default flav ignored broken
 FLAVOR?=	default
 .if ${FLAVOR} != default && !empty(FLAVORS:M${FLAVOR})
 PKGNAMESUFFIX=	-${FLAVOR:tu}
 .endif
 .if ${FLAVOR} == ignored
 IGNORE=		ignored
+.elif ${FLAVOR} == broken
+BROKEN=		broken
 .endif
 CATEGORIES=	misc
 MASTER_SITES=	#

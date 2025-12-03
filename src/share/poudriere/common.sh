@@ -5361,15 +5361,14 @@ build_port() {
 	case "${BUILD_AS_NON_ROOT}" in
 	"yes") shash_remove pkgname-need_root "${pkgname}" NEED_ROOT || : ;;
 	esac
-	case "${PORT_FLAGS:+set}" in
-	set)
-		shash_unset pkgname-prefix "${pkgname}" PREFIX
-		;;
-	*)
+	if was_a_testport_run; then
+		# PREFIX will already be set
+		dev_assert_not "" "${PREFIX-}"
+		shash_unset pkgname-prefix "${pkgname}"
+	else
 		shash_remove pkgname-prefix "${pkgname}" PREFIX ||
-		    err 1 "build_port: shash_get PREFIX"
-		;;
-	esac
+		    err 1 "build_port: shash_get PREFIX for pkgname=${pkgname}"
+	fi
 
 	allownetworking=0
 
@@ -6325,7 +6324,7 @@ parallel_build() {
 
 	# The port-to-test is "queued" but won't build in here. Avoid
 	# starting a builder for it.
-	if was_a_testport_run; then
+	if was_a_testport_run && [ -z "${IGNORE:+set}" ]; then
 		dev_assert_not 0 "${nremaining}"
 		nremaining="$((nremaining - 1))"
 	fi
@@ -6982,6 +6981,7 @@ deps_fetch_vars() {
 	local _prefix _pkgname_var _pdeps_var _bdeps_var _rdeps_var
 	local _depend_specials= _build_as_non_root= _need_root=
 	local dist_subdir dist_allfiles
+	local port_flags
 
 	originspec_decode "${originspec}" origin _origin_flavor _origin_subpkg
 	# If we were passed in a FLAVOR then we better have already looked up
@@ -7034,7 +7034,11 @@ deps_fetch_vars() {
 	case "${BUILD_AS_NON_ROOT}" in
 	yes) _build_as_non_root="NEED_ROOT _need_root" ;;
 	esac
+	# This is for testport.
+	shash_remove originspec-port_flags "${originspec}" port_flags ||
+	    port_flags=
 	if ! port_var_fetch_originspec "${originspec}" \
+		${port_flags-} \
 		${_pkgname_var} _pkgname \
 		${_lookup_flavors} \
 		'${_DEPEND_SPECIALS:C,^${PORTSDIR}/,,}' _depend_specials \

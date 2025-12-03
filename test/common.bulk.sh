@@ -113,7 +113,7 @@ cache_pkgnames() {
 	fi
 	originspec_encode flavor_originspec "${origin}" "${port_flavor}" "${subpkg}"
 	fix_default_flavor "${originspec}" originspec
-	assert_not '' "${pkgname}" "cache_pkgnames: ${originspec} has no PKGNAME?"
+	assert_not '' "${pkgname-}" "cache_pkgnames: ${originspec} has no PKGNAME?"
 	hash_set originspec-pkgname "${originspec}" "${pkgname}"
 	hash_set originspec-pkgname "${flavor_originspec}" "${pkgname}"
 	if [ -n "${port_flavor}" ]; then
@@ -141,7 +141,9 @@ cache_pkgnames() {
 			esac
 		fi
 	fi
-	if [ -z "${ignore}" ]; then
+	# Used to skip ignored here but with TRYBROKEN support we need
+	# everything.
+	if true || [ -z "${ignore}" ]; then
 		for dep_origin in ${pdeps}; do
 			if cache_pkgnames 1 "${dep_origin}"; then
 				if [ "${was_listed_with_flavor}" -eq 1 ]; then
@@ -294,7 +296,7 @@ assert_metadata() {
 	for originspec in ${origins_expanded}; do
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is dep='${dep}' in metadata" >&2
 		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" -vdep="${dep}" '
 		    $2 == originspec && $1 == pkgname && $3 == dep {
@@ -366,7 +368,7 @@ assert_queued() {
 		esac
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is dep='${dep}' in queue${rdep:+ with rdep ${rdep}}" >&2
 		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" -vdep="${dep:-${rdep}}" '
 		    $1 == originspec && $2 == pkgname && (dep == "" || $3 == dep) {
@@ -434,7 +436,7 @@ assert_ignored() {
 		esac
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is ignored${ignorereason:+ with reason='${ignorereason}'}" >&2
 		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		    -vignorereason="${ignorereason}" '
@@ -502,7 +504,7 @@ assert_inspected() {
 		esac
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is inspected${inspectreason:+ with reason='${inspectreason}'}" >&2
 		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		    -vinspectreason="${inspectreason}" '
@@ -570,7 +572,7 @@ assert_skipped() {
 		esac
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is skipped${skipreason:+ with reason ${skipreason}}" >&2
 		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		    -vskipreason="${skipreason}" '
@@ -635,7 +637,7 @@ assert_tobuild() {
 		esac
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is tobuild${rdep:+ with rdep ${rdep}}" >&2
 		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		    -vrdep="${rdep}" '
@@ -691,7 +693,7 @@ assert_built() {
 		originspec="${originspec%:*}"
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is built" >&2
 		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
 		    $1 == originspec && $2 == pkgname {
@@ -753,7 +755,7 @@ assert_failed() {
 		esac
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is failed${phase:+ in phase ${phase}}" >&2
 		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		     -vfailedreason="${phase}" '
@@ -1241,7 +1243,7 @@ _assert_bulk_build_results() {
 		# Trim away possible :reason leaked from EXPECTED_TOBUILD copy
 		originspec="${originspec%:*}"
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		built_pkgnames="${built_pkgnames:+${built_pkgnames} }${pkgname}"
 		case "${TESTPORT:+set}" in
 		set)
@@ -1267,7 +1269,7 @@ _assert_bulk_build_results() {
 			originspec="${failedspec}"
 		esac
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		failed_pkgnames="${failed_pkgnames:+${failed_pkgnames} }${pkgname}"
 		case "${TESTPORT:+set}" in
 		set)
@@ -1293,7 +1295,7 @@ _assert_bulk_build_results() {
 			originspec="${ignoredspec}"
 		esac
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		ignored_pkgnames="${ignored_pkgnames:+${ignored_pkgnames} }${pkgname}"
 		case "${TESTPORT:+set}" in
 		set)
@@ -1319,7 +1321,7 @@ _assert_bulk_build_results() {
 			originspec="${inspectedspec}"
 		esac
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		inspected_pkgnames="${inspected_pkgnames:+${inspected_pkgnames} }${pkgname}"
 		case "${TESTPORT:+set}" in
 		set)
@@ -1345,7 +1347,7 @@ _assert_bulk_build_results() {
 			originspec="${skippedspec}"
 		esac
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		skipped_pkgnames="${skipped_pkgnames:+${skipped_pkgnames} }${pkgname}"
 		case "${TESTPORT:+set}" in
 		set)
