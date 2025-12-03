@@ -319,10 +319,8 @@ main(int argc, char **argv)
 	dirfd = open(dirpath, O_RDONLY | O_DIRECTORY);
 	if (dirfd == -1) {
 #ifdef SHELL
-		serrno = errno;
 		cleanup();
 		INTON;
-		errno = serrno;
 #endif
 		err(1, "%s", "opendir");
 	}
