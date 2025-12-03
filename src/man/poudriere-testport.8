@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd August 9, 2024
+.Dd December 2, 2025
 .Dt POUDRIERE-TESTPORT 8
 .Os
 .Sh NAME
@@ -41,9 +41,17 @@
 .Sh DESCRIPTION
 The specified port will be tested for build and packaging problems.
 All missing dependencies will first be built in parallel.
-.Ev TRYBROKEN=yes
-is automatically defined in the environment to test ports marked as
-.Ev BROKEN .
+.Pp
+.Ev TRYBROKEN
+is
+.Em not
+automatically defined in the environment to test ports marked as
+.Ev BROKEN
+as it was in previous versions.
+Use
+.Fl T
+to enable that.
+.Pp
 See
 .Sx FLAVORS
 in
@@ -164,6 +172,15 @@ This may result in broken packages if the ones they depend on are updated,
 are not ABI-compatible, and were not properly
 .Sy PORTREVISION
 bumped.
+.It Fl T
+Try building the port, even if marked
+.Va BROKEN ,
+by defining
+.Va TRYBROKEN
+for the build.
+Dependencies marked
+.Va BROKEN
+will not be built.
 .It Fl v
 This will show more information during the build.
 Specify twice to enable debug output.

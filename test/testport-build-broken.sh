@@ -9,10 +9,10 @@ do_pkgclean -y -A
 assert 0 $? "Pkgclean should pass"
 echo "-----" | tee /dev/stderr
 
-EXPECTED_QUEUED="ports-mgmt/pkg ${TESTPORT}"
+EXPECTED_QUEUED="${TESTPORT}"
 EXPECTED_LISTED="${TESTPORT}"
-EXPECTED_TOBUILD="${EXPECTED_QUEUED}"
-EXPECTED_IGNORED=
+EXPECTED_TOBUILD=
+EXPECTED_IGNORED="${TESTPORT}"
 EXPECTED_BUILT=
 do_testport -n ${TESTPORT}
 assert 0 "$?" "testport dry-run should pass"
@@ -20,8 +20,20 @@ assert_bulk_queue_and_stats
 assert_bulk_build_results
 echo "-----" | tee /dev/stderr
 
+# Now retry with -T
+EXPECTED_QUEUED="ports-mgmt/pkg ${TESTPORT}"
+EXPECTED_LISTED="${TESTPORT}"
+EXPECTED_TOBUILD="${EXPECTED_QUEUED}"
+EXPECTED_IGNORED=
+EXPECTED_BUILT=
+do_testport -T -n ${TESTPORT}
+assert 0 "$?" "testport dry-run should pass"
+assert_bulk_queue_and_stats
+assert_bulk_build_results
+echo "-----" | tee /dev/stderr
+
 EXPECTED_BUILT="${EXPECTED_TOBUILD}"
-do_testport ${TESTPORT}
+do_testport -T ${TESTPORT}
 assert 0 "$?" "testport should pass"
 assert_bulk_queue_and_stats
 assert_bulk_build_results

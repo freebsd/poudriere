@@ -64,6 +64,7 @@ Options:
                    packages requiring incremental rebuild. This can result
                    in broken packages if the ones updated do not retain
                    a stable ABI.
+    -T          -- Try to build a BROKEN port (but not broken dependencies)
     -v          -- Be verbose; show more information. Use twice to enable
                    debug output
     -w          -- Save WRKDIR on failed builds
@@ -81,8 +82,9 @@ PTNAME="default"
 BUILD_REPO=1
 OVERLAYS=""
 COMMIT=1
+TRYBROKEN=
 
-while getopts "b:B:o:cniIj:J:kNO:p:PSvwz:" FLAG; do
+while getopts "b:B:o:cniIj:J:kNO:p:PSTvwz:" FLAG; do
 	case "${FLAG}" in
 		b)
 			PACKAGE_FETCH_BRANCH="${OPTARG}"
@@ -146,6 +148,9 @@ while getopts "b:B:o:cniIj:J:kNO:p:PSvwz:" FLAG; do
 		S)
 			SKIP_RECURSIVE_REBUILD=1
 			;;
+		T)
+			TRYBROKEN=yes
+			;;
 		w)
 			SAVE_WRKDIR=1
 			;;
@@ -199,8 +204,13 @@ originspec_decode "${ORIGINSPEC}" ORIGIN FLAVOR SUBPKG
 ORIGIN="${ORIGIN#/}"
 ORIGIN="${ORIGIN%/}"
 originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
-# Avoid the port-to-test being marked IGNORED as it breaks dependency lookups.
-shash_set originspec-port_flags "${ORIGINSPEC}" "TRYBROKEN=yes"
+case "${TRYBROKEN:+set}" in
+set)
+	# Avoid the port-to-test being marked IGNORED as it breaks dependency
+	# lookups.
+	shash_set originspec-port_flags "${ORIGINSPEC}" "TRYBROKEN=yes"
+	;;
+esac
 if have_ports_feature FLAVORS; then
 	case "${FLAVOR}" in
 	"${FLAVOR_ALL}")
@@ -372,7 +382,11 @@ PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs PKGLATESTREPOSITORY=/tmp/pkgs
 MAKE_ARGS="${FLAVOR:+ FLAVOR=${FLAVOR}}"
 injail install -d -o ${PORTBUILD_USER} /tmp/pkgs
 PORTTESTING=1
-export TRYBROKEN=yes
+case "${TRYBROKEN:+set}" in
+set)
+	export TRYBROKEN="${TRYBROKEN}"
+	;;
+esac
 export NO_WARNING_PKG_INSTALL_EOL=yes
 # Disable waits unless running in a tty interactively
 if ! [ -t 1 ]; then
