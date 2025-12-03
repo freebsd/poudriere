@@ -180,8 +180,6 @@ _mapfile_open(const char *file, const char *modes, int Fflag, int qflag)
 	    strcmp(file, "/dev/stdin") == 0 ||
 	    strcmp(file, "/dev/fd/0") == 0) {
 		if ((fp = fdopen(STDIN_FILENO, modes)) == NULL) {
-			serrno = errno;
-			errno = serrno;
 			if (!qflag) {
 				INTON;
 				err(EX_NOINPUT, "%s: %s", "fopen", file);
@@ -192,8 +190,6 @@ _mapfile_open(const char *file, const char *modes, int Fflag, int qflag)
 	} else if (strcmp(file, "/dev/stdout") == 0 ||
 	    strcmp(file, "/dev/fd/1") == 0) {
 		if ((fp = fdopen(STDOUT_FILENO, modes)) == NULL) {
-			serrno = errno;
-			errno = serrno;
 			if (!qflag) {
 				INTON;
 				err(EX_NOINPUT, "%s: %s", "fopen", file);
@@ -204,8 +200,6 @@ _mapfile_open(const char *file, const char *modes, int Fflag, int qflag)
 	} else if (strcmp(file, "/dev/stderr") == 0 ||
 	    strcmp(file, "/dev/fd/2") == 0) {
 		if ((fp = fdopen(STDERR_FILENO, modes)) == NULL) {
-			serrno = errno;
-			errno = serrno;
 			if (!qflag) {
 				INTON;
 				err(EX_NOINPUT, "%s: %s", "fopen", file);
@@ -215,8 +209,6 @@ _mapfile_open(const char *file, const char *modes, int Fflag, int qflag)
 		}
 	} else {
 		if ((fp = fopen(file, modes)) == NULL) {
-			serrno = errno;
-			errno = serrno;
 			if (!qflag) {
 				INTON;
 				err(EX_NOINPUT, "%s: %s", "fopen", file);
