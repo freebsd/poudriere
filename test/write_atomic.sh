@@ -48,7 +48,7 @@ set_pipefail
 	echo "noclobber" > "${TMP2}"
 
 	# With noclobber we should get no modification to TMP2.
-	noclobber write_atomic "${TMP2}" "$(cat "${TMP}")"
+	expect_error_on_stderr noclobber write_atomic "${TMP2}" "$(cat "${TMP}")"
 	assert 1 "$?" "pipe exit status"
 	assert_file - "${TMP2}" <<-EOF
 	noclobber
@@ -101,4 +101,26 @@ set_pipefail
 	1 2
 	EOF
 	rm -f "${TMP3}"
+}
+
+# Ensure mode is proper based on umask
+{
+	# local oldumask
+	oldumask=$(umask)
+
+	TMP="$(mktemp -t destfile)"
+	umask 022
+	write_atomic "${TMP}" ""
+	assert_true [ -e "${TMP}" ]
+	assert "100644" "$(stat -f%p "${TMP}")"
+	rm -f "${TMP}"
+
+	umask 066
+	TMP="$(mktemp -t destfile)"
+	write_atomic "${TMP}" ""
+	assert_true [ -e "${TMP}" ]
+	assert "100600" "$(stat -f%p "${TMP}")"
+	rm -f "${TMP}"
+
+	umask "${oldumask}"
 }

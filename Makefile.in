@@ -100,7 +100,8 @@ pkglibexec_PROGRAMS = clock$(EXEEXT) cpdup$(EXEEXT) dirempty$(EXEEXT) \
 	dirwatch$(EXEEXT) getpid$(EXEEXT) locked_mkdir$(EXEEXT) \
 	lockf$(EXEEXT) nc$(EXEEXT) poudriered$(EXEEXT) ptsort$(EXEEXT) \
 	pwait$(EXEEXT) rename$(EXEEXT) @USE_RM@ setsid$(EXEEXT) \
-	timeout$(EXEEXT) timestamp$(EXEEXT) @BUILD_SH@
+	timeout$(EXEEXT) timestamp$(EXEEXT) write_atomic$(EXEEXT) \
+	@BUILD_SH@ $(am__empty)
 EXTRA_PROGRAMS = rm$(EXEEXT) sh$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -232,6 +233,9 @@ am__objects_4 =  \
 am__objects_5 = external/freebsd/bin/pwait/sh-pwait.$(OBJEXT)
 am__objects_6 = src/libexec/poudriere/rename/sh-rename.$(OBJEXT)
 am__objects_7 = external/freebsd/bin/rm/sh-rm.$(OBJEXT)
+am__objects_8 =  \
+	src/libexec/poudriere/write_atomic/sh-mktemp.$(OBJEXT) \
+	src/libexec/poudriere/write_atomic/sh-write_atomic.$(OBJEXT)
 am_sh_OBJECTS = external/sh/sh-alias.$(OBJEXT) \
 	external/sh/sh-arith_yacc.$(OBJEXT) \
 	external/sh/sh-arith_yylex.$(OBJEXT) \
@@ -274,7 +278,7 @@ am_sh_OBJECTS = external/sh/sh-alias.$(OBJEXT) \
 	external/freebsd/usr.bin/stat/sh-stat.$(OBJEXT) \
 	external/freebsd/usr.bin/touch/sh-touch.$(OBJEXT) \
 	src/poudriere-sh/sh-unlink.$(OBJEXT) \
-	external/freebsd/usr.bin/wc/sh-wc.$(OBJEXT) \
+	external/freebsd/usr.bin/wc/sh-wc.$(OBJEXT) $(am__objects_8) \
 	src/poudriere-sh/sh-builtins.$(OBJEXT)
 sh_OBJECTS = $(am_sh_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -291,6 +295,13 @@ timestamp_OBJECTS = $(am_timestamp_OBJECTS)
 timestamp_DEPENDENCIES =
 timestamp_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(timestamp_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_write_atomic_OBJECTS = src/libexec/poudriere/write_atomic/write_atomic-mktemp.$(OBJEXT) \
+	src/libexec/poudriere/write_atomic/write_atomic-write_atomic.$(OBJEXT)
+write_atomic_OBJECTS = $(am_write_atomic_OBJECTS)
+write_atomic_LDADD = $(LDADD)
+write_atomic_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(write_atomic_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -414,6 +425,10 @@ am__depfiles_remade = external/cpdup/src/$(DEPDIR)/cpdup-cpdup.Po \
 	src/libexec/poudriere/rename/$(DEPDIR)/rename.Po \
 	src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Po \
 	src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Po \
+	src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-mktemp.Po \
+	src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-write_atomic.Po \
+	src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-mktemp.Po \
+	src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-write_atomic.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-alarm.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-builtins.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-helpers.Po \
@@ -448,7 +463,8 @@ SOURCES = $(libptsort_la_SOURCES) $(libucl_la_SOURCES) \
 	$(locked_mkdir_SOURCES) $(lockf_SOURCES) $(nc_SOURCES) \
 	$(poudriered_SOURCES) $(ptsort_SOURCES) $(pwait_SOURCES) \
 	$(rename_SOURCES) $(rm_SOURCES) $(setsid_SOURCES) \
-	$(sh_SOURCES) $(timeout_SOURCES) $(timestamp_SOURCES)
+	$(sh_SOURCES) $(timeout_SOURCES) $(timestamp_SOURCES) \
+	$(write_atomic_SOURCES)
 DIST_SOURCES = $(libptsort_la_SOURCES) $(libucl_la_SOURCES) \
 	$(clock_SOURCES) $(cpdup_SOURCES) $(dirempty_SOURCES) \
 	$(dirwatch_SOURCES) $(external_sh_mknodes_SOURCES) \
@@ -456,7 +472,8 @@ DIST_SOURCES = $(libptsort_la_SOURCES) $(libucl_la_SOURCES) \
 	$(locked_mkdir_SOURCES) $(lockf_SOURCES) $(nc_SOURCES) \
 	$(poudriered_SOURCES) $(ptsort_SOURCES) $(pwait_SOURCES) \
 	$(rename_SOURCES) $(rm_SOURCES) $(setsid_SOURCES) \
-	$(sh_SOURCES) $(timeout_SOURCES) $(timestamp_SOURCES)
+	$(sh_SOURCES) $(timeout_SOURCES) $(timestamp_SOURCES) \
+	$(write_atomic_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -867,6 +884,11 @@ timeout_SOURCES = external/freebsd/bin/timeout/timeout.c
 timestamp_SOURCES = src/libexec/poudriere/timestamp/timestamp.c
 timestamp_CFLAGS = $(AM_CFLAGS) $(SAN_CFLAGS)
 timestamp_LDADD = -lpthread
+write_atomic_SOURCES = \
+			src/libexec/poudriere/write_atomic/mktemp.c \
+			src/libexec/poudriere/write_atomic/write_atomic.c
+
+write_atomic_CFLAGS = $(AM_CFLAGS) $(SAN_CFLAGS)
 sh_CFLAGS = $(AM_CFLAGS) -Wno-extra -DSHELL -std=gnu99 -DVTABSIZE=1000 \
 	${sh_hist_CFLAGS} -Wno-unused-const-variable -include \
 	$(top_srcdir)/external/sh_compat/compat.h -I$(top_srcdir)/src \
@@ -918,7 +940,7 @@ sh_SOURCES = external/sh/alias.c external/sh/alias.h \
 	external/freebsd/usr.bin/stat/stat.c \
 	external/freebsd/usr.bin/touch/touch.c \
 	src/poudriere-sh/unlink.c external/freebsd/usr.bin/wc/wc.c \
-	src/poudriere-sh/builtins.c
+	$(write_atomic_SOURCES) src/poudriere-sh/builtins.c
 external_sh_mknodes_SOURCES = external/sh/mknodes.c
 external_sh_mksyntax_SOURCES = external/sh/mksyntax.c
 libucl_la_SOURCES = \
@@ -1562,6 +1584,18 @@ external/freebsd/usr.bin/wc/$(DEPDIR)/$(am__dirstamp):
 external/freebsd/usr.bin/wc/sh-wc.$(OBJEXT):  \
 	external/freebsd/usr.bin/wc/$(am__dirstamp) \
 	external/freebsd/usr.bin/wc/$(DEPDIR)/$(am__dirstamp)
+src/libexec/poudriere/write_atomic/$(am__dirstamp):
+	@$(MKDIR_P) src/libexec/poudriere/write_atomic
+	@: >>src/libexec/poudriere/write_atomic/$(am__dirstamp)
+src/libexec/poudriere/write_atomic/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/libexec/poudriere/write_atomic/$(DEPDIR)
+	@: >>src/libexec/poudriere/write_atomic/$(DEPDIR)/$(am__dirstamp)
+src/libexec/poudriere/write_atomic/sh-mktemp.$(OBJEXT):  \
+	src/libexec/poudriere/write_atomic/$(am__dirstamp) \
+	src/libexec/poudriere/write_atomic/$(DEPDIR)/$(am__dirstamp)
+src/libexec/poudriere/write_atomic/sh-write_atomic.$(OBJEXT):  \
+	src/libexec/poudriere/write_atomic/$(am__dirstamp) \
+	src/libexec/poudriere/write_atomic/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/sh-builtins.$(OBJEXT):  \
 	src/poudriere-sh/$(am__dirstamp) \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
@@ -1595,6 +1629,16 @@ src/libexec/poudriere/timestamp/timestamp-timestamp.$(OBJEXT):  \
 timestamp$(EXEEXT): $(timestamp_OBJECTS) $(timestamp_DEPENDENCIES) $(EXTRA_timestamp_DEPENDENCIES) 
 	@rm -f timestamp$(EXEEXT)
 	$(AM_V_CCLD)$(timestamp_LINK) $(timestamp_OBJECTS) $(timestamp_LDADD) $(LIBS)
+src/libexec/poudriere/write_atomic/write_atomic-mktemp.$(OBJEXT):  \
+	src/libexec/poudriere/write_atomic/$(am__dirstamp) \
+	src/libexec/poudriere/write_atomic/$(DEPDIR)/$(am__dirstamp)
+src/libexec/poudriere/write_atomic/write_atomic-write_atomic.$(OBJEXT):  \
+	src/libexec/poudriere/write_atomic/$(am__dirstamp) \
+	src/libexec/poudriere/write_atomic/$(DEPDIR)/$(am__dirstamp)
+
+write_atomic$(EXEEXT): $(write_atomic_OBJECTS) $(write_atomic_DEPENDENCIES) $(EXTRA_write_atomic_DEPENDENCIES) 
+	@rm -f write_atomic$(EXEEXT)
+	$(AM_V_CCLD)$(write_atomic_LINK) $(write_atomic_OBJECTS) $(write_atomic_LDADD) $(LIBS)
 install-dist_binSCRIPTS: $(dist_bin_SCRIPTS)
 	@$(NORMAL_INSTALL)
 	@list='$(dist_bin_SCRIPTS)'; test -n "$(bindir)" || list=; \
@@ -1700,6 +1744,7 @@ mostlyclean-compile:
 	-rm -f src/libexec/poudriere/nc/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/rename/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/timestamp/*.$(OBJEXT)
+	-rm -f src/libexec/poudriere/write_atomic/*.$(OBJEXT)
 	-rm -f src/poudriere-sh/*.$(OBJEXT)
 	-rm -f src/poudriered/*.$(OBJEXT)
 
@@ -1786,6 +1831,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rename/$(DEPDIR)/rename.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-mktemp.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-write_atomic.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-mktemp.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-write_atomic.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-alarm.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-builtins.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-helpers.Po@am__quote@ # am--include-marker
@@ -2784,6 +2833,34 @@ external/freebsd/usr.bin/wc/sh-wc.obj: external/freebsd/usr.bin/wc/wc.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/freebsd/usr.bin/wc/sh-wc.obj `if test -f 'external/freebsd/usr.bin/wc/wc.c'; then $(CYGPATH_W) 'external/freebsd/usr.bin/wc/wc.c'; else $(CYGPATH_W) '$(srcdir)/external/freebsd/usr.bin/wc/wc.c'; fi`
 
+src/libexec/poudriere/write_atomic/sh-mktemp.o: src/libexec/poudriere/write_atomic/mktemp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/write_atomic/sh-mktemp.o -MD -MP -MF src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-mktemp.Tpo -c -o src/libexec/poudriere/write_atomic/sh-mktemp.o `test -f 'src/libexec/poudriere/write_atomic/mktemp.c' || echo '$(srcdir)/'`src/libexec/poudriere/write_atomic/mktemp.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-mktemp.Tpo src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-mktemp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/write_atomic/mktemp.c' object='src/libexec/poudriere/write_atomic/sh-mktemp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/write_atomic/sh-mktemp.o `test -f 'src/libexec/poudriere/write_atomic/mktemp.c' || echo '$(srcdir)/'`src/libexec/poudriere/write_atomic/mktemp.c
+
+src/libexec/poudriere/write_atomic/sh-mktemp.obj: src/libexec/poudriere/write_atomic/mktemp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/write_atomic/sh-mktemp.obj -MD -MP -MF src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-mktemp.Tpo -c -o src/libexec/poudriere/write_atomic/sh-mktemp.obj `if test -f 'src/libexec/poudriere/write_atomic/mktemp.c'; then $(CYGPATH_W) 'src/libexec/poudriere/write_atomic/mktemp.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/write_atomic/mktemp.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-mktemp.Tpo src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-mktemp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/write_atomic/mktemp.c' object='src/libexec/poudriere/write_atomic/sh-mktemp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/write_atomic/sh-mktemp.obj `if test -f 'src/libexec/poudriere/write_atomic/mktemp.c'; then $(CYGPATH_W) 'src/libexec/poudriere/write_atomic/mktemp.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/write_atomic/mktemp.c'; fi`
+
+src/libexec/poudriere/write_atomic/sh-write_atomic.o: src/libexec/poudriere/write_atomic/write_atomic.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/write_atomic/sh-write_atomic.o -MD -MP -MF src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-write_atomic.Tpo -c -o src/libexec/poudriere/write_atomic/sh-write_atomic.o `test -f 'src/libexec/poudriere/write_atomic/write_atomic.c' || echo '$(srcdir)/'`src/libexec/poudriere/write_atomic/write_atomic.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-write_atomic.Tpo src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-write_atomic.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/write_atomic/write_atomic.c' object='src/libexec/poudriere/write_atomic/sh-write_atomic.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/write_atomic/sh-write_atomic.o `test -f 'src/libexec/poudriere/write_atomic/write_atomic.c' || echo '$(srcdir)/'`src/libexec/poudriere/write_atomic/write_atomic.c
+
+src/libexec/poudriere/write_atomic/sh-write_atomic.obj: src/libexec/poudriere/write_atomic/write_atomic.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/write_atomic/sh-write_atomic.obj -MD -MP -MF src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-write_atomic.Tpo -c -o src/libexec/poudriere/write_atomic/sh-write_atomic.obj `if test -f 'src/libexec/poudriere/write_atomic/write_atomic.c'; then $(CYGPATH_W) 'src/libexec/poudriere/write_atomic/write_atomic.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/write_atomic/write_atomic.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-write_atomic.Tpo src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-write_atomic.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/write_atomic/write_atomic.c' object='src/libexec/poudriere/write_atomic/sh-write_atomic.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/write_atomic/sh-write_atomic.obj `if test -f 'src/libexec/poudriere/write_atomic/write_atomic.c'; then $(CYGPATH_W) 'src/libexec/poudriere/write_atomic/write_atomic.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/write_atomic/write_atomic.c'; fi`
+
 src/poudriere-sh/sh-builtins.o: src/poudriere-sh/builtins.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-builtins.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-builtins.Tpo -c -o src/poudriere-sh/sh-builtins.o `test -f 'src/poudriere-sh/builtins.c' || echo '$(srcdir)/'`src/poudriere-sh/builtins.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-builtins.Tpo src/poudriere-sh/$(DEPDIR)/sh-builtins.Po
@@ -2811,6 +2888,34 @@ src/libexec/poudriere/timestamp/timestamp-timestamp.obj: src/libexec/poudriere/t
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/timestamp/timestamp.c' object='src/libexec/poudriere/timestamp/timestamp-timestamp.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(timestamp_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/timestamp/timestamp-timestamp.obj `if test -f 'src/libexec/poudriere/timestamp/timestamp.c'; then $(CYGPATH_W) 'src/libexec/poudriere/timestamp/timestamp.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/timestamp/timestamp.c'; fi`
+
+src/libexec/poudriere/write_atomic/write_atomic-mktemp.o: src/libexec/poudriere/write_atomic/mktemp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(write_atomic_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/write_atomic/write_atomic-mktemp.o -MD -MP -MF src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-mktemp.Tpo -c -o src/libexec/poudriere/write_atomic/write_atomic-mktemp.o `test -f 'src/libexec/poudriere/write_atomic/mktemp.c' || echo '$(srcdir)/'`src/libexec/poudriere/write_atomic/mktemp.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-mktemp.Tpo src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-mktemp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/write_atomic/mktemp.c' object='src/libexec/poudriere/write_atomic/write_atomic-mktemp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(write_atomic_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/write_atomic/write_atomic-mktemp.o `test -f 'src/libexec/poudriere/write_atomic/mktemp.c' || echo '$(srcdir)/'`src/libexec/poudriere/write_atomic/mktemp.c
+
+src/libexec/poudriere/write_atomic/write_atomic-mktemp.obj: src/libexec/poudriere/write_atomic/mktemp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(write_atomic_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/write_atomic/write_atomic-mktemp.obj -MD -MP -MF src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-mktemp.Tpo -c -o src/libexec/poudriere/write_atomic/write_atomic-mktemp.obj `if test -f 'src/libexec/poudriere/write_atomic/mktemp.c'; then $(CYGPATH_W) 'src/libexec/poudriere/write_atomic/mktemp.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/write_atomic/mktemp.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-mktemp.Tpo src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-mktemp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/write_atomic/mktemp.c' object='src/libexec/poudriere/write_atomic/write_atomic-mktemp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(write_atomic_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/write_atomic/write_atomic-mktemp.obj `if test -f 'src/libexec/poudriere/write_atomic/mktemp.c'; then $(CYGPATH_W) 'src/libexec/poudriere/write_atomic/mktemp.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/write_atomic/mktemp.c'; fi`
+
+src/libexec/poudriere/write_atomic/write_atomic-write_atomic.o: src/libexec/poudriere/write_atomic/write_atomic.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(write_atomic_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/write_atomic/write_atomic-write_atomic.o -MD -MP -MF src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-write_atomic.Tpo -c -o src/libexec/poudriere/write_atomic/write_atomic-write_atomic.o `test -f 'src/libexec/poudriere/write_atomic/write_atomic.c' || echo '$(srcdir)/'`src/libexec/poudriere/write_atomic/write_atomic.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-write_atomic.Tpo src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-write_atomic.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/write_atomic/write_atomic.c' object='src/libexec/poudriere/write_atomic/write_atomic-write_atomic.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(write_atomic_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/write_atomic/write_atomic-write_atomic.o `test -f 'src/libexec/poudriere/write_atomic/write_atomic.c' || echo '$(srcdir)/'`src/libexec/poudriere/write_atomic/write_atomic.c
+
+src/libexec/poudriere/write_atomic/write_atomic-write_atomic.obj: src/libexec/poudriere/write_atomic/write_atomic.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(write_atomic_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/write_atomic/write_atomic-write_atomic.obj -MD -MP -MF src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-write_atomic.Tpo -c -o src/libexec/poudriere/write_atomic/write_atomic-write_atomic.obj `if test -f 'src/libexec/poudriere/write_atomic/write_atomic.c'; then $(CYGPATH_W) 'src/libexec/poudriere/write_atomic/write_atomic.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/write_atomic/write_atomic.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-write_atomic.Tpo src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-write_atomic.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/write_atomic/write_atomic.c' object='src/libexec/poudriere/write_atomic/write_atomic-write_atomic.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(write_atomic_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/write_atomic/write_atomic-write_atomic.obj `if test -f 'src/libexec/poudriere/write_atomic/write_atomic.c'; then $(CYGPATH_W) 'src/libexec/poudriere/write_atomic/write_atomic.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/write_atomic/write_atomic.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -3565,6 +3670,8 @@ distclean-generic:
 	-$(am__rm_f) src/libexec/poudriere/rename/$(am__dirstamp)
 	-$(am__rm_f) src/libexec/poudriere/timestamp/$(DEPDIR)/$(am__dirstamp)
 	-$(am__rm_f) src/libexec/poudriere/timestamp/$(am__dirstamp)
+	-$(am__rm_f) src/libexec/poudriere/write_atomic/$(DEPDIR)/$(am__dirstamp)
+	-$(am__rm_f) src/libexec/poudriere/write_atomic/$(am__dirstamp)
 	-$(am__rm_f) src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
 	-$(am__rm_f) src/poudriere-sh/$(am__dirstamp)
 	-$(am__rm_f) src/poudriered/$(DEPDIR)/$(am__dirstamp)
@@ -3660,6 +3767,10 @@ distclean: distclean-recursive
 	-rm -f src/libexec/poudriere/rename/$(DEPDIR)/rename.Po
 	-rm -f src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Po
 	-rm -f src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Po
+	-rm -f src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-mktemp.Po
+	-rm -f src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-write_atomic.Po
+	-rm -f src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-mktemp.Po
+	-rm -f src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-write_atomic.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-alarm.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-builtins.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-helpers.Po
@@ -3802,6 +3913,10 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f src/libexec/poudriere/rename/$(DEPDIR)/rename.Po
 	-rm -f src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Po
 	-rm -f src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp-timestamp.Po
+	-rm -f src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-mktemp.Po
+	-rm -f src/libexec/poudriere/write_atomic/$(DEPDIR)/sh-write_atomic.Po
+	-rm -f src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-mktemp.Po
+	-rm -f src/libexec/poudriere/write_atomic/$(DEPDIR)/write_atomic-write_atomic.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-alarm.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-builtins.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-helpers.Po

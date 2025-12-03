@@ -10,7 +10,7 @@ writer() {
 	unset tmp
 	while time_bounded_loop tmp 90; do
 		noclobber shash_set bucket key value || :
-	done
+	done 2>/dev/null
 }
 
 echo "Working on ${MASTERMNT}"

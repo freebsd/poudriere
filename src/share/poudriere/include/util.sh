@@ -2640,6 +2640,7 @@ calculate_duration_times() {
 	setvar "${cd_outvar}" "${_duration}"
 }
 
+if ! type write_atomic >/dev/null 2>&1; then
 _write_atomic() {
 	local -; set +x
 	[ $# -eq 3 ] || [ $# -ge 4 ] ||
@@ -2707,7 +2708,7 @@ _write_atomic() {
 	ret=0
 	case "$-" in
 	*C*) # noclobber
-		# If comparing, we can only succeed if there is no file
+		# With noclobber we can only succeed if there is no file
 		# so no need to compare.
 		# allow vfork
 		{ ln "${tmpfile}" "${dest}"; } 2>/dev/null || ret="$?"
@@ -2785,6 +2786,25 @@ write_atomic() {
 
 	_write_atomic 0 "${Tflag}" "$@" || return
 }
+else
+write_atomic_cmp() {
+	write_atomic -C "$@"
+}
+
+write_atomic() {
+	local NOCLOBBER
+
+	# It is possible this function was called with "--" in it.
+	# Rather than trying to remove it to pass in -N for noclobber
+	# an env var is used.
+	case "$-" in
+	*C*)
+		export NOCLOBBER=1
+		;;
+	esac
+	command write_atomic "$@"
+}
+fi
 
 # Place environment requirements on entering a function
 # Using VALUE of re__null requires a variable is NOT SET

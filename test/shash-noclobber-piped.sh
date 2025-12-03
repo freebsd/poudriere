@@ -11,7 +11,7 @@ MASTERMNT=$(mktemp -d)
 	1
 	EOF
 	assert 0 "$?"
-	noclobber shash_write bucket key <<-EOF
+	expect_error_on_stderr noclobber shash_write bucket key <<-EOF
 	2
 	EOF
 	assert_not 0 "$?"

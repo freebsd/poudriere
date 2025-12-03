@@ -43,3 +43,4 @@ trap_pushcmd -n		trap_push
 trap_popcmd -n		trap_pop
 unlinkcmd -n		unlink
 wccmd -n		wc
+write_atomiccmd -n	write_atomic

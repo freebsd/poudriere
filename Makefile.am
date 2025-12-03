@@ -166,6 +166,7 @@ pkglibexec_PROGRAMS= \
 		     setsid \
 		     timeout \
 		     timestamp \
+		     write_atomic \
 		     @BUILD_SH@
 EXTRA_PROGRAMS= \
 		rm \
@@ -204,6 +205,10 @@ timeout_SOURCES=	external/freebsd/bin/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 timestamp_CFLAGS=	$(AM_CFLAGS) $(SAN_CFLAGS)
 timestamp_LDADD=	-lpthread
+write_atomic_SOURCES=	\
+			src/libexec/poudriere/write_atomic/mktemp.c \
+			src/libexec/poudriere/write_atomic/write_atomic.c
+write_atomic_CFLAGS=	$(AM_CFLAGS) $(SAN_CFLAGS)
 
 sh_CFLAGS=		$(AM_CFLAGS) -Wno-extra \
 			-DSHELL -std=gnu99 -DVTABSIZE=1000 ${sh_hist_CFLAGS} \
@@ -254,6 +259,7 @@ sh_SOURCES+=		external/freebsd/usr.bin/stat/stat.c
 sh_SOURCES+=		external/freebsd/usr.bin/touch/touch.c
 sh_SOURCES+=		src/poudriere-sh/unlink.c
 sh_SOURCES+=		external/freebsd/usr.bin/wc/wc.c
+sh_SOURCES+=		$(write_atomic_SOURCES)
 noinst_PROGRAMS+=	external/sh/mknodes
 external_sh_mknodes_SOURCES= external/sh/mknodes.c
 external/sh/nodes.c: external/sh/mknodes \

@@ -9,6 +9,32 @@ set_pipefail
 	TMP2=$(mktemp -t mapfile)
 	TMP3=$(mktemp -ut mapfile)
 
+	cat > "${TMP}" <<-EOF
+	1
+	2
+	EOF
+	# TMP3 is making sure no teeing happens
+	write_atomic_cmp "${TMP2}" > "${TMP3}" < "${TMP}"
+	assert 0 "$?" "pipe exit status"
+	assert_ret 0 diff -u "${TMP}" "${TMP2}"
+	assert_ret 1 [ -s "${TMP3}" ]
+	rm -f "${TMP3}"
+
+	# Because the output matches we should get a successful write but
+	# the same inode.
+	tmp2_ino=$(stat -f %i "${TMP2}")
+	assert_ret 0 write_atomic_cmp "${TMP2}" "$(cat "${TMP}")"
+	assert_ret 0 diff -u "${TMP}" "${TMP2}"
+	assert "${tmp2_ino}" "$(stat -f %i "${TMP2}")"
+
+	rm -f "${TMP}" "${TMP2}"
+}
+
+{
+	TMP=$(mktemp -t mapfile)
+	TMP2=$(mktemp -t mapfile)
+	TMP3=$(mktemp -ut mapfile)
+
 	generate_data > "${TMP}"
 
 	# This pattern is testing that the file is not written until close.
@@ -40,7 +66,8 @@ set_pipefail
 	echo "noclobber" > "${TMP2}"
 
 	# With noclobber we should get no modification to TMP2.
-	noclobber write_atomic_cmp "${TMP2}" "$(cat "${TMP}")"
+	expect_error_on_stderr \
+	    noclobber write_atomic_cmp "${TMP2}" "$(cat "${TMP}")"
 	assert 1 "$?" "pipe exit status"
 	assert_file - "${TMP2}" <<-EOF
 	noclobber
@@ -49,7 +76,8 @@ set_pipefail
 	cp -f "${TMP}" "${TMP2}"
 	tmp2_ino=$(stat -f %i "${TMP2}")
 	# With noclobber we should get no modification to TMP2.
-	noclobber write_atomic_cmp "${TMP2}" "$(cat "${TMP}")"
+	expect_error_on_stderr \
+	    noclobber write_atomic_cmp "${TMP2}" "$(cat "${TMP}")"
 	assert 1 "$?" "pipe exit status"
 	assert_ret 0 diff -u "${TMP}" "${TMP2}"
 	assert "${tmp2_ino}" "$(stat -f %i "${TMP2}")"

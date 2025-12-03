@@ -33,6 +33,7 @@ libtool
 /sh
 /timeout
 /timestamp
+/write_atomic
 Makefile
 configure~
 build-aux/install-sh~

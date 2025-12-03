@@ -20,6 +20,8 @@ for cmd in $(cat ${THISDIR}/../src/poudriere-sh/builtins-poudriere.def |
 	setproctitle) continue ;;
 	# Overridden to hide errors
 	unlink) continue ;;
+	# Overridden for noclobber support
+	write_atomic) continue ;;
 	esac
 	assert_true have_builtin "${cmd}"
 	assert "${cmd} is a shell builtin" "$(type "${cmd}")" \

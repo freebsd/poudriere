@@ -14,7 +14,7 @@ writer() {
 		} <<-EOF
 		value
 		EOF
-	done
+	done 2>/dev/null
 }
 
 echo "Working on ${MASTERMNT}"

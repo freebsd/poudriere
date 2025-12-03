@@ -40,7 +40,8 @@ set_pipefail
 	echo "noclobber" > "${TMP2}"
 
 	# With noclobber we should get no modification to TMP2.
-	( cat "${TMP}"; ) | noclobber write_atomic "${TMP2}"
+	( cat "${TMP}"; ) |
+	    expect_error_on_stderr noclobber write_atomic "${TMP2}"
 	assert 1 "$?" "pipe exit status"
 	assert_file - "${TMP2}" <<-EOF
 	noclobber
