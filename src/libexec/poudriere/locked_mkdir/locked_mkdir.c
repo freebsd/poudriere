@@ -234,7 +234,10 @@ stale_lock(const int dirfd, const char *lockdirpath, pid_t *outpid)
 		cleanup();
 		INTON;
 #endif
-		err(1, "%s", "fread(pid)");
+		if (ferror(f))
+			err(1, "fread(pid)");
+		else
+			errx(1, "fread(pid): no data in %s", pidpath);
 	}
 	pidlen = strlen(pidbuf);
 	if (pidbuf[pidlen - 1] == '\n')
