@@ -228,7 +228,9 @@ stale_lock(const int dirfd, const char *lockdirpath, pid_t *outpid)
 	/* Read failure is fatal. */
 	if (fgets(pidbuf, sizeof(pidbuf), f) == NULL) {
 #ifdef SHELL
+		int serrno = errno;
 		fclose(f);
+		errno = serrno;
 		cleanup();
 		INTON;
 #endif
