@@ -162,7 +162,7 @@ delete_jail() {
 			    ${JAILMNT:?}/etc/login.conf
 			cap_mkdb ${JAILMNT:?}/etc/login.conf
 		fi
-	else
+	elif [ -n "${JAILMNT:+set}" ]; then
 		TMPFS_ALL=0 destroyfs ${JAILMNT:?} jail || :
 	fi
 	cache_dir="${POUDRIERE_DATA}/cache/${JAILNAME}-*"
