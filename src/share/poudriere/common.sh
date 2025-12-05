@@ -5634,7 +5634,6 @@ build_port() {
 
 			job_build_status "stage-qa" "${originspec}" "${pkgname}"
 			if ! cleanenv injail /usr/bin/env DEVELOPER=1 \
-			    PROXYDEPS_FATAL=1 \
 			    ${PORT_FLAGS:=-S "${PORT_FLAGS}"} \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    stage-qa; then
@@ -8129,7 +8128,7 @@ package_libdeps_satisfied() {
 				    "will NOT be rebuilt (ignorelisted) but" \
 				    "it misses ${shlib} which no" \
 				    "dependency provides. It is likely" \
-				    "failing testport/stage-qa." \
+				    "(silently) failing testport/stage-qa." \
 				    "Report to maintainer."
 			else
 				ret=1
@@ -8137,7 +8136,7 @@ package_libdeps_satisfied() {
 				    "will be rebuilt as" \
 				    "it misses ${shlib} which no" \
 				    "dependency provides. It is likely" \
-				    "failing testport/stage-qa." \
+				    "(silently) failing testport/stage-qa." \
 				    "Report to maintainer."
 			fi
 			pls_reason="misses undeclared shlib ${shlib:?}"
