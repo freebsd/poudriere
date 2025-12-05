@@ -3252,8 +3252,10 @@ _lock_release() {
 			err 1 "Releasing lock pid ${lock_pid} owns ${lockname}"
 			;;
 		esac
-		critical_retry rmdir "${lockpath:?}" ||
+		if [ ! -d "${lockpath:?}" ]; then
 			err 1 "Held lock dir not found: ${lockpath}"
+		fi
+		critical_retry rmdir "${lockpath:?}" || :
 	fi
 
 	# Callers assume _lock_release cannot fail.
