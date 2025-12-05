@@ -87,7 +87,7 @@ test_dirwatch_basic_file_added_race() {
 		find "${TMP}" -mindepth 1 -type f -delete
 	done
 	assert "124" "${ret}"
-	assert_ret 143 kill_job 0 "${spawn_job:?}"
+	assert_ret 143 kill_job 2 "${spawn_job:?}"
 	rm -rf "${TMP}"
 }
 
@@ -125,7 +125,7 @@ test_dirwatch_basic_file_added_race_nflag() {
 		assert_ret 0 timeout 2 dirwatch -n "${TMP}"
 		find "${TMP}" -mindepth 1 -type f -delete
 	done
-	assert_ret 143 kill_job 0 "${spawn_job:?}"
+	assert_ret 143 kill_job 2 "${spawn_job:?}"
 	rm -rf "${TMP}"
 }
 
