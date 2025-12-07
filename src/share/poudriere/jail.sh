@@ -927,6 +927,7 @@ pkgbase: {
 EOF
 	cat <<EOF > "${JAILMNT}/etc/pkg/FreeBSD2.conf"
 FreeBSD: { enabled: no }
+FreeBSD-kmods: { enabled: no }
 FreeBSD-ports: { enabled: no }
 FreeBSD-ports-kmods: { enabled: no }
 FreeBSD-base: { enabled: no }
