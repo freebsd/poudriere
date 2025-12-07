@@ -2088,6 +2088,7 @@ enter_interactive() {
 	mkdir -p ${MASTERMNT}${LOCALBASE}/etc/pkg/repos
 	cat > ${MASTERMNT}${LOCALBASE}/etc/pkg/repos/local.conf <<-EOF
 	FreeBSD: { enabled: no }
+	FreeBSD-kmods: { enabled: no }
 	FreeBSD-ports: { enabled: no }
 	FreeBSD-ports-kmods: { enabled: no }
 	FreeBSD-base: { enabled: no }
