@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2014-2025 Bryan Drewery <bdrewery@FreeBSD.org>
  * All rights reserved.
  *
@@ -420,11 +422,15 @@ main(int argc, char **argv)
 		exit(0);
 	}
 
-	if (uflag)
+	if (uflag || (isatty(STDOUT_FILENO) && getenv("_STDBUF_O") == NULL)) {
 		setbuf(stdout, NULL);
-	else {
-		setlinebuf(stdout);
-		setlinebuf(stderr);
+	} else {
+		if (getenv("_STDBUF_O") == NULL) {
+			setlinebuf(stdout);
+		}
+		if (getenv("_STDBUF_E") == NULL) {
+			setlinebuf(stderr);
+		}
 	}
 
 	if (argc > 0) {
