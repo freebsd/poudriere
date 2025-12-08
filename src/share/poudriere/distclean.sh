@@ -144,8 +144,6 @@ CLEANUP_HOOK=distfiles_cleanup
 read_packages_from_params "$@"
 
 for PTNAME in ${PTNAMES}; do
-	parallel_start || err 1 "parallel_start"
-
 	PORTSDIR=$(pget ${PTNAME} mnt)
 	export PORTSDIR
 	[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
@@ -167,6 +165,7 @@ for PTNAME in ${PTNAMES}; do
 
 	ports="$(MASTERMNTREL= listed_ports show_moved)" ||
 	    err "$?" "Failed to find ports for ${PTNAME}"
+	parallel_start || err 1 "parallel_start"
 	for originspec in ${ports}; do
 		parallel_run \
 		    prefix_stderr_quick \
