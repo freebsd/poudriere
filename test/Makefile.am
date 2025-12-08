@@ -179,6 +179,7 @@ JAIL_TESTS= \
 	bulk-build-skips-crashed-builder.sh \
 	bulk-build-skips.sh \
 	bulk-build-specific-bad-flavor.sh \
+	bulk-build-ulimits.sh \
 	bulk-flavor-FLAVORS-misordered.sh \
 	bulk-flavor-all-and-specific.sh \
 	bulk-flavor-default-dep-and-specific-listed.sh \
@@ -246,6 +247,7 @@ JAIL_TESTS= \
 	testport-build-quick-pkg.sh \
 	testport-build-specific-flavor.sh \
 	testport-build-specific-port.sh \
+	testport-build-ulimits.sh \
 	testport-default-all-flavors-failure.sh \
 	testport-specific-bad-flavor-failure.sh
 

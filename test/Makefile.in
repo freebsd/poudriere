@@ -564,6 +564,7 @@ JAIL_TESTS = \
 	bulk-build-skips-crashed-builder.sh \
 	bulk-build-skips.sh \
 	bulk-build-specific-bad-flavor.sh \
+	bulk-build-ulimits.sh \
 	bulk-flavor-FLAVORS-misordered.sh \
 	bulk-flavor-all-and-specific.sh \
 	bulk-flavor-default-dep-and-specific-listed.sh \
@@ -631,6 +632,7 @@ JAIL_TESTS = \
 	testport-build-quick-pkg.sh \
 	testport-build-specific-flavor.sh \
 	testport-build-specific-port.sh \
+	testport-build-ulimits.sh \
 	testport-default-all-flavors-failure.sh \
 	testport-specific-bad-flavor-failure.sh
 
@@ -1951,6 +1953,13 @@ bulk-build-specific-bad-flavor.sh.log: bulk-build-specific-bad-flavor.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-ulimits.sh.log: bulk-build-ulimits.sh
+	@p='bulk-build-ulimits.sh'; \
+	b='bulk-build-ulimits.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 bulk-flavor-FLAVORS-misordered.sh.log: bulk-flavor-FLAVORS-misordered.sh
 	@p='bulk-flavor-FLAVORS-misordered.sh'; \
 	b='bulk-flavor-FLAVORS-misordered.sh'; \
@@ -2374,6 +2383,13 @@ testport-build-specific-flavor.sh.log: testport-build-specific-flavor.sh
 testport-build-specific-port.sh.log: testport-build-specific-port.sh
 	@p='testport-build-specific-port.sh'; \
 	b='testport-build-specific-port.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-build-ulimits.sh.log: testport-build-ulimits.sh
+	@p='testport-build-ulimits.sh'; \
+	b='testport-build-ulimits.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
