@@ -211,7 +211,7 @@ _pkgqueue_job_start() {
 	fi
 	# Do we actually need to run this job or was it just for ordering?
 	if ! _pkgqueue_might_run "${pkgqueue_job}"; then
-		msg_debug "Skipping ordering/inspection ${job_type} job ${COLOR_PORT}${job_name}${COLOR_RESET}"
+		msg_dev "Skipping ordering/inspection ${job_type} job ${COLOR_PORT}${job_name}${COLOR_RESET}"
 		# Trim this from the queue...
 		pkgqueue_job_done "${job_type}" "${job_name}"
 		pkgqueue_clean_queue "${job_type}" "${job_name}" "" ||
@@ -294,7 +294,7 @@ _pkgqueue_might_run() {
 	# If this package has required shlibs we need to check it again later.
 	# See build_pkg().
 	if shash_exists pkgname-check_shlibs "${pkgname}"; then
-		msg_debug "Might need to build ${COLOR_PORT}${pkgname}${COLOR_RESET} later for missing shlibs"
+		msg_dev "Might need to build ${COLOR_PORT}${pkgname}${COLOR_RESET} later for missing shlibs"
 		return 0
 	fi
 
@@ -649,7 +649,7 @@ _pkgqueue_remove_many_pipe() {
 		case "${deppath}" in
 		deps/*/*/*|rdeps/*) ;;
 		deps/*/*)
-			msg_debug "Unqueueing ${COLOR_PORT}${deppath##*/}${COLOR_RESET}" >&2
+			msg_dev "Unqueueing ${COLOR_PORT}${deppath##*/}${COLOR_RESET}" >&2
 			;;
 		*) ;;
 		esac
