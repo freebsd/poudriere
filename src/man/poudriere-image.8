@@ -29,7 +29,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 18, 2023
+.Dd December 12, 2025
 .Dt POUDRIERE-IMAGE 8
 .Os
 .Sh NAME
@@ -79,6 +79,10 @@ the final image, starting from the root.
 This specifies the ZFS pool compatibility string to use when creating ZFS pools.
 The compatibility string controls which ZFS features are enabled.
 Only applies to ZFS-based image types.
+.Pp
+See
+.Pa /usr/share/zfs/compatibility.d/
+for available options.
 .It Fl f Ar packagelist
 This specifies a list of packages to be pre-installed in the final image.
 .It Fl h Ar hostname
