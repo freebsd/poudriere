@@ -35,6 +35,12 @@ if ! type eargs 2>/dev/null >&2; then
 	}
 fi
 
+if ! type clock 2>/dev/null >&2; then
+clock() {
+	date +%s
+}
+fi
+
 case "$(type "have_builtin" 2>/dev/null)" in
 # The builtin version avoids searching PATH.
 *"is a shell builtin") ;;
