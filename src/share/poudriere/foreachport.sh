@@ -28,7 +28,7 @@
 
 usage() {
 	cat <<EOF
-poudriere foreachport [options] [-f file] /patch/to/script [args]
+poudriere foreachport [options] [-f file] /path/to/script [args]
 
 Parameters:
     -a          -- Run on all ports (default)
