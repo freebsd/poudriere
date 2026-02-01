@@ -3714,11 +3714,13 @@ update_version_env() {
 	local osversion="$5"
 	local login_env
 
-	login_env=",UNAME_r=${version% *},UNAME_v=FreeBSD ${version},OSVERSION=${osversion}"
+	login_env=",UNAME_r=${version% *},UNAME_v=FreeBSD ${version}"
 
 	# Tell pkg(8) to not use /bin/sh for the ELF ABI since it is native.
 	if [ "${QEMU_EMULATING}" -eq 1 ]; then
 		login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o"
+	else
+		login_env="${login_env},OSVERSION=${osversion}"
 	fi
 
 	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
