@@ -7,7 +7,9 @@ Poudriere has 2 incremental build modes
 1. Rebuild everything downstream if a dependency is missing or changed. This is the **curent default**.
 2. Only rebuild what `pkg upgrade` would [re]install for, but also ensure build reproducibility. Enabled with `PKG_NO_VERSION_FOR_DEPS=yes`.
   - **Guiding principle is to only rebuild what `pkg upgrade` would upgrade for; build for `pkg upgrade` behavior.**
+    *arrowd*: I find this formulation a bit vague, because "what pkg would upgrade" is also subject for change. The `shlib_tracking.md` uses more precise "rebuild only if needed" wording.
   - In that sense the current algorithm rebuilds _a lot_ that `pkg upgrade` does not care about; we rebuild a lot needlessly.
+    *arrowd*: Same here. Yes, we "rebuild a lot needlessly" indeed, but `pkg upgrade` is a different story, see below.
 
 This document describes the algorithm for (2).
 
@@ -22,6 +24,11 @@ version as it did before. Then `pkg upgrade` has no clue there is a _rebuilt_
 package available to upgrade to, and it does nothing. So we are building packages
 that never get used unless someone does `pkg install -f pkgname`.
 
+*arrowd*: Actually, `pkg` does have a clue - a package's digest. So it actually
+discerns that a package got rerolled in the repo, but currenly this is not
+enough to decide to upgrade it. *We might change that* and then see how it
+affects the `PKG_NO_VERSION_FOR_DEPS=yes` mode.
+
 ## New algorithm
 
 [Commit 6c8c538f](https://github.com/freebsd/poudriere/commit/6c8c538ffcad3b88bc807b15cc69acc6c72d8962)
@@ -32,6 +39,26 @@ dependencies. If a dependency `foo-1.2` used to be registered but was bumped to
 `foo-1.3` it used to force a rebuild because the dependency was missing. Now we
 only store `foo` as a dependency, such that version bumps do not themselves
 force a rebuild.
+
+*arrowd*: We have a gap in an expressiveness between Ports and pkg wrt specifying
+deps. This is why I believe that a solid provides/requires implementation is needed
+before trying on `PKG_NO_VERSION_FOR_DEPS`.
+
+For instance, a port might have `RUN_DEPENDS=sudo:security/sudo`. To my thinking
+this should end up as a special "requires an executable named sudo" type of the
+"requires" dependency encoded into the package. This is similar to
+`PKG_NO_VERSION_FOR_DEPS` in that we do not store the version, but it is also
+different, because we explicitly specify what we're depending on. This gives
+Poudriere an idea when the package should be rebuilt - if the "sudo" executable
+is no more provided by the dependency package.
+
+The same rule can be applied to `*_DEPENDS=foo>123:cat/foo` types of depends -
+we store the ">123" part and teach both pkg and Poudriere to take it into account.
+
+Turning such a mode on might require refining dependency lines in our Ports and
+probably introducing deps with the same `cat/port` parts, but different types
+of requirements. But I see this as a good thing - the intentions are declared
+explicitly.
 
 Always rebuild cases are:
 
@@ -74,11 +101,27 @@ packages _after they are built_ to determine if this package still has its
 shared library requirements met. That is, some of `_delete_old_pkg` (inspection
 of existing package) for shared library handling is deferred to the build.
 
+*arrowd*: Some of my thinking on a theoretical level, not directly related to
+the text above. A repository of packages is something more than just a directory
+with many ".pkg" files - it also contains some metadata, an excerpt, a digest
+of the package's contents.
+
+When `poud bulk -a` operates, it does not operate on a repository - it gets
+created at the very end. I think it is crucial for a package manager to have
+an ability to quickly and incrementally regenerate the repository once a new
+package gets dropped into the repo's dir. This will give builder tools like
+Poudriere an ability to tap into the metadata and query it, to drive the build
+further. Right now we're compensating the lack by using `pkg add`, which is
+suboptimal.
+
 This changes Poudriere behavior in a few ways:
 
 - Dry-run mode can no longer predict everything that will be done.
 - A new "inspected" category is added. A port is "inspected" to see if its shared library dependencies are satisified. If they are then it is done. If they are not then it rebuilds that package.
 - `PORTREVISION` bumps are now critical. The old behavior of recursively deleting hid how important these are as it often would rebuild things anyway. Now we basically only rebuild if the version or a required shared library version changed.
+  *arrowd*: It might be worth trying to enumerate all possible cases when missing
+  a bump would break something. My brain is extremely faulty these days, so I
+  failed to come up with an example.
 
 More details on shared library handling are in [shlib_tracking.md](./shlib_tracking.md).
 
