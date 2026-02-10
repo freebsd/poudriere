@@ -656,7 +656,7 @@ install_from_src() {
 	# Use __FreeBSD_version as our version_extra
 	setvar "${var_version_extra}" \
 	    "$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' \
-	    ${JAILMNT}/usr/include/sys/param.h)"
+	    ${JAILMNT}/usr/src/sys/sys/param.h)"
 }
 
 install_from_vcs() {
@@ -743,7 +743,7 @@ install_from_vcs() {
 	# Use __FreeBSD_version as our version_extra
 	setvar "${var_version_extra}" \
 	    "$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' \
-	    ${JAILMNT}/usr/include/sys/param.h)"
+	    ${JAILMNT}/usr/src/sys/sys/param.h)"
 }
 
 install_from_ftp() {
