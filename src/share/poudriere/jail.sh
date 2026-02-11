@@ -45,8 +45,9 @@ Parameters:
     -r newname    -- Rename a jail
 
 Options:
-    -b            -- Build the OS (for use with -m src)
-    -B            -- Build the pkgbase set (for use with -b or -m git/svn/...)
+    -b            -- Build the OS (only for use with -m src)
+    -B            -- Build the pkgbase set (only for use with -c, and
+                     -b -m src=path or -m git|svn)
     -q            -- Quiet (Do not print the header)
     -n            -- Print only jail name (for use with -l)
     -J n          -- Run buildworld in parallel with n jobs.
@@ -242,7 +243,7 @@ update_pkgbase() {
 }
 
 update_jail() {
-	local pkgbase
+	local jail_created_with_build_pkgbase BUILD_PKGBASE
 
 	METHOD=$(jget ${JAILNAME} method)
 	: ${SRCPATH:=$(jget ${JAILNAME} srcpath || echo)}
@@ -256,7 +257,14 @@ update_jail() {
 		jset ${JAILNAME} method ${METHOD}
 	fi
 	msg "Upgrading using ${METHOD}"
+	# -B / BUILD_PKGBASE being set in this context may lead to
+	# *build_pkgbase()* being called rather than *update_pkgbase()*.
+	# Set pkgbase based on whether the jail was *created* with -B and
+	# use that later for update_pkgbase() if so.
+	BUILD_PKGBASE=0
+	jail_created_with_build_pkgbase="$(jget "${JAILNAME}" pkgbase || echo 0)"
 	: ${KERNEL:=$(jget ${JAILNAME} kernel || echo)}
+	validate_b_and_B_flags
 	case ${METHOD} in
 	ftp|http|ftp-archive)
 		local FREEBSD_UPDATE fu_bin fu_basedir fu_bdhash fu_workdir version
@@ -363,8 +371,8 @@ update_jail() {
 		err 1 "Unsupported method"
 		;;
 	esac
-	pkgbase=$(jget ${JAILNAME} pkgbase)
-	if [ -n "${pkgbase}" ] && [ "${pkgbase}" -eq 1 ]; then
+	if [ -n "${jail_created_with_build_pkgbase}" ] &&
+	    [ "${jail_created_with_build_pkgbase}" -eq 1 ]; then
 	    update_pkgbase
 	fi
 	jset ${JAILNAME} timestamp $(clock -epoch)
@@ -373,12 +381,22 @@ update_jail() {
 installworld() {
 	local make_jobs
 	local destdir="${JAILMNT}"
+	local objtop
 
 	if [ ${JAIL_OSVERSION} -gt 1100086 ]; then
 		make_jobs="${MAKE_JOBS}"
 	fi
 
 	msg "Starting make installworld"
+	objtop="$(${MAKE_CMD} -C "${SRC_BASE:?}" -V OBJTOP || echo)"
+	if [ -z "${objtop}" ] ||
+	    [ ! -e "${objtop}/toolchain-metadata.mk" ]; then
+		case "${METHOD}" in
+		src=*)
+			msg_warn "No completed build found.  Did you mean to pass in -b?"
+			;;
+		esac
+	fi
 	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} installworld \
 	    DESTDIR=${destdir} DB_FROM_SRC=1 ${MAKEWORLDARGS} || \
 	    err 1 "Failed to 'make installworld'"
@@ -587,6 +605,8 @@ install_from_src() {
 	else
 		buildworld
 		installworld
+		# We do not want this running during an update. We will
+		# run update_pkgbase() for that later in update_jail().
 		if [ ${BUILD_PKGBASE} -eq 1 ]; then
 			build_pkgbase
 		fi
@@ -892,6 +912,47 @@ EOF
 	rm "${JAILMNT}/etc/pkg/FreeBSD2.conf"
 }
 
+validate_b_and_B_flags() {
+	case "${BUILD:-0}" in
+	1)
+		case "${METHOD}" in
+		# -b is an implied no-op for vcs installs
+		git*|svn*) ;;
+		# -b is required to build with -m src
+		src=*) ;;
+		*)
+			err "${EX_USAGE}" \
+			    "-b is only used with -m src"
+			;;
+		esac
+		;;
+	esac
+	case "${BUILD_PKGBASE:-0}" in
+	1)
+		case "${METHOD}" in
+		svn*|git*) ;;
+		src=*)
+			case "${BUILD:-0}" in
+			1) ;;
+			0)
+				err "${EX_USAGE}" \
+				    "-m src with -B requires -b"
+				;;
+			esac
+			;;
+		*)
+			err "${EX_USAGE}" \
+			    "-B only works with -m git|svn, or -m src= with -b"
+			;;
+		esac
+		if [ -z "${KERNEL}" ]; then
+			err "${EX_USAGE}" \
+			    "pkgbase build needs a kernel specified with -K"
+		fi
+		;;
+	esac
+}
+
 create_jail() {
 	local IFS
 
@@ -924,6 +985,8 @@ create_jail() {
 	else
 		SRC_BASE="${JAILMNT}/usr/src"
 	fi
+
+	validate_b_and_B_flags
 
 	case ${METHOD} in
 	ftp|http|gjb|ftp-archive|freebsdci|url=*)
@@ -1335,10 +1398,6 @@ if ! svn_git_checkout_method "${SOURCES_URL}" "${METHOD}" \
 		usage
 		;;
 	esac
-fi
-
-if [ -z "${KERNEL}" ] && [ "${BUILD_PKGBASE}" -eq 1 ]; then
-    err 1 "pkgbase build need a kernel"
 fi
 
 case "${COMMAND}" in

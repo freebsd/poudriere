@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd November 18, 2025
+.Dd February 11, 2026
 .Dt POUDRIERE-JAIL 8
 .Os
 .Sh NAME
@@ -131,14 +131,24 @@ to use in the jail
 .Pq for example Cm amd64 .
 The default is the architecture of the host.
 .It Fl b
-Build the source provided with the
+By default,
 .Fl m Cm src= Ns Ar path
-option.
-.It Fl B
-Build the pkgbase set (for use with
+will only install the source, not build it.
+Use
 .Fl b
+to do a build too.
+.Pp
+Using
+.Fl m Cm git|svn
+will always build.
+.It Fl B
+Build the pkgbase set when creating the jail with
+.Fl c.
+Should only be used with
+.Fl b
+.Fl m Cm src= Ns Ar path ,
 or
-.Fl m Cm git/svn/... )
+.Fl m Cm git|svn .
 .It Fl C Ar data
 Clean poudriere
 .Ar data
