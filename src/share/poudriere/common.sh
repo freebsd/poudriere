@@ -3475,7 +3475,7 @@ check_emulation() {
 	local wanted_arch="${2}"
 
 	if need_emulation "${wanted_arch}"; then
-		msg "Cross-building ports for ${wanted_arch} on ${real_arch} requires QEMU"
+		msg "Using QEMU for cross-buildiing ${wanted_arch} on ${real_arch}"
 		[ -x "${BINMISC}" ] || \
 		    err 1 "Cannot find ${BINMISC}. Install ${BINMISC} and restart"
 		EMULATOR=$(${BINMISC} lookup ${wanted_arch#*.} 2>/dev/null | \
