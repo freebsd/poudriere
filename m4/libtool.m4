@@ -4825,7 +4825,7 @@ m4_if([$1], [CXX], [
       _LT_TAGVAR(lt_prog_compiler_static, $1)='-non_shared'
       ;;
 
-    linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
+    linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu* | *freebsd*)
       case $cc_basename in
       # old Intel for x86_64, which still supported -KPIC.
       ecc*)
