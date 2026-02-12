@@ -174,7 +174,7 @@ write_pid(const int dirfd, const char *lockdirpath, pid_t writepid)
 		err(1, "fdopen: %s", pidpath);
 	}
 
-	if (fprintf(f, "%u", writepid) < 0) {
+	if (fprintf(f, "%u\n", writepid) < 0) {
 		serrno = errno;
 		(void)funlinkat(dirfd, pidpath, fd, 0);
 		(void)unlinkat(dirfd, lockdirpath, AT_REMOVEDIR);
@@ -206,6 +206,7 @@ stale_lock(const int dirfd, const char *lockdirpath, pid_t *outpid)
 	FILE *f;
 	char pidpath[MAXPATHLEN], pidbuf[16];
 	char *end;
+	size_t pidlen;
 	pid_t pid;
 	bool stale;
 	int fd;
@@ -233,7 +234,9 @@ stale_lock(const int dirfd, const char *lockdirpath, pid_t *outpid)
 #endif
 		err(1, "%s", "fread(pid)");
 	}
-
+	pidlen = strlen(pidbuf);
+	if (pidbuf[pidlen - 1] == '\n')
+		pidbuf[--pidlen] = '\0';
 	/* Bad pid is considered stale. */
 	errno = 0;
 	pid = strtol(pidbuf, &end, 10);

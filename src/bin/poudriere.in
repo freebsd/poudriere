@@ -36,6 +36,19 @@ env_set() {
 	local envvar="$1"
 	local envvalue="${2:-"\${${envvar}}"}"
 
+	case " ${_EXPORT_LIST-} " in
+	*" ${envvar} "*) return 0 ;;
+	esac
+
+	case "${VERBOSE:-0}" in
+	3)
+		case "$#" in
+		1) echo "Inheriting ${envvar}" ;;
+		2) echo "Setting ${envvar}=${envvalue}" ;;
+		esac >&2
+		;;
+	esac
+
 	CMD_ENV_S="${CMD_ENV_S:+${CMD_ENV_S} }\"${envvar}=${envvalue}\""
 	_EXPORT_LIST="${_EXPORT_LIST:+${_EXPORT_LIST} }${envvar}"
 }
@@ -43,36 +56,43 @@ env_set() {
 # Exporting saved until last to not impact any tests between env_set and
 # env -S.
 env_export() {
+	local -
+
+	set -o noglob
+	# shellcheck disable=SC2086
 	export ${_EXPORT_LIST}
 }
 
 usage() {
 	cat << EOF
-Usage: poudriere [-ANv] [-e etcdir] command [options]
+Usage: poudriere [-ANv] [-e etcdir] [-s var[=value]] command [options]
 
 Options:
-    -A          -- Force colors, even if not in a TTY
-    -e etcdir   -- Specify an alternate etc/ dir where poudriere configuration
-                   resides.
-    -N          -- Disable colors
-    -v          -- Be verbose; show more information. Use twice to enable
-                   debug output
+    -A           -- Force colors, even if not in a TTY
+    -e etcdir    -- Specify an alternate etc/ dir where poudriere configuration
+                    resides.
+    -N           -- Disable colors
+    -s var       -- Inherit var default from environment.
+    -s var=value -- Set var default to given value.
+    -v           -- Be verbose; show more information. Use twice to enable
+                    debug output
 Commands:
-    audit       -- Audit the packages in the repository
-    bulk        -- Generate packages for given ports
-    distclean   -- Remove old distfiles
-    daemon      -- Launch the poudriere daemon
-    help        -- Show usage
-    image       -- Generate images
-    jail        -- Manage the jails used by poudriere
-    logclean    -- Remove old logfiles
-    ports       -- Create, update or delete the portstrees used by poudriere
-    pkgclean    -- Remove packages that are no longer needed
-    options     -- Configure ports options
-    queue       -- Queue a build request
-    status      -- Get the status of builds
-    testport    -- Launch a test build of a given port
-    version     -- Show the version of poudriere
+    audit        -- Audit the packages in the repository
+    bulk         -- Generate packages for given ports
+    distclean    -- Remove old distfiles
+    daemon       -- Launch the poudriere daemon
+    help         -- Show usage
+    image        -- Generate images
+    jail         -- Manage the jails used by poudriere
+    logclean     -- Remove old logfiles
+    ports        -- Create, update or delete the portstrees used by poudriere
+    pkgclean     -- Remove packages that are no longer needed
+    options      -- Configure ports options
+    queue        -- Queue a build request
+    repo         -- Regenerate repository
+    status       -- Get the status of builds
+    testport     -- Launch a test build of a given port
+    version      -- Show the version of poudriere
 EOF
 	exit 1
 }
@@ -80,7 +100,7 @@ EOF
 SETX=""
 SETE=
 Xflag=0
-while getopts "Ade:ENvxX" FLAG; do
+while getopts "Ade:ENs:vxX" FLAG; do
 	case "${FLAG}" in
 	A)
 		env_set FORCE_COLORS '1'
@@ -100,6 +120,16 @@ while getopts "Ade:ENvxX" FLAG; do
 		;;
 	N)
 		env_set USE_COLORS 'no'
+		;;
+	s)
+		case "${OPTARG}" in
+		*=*)
+			env_set "${OPTARG%%=*}" "${OPTARG#*=}"
+			;;
+		*)
+			env_set "${OPTARG}"
+			;;
+		esac
 		;;
 	v)
 		VERBOSE=$((${VERBOSE:-0} + 1))
@@ -136,7 +166,23 @@ fi
 
 # Valid command list.
 case "${CMD}" in
-api|audit|bulk|distclean|daemon|image|jail|foreachport|logclean|ports|options|pkgclean|queue|status|testport)
+api|\
+audit|\
+bulk|\
+distclean|\
+daemon|\
+image|\
+jail|\
+foreachport|\
+logclean|\
+ports|\
+options|\
+pkgclean|\
+queue|\
+repo|\
+status|\
+testport|\
+$'\x00')
 	;;
 jails)
 	CMD="jail"
@@ -199,7 +245,7 @@ esac
 # Special-case environment passthroughs.
 while read envvar; do
 	case "${envvar}" in
-	ASSERT_CONTINUE|FP_*)
+	ASSERT_CONTINUE|FP_*|MALLOC_CONF)
 		;;
 	FETCH_BIND_ADDRESS|FTP_*|ftp_*|HTTP_*|http_*|SSH_*|SSL_|NO_PROXY|no_proxy)
 		case "${CMD}" in
@@ -225,6 +271,11 @@ while read envvar; do
 done <<-EOF
 $(export)
 EOF
+
+# We also allow POUDRIERE_ENV_INHERIT vars to passthrough.
+for var in ${POUDRIERE_ENV_INHERIT-}; do
+	env_set "${var}"
+done
 
 # set -e blacklist (default on otherwise)
 case "${SETE}${CMD}" in

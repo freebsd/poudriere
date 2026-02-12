@@ -105,7 +105,7 @@ daemon_cleanup() {
 while :; do
 	next=$(find ${WATCHDIR} -type f -depth 1 -print -quit 2>/dev/null)
 	if [ -z "${next}" ]; then
-		dirwatch ${WATCHDIR}
+		dirwatch -n ${WATCHDIR}
 		if [ $? -ne 0 ]; then
 			err 1 "dirwatch terminated unsuccessfully"
 		fi

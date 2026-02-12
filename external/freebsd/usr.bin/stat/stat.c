@@ -210,6 +210,15 @@ static int linkfail;
 		(*nl) = ((c) == '\n'); \
 	} while (0/*CONSTCOND*/)
 
+#ifdef SHELL
+int
+readlinkcmd(int argc, char *argv[])
+{
+
+	return (main(argc, argv));
+}
+#endif
+
 int
 main(int argc, char *argv[])
 {
@@ -238,11 +247,7 @@ main(int argc, char *argv[])
 	statfmt = NULL;
 	timefmt = NULL;
 
-#ifdef SHELL
-	if (0) {
-#else
 	if (strcmp(getprogname(), "readlink") == 0) {
-#endif
 		am_readlink = 1;
 		options = "fn";
 		synopsis = "[-fn] [file ...]";

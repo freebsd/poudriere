@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd January 8, 2025
+.Dd November 10, 2025
 .Dt POUDRIERE-BULK 8
 .Os
 .Sh NAME
@@ -288,7 +288,7 @@ This flag is automatically set when using
 .It Fl N
 Do not build a package repository when the build is completed.
 .It Fl NN
-Do not commit the package repository when the build is completed.
+Do not commit, or publish, the package repository when the build is completed.
 This can be used to do a full test build but have the opportunity to delete
 it all rather than publish it.
 The packages will be stored in a
@@ -391,6 +391,7 @@ The following example starts a bulk build of two ports.
 .Xr poudriere-pkgclean 8 ,
 .Xr poudriere-ports 8 ,
 .Xr poudriere-queue 8 ,
+.Xr poudriere-repo 8 ,
 .Xr poudriere-status 8 ,
 .Xr poudriere-testport 8 ,
 .Xr poudriere-version 8

@@ -63,7 +63,7 @@ USE_TMPFS=yes
 # (default: none)
 #TMPFS_LIMIT=8
 
-# List of package globs that are not allowed to use tmpfs for their WRKDIR
+# List of package patterns that are not allowed to use tmpfs for their WRKDIR
 # Note that you *must* set TMPFS_BLACKLIST_TMPDIR
 # EXAMPLE: TMPFS_BLACKLIST="rust"
 
@@ -226,12 +226,12 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Use the following to allow it anyway
 # ALLOW_MAKE_JOBS=yes
 
-# List of package name globs that will always be allowed to use MAKE_JOBS
+# List of package name patterns that will always be allowed to use MAKE_JOBS
 # regardless of ALLOW_MAKE_JOBS. This is useful for allowing ports
 # which holdup the rest of the queue to build more quickly.
 #ALLOW_MAKE_JOBS_PACKAGES="pkg ccache py*"
 
-# List of package name globs that should never build at the same time.
+# List of package name patterns that should never build at the same time.
 # Default: none
 #MUTUALLY_EXCLUSIVE_BUILD_PACKAGES="llvm* rust* gcc*"
 
@@ -261,6 +261,8 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # packages fail to build. Ignored ports are considered successful.
 # This can be set to 'no' to only commit the packages once no failures
 # are encountered.
+# This also controls whether hook 'pkgrepo publish' is called regardless of
+# ATOMIC_PACKAGE_REPOSITORY.
 # Default: yes
 #COMMIT_PACKAGES_ON_FAILURE=yes
 
@@ -314,7 +316,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #PORTBUILD_UID=65534
 #PORTBUILD_GID=65534
 
-# Define pkgname globs to boost priority for
+# Define pkgname patterns to boost priority for
 # Default: none
 #PRIORITY_BOOST="pypy openoffice*"
 
@@ -390,7 +392,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #PACKAGE_FETCH_BLACKLIST=""
 # Alternatively a whitelist can be created to only allow specific packages to
 # be fetched.
-# Default: everything
+# Default: "*"
 #PACKAGE_FETCH_WHITELIST="gcc* rust llvm*"
 
 # If the ports tree is a git checkout then it is inspected for whether it
@@ -418,6 +420,18 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #PKG_HASH="no"
 
 # Use an immutable base in the jail.
-# Options: no, yes
-# Default: yes
-#IMMUTABLE_BASE=yes
+# This feature is evolving and subject to change.
+# Options: "no", "yes", "nullfs", or "schg".
+# "yes" uses "schg".
+# Default: "no"
+#IMMUTABLE_BASE="no"
+
+# Packages which should not be force rebuilt if it uses a shared library
+# which no dependency provides. It is likely failing stage-qa.
+# This likely indicates a bug with the port, and possibly Poudriere. Please
+# do report any cases to the port maintainer.
+# In the meantime you can avoid the forced rebuild and only do so if
+# another incremental decision does it. For example, version update.
+# patterns can be used.
+# Default: ""
+#ORPHAN_SHLIB_REBUILD_IGNORELIST="bootstrap-openjdk*"

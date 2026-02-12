@@ -73,7 +73,8 @@ pipe_func_child_exit_success=27
 	#    some_func "$((lines + max))" "${lines}"; do
 	#The while loop method would work fine but loses the child exit
 	# status which we need to ensure it passed its own asserts.
-	while :; do
+	unset ttmp
+	while time_bounded_loop ttmp 60; do
 		ret=0
 		pipe_func -H tmp read cstart cmax n n_minus_1 -- \
 		    some_func "$((lines + max))" "spaced data" "${lines}" || ret="$?"
@@ -124,7 +125,8 @@ pipe_func_child_exit_success=27
 	start_max=${max}
 	#The while loop method would work fine but loses the child exit
 	# status which we need to ensure it passed its own asserts.
-	while :; do
+	unset ttmp
+	while time_bounded_loop ttmp 60; do
 		ret=0
 		# With a computed handle we must ensure the passed in
 		# params are static.

@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <stdbool.h>
 #include <dirent.h>
+#include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
 #include <err.h>
@@ -36,25 +37,60 @@
 #include "bltin/bltin.h"
 #include "helpers.h"
 #endif
- 
+
 static bool
-dir_empty(const char *path)
+dir_empty_fd(int fd)
 {
 	struct dirent *ent;
 	bool ret = true;
 	DIR *d;
 
-	if ((d = opendir(path)) == NULL)
-		err(EXIT_FAILURE, "%s: ", path);
+#ifdef SHELL
+	INTOFF;
+#endif
+	if ((d = fdopendir(fd)) == NULL) {
+#ifdef SHELL
+		INTON;
+#endif
+		err(EXIT_FAILURE, "fdopendir()");
+	}
 
 	while ((ent = readdir(d))) {
-		if (strcmp(ent->d_name, ".") == 0 || (strcmp(ent->d_name, "..")) == 0)
+		if (strcmp(ent->d_name, ".") == 0 ||
+		    (strcmp(ent->d_name, "..")) == 0) {
 			continue;
+		}
 		ret = false;
 		break;
 	}
-	closedir(d);
+	fdclosedir(d);
+#ifdef SHELL
+	INTON;
+#endif
+	return (ret);
+}
 
+static bool
+dir_empty(const char *path)
+{
+	int fd;
+	bool ret;
+
+#ifdef SHELL
+	INTOFF;
+#endif
+	fd = open(path, O_RDONLY | O_DIRECTORY);
+	if (fd == -1) {
+#ifdef SHELL
+		INTON;
+#endif
+		err(EXIT_FAILURE, "%s: ", path);
+	}
+	ret = dir_empty_fd(fd);
+#ifdef SHELL
+	close(fd);
+	INTON;
+#endif
 	return (ret);
 }
  

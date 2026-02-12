@@ -40,6 +40,7 @@ struct sigdata {
 void trap_push(int signo, struct sigdata *sd);
 void trap_push_sh(int signo, struct sigdata *sd);
 void trap_pop(int signo, struct sigdata *sd);
+double parse_duration(const char *duration);
 
 #ifdef SHELL
 #include <errno.h>
@@ -216,6 +217,8 @@ void verrorwithstatus(int, const char *, va_list) __printf0like(2, 0) __dead2;
 
 #undef getopt
 #define getopt pgetopt
+#define getopt_long(argc, argv, optstring, longopts, longindex) \
+    getopt(argc, argv, optstring)
 #undef opterr
 #undef optreset
 #undef optarg
@@ -236,6 +239,27 @@ pgetopt(const int argc, char *argv[], const char *optstring)
 	assert(argc - optind == argc - (argptr - argv));
 	assert(argv + optind == argptr);
 	return ((optopt = ch));
+}
+
+#define getpid	pgetpid
+extern long shpid;
+#ifndef NDEBUG
+pid_t __sys_getpid(void);
+#endif
+inline static pid_t
+pgetpid(void)
+{
+
+	assert(__sys_getpid() == shpid);
+	return (shpid);
+}
+
+#define getprogname pgetprogname
+extern char *commandname;
+inline static const char *
+getprogname() {
+
+	return (commandname);
 }
 
 #endif

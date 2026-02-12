@@ -24,6 +24,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,7 +35,7 @@
 #endif
 
 #include "bltin/bltin.h"
-#include <errno.h>
+#define _NEED_SH_FLAGS
 #include "helpers.h"
 #include "var.h"
 
@@ -44,6 +45,131 @@ static sigset_t osigmask;
 
 #define MAX_SIGNALS 32
 static struct sigdata *signals[MAX_SIGNALS] = {0};
+
+extern int rootshell;
+
+/* From external/sh/trap.c */
+extern char *volatile trap[NSIG];	/* trap handler commands */
+extern char sigmode[NSIG];	/* current value of signal */
+extern char *savestr(const char *);
+extern void onsig(int);
+#define S_DFL 1			/* default signal handling (SIG_DFL) */
+#define S_CATCH 2		/* signal is caught */
+#define S_IGN 3			/* signal is ignored (SIG_IGN) */
+#define S_HARD_IGN 4		/* signal is ignored permanently */
+#define S_RESET 5		/* temporary - to reset a hard ignored sig */
+
+/*
+ * Allow signal to use SA_RESTART.  The trapcmd always registers
+ * traps without SA_RESTART, but for the builtins we do want that
+ * behavior on SIGINFO.  This is also for restoring signal handlers
+ * that are modified temporarily in the builtin.
+ */
+static void
+_trap_push(int signo, struct sigdata *sd, bool sh)
+{
+	struct sigaction act;
+	sig_t sigact = SIG_DFL;
+	char *action_str = "-", *t;
+	int action;
+
+	memset(sd, 0, sizeof(*sd));
+	sd->signo = signo;
+	sd->sh = sh;
+
+	/* Adapted from setsignal() */
+	/* While a trap is stashed we want to use S_DFL (-) by default. */
+	action = S_DFL;
+	switch (signo) {
+	case SIGINT:
+	case SIGQUIT:
+		action = S_CATCH;
+		break;
+	case SIGINFO:
+		/* Ignore to avoid [EINTR]. */
+		action = S_DFL;
+		break;
+	case SIGALRM:
+		action = S_IGN;
+		break;
+	case SIGTERM:
+		if (rootshell && iflag)
+			action = S_IGN;
+		break;
+#if JOBS
+	case SIGTSTP:
+	case SIGTTOU:
+		if (rootshell && mflag)
+			action = S_IGN;
+		else
+			action = S_DFL;
+		break;
+#endif
+	default:
+		action = S_DFL;
+		break;
+	}
+	switch (action) {
+		case S_DFL:	sigact = SIG_DFL; action_str=NULL; break;
+		case S_CATCH:  	sigact = onsig;   action_str=NULL; break;
+		case S_IGN:	sigact = SIG_IGN; action_str="";   break;
+	}
+
+	if (sh) {
+		sd->action_str = trap[signo];
+		if (action_str != NULL)
+			action_str = savestr(action_str);
+		trap[signo] = action_str;
+	}
+	act.sa_handler = sigact;
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = SA_RESTART;
+	sigaction(signo, &act, &sd->oact);
+
+	if (sh) {
+		t = &sigmode[signo];
+		if (*t == 0) {
+			if (sd->oact.sa_handler == SIG_IGN) {
+				if (mflag && (signo == SIGTSTP ||
+				    signo == SIGTTIN || signo == SIGTTOU)) {
+					*t = S_IGN;	/* don't hard ignore these */
+				} else
+					*t = S_HARD_IGN;
+			} else {
+				*t = S_RESET;	/* force to be set */
+			}
+		}
+		*t = action;
+		sd->sigmode = sigmode[sd->signo];
+	}
+}
+void
+trap_push(int signo, struct sigdata *sd)
+{
+	_trap_push(signo, sd, 0);
+}
+void
+trap_push_sh(int signo, struct sigdata *sd)
+{
+	_trap_push(signo, sd, 1);
+}
+
+void
+trap_pop(int signo, struct sigdata *sd)
+{
+	int serrno;
+
+	serrno = errno;
+	sigaction(signo, &sd->oact, NULL);
+	if (sd->sh) {
+		if (trap[sd->signo])
+			ckfree(trap[sd->signo]);
+		trap[sd->signo] = sd->action_str;
+		sigmode[sd->signo] = sd->sigmode;
+	}
+	errno = serrno;
+}
+
 
 static int
 signame_to_signum(const char *sig)
@@ -87,7 +213,7 @@ trap_pushcmd(int argc, char **argv)
 	sd = calloc(1, sizeof(*sd));
 	trap_push_sh(signo, sd);
 
-	snprintf(buf, sizeof(buf), "%d", nextidx);
+	fmtstr(buf, sizeof(buf), "%d", nextidx);
 
 	signals[nextidx] = sd;
 	INTON;

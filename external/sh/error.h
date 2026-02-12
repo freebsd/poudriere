@@ -55,6 +55,7 @@ extern volatile sig_atomic_t exception;
 #define EXERROR 1	/* a generic error with exitstatus */
 #define EXEXIT 2	/* call exitshell(exitstatus) */
 
+extern int errlinno;
 
 /*
  * These macros allow the user to suspend the handling of interrupt signals

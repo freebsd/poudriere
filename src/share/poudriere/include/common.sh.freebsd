@@ -28,11 +28,11 @@ if [ ${JAILED} -eq 0 ] || \
     [ $(sysctl -n security.jail.sysvipc_allowed) -eq 1 ]; then
 	JAIL_PARAMS="${JAIL_PARAMS:+${JAIL_PARAMS} }allow.sysvipc"
 fi
-# we have no parameter to check if allow.mlock is allowed
-#if [ ${JAILED} -eq 0 ] || \
-#    [ $(sysctl -n security.jail.mlock_allowed) -eq 1 ]; then
-JAIL_PARAMS="${JAIL_PARAMS:+${JAIL_PARAMS} }allow.mlock"
-#fi
+# Check if the system supports mlock.
+if [ ${JAILED} -eq 0 ] ||
+    [ $(sysctl -n security.jail.mlock_allowed) -eq 1 ]; then
+	JAIL_PARAMS="${JAIL_PARAMS:+${JAIL_PARAMS} }allow.mlock"
+fi
 
 # Hardlink Checks (NONE = 00, UID = 10, GID = 01, UID+GID = 11)
 HARDLINK_CHECK="$(sysctl -n security.bsd.hardlink_check_uid)$(sysctl -n security.bsd.hardlink_check_gid)"

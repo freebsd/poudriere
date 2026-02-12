@@ -10,7 +10,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -27,47 +27,72 @@
  * SUCH DAMAGE.
  */
 
-#if 0
-#ifndef lint
-static char const copyright[] =
-"@(#) Copyright (c) 1988, 1993, 1994\n\
-	The Regents of the University of California.  All rights reserved.\n";
-#endif /* not lint */
-
-#ifndef lint
-static char sccsid[] = "@(#)sleep.c	8.3 (Berkeley) 4/2/94";
-#endif /* not lint */
-#endif
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sleep/sleep.c 308432 2016-11-08 05:31:01Z cem $");
-
 #ifndef SHELL
 #include <capsicum_helpers.h>
 #endif
-#include <ctype.h>
 #include <err.h>
 #include <errno.h>
 #include <limits.h>
+#include <math.h>
 #include <signal.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 
 #ifdef SHELL
 #define main sleepcmd
 #include "bltin/bltin.h"
 #include "helpers.h"
+#include "trap.h"
 #endif
 
-static void usage(void);
-
 static volatile sig_atomic_t report_requested;
+
 static void
 report_request(int signo __unused)
 {
-
 	report_requested = 1;
+}
+
+static void __dead2
+usage(void)
+{
+	fprintf(stderr, "usage: sleep number[unit] [...]\n"
+	    "Unit can be 's' (seconds, the default), "
+	    "m (minutes), h (hours), or d (days).\n");
+	exit(1);
+}
+
+static double
+parse_interval(const char *arg)
+{
+	double num;
+	char unit, extra;
+
+	switch (sscanf(arg, "%lf%c%c", &num, &unit, &extra)) {
+	case 2:
+		switch (unit) {
+		case 'd':
+			num *= 24;
+			/* FALLTHROUGH */
+		case 'h':
+			num *= 60;
+			/* FALLTHROUGH */
+		case 'm':
+			num *= 60;
+			/* FALLTHROUGH */
+		case 's':
+			if (!isnan(num))
+				return (num);
+		}
+		break;
+	case 1:
+		if (!isnan(num))
+			return (num);
+	}
+	warnx("invalid time interval: %s", arg);
+	return (INFINITY);
 }
 
 int
@@ -77,9 +102,8 @@ main(int argc, char *argv[])
 	struct sigaction act, oact;
 #endif
 	struct timespec time_to_sleep;
-	double d;
+	double seconds;
 	time_t original;
-	char buf[2];
 
 #ifdef SHELL
 	report_requested = 0;
@@ -88,17 +112,22 @@ main(int argc, char *argv[])
 		err(1, "capsicum");
 #endif
 
-	if (argc != 2)
+	while (getopt(argc, argv, "") != -1)
+		usage();
+	argc -= optind;
+	argv += optind;
+	if (argc < 1)
 		usage();
 
-	if (sscanf(argv[1], "%lf%1s", &d, buf) != 1)
+	seconds = 0;
+	while (argc--)
+		seconds += parse_interval(*argv++);
+	if (seconds > INT_MAX)
 		usage();
-	if (d > INT_MAX)
-		usage();
-	if (d <= 0)
-		return (0);
-	original = time_to_sleep.tv_sec = (time_t)d;
-	time_to_sleep.tv_nsec = 1e9 * (d - time_to_sleep.tv_sec);
+	if (seconds < 1e-9)
+		exit(0);
+	original = time_to_sleep.tv_sec = (time_t)seconds;
+	time_to_sleep.tv_nsec = 1e9 * (seconds - time_to_sleep.tv_sec);
 
 #ifdef SHELL
 	INTOFF;
@@ -110,16 +139,19 @@ main(int argc, char *argv[])
 	signal(SIGINFO, report_request);
 #endif
 
-	/*
-	 * Note: [EINTR] is supposed to happen only when a signal was handled
-	 * but the kernel also returns it when a ptrace-based debugger
-	 * attaches. This is a bug but it is hard to fix.
-	 */
 	while (nanosleep(&time_to_sleep, &time_to_sleep) != 0) {
+		if (errno != EINTR)
+			err(1, "nanosleep");
 		if (report_requested) {
 			/* Reporting does not bother with nanoseconds. */
-			warnx("about %d second(s) left out of the original %d",
-			    (int)time_to_sleep.tv_sec, (int)original);
+#ifdef SHELL
+			out2fmt_flush("sleep: about %ld second(s) left out"
+			    "of the original %ld\n",
+			    (long)time_to_sleep.tv_sec, (long)original);
+#else
+			warnx("about %ld second(s) left out of the original %ld",
+			    (long)time_to_sleep.tv_sec, (long)original);
+#endif
 			report_requested = 0;
 		} else if (errno != EINTR) {
 #ifdef SHELL
@@ -129,22 +161,28 @@ main(int argc, char *argv[])
 			err(1, "nanosleep");
 #ifdef SHELL
 		} else if (errno == EINTR) {
+			int ret;
+
 			/* Don't ignore interrupts that aren't SIGINFO. */
-			break;
+			if (pendingsig == 0 || pendingsig == SIGINFO) {
+				goto done;
+			}
+			/* For now only return EINTR signal on SIGALRM. */
+			if (pendingsig != SIGALRM) {
+				goto done;
+			}
+			ret = 128 + pendingsig;
+			sigaction(SIGINFO, &oact, NULL);
+			INTON;
+			exit (ret);
 #endif
 		}
 	}
 #ifdef SHELL
+done:
 	sigaction(SIGINFO, &oact, NULL);
 	INTON;
 #endif
-	return (0);
-}
 
-static void
-usage(void)
-{
-
-	fprintf(stderr, "usage: sleep seconds\n");
-	exit(1);
+	exit(0);
 }

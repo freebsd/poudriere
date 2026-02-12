@@ -31,7 +31,6 @@
 #include <errno.h>
 #include <fnmatch.h>
 #include <limits.h>
-#include <signal.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sysexits.h>
@@ -41,158 +40,60 @@
 #include "eval.h"
 #include "syntax.h"
 #include "var.h"
-#define _NEED_SH_FLAGS
 #include "helpers.h"
 
-extern int rootshell;
-
-/* From external/sh/trap.c */
-extern char *volatile trap[NSIG];	/* trap handler commands */
-extern char sigmode[NSIG];	/* current value of signal */
-extern char *savestr(const char *);
-extern void onsig(int);
-#define S_DFL 1			/* default signal handling (SIG_DFL) */
-#define S_CATCH 2		/* signal is caught */
-#define S_IGN 3			/* signal is ignored (SIG_IGN) */
-#define S_HARD_IGN 4		/* signal is ignored permanently */
-#define S_RESET 5		/* temporary - to reset a hard ignored sig */
-
-/*
- * Allow signal to use SA_RESTART.  The trapcmd always registers
- * traps without SA_RESTART, but for the builtins we do want that
- * behavior on SIGINFO.  This is also for restoring signal handlers
- * that are modified temporarily in the builtin.
- */
-static void
-_trap_push(int signo, struct sigdata *sd, bool sh)
+unsigned long
+get_ulong(const char *str, const char *desc)
 {
-	struct sigaction act;
-	sig_t sigact = SIG_DFL;
-	char *action_str = "-", *t;
-	int action;
+	char *endp = NULL;
+	unsigned long val;
 
-	memset(sd, 0, sizeof(*sd));
-	sd->signo = signo;
-	sd->sh = sh;
-
-	/* Adapted from setsignal() */
-	/* While a trap is stashed we want to use S_DFL (-) by default. */
-	action = S_DFL;
-	switch (signo) {
-	case SIGINT:
-	case SIGQUIT:
-		action = S_CATCH;
-		break;
-	case SIGINFO:
-		/* Ignore to avoid [EINTR]. */
-		action = S_DFL;
-		break;
-	case SIGALRM:
-		action = S_IGN;
-		break;
-	case SIGTERM:
-		if (rootshell && iflag)
-			action = S_IGN;
-		break;
-#if JOBS
-	case SIGTSTP:
-	case SIGTTOU:
-		if (rootshell && mflag)
-			action = S_IGN;
-		else
-			action = S_DFL;
-		break;
-#endif
-	default:
-		action = S_DFL;
-		break;
+	errno = 0;
+	val = strtoul(str, &endp, 10);
+	if (*endp != '\0' || errno != 0) {
+		err(EX_USAGE, "Invalid %s", desc);
 	}
-	switch (action) {
-		case S_DFL:	sigact = SIG_DFL; action_str=NULL; break;
-		case S_CATCH:  	sigact = onsig;   action_str=NULL; break;
-		case S_IGN:	sigact = SIG_IGN; action_str="";   break;
-	}
-
-	if (sh) {
-		sd->action_str = trap[signo];
-		if (action_str != NULL)
-			action_str = savestr(action_str);
-		trap[signo] = action_str;
-	}
-	act.sa_handler = sigact;
-	sigemptyset(&act.sa_mask);
-	act.sa_flags = SA_RESTART;
-	sigaction(signo, &act, &sd->oact);
-
-	if (sh) {
-		t = &sigmode[signo];
-		if (*t == 0) {
-			if (sd->oact.sa_handler == SIG_IGN) {
-				if (mflag && (signo == SIGTSTP ||
-				    signo == SIGTTIN || signo == SIGTTOU)) {
-					*t = S_IGN;	/* don't hard ignore these */
-				} else
-					*t = S_HARD_IGN;
-			} else {
-				*t = S_RESET;	/* force to be set */
-			}
-		}
-		*t = action;
-		sd->sigmode = sigmode[sd->signo];
-	}
-}
-void
-trap_push(int signo, struct sigdata *sd)
-{
-	_trap_push(signo, sd, 0);
-}
-void
-trap_push_sh(int signo, struct sigdata *sd)
-{
-	_trap_push(signo, sd, 1);
-}
-
-void
-trap_pop(int signo, struct sigdata *sd)
-{
-	int serrno;
-
-	serrno = errno;
-	sigaction(signo, &sd->oact, NULL);
-	if (sd->sh) {
-		if (trap[sd->signo])
-			ckfree(trap[sd->signo]);
-		trap[sd->signo] = sd->action_str;
-		sigmode[sd->signo] = sd->sigmode;
-	}
-	errno = serrno;
+	return (val);
 }
 
 int
 randintcmd(int argc, char **argv)
 {
-	char *endp;
-	char valstr[20];
+	const char *outvar = NULL;
+	char valstr[40];
 	int ret;
 	uint32_t value;
-	unsigned long max_val;
+	unsigned long min_val, max_val;
 
-	if (argc != 2 && argc != 3)
-		errx(EX_USAGE, "%s", "Usage: randint <max_val> [var_return]");
+	if (argc != 2 && argc != 3 && argc != 4)
+		errx(EX_USAGE, "%s", "Usage: randint [min_val] <max_val> " \
+		    "[var_return]");
 
 	ret = 0;
-	errno = 0;
-	endp = NULL;
-	max_val = strtoul(argv[1], &endp, 10);
-	if (*endp != '\0' || errno != 0) {
-		err(EX_USAGE, "Invalid max_val");
+	min_val = 1;
+	outvar = NULL;
+	if (argc == 2) {
+		max_val = get_ulong(argv[1], "max_val");
+	} else if (argc == 3) {
+		if (argv[2][0] >= '0' && argv[2][0] <= '9') {
+			min_val = get_ulong(argv[1], "min_val");
+			max_val = get_ulong(argv[2], "max_val");
+		} else {
+			max_val = get_ulong(argv[1], "max_val");
+			outvar = argv[2];
+		}
+	} else {
+		assert(argc == 4);
+		min_val = get_ulong(argv[1], "min_val");
+		max_val = get_ulong(argv[2], "max_val");
+		outvar = argv[3];
 	}
 	INTOFF;
-	value = arc4random_uniform(max_val);
+	value = min_val + arc4random_uniform((max_val - min_val) + 1);
 	INTON;
-	if (argc == 3) {
-		snprintf(valstr, sizeof(valstr), "%u", value);
-		if (setvarsafe(argv[2], valstr, 0))
+	if (outvar != NULL) {
+		fmtstr(valstr, sizeof(valstr), "%u", value);
+		if (setvarsafe(outvar, valstr, 0))
 			ret = 1;
 	} else
 		printf("%u\n", value);
@@ -317,7 +218,7 @@ _gsub_shell(struct sbuf *newstr, char *string, const char *pattern,
 	int ret;
 
 	char pattern_r[pattern_len + 2];
-	snprintf(pattern_r, sizeof(pattern_r), "%s*", pattern);
+	fmtstr(pattern_r, sizeof(pattern_r), "%s*", pattern);
 
 	ret = 0;
 	INTOFF;
@@ -534,6 +435,62 @@ gsubcmd(int argc, char **argv)
 		    "<replacement> [var_return]");
 	var_return = argc == 5 && argv[4][0] != '\0' ? argv[4] : NULL;
 	return (_gsub(argv, var_return));
+}
+
+double
+parse_duration(const char *duration)
+{
+	double ret;
+	char *suffix;
+
+#ifdef SHELL
+	assert(is_int_on());
+#endif
+	ret = strtod(duration, &suffix);
+	if (suffix == duration) {
+#ifdef SHELL
+		INTON;
+#endif
+		errx(EX_USAGE, "duration is not a number");
+	}
+
+	if (*suffix == '\0')
+		return (ret);
+
+	if (suffix[1] != '\0') {
+#ifdef SHELL
+		INTON;
+#endif
+		errx(EX_USAGE, "duration unit suffix too long");
+	}
+
+	switch (*suffix) {
+	case 's':
+		break;
+	case 'm':
+		ret *= 60;
+		break;
+	case 'h':
+		ret *= 60 * 60;
+		break;
+	case 'd':
+		ret *= 60 * 60 * 24;
+		break;
+	default:
+#ifdef SHELL
+		INTON;
+#endif
+		errx(EX_USAGE, "duration unit suffix invalid");
+	}
+
+	if (ret < 0 || ret >= 100000000UL) {
+#ifdef SHELL
+		INTON;
+#endif
+		errx(EX_USAGE, "duration out of range");
+	}
+
+	return (ret);
 }
 
 /* $$ is not correct in subshells. */

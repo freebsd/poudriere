@@ -2,24 +2,59 @@ set -e
 . ./common.sh
 set +e
 
-# Basic timeout test
+add_test_function test_timeout_basic
+test_timeout_basic()
 {
+	local in start
+
 	TMP=$(mktemp -u)
 	assert_ret 0 mkfifo "${TMP}"
 	start=$(clock -monotonic)
 	exec 4<> "${TMP}"
-	read_blocking -t 5 in < "${TMP}"
-	now=$(clock -monotonic)
-	diff=$((now - start))
-	[ "${diff}" -ge 5 ]
-	assert 0 "$?" "Timeout of 5 should be reached but found: ${diff}"
+	assert_runs_between 4 7 assert_ret 142 read_blocking -t 5 in < "${TMP}"
+	assert "" "${in}" "read with timeout should reset the output vars"
+	exec 4>&-
+	rm -f "${TMP}"
+}
+
+add_test_function test_timeout_decimal
+test_timeout_decimal()
+{
+	local in start
+
+	TMP=$(mktemp -u)
+	assert_ret 0 mkfifo "${TMP}"
+	start=$(clock -monotonic)
+	exec 4<> "${TMP}"
+	# The decimal gets trimmed off
+	assert_runs_between 4 7 assert_ret 142 read_blocking -t 5.9 in < "${TMP}"
+	assert "" "${in}" "read with timeout should reset the output vars"
+	exec 4>&-
+	rm -f "${TMP}"
+}
+
+add_test_function test_timeout_decimal_zero
+test_timeout_decimal_zero()
+{
+	local in start
+
+	TMP=$(mktemp -u)
+	assert_ret 0 mkfifo "${TMP}"
+	start=$(clock -monotonic)
+	exec 4<> "${TMP}"
+	# The decimal gets trimmed off to be 0
+	assert_runs_less_than 1 assert_ret 142 read_blocking -t 0.9 in < "${TMP}"
 	assert "" "${in}" "read with timeout should reset the output vars"
 	exec 4>&-
 	rm -f "${TMP}"
 }
 
 # Test that SIGINFO with [EINTR] is restarted
+add_test_function test_siginfo_restart
+test_siginfo_restart()
 {
+	local in start gotinfo
+
 	TMP=$(mktemp -u)
 	assert_ret 0 mkfifo "${TMP}"
 	start=$(clock -monotonic)
@@ -32,15 +67,10 @@ set +e
 		sleep 1
 		kill -INFO $$
 	) &
-	read_blocking -t 5 in < "${TMP}"
-	assert 142 "$?"
-	assert 1 "${gotinfo}" "should have received SIGINFO"
-	now=$(clock -monotonic)
-	diff=$((now - start))
-	[ "${diff}" -ge 5 ]
 	# If this fails it is possible SIGINFO caused an [EINTR] which
 	# was not ignored.
-	assert 0 "$?" "Timeout of 5 should be reached but found: ${diff}"
+	assert_runs_between 4 7 assert_ret 142 read_blocking -t 5 in < "${TMP}"
+	assert 1 "${gotinfo}" "should have received SIGINFO"
 	assert "" "${in}" "read with timeout should reset the output vars"
 	exec 4>&-
 	kill "$!" || :
@@ -49,4 +79,18 @@ set +e
 	trap - INFO
 }
 
-exit 0
+add_test_function test_read_IFS
+test_read_IFS() {
+	local expected actual
+
+	TMP=$(mktemp -u)
+	expected="    test   "
+	echo "${expected}" > "${TMP}"
+	assert_true read_blocking actual < "${TMP}"
+	assert "|test|" "|${actual}|"
+	assert_file - "${TMP}" <<-EOF
+	${expected}
+	EOF
+}
+
+run_test_functions

@@ -5,6 +5,19 @@ set +e
 STACK=
 assert "0" "$(stack_size STACK)"
 assert_ret 0 stack_push STACK "01 TT"
+size=
+assert_true stack_size STACK size
+assert "1" "${size}"
+assert_stack STACK "01 TT"
+pop=
+assert_ret 0 stack_pop STACK pop
+assert "01 TT" "${pop:-}"
+assert "0" "$(stack_size STACK)"
+assert_stack STACK ""
+
+STACK=
+assert "0" "$(stack_size STACK)"
+assert_ret 0 stack_push STACK "01 TT"
 assert "1" "$(stack_size STACK)"
 assert_stack STACK "01 TT"
 assert_ret 0 stack_push STACK "02 QQ"

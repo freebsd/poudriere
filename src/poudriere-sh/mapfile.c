@@ -57,6 +57,7 @@
 #undef FILE	/* Avoid sh version */
 #undef fwrite	/* Avoid sh version */
 #undef fputc	/* Avoid sh version */
+#undef fflush
 #include "eval.h"
 #include "redir.h"
 #include "trap.h"
@@ -77,6 +78,8 @@ struct mapped_data {
 	int pid;
 };
 static struct mapped_data *mapped_files[MAX_FILES] = {0};
+/* Hack for not using a hash table. */
+static int read_loop_handles[5] = {-1, -1, -1, -1, -1};
 
 static int
 _mapfile_read(struct mapped_data *md, char **linep, ssize_t *linelenp,
@@ -94,6 +97,12 @@ md_close(struct mapped_data *md)
 	assert(is_int_on());
 
 	idx = md->handle;
+	assert(idx != -1);
+#ifndef NDEBUG
+	for (int i = 0; i < nitems(read_loop_handles); i++) {
+		assert(read_loop_handles[i] != md->handle);
+	}
+#endif
 	md->handle = -1;
 	free(md->file);
 	md->file = NULL;
@@ -332,7 +341,7 @@ mapfilecmd(int argc, char **argv)
 	}
 	assert(md != NULL);
 
-	snprintf(handle, sizeof(handle), "%d", md->handle);
+	fmtstr(handle, sizeof(handle), "%d", md->handle);
 	if (setvarsafe(var_return, handle, 0)) {
 		md_close(md);
 		ret = 1;
@@ -363,6 +372,7 @@ mapfile_readcmd(int argc, char **argv)
 	INTOFF;
 	md = md_find(handle);
 	INTON;
+
 	return (_mapfile_readcmd(md, argc, argv));
 }
 
@@ -490,10 +500,7 @@ done:
 
 /*
  * Cache recently used handles.
- * Hack for not using a hash table.
  */
-static int read_loop_handles[5] = {-1, -1, -1, -1, -1};
-
 static bool
 read_loop_check_file(struct mapped_data *md, const char *file)
 {
@@ -553,12 +560,20 @@ read_loop_find(bool (*function)(struct mapped_data *, const char *),
 		}
 	}
 	if (md != NULL) {
+#ifndef NDEBUG
+		bool found = false;
+#endif
+
 		for (int i = 0; i < nitems(read_loop_handles); i++) {
 			if (read_loop_handles[i] == -1) {
 				read_loop_handles[i] = md->handle;
+#ifndef NDEBUG
+				found = true;
+#endif
 				break;
 			}
 		}
+		assert(found == true);
 	}
 	return (md);
 }
@@ -610,6 +625,9 @@ mapfile_read_loopcmd(int argc, char **argv)
 	struct mapped_data *md;
 	const char *file;
 	int error;
+#ifndef NDEBUG
+	bool found;
+#endif
 
 	if (argc < 2)
 		errx(EX_USAGE, "%s", usage);
@@ -631,23 +649,37 @@ mapfile_read_loopcmd(int argc, char **argv)
 		assert(md != NULL);
 		md->fd0_redirected = fd0_redirected;
 		md->pid = shpid;
+#ifndef NDEBUG
+		found = false;
+#endif
 		for (int i = 0; i < nitems(read_loop_handles); i++) {
 			if (read_loop_handles[i] == -1) {
+#ifndef NDEBUG
+				found = true;
+#endif
 				read_loop_handles[i] = md->handle;
 				break;
 			}
 		}
+		assert(found == true);
 	}
 	INTON;
 	error = _mapfile_readcmd(md, argc, argv);
 	if (error != 0) {
 		INTOFF;
+#ifndef NDEBUG
+		found = false;
+#endif
 		for (int i = 0; i < nitems(read_loop_handles); i++) {
 			if (read_loop_handles[i] == md->handle) {
 				read_loop_handles[i] = -1;
+#ifndef NDEBUG
+				found = true;
+#endif
 				break;
 			}
 		}
+		assert(found == true);
 		md_close(md);
 		INTON;
 	}
@@ -655,40 +687,26 @@ mapfile_read_loopcmd(int argc, char **argv)
 }
 
 static int
-_mapfile_cat(struct mapped_data *md, int tee_fd, size_t *lines)
+_mapfile_cat(struct mapped_data *md, size_t *lines)
 {
 	char *line;
 	ssize_t linelen;
 	int rret, ret;
-	FILE *tee_fp;
 
 	assert(is_int_on());
 	ret = 0;
-	if (tee_fd != -1) {
-		if ((tee_fp = fdopen(tee_fd, "w")) == NULL) {
-			err(EXIT_FAILURE, "%s", "fdopen");
-		}
-	}
 	*lines = 0;
 	while ((rret = _mapfile_read(md, &line, &linelen, NULL)) == 0) {
 		(*lines)++;
 		INTON;
 		outbin(line, linelen, out1);
 		out1c('\n');
-		if (tee_fd != -1) {
-			(void)fwrite(line, sizeof(*line), linelen, tee_fp);
-			fputc('\n', tee_fp);
-			if (ferror(tee_fp)) {
-				rret = 1;
-				break;
-			}
-		}
 		INTOFF;
 	}
-	if (tee_fd != -1) {
-		fclose(tee_fp);
+	/* There may be leftover without EOL newline. */
+	if (linelen > 0) {
+		outbin(line, linelen, out1);
 	}
-
 	/* 1 == EOF */
 	if (rret != 1) {
 		ret = rret;
@@ -699,28 +717,13 @@ _mapfile_cat(struct mapped_data *md, int tee_fd, size_t *lines)
 int
 mapfile_catcmd(int argc, char **argv)
 {
-	static const char usage[] = "Usage: mapfile_cat [-T fd] <handle> ...";
+	static const char usage[] = "Usage: mapfile_cat <handle> ...";
 	struct mapped_data *md;
 	const char *handle;
-	char *end;
-	int i, ch, Tflag, error, ret;
+	int i, error, ret;
 	size_t lines;
 	char liness[10];
 
-	Tflag = -1;
-	while ((ch = getopt(argc, argv, "T:")) != -1) {
-		switch (ch) {
-		case 'T':
-			Tflag = strtod(optarg, &end);
-			if (end == optarg || errno == ERANGE || Tflag < 0)
-				errx(EX_DATAERR, "Invalid T fd '%s'", optarg);
-			break;
-		default:
-			errx(EX_USAGE, "%s", usage);
-		}
-	}
-	argc -= optind;
-	argv += optind;
 	if (argc < 1)
 		errx(EX_USAGE, "%s", usage);
 
@@ -728,18 +731,18 @@ mapfile_catcmd(int argc, char **argv)
 	ret = 0;
 	lines = 0;
 	setvarsafe("_mapfile_cat_lines_read", "0", 0);
-	for (i = 0; i < argc; i++) {
+	for (i = 1; i < argc; i++) {
 		handle = argv[i];
 		INTOFF;
 		md = md_find(handle);
 		lines = 0;
-		if ((error = _mapfile_cat(md, Tflag, &lines)) != 0) {
+		if ((error = _mapfile_cat(md, &lines)) != 0) {
 			ret = error;
 		}
 		assert(is_int_on());
 		INTON;
 	}
-	snprintf(liness, sizeof(liness), "%zd", lines);
+	fmtstr(liness, sizeof(liness), "%zd", lines);
 	setvarsafe("_mapfile_cat_lines_read", liness, 0);
 
 	return (ret);
@@ -748,26 +751,21 @@ mapfile_catcmd(int argc, char **argv)
 int
 mapfile_cat_filecmd(int argc, char **argv)
 {
-	static const char usage[] = "Usage: mapfile_cat_file [-q] [-T fd] <file> ...";
+	static const char usage[] = "Usage: mapfile_cat_file [-q]" \
+				    "[-|file ...]";
 	struct mapped_data *md;
 	const char *file;
-	char *end;
 	int error, ret;
-	int i, ch, Tflag, qflag;
+	int i, ch, qflag;
 	size_t lines;
+	bool read_stdin = false;
 	char liness[10];
 
-	Tflag = -1;
 	qflag = 0;
-	while ((ch = getopt(argc, argv, "qT:")) != -1) {
+	while ((ch = getopt(argc, argv, "q")) != -1) {
 		switch (ch) {
 		case 'q':
 			qflag = 1;
-			break;
-		case 'T':
-			Tflag = strtod(optarg, &end);
-			if (end == optarg || errno == ERANGE || Tflag < 0)
-				errx(EX_DATAERR, "Invalid T fd '%s'", optarg);
 			break;
 		default:
 			errx(EX_USAGE, "%s", usage);
@@ -776,14 +774,23 @@ mapfile_cat_filecmd(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc < 1)
+	if (argc == 0) {
+		read_stdin = true;
+		argc = 1;
+	} else if (argc < 1) {
 		errx(EX_USAGE, "%s", usage);
+	}
 
 	ret = 0;
 	lines = 0;
 	setvarsafe("_mapfile_cat_file_lines_read", "0", 0);
 	for (i = 0; i < argc; i++) {
-		file = argv[i];
+		if (read_stdin) {
+		    assert(argc == 1);
+		    file = "-";
+		} else {
+			file = argv[i];
+		}
 		INTOFF;
 		/* Create handle */
 		md = _mapfile_open(file, "r", 1, qflag);
@@ -794,14 +801,14 @@ mapfile_cat_filecmd(int argc, char **argv)
 		}
 		assert(md != NULL);
 		lines = 0;
-		if ((error = _mapfile_cat(md, Tflag, &lines)) != 0) {
+		if ((error = _mapfile_cat(md, &lines)) != 0) {
 			ret = error;
 		}
 		assert(is_int_on());
 		md_close(md);
 		INTON;
 	}
-	snprintf(liness, sizeof(liness), "%zd", lines);
+	fmtstr(liness, sizeof(liness), "%zd", lines);
 	setvarsafe("_mapfile_cat_file_lines_read", liness, 0);
 	return (ret);
 }
@@ -911,9 +918,6 @@ out:
 			warn("fcntl(%s, F_SETFL, ~O_NONBLOCK)",
 			    handle);
 	}
-	/* Don't close on EOF or timeout as more data may come later. */
-	if (ret != 1 && ret != 0 && ret != 142)
-		md_close(md);
 
 	if (linelen == -1) {
 		line[0] = '\0';
@@ -995,8 +999,6 @@ _mapfile_write(/*XXX const*/ struct mapped_data *md, const char *handle,
 	}
 	return (ret);
 }
-
-int evalcmd(int argc, char **argv);
 
 int
 mapfile_writecmd(int argc, char **argv)
@@ -1080,7 +1082,20 @@ mapfile_writecmd(int argc, char **argv)
 			}
 			assert(is_int_on());
 		}
-
+		/* There may be leftover without EOL newline. */
+		if (linelen > 0) {
+			ret = _mapfile_write(md, handle, nflag,
+			    Tflag, line, linelen);
+			if (ret == 0) {
+				ret = fflush(md->fp);
+			}
+			if (ret != 0) {
+				assert(is_int_on());
+				md_close(md_read);
+				INTON;
+				err(ret, "mapfile_write");
+			}
+		}
 		/* 1 == EOF */
 		if (rret != 1) {
 			ret = rret;

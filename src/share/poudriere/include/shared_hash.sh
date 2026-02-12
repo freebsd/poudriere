@@ -31,18 +31,30 @@
 add_relpath_var SHASH_VAR_PATH || err "Failed to add SHASH_VAR_PATH to relpaths"
 
 _shash_var_name() {
+	[ $# -eq 2 ] || eargs _shash_var_name var key
 	local _svn_var="${1}"
+	local _svn_key="${2}"
+	local _svn_varkey
 
+	_svn_varkey="${_svn_var:?}%${_svn_key:?}"
 	# Replace SHASH_VAR_NAME_SUB_BADCHARS matches with _
-	_gsub_badchars "${_svn_var}" "${SHASH_VAR_NAME_SUB_BADCHARS}" _shash_var_name
+	_gsub_badchars "${_svn_varkey:?}" \
+	    "${SHASH_VAR_NAME_SUB_BADCHARS:?}" _shash_var_name
+}
+
+_shash_var_path() {
+	_shash_var_path="${SHASH_VAR_PATH:+${SHASH_VAR_PATH}/}${SHASH_VAR_PREFIX}"
 }
 
 _shash_varkey_file() {
-	local _svf_varkey="${1}%${2}"
-	local _shash_var_name
+	[ $# -eq 2 ] || eargs _shash_varkey_file var key
+	local _svf_var="${1}"
+	local _svf_key="${2}"
+	local _shash_var_name _shash_var_path
 
-	_shash_var_name "${_svf_varkey:?}"
-	_shash_varkey_file="${SHASH_VAR_PATH}/${SHASH_VAR_PREFIX}${_shash_var_name:?}"
+	_shash_var_name "${_svf_var:?}" "${_svf_key:?}"
+	_shash_var_path
+	_shash_varkey_file="${_shash_var_path}${_shash_var_name:?}"
 }
 
 shash_get() {
@@ -51,19 +63,22 @@ shash_get() {
 	local sg_var="$1"
 	local sg_key="$2"
 	local sg_var_return="$3"
-	local _shash_varkey_file _f _sh_value _sh_values
+	local _shash_var_name _shash_var_path _f _sh_value _sh_values
 	local sg_ret sg_rret
+	local -
 
 	sg_ret=0
 	_sh_values=
-	_shash_varkey_file "${sg_var}" "${sg_key}"
+	_shash_var_path
+	_shash_var_name "${sg_var:?}" "${sg_key:?}"
+	# Ensure globbing is on
 	set +o noglob
-	for _f in ${_shash_varkey_file:?}; do
-		set -o noglob
-		case "${_shash_varkey_file:?}" in
+	# Don't glob the path.
+	for _f in "${_shash_var_path}"${_shash_var_name:?}; do
+		case "${_shash_var_path}${_shash_var_name:?}" in
 		*"*"*|*"["*|*"?"*)
 			case "${_f:?}" in
-			"${_shash_varkey_file:?}")
+			"${_shash_var_path}${_shash_var_name:?}")
 				# No file found
 				sg_ret=1
 				break
@@ -75,10 +90,10 @@ shash_get() {
 		sg_rret=0
 		case "${sg_var_return:?}" in
 		-)
-			readlines_file "${_f:?}" - || sg_rret=$?
+			readlines_file -- "${_f:?}" - || sg_rret=$?
 			;;
 		*)
-			readlines_file "${_f:?}" _sh_value || sg_rret=$?
+			readlines_file -- "${_f:?}" _sh_value || sg_rret=$?
 			;;
 		esac
 		case "${sg_rret}" in
@@ -94,8 +109,6 @@ shash_get() {
 			;;
 		esac
 	done
-	set -o noglob
-
 	case "${sg_var_return}" in
 	-) ;;
 	*) setvar "${sg_var_return}" "${_sh_values}" || return ;;
@@ -108,16 +121,28 @@ shash_exists() {
 	[ $# -eq 2 ] || eargs shash_exists var key
 	local var="$1"
 	local key="$2"
-	local _shash_varkey_file _f
+	local _shash_var_path _shash_var_name _f
 
-	_shash_varkey_file "${var}" "${key}"
+	_shash_var_path
+	_shash_var_name "${var:?}" "${key:?}"
+	# Ensure globbing is on
 	set +o noglob
-	for _f in ${_shash_varkey_file:?}; do
-		set -o noglob
-		case "${_f}" in
-		*"*"*) break ;; # no file found
+	# Don't glob the path.
+	for _f in "${_shash_var_path}"${_shash_var_name}; do
+		case "${_shash_var_path}${_shash_var_name:?}" in
+		*"*"*|*"["*|*"?"*)
+			case "${_f:?}" in
+			"${_shash_var_path}${_shash_var_name:?}")
+				# No file found
+				return 1
+			esac
+			;;
+		*)
+			;;
 		esac
-		[ -r "${_f}" ] || break
+		if [ ! -r "${_f:?}" ]; then
+			return 1
+		fi
 		return 0
 	done
 	return 1
@@ -134,7 +159,7 @@ shash_set() {
 	_shash_varkey_file "${var}" "${key}"
 	case "${value+set}" in
 	set)
-		write_atomic "${_shash_varkey_file:?}" "${value}" || return
+		write_atomic -- "${_shash_varkey_file:?}" "${value}" || return
 		;;
 	*)
 		: > "${_shash_varkey_file:?}" || return
@@ -186,21 +211,16 @@ shash_write() {
 	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
-	write_atomic ${Tflag:+-T} "${_shash_varkey_file:?}"
+	write_atomic ${Tflag:+-T} -- "${_shash_varkey_file:?}"
 }
 
 shash_remove_var() {
 	local -; set +x
 	[ $# -eq 1 ] || eargs shash_remove_var var
 	local srv_var="$1"
-	local _shash_var_name
 
-	# This assumes globbing works for shash, which it does for now
-	# due to using find.
-	_shash_var_name "${srv_var}%*"
-	find -x "${SHASH_VAR_PATH:?}" \
-	    -name "${SHASH_VAR_PREFIX}${_shash_var_name}" \
-	    -delete || :
+	# This assumes globbing works for shash.
+	shash_unset "${srv_var:?}" "*"
 }
 
 shash_remove() {
@@ -225,10 +245,13 @@ shash_unset() {
 	[ $# -eq 2 ] || eargs shash_unset var key
 	local var="$1"
 	local key="$2"
-	local _shash_varkey_file
+	local _shash_var_path _shash_var_name
 
-	_shash_varkey_file "${var}" "${key}"
+	_shash_var_path
+	_shash_var_name "${var:?}" "${key:?}"
+	# Ensure globbing is on
 	set +o noglob
+	# Don't glob the path.
 	# shellcheck disable=SC2086
-	rm -f ${_shash_varkey_file}
+	rm -f -- "${_shash_var_path}"${_shash_var_name:?}
 }

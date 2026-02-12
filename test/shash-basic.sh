@@ -15,36 +15,36 @@ value=
 assert_ret 0 shash_set blank key $'\n'
 assert_ret 0 shash_get blank key value
 assert "" "${value}"
-assert_ret_not 0 shash_remove pkgname-origin "pkg-1.7" value
-assert_ret 0 shash_unset pkgname-origin "pkg-1.7"
-assert_ret_not 0 shash_get pkgname-origin "pkg-1.7" value
-assert_ret 0 shash_set pkgname-origin "pkg-1.7" "ports-mgmt/pkg"
-assert_ret 0 shash_get pkgname-origin "pkg-1.7" value
-assert_ret 0 shash_exists pkgname-origin "pkg-1.7"
-assert_ret 1 shash_exists pkgname-origin "pkg-1.8"
+assert_ret_not 0 shash_remove pkgname-origin "pkg 1.7" value
+assert_ret 0 shash_unset pkgname-origin "pkg 1.7"
+assert_ret_not 0 shash_get pkgname-origin "pkg 1.7" value
+assert_ret 0 shash_set pkgname-origin "pkg 1.7" "ports-mgmt/pkg"
+assert_ret 0 shash_get pkgname-origin "pkg 1.7" value
+assert_ret 0 shash_exists pkgname-origin "pkg 1.7"
+assert_ret 1 shash_exists pkgname-origin "pkg 1.8"
 assert "ports-mgmt/pkg" "${value}" "Removed value should match"
 value=
-assert_ret 0 shash_remove pkgname-origin "pkg-1.7" value
+assert_ret 0 shash_remove pkgname-origin "pkg 1.7" value
 assert "ports-mgmt/pkg" "${value}" "Removed value should match"
 value=
-assert_ret_not 0 shash_get pkgname-origin "pkg-1.7" value
+assert_ret_not 0 shash_get pkgname-origin "pkg 1.7" value
 
 # Test globbing
 {
-	assert_ret_not 0 shash_get pkgname-origin "pkg-*" value
-	assert_ret 0 shash_set pkgname-origin "pkg-1.7" "ports-mgmt/pkg"
-	assert_ret 0 shash_get pkgname-origin "pkg-1.7" value
+	assert_ret_not 0 shash_get pkgname-origin "pkg *" value
+	assert_ret 0 shash_set pkgname-origin "pkg 1.7" "ports-mgmt/pkg"
+	assert_ret 0 shash_get pkgname-origin "pkg 1.7" value
 	value=
-	assert_ret 0 shash_get pkgname-origin "pkg-*" value
+	assert_ret 0 shash_get pkgname-origin "pkg *" value
 	assert "ports-mgmt/pkg" "${value}" "Removed value should match"
-	assert_ret 0 shash_set pkgname-origin "pkg-2.0" "ports-mgmt/pkg2"
+	assert_ret 0 shash_set pkgname-origin "pkg 2.0" "ports-mgmt/pkg2"
 	value=
-	assert_ret 0 shash_get pkgname-origin "pkg-*" value
+	assert_ret 0 shash_get pkgname-origin "pkg *" value
 	assert "ports-mgmt/pkg ports-mgmt/pkg2" "${value}" "Globbing shash_get should match"
-	assert_ret 0 shash_unset pkgname-origin "pkg-*"
-	assert_ret_not 0 shash_get pkgname-origin "pkg-1.7" value
-	assert_ret_not 0 shash_get pkgname-origin "pkg-2.0" value
-	assert_ret_not 0 shash_get pkgname-origin "pkg-*" value
+	assert_ret 0 shash_unset pkgname-origin "pkg *"
+	assert_ret_not 0 shash_get pkgname-origin "pkg 1.7" value
+	assert_ret_not 0 shash_get pkgname-origin "pkg 2.0" value
+	assert_ret_not 0 shash_get pkgname-origin "pkg *" value
 
 	assert_ret_not 0 shash_get pkgname-origin "notfound-*" value
 	assert "" "${value}" "globbed missing value"
@@ -74,9 +74,9 @@ assert_ret_not 0 shash_get pkgname-origin "pkg-1.7" value
 	assert_ret_not 0 shash_get foo-origin "c" value
 	assert_ret_not 0 shash_get foo-origin "d" value
 
-	assert_ret_not 0 shash_get pkgname-origin "pkg-1.7" value
-	assert_ret 0 shash_set pkgname-origin "pkg-1.7" "ports-mgmt/pkg"
-	assert_ret 0 shash_get pkgname-origin "pkg-1.7" value
+	assert_ret_not 0 shash_get pkgname-origin "pkg 1.7" value
+	assert_ret 0 shash_set pkgname-origin "pkg 1.7" "ports-mgmt/pkg"
+	assert_ret 0 shash_get pkgname-origin "pkg 1.7" value
 	assert "ports-mgmt/pkg" "${value}" "pkg should match afer shash_remove_var"
 }
 
@@ -306,59 +306,59 @@ assert_ret_not 0 shash_get pkgname-origin "pkg-1.7" value
 # shash_write with tee
 {
 
-	assert_ret 1 shash_exists description "pkg-foo"
+	assert_ret 1 shash_exists description "pkg foo"
 	TMP="$(mktemp -ut shash_tee)"
 	cat > "${TMP}" <<-EOF
-	This is a test package description for pkg-foo.
+	This is a test package description for 'pkg foo'.
 
 	This package is used for testing shash_tee.
 	WWW: www.test.com
 	EOF
 	cp -f "${TMP}" "${TMP}.save" # XXX: assert_file deletes currently
-	cat "${TMP}" | assert_ret 0 shash_write -T description "pkg-foo" > "${TMP}.3"
+	cat "${TMP}" | assert_ret 0 shash_write -T description "pkg foo" > "${TMP}.3"
 	assert 0 "$?" "shash_tee"
 	assert_file "${TMP}" "${TMP}.3"
 	mv -f "${TMP}.save" "${TMP}" # XXX: assert_file deletes currently
-	assert_ret 0 shash_read description "pkg-foo" > "${TMP}.2"
+	assert_ret 0 shash_read description "pkg foo" > "${TMP}.2"
 	assert_file "${TMP}" "${TMP}.2"
 	rm -f "${TMP}" "${TMP}.2" "${TMP}.3"
-	assert_ret 0 shash_unset description "pkg-foo"
+	assert_ret 0 shash_unset description "pkg foo"
 }
 
 # shash_tee with just newline is valid; newline should be trimmed
 {
 
-	assert_ret 1 shash_exists description "pkg-foo"
+	assert_ret 1 shash_exists description "pkg foo"
 	TMP="$(mktemp -ut shash_tee)"
 	echo > "${TMP}"
 	assert_ret 0 test -s  "${TMP}"
 	cp -f "${TMP}" "${TMP}.save" # XXX: assert_file deletes currently
-	cat "${TMP}" | assert_ret 0 shash_write -T description "pkg-foo" > "${TMP}.3"
+	cat "${TMP}" | assert_ret 0 shash_write -T description "pkg foo" > "${TMP}.3"
 	assert 0 "$?" "shash_tee"
 	assert_file "${TMP}" "${TMP}.3"
 	mv -f "${TMP}.save" "${TMP}" # XXX: assert_file deletes currently
-	assert_ret 0 shash_read description "pkg-foo" > "${TMP}.2"
+	assert_ret 0 shash_read description "pkg foo" > "${TMP}.2"
 	assert_file "${TMP}" "${TMP}.2"
 	rm -f "${TMP}" "${TMP}.2" "${TMP}.3"
-	assert_ret 0 shash_unset description "pkg-foo"
+	assert_ret 0 shash_unset description "pkg foo"
 }
 
 # shash_tee with empth data is still valid
 {
 
-	assert_ret 1 shash_exists description "pkg-foo"
+	assert_ret 1 shash_exists description "pkg foo"
 	TMP="$(mktemp -ut shash_tee)"
 	: > "${TMP}"
 	assert_ret 1 test -s  "${TMP}"
 	cp -f "${TMP}" "${TMP}.save" # XXX: assert_file deletes currently
-	cat "${TMP}" | assert_ret 0 shash_write -T description "pkg-foo" > "${TMP}.3"
+	cat "${TMP}" | assert_ret 0 shash_write -T description "pkg foo" > "${TMP}.3"
 	assert 0 "$?" "shash_tee"
 	assert_file "${TMP}" "${TMP}.3"
 	mv -f "${TMP}.save" "${TMP}" # XXX: assert_file deletes currently
-	assert_ret 0 shash_read description "pkg-foo" > "${TMP}.2"
+	assert_ret 0 shash_read description "pkg foo" > "${TMP}.2"
 	assert_file "${TMP}" "${TMP}.2"
 	rm -f "${TMP}" "${TMP}.2" "${TMP}.3"
-	assert_ret 0 shash_unset description "pkg-foo"
+	assert_ret 0 shash_unset description "pkg foo"
 }
 
 rm -rf "${MASTERMNT}"

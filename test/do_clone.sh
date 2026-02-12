@@ -13,7 +13,7 @@ setup_src() {
 	if [ -n "${SRC_DIR}" ]; then
 		rm -rf "${SRC_DIR}"
 	fi
-	SRC_DIR=$(mktemp -dt poudriere.do_clone)
+	SRC_DIR=$(mktemp -dt src)
 	mkdir -p "${SRC_DIR}/deep/path/for/relative/testing"
 	SRC_DIR="${SRC_DIR}/deep/for/relative/testing/path"
 	mkdir -p "${SRC_DIR}/nested/path"
@@ -24,7 +24,7 @@ setup_src() {
 # Basic test
 {
 	setup_src
-	DST_DIR=$(mktemp -udt poudriere.do_clone)
+	DST_DIR=$(mktemp -udt dst)
 	do_clone "${SRC_DIR}" "${DST_DIR}"
 	assert 0 $? "do_clone"
 
@@ -36,7 +36,7 @@ setup_src() {
 # Test not deleting files
 {
 	setup_src
-	DST_DIR=$(mktemp -udt poudriere.do_clone)
+	DST_DIR=$(mktemp -udt dst)
 	mkdir -p "${DST_DIR}"
 	touch "${DST_DIR}/dont-delete-me"
 	do_clone -x "${SRC_DIR}" "${DST_DIR}"
@@ -53,7 +53,7 @@ setup_src() {
 # Test deleting files
 {
 	setup_src
-	DST_DIR=$(mktemp -udt poudriere.do_clone)
+	DST_DIR=$(mktemp -udt dst)
 	mkdir -p "${DST_DIR}"
 	touch "${DST_DIR}/delete-me"
 	do_clone_del "${SRC_DIR}" "${DST_DIR}"
@@ -70,7 +70,7 @@ setup_src() {
 # Relative test
 {
 	setup_src
-	DST_DIR=$(mktemp -udt poudriere.do_clone)
+	DST_DIR=$(mktemp -udt dst)
 	do_clone -rx "${SRC_DIR}" "${DST_DIR}"
 	assert 0 $? "do_clone"
 
@@ -87,7 +87,7 @@ setup_src() {
 	blah
 	EOF
 	touch "${SRC_DIR}/blah"
-	DST_DIR=$(mktemp -udt poudriere.do_clone)
+	DST_DIR=$(mktemp -udt dst)
 	do_clone "${SRC_DIR}" "${DST_DIR}"
 	assert 0 $? "do_clone"
 
@@ -117,7 +117,7 @@ setup_src() {
 	blah
 	EOF
 	touch "${SRC_DIR}/blah"
-	DST_DIR=$(mktemp -udt poudriere.do_clone)
+	DST_DIR=$(mktemp -udt dst)
 	do_clone -x "${SRC_DIR}" "${DST_DIR}"
 	assert 0 $? "do_clone"
 
@@ -151,7 +151,7 @@ setup_src() {
 	blah
 	EOF
 	touch "${SRC_DIR}/blah"
-	DST_DIR=$(mktemp -udt poudriere.do_clone)
+	DST_DIR=$(mktemp -udt dst)
 	do_clone -rx "${SRC_DIR}" "${DST_DIR}"
 	assert 0 $? "do_clone"
 
@@ -185,7 +185,7 @@ setup_src() {
 	blah
 	EOF
 	touch "${SRC_DIR}/blah"
-	DST_DIR=$(mktemp -udt poudriere.do_clone)
+	DST_DIR=$(mktemp -udt dst)
 	do_clone -rx "${SRC_DIR}" "${DST_DIR}"
 	assert 0 $? "do_clone"
 
@@ -220,7 +220,7 @@ setup_src() {
 	blah
 	EOF
 	touch "${SRC_DIR}/blah"
-	DST_DIR=$(mktemp -udt poudriere.do_clone)
+	DST_DIR=$(mktemp -udt dst)
 	do_clone -X ".cpignore" "${SRC_DIR}" "${DST_DIR}"
 	assert 0 $? "do_clone"
 
@@ -255,7 +255,7 @@ setup_src() {
 	EOF
 	touch "${SRC_DIR}/.cpignore"
 	touch "${SRC_DIR}/blah"
-	DST_DIR=$(mktemp -udt poudriere.do_clone)
+	DST_DIR=$(mktemp -udt dst)
 	do_clone -X "${CPIGNORE}" "${SRC_DIR}" "${DST_DIR}"
 	assert 0 $? "do_clone"
 
@@ -290,7 +290,7 @@ setup_src() {
 	EOF
 	touch "${SRC_DIR}/.cpignore"
 	touch "${SRC_DIR}/blah"
-	DST_DIR=$(mktemp -udt poudriere.do_clone)
+	DST_DIR=$(mktemp -udt dst)
 	do_clone -r -X "${CPIGNORE}" "${SRC_DIR}" "${DST_DIR}"
 	assert 0 $? "do_clone"
 

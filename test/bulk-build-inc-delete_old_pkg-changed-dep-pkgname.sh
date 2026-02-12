@@ -55,7 +55,7 @@ while get_test_context; do
 		# Normally delete_old_pkg() handles new PKGNAME fine but in the case
 		# of a new PKGBASE it tends to ignore the package.  We need the package
 		# gone for the run-depends test later.
-		do_pkgclean -yC misc/foo
+		assert_true do_pkgclean -yC misc/foo
 		;;
 	esac
 
@@ -68,7 +68,7 @@ while get_test_context; do
 
 	# Force ports-mgmt/poudriere-devel-dep-FOO to rebuild as it needs to go through
 	# run-depends to check for the changed PKGNAME bug.
-	do_pkgclean -yC ports-mgmt/poudriere-devel-dep-FOO
+	assert_true do_pkgclean -yC ports-mgmt/poudriere-devel-dep-FOO
 
 	EXPECTED_IGNORED=""
 	EXPECTED_SKIPPED=

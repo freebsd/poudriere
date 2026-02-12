@@ -69,7 +69,7 @@ _cache_set() {
 	# The main difference between these is that -vvv (dev) will see
 	# the shash_set error while normally it will be hidden.  It can
 	# happen with SIGINT races and is non-fatal.
-	if [ ${VERBOSE} -gt 2 ]; then
+	if msg_level dev; then
 		shash_set "${var}" "${key}" "${value}" || \
 		    msg_dev "_cache_set: Failed to set value for V: ${var} K: ${key}"
 	else

@@ -282,13 +282,32 @@ _relpath_common() {
 	[ $# -eq 2 ] || eargs _relpath_common dir1 dir2
 	local _rc_dir1 _rc_dir2 _rc_common _rc_other
 
+	# relative paths must exist but absolutes are not validated.
+	case "$1" in
+	/*) ;;
+	*)
+		if [ ! -d "${1:?}" ]; then
+		    msg_error "_relpath_common: $1: Not a directory"
+		    return "${EX_DATAERR:-65}"
+		fi
+		;;
+	esac
+	case "$2" in
+	/*) ;;
+	*)
+		if ! [ -d "${2:?}" ]; then
+		    msg_error "_relpath_common: $2: Not a directory"
+		    return "${EX_DATAERR:-65}"
+		fi
+		;;
+	esac
 	# shellcheck disable=SC2001
-	_rc_dir1=$(realpath -q "$1" || echo "$1" | sed -e 's,//*,/,g') ||
-	    return "${EX_OSERR:-71}"
+	critical_retry_cmdsubst _rc_dir1 \
+		"\$(realpath -q '${1}' || echo '${1}' | sed -e 's,//*,/,g')"
 	_rc_dir1="${_rc_dir1%/}/"
 	# shellcheck disable=SC2001
-	_rc_dir2=$(realpath -q "$2" || echo "$2" | sed -e 's,//*,/,g') ||
-	    return "${EX_OSERR:-71}"
+	critical_retry_cmdsubst _rc_dir2 \
+		"\$(realpath -q '${2}' || echo '${2}' | sed -e 's,//*,/,g')"
 	_rc_dir2="${_rc_dir2%/}/"
 	if [ "${#_rc_dir1}" -ge "${#_rc_dir2}" ]; then
 		_rc_common="${_rc_dir1}"
@@ -327,9 +346,9 @@ _relpath_common() {
 	_rc_dir2="${_rc_dir2%/}"
 	_rc_dir2="${_rc_dir2:-.}"
 
-	_relpath_common="${_rc_common}"
-	_relpath_common_dir1="${_rc_dir1}"
-	_relpath_common_dir2="${_rc_dir2}"
+	_relpath_common="${_rc_common:?}"
+	_relpath_common_dir1="${_rc_dir1:?}"
+	_relpath_common_dir2="${_rc_dir2:?}"
 }
 
 # See _relpath_common
@@ -340,8 +359,10 @@ relpath_common() {
 	local rc_dir2="$2"
 	local _relpath_common _relpath_common_dir1 _relpath_common_dir2
 
-	_relpath_common "${rc_dir1}" "${rc_dir2}"
-	echo "${_relpath_common} ${_relpath_common_dir1} ${_relpath_common_dir2}"
+	_relpath_common "${rc_dir1}" "${rc_dir2}" || return
+	echo "${_relpath_common:?}" \
+	    "${_relpath_common_dir1:?}" \
+	    "${_relpath_common_dir2:?}"
 }
 
 : "${RELPATH_DEFAULT_VAR:=_relpath}"
@@ -359,7 +380,7 @@ _relpath() {
 	local -
 
 	# Find the common prefix
-	_relpath_common "${_r_dir1}" "${_r_dir2}"
+	_relpath_common "${_r_dir1}" "${_r_dir2}" || return
 
 	case "${_relpath_common_dir2}" in
 	".")
@@ -435,7 +456,7 @@ in_reldir() {
 		ir_oldpwd=
 		;;
 	*)
-		cd "${wanted_dir:?}"
+		cd "${wanted_dir:?}" || return
 		ir_oldpwd="${OLDPWD}"
 		;;
 	esac
@@ -444,7 +465,7 @@ in_reldir() {
 	"$@" || ir_ret="$?"
 
 	case "${ir_oldpwd:+set}" in
-	set) cd "${ir_oldpwd}" ;;
+	set) cd "${ir_oldpwd}" || return ;;
 	esac
 
 	return "${ir_ret}"
@@ -456,16 +477,23 @@ make_relative() {
 	local mr_var="$1"
 	local mr_oldroot="${2:-${PWD}}"
 	local mr_newroot="${3:-${PWD}}"
-	local mr_val
+	local mr_val mr_one mr_two
 
-	getvar "${mr_var}" mr_val || return 0
-	case "${mr_val}" in
+	getvar "${mr_var:?}" mr_val || return 0
+	case "${mr_val:?}" in
 	"") return 0 ;;
 	esac
-	case "${mr_val}" in
-	/*)	_relpath "${mr_val}" "${mr_newroot}" "${mr_var}" ;;
-	*)	_relpath "${mr_oldroot}/${mr_val}" "${mr_newroot}" "${mr_var}" ;;
+	case "${mr_val:?}" in
+	/*)
+		mr_one="${mr_val:?}"
+		mr_two="${mr_newroot:?}"
+		;;
+	*)
+		mr_one="${mr_oldroot:?}/${mr_val:?}"
+		mr_two="${mr_newroot:?}"
+		;;
 	esac
+	_relpath "${mr_one:?}" "${mr_two:?}" "${mr_var:?}"
 }
 
 _update_relpaths() {
@@ -473,11 +501,14 @@ _update_relpaths() {
 	[ $# -eq 2 ] || eargs _update_relpaths oldroot newroot
 	local _ur_oldroot="$1"
 	local _ur_newroot="$2"
-	local _ur_var
+	local _ur_var _ur_ret
 
+	_ur_ret=0
 	for _ur_var in ${RELATIVE_PATH_VARS}; do
-		make_relative "${_ur_var}" "${_ur_oldroot}" "${_ur_newroot}"
+		make_relative "${_ur_var:?}" "${_ur_oldroot:?}" \
+		    "${_ur_newroot:?}" || _ur_ret="$?"
 	done
+	return "${_ur_ret}"
 }
 
 add_relpath_var() {
@@ -505,6 +536,35 @@ add_relpath_var() {
 	make_relative "${arv_var}"
 }
 
+dirname() {
+	[ $# -eq 1 ] || [ $# -eq 2 ] || eargs dirname path '[outvar]'
+	local d_path="$1"
+	local d_outvar="${2-}"
+	local d_dir
+
+	case "${d_path?}" in
+	*/)
+		rtrim "${d_path?}" '/' d_path
+		case "${d_path}" in
+		"") d_path="/" ;;
+		esac
+		;;
+	esac
+	case "${d_path?}" in
+	/) d_dir="/" ;;
+	*/*)
+		d_dir="${d_path%/*}"
+		rtrim "${d_dir:?}" '/' d_dir
+		;;
+	*)   d_dir="." ;;
+	esac
+	case "${d_outvar:+set}" in
+	set) setvar "${d_outvar:?}" "${d_dir:?}" || return ;;
+	"") echo "${d_dir:?}" ;;
+	esac
+}
+
+
 # Handle relative path change needs
 cd() {
 	local ret
@@ -516,7 +576,7 @@ cd() {
 	case "${OLDPWD}" in
 	"${PWD}") ;;
 	*)
-		_update_relpaths "${OLDPWD}" "${PWD}" || :
+		critical_retry _update_relpaths "${OLDPWD}" "${PWD}" || :
 		;;
 	esac
 	critical_end
@@ -528,24 +588,47 @@ unlink() {
 	[ $# -eq 2 ] || [ $# -eq 1 ] || eargs unlink '[--]' file
 
 	# The builtin one ignores errors for ENOENT.
-	command unlink "$@" 2>/dev/null || :
+	# allow vfork
+	{ command unlink "$@"; } 2>/dev/null || :
 }
 fi
 
 if ! have_builtin randint; then
 randint() {
-	[ "$#" -eq 1 ] || [ "$#" -eq 2 ] ||
-	    eargs randint max_val '[var_return]'
-	local max_val="$1"
-	local r_outvar="${2-}"
-	local val
+	[ "$#" -eq 1 ] || [ "$#" -eq 2 ] || [ "$#" -eq 3 ] ||
+	    eargs randint '[min_val]' max_val '[var_return]'
+	local r_min_val r_max_val r_outvar r_val
 
-	if [ "$#" -eq 1 ]; then
-		jot -r 1 "${max_val}"
-		return
-	fi
-	val=$(jot -r 1 "${max_val}")
-	setvar "${r_outvar}" "${val}"
+	r_min_val=1
+	r_outvar=
+	case "$#" in
+	1)
+		r_max_val="$1"
+		;;
+	2)
+		case "$2" in
+		[0-9]*)
+			r_min_val="$1"
+			r_max_val="$2"
+			;;
+		*)
+			r_max_val="$1"
+			r_outvar="$2"
+			;;
+		esac
+		;;
+	3)
+		r_min_val="$1"
+		r_max_val="$2"
+		r_outvar="$3"
+		;;
+	esac
+
+	r_val="$(jot -r 1 "${r_min_val}" "${r_max_val}")"
+	case "${r_outvar}" in
+	""|-) echo "${r_val:?}" ;;
+	*) setvar "${r_outvar}" "${r_val}" || return ;;
+	esac
 }
 fi
 
@@ -592,19 +675,21 @@ trap_ignore_block() {
 	_trap_ignore_block 1 "$@"
 }
 
-if have_builtin trap_push; then
-critical_inherit() { :; }
-else
+if ! have_builtin trap_push; then
 trap_push() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs trap_push signal var_return
 	local signal="$1"
 	local tp_outvar="$2"
-	local _trap ldash lhandler lsig
+	local _trap ltrap ldash lhandler lsig
 
 	_trap="-"
 	# shellcheck disable=SC2034
 	while read -r ltrap ldash lhandler lsig; do
+		case "${ltrap-}" in
+		# no traps set
+		"") break ;;
+		esac
 		case "${lsig}" in
 		*" "*)
 			# Multi-word handler, need to shift it back into
@@ -641,7 +726,9 @@ trap_pop() {
 		;;
 	esac
 }
+fi # have_builtin trap_push
 
+if ! have_builtin critical_start; then
 # Start a "critical section", disable INT/TERM while in here and delay until
 # critical_end is called.
 # Unfortunately this can not block signals to our commands. The builtin
@@ -664,17 +751,6 @@ critical_start() {
 		# shellcheck disable=SC2064
 		trap "{ _crit_caught_${sig}=1; } 2>/dev/null" "${sig}"
 		hash_set crit_saved_trap "${sig}-${_CRITSNEST}" "${saved_trap}"
-	done
-}
-
-critical_inherit() {
-	case "${_CRITSNEST:-0}" in
-	0) return 0 ;;
-	esac
-	local sig
-
-	for sig in ${CRITICAL_START_BLOCK_SIGS}; do
-		trap '' "${sig}"
 	done
 }
 
@@ -705,7 +781,78 @@ critical_end() {
 		esac
 	done
 }
-fi
+
+critical_inherit() {
+	case "${_CRITSNEST:-0}" in
+	0) return 0 ;;
+	esac
+	local sig
+
+	for sig in ${CRITICAL_START_BLOCK_SIGS}; do
+		trap '' "${sig}"
+	done
+}
+
+# Retry on signal if in a critical section.
+# The builtin sh does not need this but /bin/sh does.
+critical_retry() {
+	[ $# -ge 1 ] || eargs critical_retry 'cmd...'
+	local ret _CRITICAL_RETRY
+
+	_CRITICAL_RETRY=1
+	ret=0
+	"$@" || ret="$?"
+	case "${_CRITSNEST:-0}" in
+	0) return "${ret}" ;;
+	esac
+	# Possibly try again.
+	case "${ret}" in
+	130|143)
+		ret=0
+		"$@" || ret="$?"
+		;;
+	esac
+	return "${ret}"
+}
+else
+critical_inherit() { :; }
+critical_retry() { "$@"; }
+fi # ! have_builtin critical_start
+
+# Same as critical_retry but eval's the input to allow cmdsubst.
+# Don't call with untrusted input.
+_critical_retry_cmdsubst() {
+	# shellcheck disable=SC2016
+	[ $# -eq 2 ] || eargs _critical_retry_cmdsubst outvar '"\$(cmd...)"'
+	local _crc_outvar="${1:?}"
+	shift
+	local _crc_val _crc_ret
+	local -; set -u
+
+	# This is just ensuring proper syntax. The goal is to not execute
+	# anything until we are _in_ this function.
+	# shellcheck disable=SC2016
+	case "$@" in
+	'$('*')') ;;
+	*)
+		err "${EX_USAGE:-64}" "critical_retry_cmdsubst:" \
+		    "invalid syntax:" \
+		    "expected: \"\\\$(cmd...)\"" \
+		    "got:" "$@"
+		;;
+	esac
+	_crc_ret=0
+	unset _crc_val
+	# _crc_val="$(cmd)"
+	eval _crc_val="\"$*\"" || _crc_ret="$?"
+	setvar "${_crc_outvar:?}" "${_crc_val}" || _crc_ret="$?"
+	return "${_crc_ret:?}"
+}
+
+critical_retry_cmdsubst() {
+	# With builtins the critical_retry only tries once.
+	critical_retry _critical_retry_cmdsubst "$@"
+}
 
 # Read a file into the given variable.
 read_file() {
@@ -809,16 +956,16 @@ read_line() {
 
 readlines() {
 	[ "$#" -ge 0 ] || eargs readlines '[-T]' '[vars...]'
-	local flag Tflag
+	local rl_flag Tflag
 	local OPTIND=1
 
 	Tflag=
-	while getopts "T" flag; do
-		case "${flag}" in
+	while getopts "T" rl_flag; do
+		case "${rl_flag}" in
 		T)
 			Tflag=1
 			;;
-		*) err "${EX_USAGE}" "readlines: Invalid flag ${flag}" ;;
+		*) err "${EX_USAGE}" "readlines: Invalid flag ${rl_flag}" ;;
 		esac
 	done
 	shift $((OPTIND-1))
@@ -833,16 +980,16 @@ readlines_file() {
 	local rlf_file
 	local rlf_var rlf_line rlf_var_count
 	local rlf_rest rlf_nl rlf_handle rlf_ret
-	local flag Tflag
+	local rlf_flag rlf_Tflag
 	local OPTIND=1 IFS
 
-	Tflag=
-	while getopts "T" flag; do
-		case "${flag}" in
+	rlf_Tflag=
+	while getopts "T" rlf_flag; do
+		case "${rlf_flag}" in
 		T)
-			Tflag=1
+			rlf_Tflag=1
 			;;
-		*) err "${EX_USAGE}" "readlines_file: Invalid flag ${flag}" ;;
+		*) err "${EX_USAGE}" "readlines_file: Invalid flag ${rlf_flag}" ;;
 		esac
 	done
 	shift $((OPTIND-1))
@@ -876,7 +1023,7 @@ readlines_file() {
 	if mapfile -F rlf_handle "${rlf_file:?}" "r"; then
 		while IFS= mapfile_read "${rlf_handle}" rlf_line; do
 			_readlines_lines_read="$((_readlines_lines_read + 1))"
-			case "${Tflag}" in
+			case "${rlf_Tflag}" in
 			1)
 				echo "${rlf_line}"
 				;;
@@ -904,6 +1051,35 @@ readlines_file() {
 				;;
 			esac
 		done
+		# Deal with leftover without newline at EOF
+		case "${rlf_line:+set}" in
+		set)
+			_readlines_lines_read="$((_readlines_lines_read + 1))"
+			case "${rlf_Tflag}" in
+			1)
+				echo -n "${rlf_line}"
+				;;
+			esac
+			case "${rlf_var_count}" in
+			0)
+				;;
+			1)
+				rlf_rest="${rlf_rest:+${rlf_rest}${rlf_nl}}${rlf_line}"
+				;;
+			*)
+				rlf_var_count="$((rlf_var_count - 1))"
+				rlf_var="${1?}"
+				shift
+				case "${rlf_var:+set}" in
+				set)
+					setvar "${rlf_var}" "${rlf_line}" ||
+					    rlf_ret="$?"
+					;;
+				esac
+				;;
+			esac
+			;;
+		esac
 		mapfile_close "${rlf_handle}" || rlf_ret="$?"
 	else
 		rlf_ret="${EX_NOINPUT:-66}"
@@ -953,43 +1129,35 @@ readarray_file() {
 # SIGINFO traps won't abort the read.
 read_blocking() {
 	local -; set +x
-	[ $# -ge 1 ] || eargs read_blocking read_args
+	[ $# -ge 1 ] || eargs read_blocking '[-t timeout]' read_args
 	local rb_ret
-	local OPTIND=1 flag tflag timeout time_start now
+	local OPTIND=1 rb_flag rb_tflag rb_timeout rb_time_start
 
-	tflag=
-	while getopts "t:" flag; do
-		case "${flag}" in
-		t) tflag="${OPTARG:?}" ;;
-		*) err 1 "read_blocking: Invalid flag ${flag}" ;;
+	rb_tflag=
+	while getopts "t:" rb_flag; do
+		case "${rb_flag}" in
+		t) rb_tflag="${OPTARG:?}" ;;
+		*) err 1 "read_blocking: Invalid flag ${rb_flag}" ;;
 		esac
 	done
 	shift "$((OPTIND-1))"
-	case "${tflag}" in
-	"") ;;
-	*.*) timeout="${tflag}" ;;
-	*) time_start="$(clock -monotonic)" ;;
+	[ $# -ge 1 ] || eargs read_blocking '[-t timeout]' read_args
+	case "${rb_tflag:+set}" in
+	set)
+		# read(builtin) does not support decimal timeout.
+		rb_tflag="${rb_tflag%.*}"
+		rb_timeout="${rb_tflag:?}"
+		rb_time_start="$(clock -monotonic)"
+		;;
 	esac
 	while :; do
 		rb_ret=0
-		# Adjust timeout
-		case "${tflag}" in
-		""|*.*) ;;
-		*)
-			now="$(clock -monotonic)"
-			timeout="$((tflag - (now - time_start)))"
-			case "${timeout}" in
-			"-"*) timeout=0 ;;
-			esac
-			;;
-		esac
 		set -o noglob
-		# shellcheck disable=SC2086
-		read -r ${tflag:+-t "${timeout}"} "$@" || rb_ret="$?"
+		read -r ${rb_timeout:+-t "${rb_timeout}"} "$@" || rb_ret="$?"
 		set +o noglob
 		case ${rb_ret} in
 			# Read again on SIGINFO interrupts
-			157) continue ;;
+			157) ;;
 			# Valid EOF
 			1) break ;;
 			# Success
@@ -997,6 +1165,11 @@ read_blocking() {
 			# Unknown problem or signal, just return the error.
 			*) break ;;
 		esac
+		if ! adjust_timeout "${rb_tflag-}" "${rb_time_start-}" \
+		    rb_timeout; then
+			rb_ret=142
+			break
+		fi
 	done
 	return "${rb_ret}"
 }
@@ -1006,43 +1179,35 @@ read_blocking() {
 # builtin does.
 read_blocking_line() {
 	local -; set +x
-	[ $# -ge 1 ] || eargs read_blocking_line read_args
+	[ $# -ge 1 ] || eargs read_blocking_line '[-t timeout]' read_args
 	local rbl_ret IFS
-	local OPTIND=1 flag tflag timeout time_start now
+	local OPTIND=1 rbl_flag rbl_tflag rbl_timeout rbl_time_start
 
-	tflag=
-	while getopts "t:" flag; do
-		case "${flag}" in
-		t) tflag="${OPTARG:?}" ;;
-		*) err 1 "read_blocking_line: Invalid flag ${flag}" ;;
+	rbl_tflag=
+	while getopts "t:" rbl_flag; do
+		case "${rbl_flag}" in
+		t) rbl_tflag="${OPTARG:?}" ;;
+		*) err 1 "read_blocking_line: Invalid flag ${rbl_flag}" ;;
 		esac
 	done
 	shift "$((OPTIND-1))"
-	case "${tflag}" in
-	"") ;;
-	*.*) timeout="${tflag}" ;;
-	*) time_start="$(clock -monotonic)" ;;
+	[ $# -ge 1 ] || eargs read_blocking_line '[-t timeout]' read_args
+	case "${rbl_tflag:+set}" in
+	set)
+		# read(builtin) does not support decimal timeout.
+		rbl_tflag="${rbl_tflag%.*}"
+		rbl_timeout="${rbl_tflag:?}"
+		rbl_time_start="$(clock -monotonic)"
+		;;
 	esac
 	while :; do
 		rbl_ret=0
-		# Adjust timeout
-		case "${tflag}" in
-		""|*.*) ;;
-		*)
-			now="$(clock -monotonic)"
-			timeout="$((tflag - (now - time_start)))"
-			case "${timeout}" in
-			"-"*) timeout=0 ;;
-			esac
-			;;
-		esac
 		set -o noglob
-		# shellcheck disable=SC2086
-		IFS= read -r ${tflag:+-t "${timeout}"} "$@" || rbl_ret="$?"
+		IFS= read -r ${rbl_timeout:+-t "${rbl_timeout}"} "$@" || rbl_ret="$?"
 		set +o noglob
 		case "${rbl_ret}" in
 			# Read again on SIGINFO interrupts
-			157) continue ;;
+			157) ;;
 			# Valid EOF
 			1) break ;;
 			# Success
@@ -1050,33 +1215,189 @@ read_blocking_line() {
 			# Unknown problem or signal, just return the error.
 			*) break ;;
 		esac
+		if ! adjust_timeout "${rbl_tflag-}" "${rbl_time_start-}" \
+		    rbl_timeout; then
+			rbl_ret=142
+			break
+		fi
 	done
 	return "${rbl_ret}"
+}
+
+if ! have_builtin alarm; then
+unset _ALARM_JOB
+_alarm_job() {
+	[ $# -eq 2 ] || eargs _alarm_job parentpid timeout
+	local parentpid="$1"
+	local timeout="$2"
+
+	case "${timeout}" in
+	*.*) timeout="${timeout%.*}" ;;
+	esac
+	setproctitle "alarm(${parentpid}, ${timeout})"
+	sleep "${timeout:?}" || return
+	kill -ALRM "${parentpid:?}"
+}
+
+# shellcheck disable=SC2120
+_alarm_cleanup() {
+	[ $# -eq 0 ] || eargs _alarm_cleanup
+	local _gotalrm
+
+	case "${_ALARM_JOB:+set}" in
+	set) ;;
+	*) err "${EX_USAGE:-64}" "alarm: not set" ;;
+	esac
+	kill_job 2 "${_ALARM_JOB:?}" 2>/dev/null || :
+	trap - ALRM
+	_gotalrm="${_GOTALRM:?}"
+	unset _ALARM_JOB _GOTALRM
+	# XXX: set_pop -T
+	return "${_gotalrm}"
+}
+
+# This is for setting an alarm on a *builtin* operation like redirecting
+# from a pipe.
+# Timing out for an external command currently requires timeout().
+# There is a race between arming the alarm and running the command.
+# ```
+# ret=0
+# aret=0
+# if alarm "${timeout}"; then
+#	cmd || ret=$?
+#	alarm || aret=?
+# else
+#	aret=142
+# fi
+# case "${ret}" in
+# 0) ret="${aret}" ;;
+# esac
+# ```
+# Returns 124 if timeout already reached (0).
+# Returns 142 if previous alarm was fired and not collected.
+# Returns 0 otherwise.
+alarm() {
+	[ $# -le 1 ] || eargs alarm '[timeout]'
+	local timeout="${1-}"
+	# shellcheck disable=SC2034
+	local spawn_jobid spawn_job spawn_pgid spawn_pid
+
+	case "${timeout:+set}" in
+	set)
+		# Cleanup previously fired alarm
+		case "${_ALARM_JOB:+set}" in
+		set) _alarm_cleanup || : ;;
+		esac
+		case "${_ALARM_JOB-unset}" in
+		unset) ;;
+		*)
+			err 1 "alarm: _ALARM_JOB is already set: ${_ALARM_JOB}"
+			;;
+		esac
+		case "${timeout}" in
+		0) return 124 ;;
+		esac
+		trap '_GOTALRM=142' ALRM
+		_GOTALRM=0
+		spawn_job _alarm_job "$(getpid)" "${timeout}" ||
+		    err "${EX_SOFTWARE}" "alarm: spawn_job"
+		_ALARM_JOB="${spawn_job:?}"
+		# XXX: set_push -T
+		;;
+	*)
+		_alarm_cleanup || return
+		;;
+	esac
+}
+fi
+
+_timeout_job() {
+	[ $# -ge 1 ] || eargs _timeout_job '"$@"'
+
+	setproctitle "timeout_job $1"
+	"$@"
+}
+
+timeout() {
+	[ $# -ge 2 ] || eargs timeout duration 'cmd...'
+	local timeout="$1"
+	shift
+	local ret aret
+	local -
+
+	case "$(type "$1")" in
+	# sleep is hooked for set -T
+	"sleep is a shell function") ;;
+	*"is a shell function")
+		if ! have_builtin "$1"; then
+			err "${EX_USAGE:-64}" "timeout: Only supported for" \
+			    "external commands and builtins"
+		fi
+		;;
+	esac
+
+	set -T
+	ret=0
+	aret=0
+	# Need special handling due to how a signal interrupts the current
+	# command running.
+	if ! have_builtin "$1"; then
+		# shellcheck disable=SC2034
+		local spawn_jobid spawn_job spawn_pgid spawn_pid
+
+		spawn_job _timeout_job "$@" || ret="$?"
+		timed_wait_and_kill_job "${timeout}" "${spawn_job:?}" ||
+		    aret="$?"
+		case "${aret}" in
+		143) aret=124 ;;
+		esac
+	else
+		if alarm "${timeout}"; then
+			"$@" || ret="$?"
+			case "${ret}" in
+			142) ret=124 ;;
+			esac
+			alarm || aret="$?"
+			case "${aret}" in
+			142) aret=124 ;;
+			esac
+		else
+			aret=124
+		fi
+	fi
+	case "${ret}" in
+	0) ret="${aret}" ;;
+	esac
+	return "${ret}"
 }
 
 # SIGINFO traps won't abort the read, and if the pipe goes away or
 # turns into a file then an error is returned.
 read_pipe() {
 	local -; set +x
-	[ $# -ge 2 ] || eargs read_pipe fifo read_args
+	[ $# -ge 2 ] || eargs read_pipe fifo '[-t timeout]' read_args
 	local fifo="$1"
-	local rp_ret resread resopen
-	local OPTIND=1 flag tflag timeout time_start now
+	local rp_ret resread resopen aret
+	local OPTIND=1 rp_flag rp_tflag rp_timeout rp_time_start
 	shift
 
 	rp_ret=0
-	tflag=
-	while getopts "t:" flag; do
-		case "${flag}" in
-		t) tflag="${OPTARG:?}" ;;
-		*) err 1 "read_pipe: Invalid flag ${flag}" ;;
+	rp_tflag=
+	while getopts "t:" rp_flag; do
+		case "${rp_flag}" in
+		t) rp_tflag="${OPTARG:?}" ;;
+		*) err 1 "read_pipe: Invalid flag ${rp_flag}" ;;
 		esac
 	done
 	shift "$((OPTIND-1))"
-	case "${tflag}" in
-	"") ;;
-	*.*) timeout="${tflag}" ;;
-	*) time_start="$(clock -monotonic)" ;;
+	[ $# -ge 1 ] || eargs read_pipe fifo '[-t timeout]' read_args
+	case "${rp_tflag:+set}" in
+	set)
+		# read(builtin) does not support decimal timeout.
+		rp_tflag="${rp_tflag%.*}"
+		rp_timeout="${rp_tflag:?}"
+		rp_time_start="$(clock -monotonic)"
+		;;
 	esac
 	while :; do
 		if ! [ -p "${fifo}" ]; then
@@ -1087,38 +1408,58 @@ read_pipe() {
 		# since opening the pipe blocks and may be interrupted.
 		resread=0
 		resopen=0
-		# Adjust timeout
-		case "${tflag}" in
-		""|*.*) ;;
-		*)
-			now="$(clock -monotonic)"
-			timeout="$((tflag - (now - time_start)))"
-			case "${timeout}" in
-			"-"*) timeout=0 ;;
+		set -o noglob
+		case "${rp_timeout:+set}" in
+		set)
+			if alarm "${rp_timeout}"; then
+				{
+					{
+						read -r \
+						    ${rp_timeout:+-t "${rp_timeout}"} \
+						    "$@" || resread=$?
+					} < "${fifo}" || resopen=$?
+				}
+				aret=0
+				alarm || aret="$?"
+			else
+				aret=142
+			fi
+			case "${resopen}" in
+			0) resopen="${aret}" ;;
 			esac
 			;;
+		*)
+			{
+				{
+					read -r \
+					    ${rp_timeout:+-t "${rp_timeout}"} \
+					    "$@" || resread=$?
+				} < "${fifo}" || resopen=$?
+			}
+			;;
 		esac
-		set -o noglob
-		# shellcheck disable=SC2086
-		{ { read -r ${tflag:+-t "${timeout}"} "$@" || resread=$?; } \
-		    < "${fifo}" || resopen=$?; } \
-		    2>/dev/null
 		set +o noglob
 		msg_dev "read_pipe ${fifo}: resread=${resread} resopen=${resopen}"
 		# First check the open errors
-		case ${resopen} in
+		case "${resopen}" in
 			# Open error.  We do a test -p in every iteration,
 			# so it was either a race or an interrupt.  Retry
 			# in case it was just an interrupt.
-			2) continue ;;
+			2)
+				# set resread=-1 so we skip over the
+				# resread check and check timeout
+				# before retrying.
+				resread=-1
+			;;
 			# Success
 			0) ;;
 			# Unknown problem or signal, just return the error.
 			*) rp_ret="${resopen}"; break ;;
 		esac
-		case ${resread} in
+		case "${resread}" in
+			-1) ;;
 			# Read again on SIGINFO interrupts
-			157) continue ;;
+			157) ;;
 			# Valid EOF
 			1) rp_ret="${resread}"; break ;;
 			# Success
@@ -1126,53 +1467,57 @@ read_pipe() {
 			# Unknown problem or signal, just return the error.
 			*) rp_ret="${resread}"; break ;;
 		esac
+		if ! adjust_timeout "${rp_tflag-}" "${rp_time_start-}" \
+		    rp_timeout; then
+			rp_ret=142
+			break
+		fi
 	done
 	return "${rp_ret}"
 }
 
 # Ignore EOF
+# XXX: no tests
 read_pipe_noeof() {
 	local -; set +x
-	[ $# -ge 2 ] || eargs read_pipe_noeof fifo read_args
+	[ $# -ge 2 ] || eargs read_pipe_noeof fifo '[-t timeout]' read_args
 	local fifo="$1"
 	local rpn_ret
 	shift
-	local OPTIND=1 flag tflag timeout time_start now
+	local OPTIND=1 rpn_flag rpn_tflag rpn_timeout rpn_time_start
 
-	tflag=
-	while getopts "t:" flag; do
-		case "${flag}" in
-		t) tflag="${OPTARG:?}" ;;
-		*) err 1 "read_pipe_noeof: Invalid flag ${flag}" ;;
+	rpn_tflag=
+	while getopts "t:" rpn_flag; do
+		case "${rpn_flag}" in
+		t) rpn_tflag="${OPTARG:?}" ;;
+		*) err 1 "read_pipe_noeof: Invalid flag ${rpn_flag}" ;;
 		esac
 	done
 	shift "$((OPTIND-1))"
-	case "${tflag}" in
-	"") ;;
-	*.*) timeout="${tflag}" ;;
-	*) time_start="$(clock -monotonic)" ;;
+	[ $# -ge 1 ] || eargs read_pipe_noeof fifo '[-t timeout]' read_args
+	case "${rpn_tflag:+set}" in
+	set)
+		# read(builtin) does not support decimal timeout.
+		rpn_tflag="${rpn_tflag%.*}"
+		rpn_timeout="${rpn_tflag:?}"
+		rpn_time_start="$(clock -monotonic)"
+		;;
 	esac
 	while :; do
 		rpn_ret=0
-		# Adjust timeout
-		case "${tflag}" in
-		""|*.*) ;;
-		*)
-			now="$(clock -monotonic)"
-			timeout="$((tflag - (now - time_start)))"
-			case "${timeout}" in
-			"-"*) timeout=0 ;;
-			esac
-			;;
-		esac
 		set -o noglob
-		# shellcheck disable=SC2086
-		read_pipe "${fifo}" ${tflag:+-t "${timeout}"} "$@" || rpn_ret="$?"
+		read_pipe "${fifo}" ${rpn_timeout:+-t "${rpn_timeout}"} "$@" ||
+		    rpn_ret="$?"
 		set +o noglob
 		case "${rpn_ret}" in
 		1) ;;
 		*) break ;;
 		esac
+		if ! adjust_timeout "${rpn_tflag-}" "${rpn_time_start-}" \
+		    rpn_timeout; then
+			rpn_ret=142
+			break
+		fi
 	done
 	return "${rpn_ret}"
 }
@@ -1246,6 +1591,7 @@ pipe_hold() {
 	local var_return_jobid="$1"
 	local ph_pid="$2"
 	shift 2
+	# shellcheck disable=SC2034
 	local spawn_jobid ph_fifo ph_sync ph_ret
 
 	ph_ret=0
@@ -1315,7 +1661,7 @@ mapfile() {
 	local mypid _hkey ret
 
 	ret=0
-	mypid=$(getpid)
+	critical_retry_cmdsubst mypid "\$(getpid)"
 	case "${_file}" in
 	-) _file="/dev/fd/0" ;;
 	esac
@@ -1578,54 +1924,36 @@ mapfile_read_loop() {
 
 # Pipe to STDOUT from handle.
 mapfile_cat() {
-	[ $# -ge 1 ] || eargs mapfile_cat '[-T fd]' handle...
-	local OPTIND=1 Tflag flag ret
-
-	_mapfile_cat_lines_read=0
-	Tflag=
-	while getopts "T:" flag; do
-		case "${flag}" in
-		T) Tflag="${OPTARG:?}" ;;
-		*) err 1 "mapfile_cat: Invalid flag ${flag}" ;;
-		esac
-	done
-	shift $((OPTIND-1))
-	[ $# -ge 1 ] || eargs mapfile_cat '[-T fd]' handle...
+	[ $# -ge 1 ] || eargs mapfile_cat handle...
 	local IFS handle line
 
-	ret=0
+	_mapfile_cat_lines_read=0
 	for handle in "$@"; do
 		while IFS= mapfile_read "${handle}" line; do
 			_mapfile_cat_lines_read="$((_mapfile_cat_lines_read + 1))"
 			# shellcheck disable=SC2320
 			echo "${line}" || ret=$?
-			case "${Tflag}" in
-			"") ;;
-			*)
-				# shellcheck disable=SC2320
-				echo "${line}" > "/dev/fd/${Tflag}" || ret=$?
-			;;
-			esac
 		done
+		# There may be leftover without EOL newline.
+		case "${line:+set}" in
+		set) echo -n "${line}" ;;
+		esac
 	done
-	return "${ret}"
 }
 
 # Pipe to STDOUT from a file.
 # Basically an optimized loop of mapfile_read_loop_redir, or read_file
 mapfile_cat_file() {
 	local -; set +x
-	[ $# -ge 0 ] || eargs mapfile_cat_file '[-q] [-T fd]' file...
+	[ $# -ge 0 ] || eargs mapfile_cat_file '[-q]' '[-|file...]'
 	local  _handle ret _file
-	local OPTIND=1 Tflag qflag flag
+	local OPTIND=1 qflag flag
 
 	_mapfile_cat_file_lines_read=0
 	qflag=
-	Tflag=
-	while getopts "qT:" flag; do
+	while getopts "q" flag; do
 		case "${flag}" in
 		q) qflag=1 ;;
-		T) Tflag="${OPTARG:?}" ;;
 		*) err 1 "mapfile_cat_file: Invalid flag ${flag}" ;;
 		esac
 	done
@@ -1642,8 +1970,7 @@ mapfile_cat_file() {
 		esac
 		# shellcheck disable=SC2034
 		if mapfile ${qflag:+-q} -F _handle "${_file}" "r"; then
-			mapfile_cat ${Tflag:+-T "${Tflag}"} "${_handle}" ||
-			    ret="$?"
+			mapfile_cat "${_handle}" || ret="$?"
 			mapfile_close "${_handle}" || ret="$?"
 			_mapfile_cat_file_lines_read="${_mapfile_cat_lines_read:?}"
 		else
@@ -1677,11 +2004,18 @@ mapfile_read_proc() {
 	[ "$#" -ge 1 ] || eargs mapfile_read_proc handle_name cmd...
 	local _mapfile_read_proc_handle="$1"
 	shift 1
-	local spawn_jobid ret tmp _real_handle
+	local ret tmp _real_handle
+	# shellcheck disable=SC2034
+	local spawn_jobid spawn_job spawn_pgid spawn_pid
 
 	tmp="$(mktemp -ut mapfile_read_proc_fifo)"
 	mkfifo "${tmp}" || return
-	spawn_job _pipe_func_job "${tmp}" "$@"
+	ret=0
+	spawn_job _pipe_func_job "${tmp}" "$@" || ret="$?"
+	case "${ret}" in
+	0) ;;
+	*) return "${ret}" ;;
+	esac
 	# shellcheck disable=SC2034
 	if mapfile "${_mapfile_read_proc_handle}" "${tmp}" "re"; then
 		getvar "${_mapfile_read_proc_handle}" _real_handle
@@ -1770,6 +2104,9 @@ pipe_func() {
 		hash_get pipe_func_read_params "${_mf_key}" _mf_read_params ||
 		    err "${EX_SOFTWARE}" "pipe_func: No stored read params for ${_mf_key}"
 	else
+		# shellcheck disable=SC2034
+		local spawn_jobid spawn_job spawn_pgid spawn_pid
+
 		_mf_read_params=
 		while :; do
 			_mf_var="$1"
@@ -1883,6 +2220,52 @@ set_pipefail() {
 	command set -o pipefail 2>/dev/null || :
 }
 
+rtrim() {
+	local -; set +x
+	[ $# -eq 2 ] || [ $# -eq 3 ] || eargs rtrim in char '-|outvar'
+	local rt_in="$1"
+	local rt_char="$2"
+	local rt_outvar="${3-}"
+
+	case "${rt_in:+set}" in
+	set)
+		while :; do
+			case "${rt_in}" in
+			*"${rt_char}") rt_in="${rt_in%"${rt_char}"}" ;;
+			*) break ;;
+			esac
+		done
+		;;
+	esac
+	case "${rt_outvar-}" in
+	-|"") echo "${rt_in-}" ;;
+	*) setvar "${rt_outvar:?}" "${rt_in-}" || return ;;
+	esac
+}
+
+ltrim() {
+	local -; set +x
+	[ $# -eq 2 ] || [ $# -eq 3 ] || eargs ltrim in char '-|outvar'
+	local lt_in="$1"
+	local lt_char="$2"
+	local lt_outvar="${3-}"
+
+	case "${lt_in:+set}" in
+	set)
+		while :; do
+			case "${lt_in}" in
+			"${lt_char}"*) lt_in="${lt_in#"${lt_char}"}" ;;
+			*) break ;;
+			esac
+		done
+		;;
+	esac
+	case "${lt_outvar-}" in
+	-|"") echo "${lt_in-}" ;;
+	*) setvar "${lt_outvar:?}" "${lt_in-}" || return ;;
+	esac
+}
+
 prefix_stderr_quick() {
 	local flags="$-" -; set +x
 	local extra="$1"
@@ -1905,8 +2288,10 @@ prefix_stderr_quick() {
 			    have_builtin timestamp; then
 				# Let timestamp handle showing the proper time.
 				prefix="$(NO_ELAPSED_IN_MSG=1 msg_warn "${extra}:" 2>&1)"
+				# shellcheck disable=SC2086
 				TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
 				    timestamp -1 "${prefix}" \
+				    ${TIMESTAMP_FLAGS-} \
 				    -P "poudriere: ${PROC_TITLE} (prefix_stderr_quick)" \
 				    >&2
 			else
@@ -1936,8 +2321,10 @@ prefix_stderr() {
 		    command -v timestamp >/dev/null; then
 			# Let timestamp handle showing the proper time.
 			prefix="$(NO_ELAPSED_IN_MSG=1 msg_warn "${extra}:" 2>&1)"
+			# shellcheck disable=SC2086
 			TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
 			    timestamp -1 "${prefix}" \
+			    ${TIMESTAMP_FLAGS-} \
 			    -P "poudriere: ${PROC_TITLE} (prefix_stderr)" \
 			    >&2
 		else
@@ -1987,8 +2374,10 @@ prefix_stdout() {
 		    command -v timestamp >/dev/null; then
 			# Let timestamp handle showing the proper time.
 			prefix="$(NO_ELAPSED_IN_MSG=1 msg "${extra}:")"
+			# shellcheck disable=SC2086
 			TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
 			    timestamp -1 "${prefix}" \
+			    ${TIMESTAMP_FLAGS-} \
 			    -P "poudriere: ${PROC_TITLE} (prefix_stdout)"
 		else
 			set +x
@@ -2026,6 +2415,8 @@ prefix_output() {
 	local prefix_stdout prefix_stderr prefixpipe_stdout prefixpipe_stderr
 	local ret MSG_NESTED MSG_NESTED_STDERR prefix_job
 	local - errexit
+	# shellcheck disable=SC2034
+	local spawn_jobid spawn_job spawn_pgid spawn_pid
 	shift 1
 
 	if [ "${USE_TIMESTAMP:-1}" -eq 0 ] || \
@@ -2044,11 +2435,13 @@ prefix_output() {
 	mkfifo "${prefixpipe_stderr}"
 	prefix_stderr="$(NO_ELAPSED_IN_MSG=1 msg_warn "${extra}:" 2>&1)"
 
+	# shellcheck disable=SC2086
 	TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
 	    spawn_job \
 	    timestamp \
 	    -1 "${prefix_stdout}" -o "${prefixpipe_stdout}" \
 	    -2 "${prefix_stderr}" -e "${prefixpipe_stderr}" \
+	    ${TIMESTAMP_FLAGS-} \
 	    -P "poudriere: ${PROC_TITLE} (prefix_output)"
 	prefix_job="${spawn_jobid}"
 	exec 3>&1
@@ -2133,6 +2526,54 @@ timespecsub() {
 	esac
 }
 
+# Adjust timeout
+adjust_timeout() {
+	[ $# -eq 3 ] || [ $# -eq 4 ] ||
+	    eargs adjust_timeout orig_timeout start_time outvar '[now]'
+	local atd_orig_timeout="$1"
+	local atd_start_time="$2"
+	local atd_outvar="$3"
+	local atd_now="${4-}"
+	local atd_timeout atd_ret
+
+	atd_ret=0
+	case "${atd_now}" in
+	"") atd_now="$(clock -monotonic)" ;;
+	esac
+	case "${atd_orig_timeout-}" in
+	0) atd_timeout=0 ;;
+	"") unset atd_timeout ;;
+	*)
+		case "${atd_orig_timeout:?}" in
+		*.*)
+			atd_timeout="$(printf "%d.%d" \
+			    "$((${atd_orig_timeout%.*} - \
+			    (atd_now - atd_start_time)))" \
+			    "${atd_orig_timeout#*.}")"
+			;;
+		*)
+			atd_timeout="$((atd_orig_timeout - \
+			    (atd_now - atd_start_time)))"
+			;;
+		esac
+		case "${atd_timeout}" in
+		"-"*) atd_timeout=0 ;;
+		esac
+	esac
+	case "${atd_timeout:+set}" in
+	set)
+		case "${atd_timeout}" in
+		0) atd_ret=124 ;;
+		esac
+		setvar "${atd_outvar:?}" "${atd_timeout?}" || return
+		;;
+	*)
+		unset "${atd_outvar:?}" || return
+		;;
+	esac
+	return "${atd_ret}"
+}
+
 calculate_duration() {
 	[ $# -eq 2 ] || eargs calculate_duration var_return elapsed
 	local cd_outvar="$1"
@@ -2157,6 +2598,33 @@ calculate_duration() {
 	setvar "${cd_outvar}" "${_duration}"
 }
 
+calculate_duration_times() {
+	[ $# -eq 2 ] || eargs calculate_duration_times var_return elapsed
+	local cd_outvar="$1"
+	local _elapsed="$2"
+	local seconds minutes hours days _duration
+
+	days="$((_elapsed / 86400))"
+	_elapsed="$((_elapsed % 86400))"
+	hours="$((_elapsed / 3600))"
+	_elapsed="$((_elapsed % 3600))"
+	minutes="$((_elapsed / 60))"
+	_elapsed="$((_elapsed % 60))"
+	seconds="${_elapsed}"
+
+	_duration=
+	if [ "${days}" -gt 0 ]; then
+		_duration="$(printf "%s%dd" "${_duration}" "${days}")"
+	fi
+	if [ "${hours}" -gt 0 ]; then
+		_duration="$(printf "%s%dh" "${_duration}" "${hours}")"
+	fi
+	_duration="$(printf "%s%dm%.3fs" "${_duration}" "${minutes}" \
+	    "${seconds}")"
+
+	setvar "${cd_outvar}" "${_duration}"
+}
+
 _write_atomic() {
 	local -; set +x
 	[ $# -eq 3 ] || [ $# -ge 4 ] ||
@@ -2165,7 +2633,7 @@ _write_atomic() {
 	local tee="$2"
 	local dest="$3"
 	local data
-	local tmpfile_handle tmpfile ret tmpdir Tflag
+	local tmpfile_handle tmpfile ret tmpdir Tflag unlink
 
 	shift 3
 	unset data
@@ -2174,18 +2642,28 @@ _write_atomic() {
 	*) data=1 ;;
 	esac
 	case "$-${tee-}" in
-	C1)
+	*C*1)
 		err "${EX_USAGE:-64}" "_write_atomic: Teeing with noclobber" \
 			              "cannot work"
 		;;
 	esac
-	case "${dest}" in
-	*/*) tmpdir="${dest%/*}" ;;
-	*)   tmpdir="." ;;
+	dirname "${dest}" tmpdir
+	# For noclobber mode we need to unlink, but otherwise avoid it.
+	case "$-" in
+	*C*) unlink=1 ;;
+	*) unlink= ;;
 	esac
 	mapfile_mktemp tmpfile_handle tmpfile \
-	    -p "${tmpdir}" -ut ".write_atomic-${dest##*/}" ||
+	    -p "${tmpdir}" ${unlink:+-u} -t ".write_atomic-${dest##*/}" ||
 	    err "$?" "write_atomic unable to create tmpfile in ${tmpdir}"
+	case "${unlink:+set}" in
+	set) ;;
+	*)
+		# Respect umask without needing -u above.
+		chmod "=rw" "${tmpfile}" ||
+		    err "$?" "write_atomic: chmod"
+		;;
+	esac
 	ret=0
 	case "${tee}" in
 	1) Tflag=1 ;;
@@ -2216,7 +2694,8 @@ _write_atomic() {
 	*C*) # noclobber
 		# If comparing, we can only succeed if there is no file
 		# so no need to compare.
-		ln "${tmpfile}" "${dest}" 2>/dev/null || ret="$?"
+		# allow vfork
+		{ ln "${tmpfile}" "${dest}"; } 2>/dev/null || ret="$?"
 		case "${ret}" in
 		0) ;;
 		*)
@@ -2512,6 +2991,34 @@ sleep() {
 }
 fi
 
+fp_sleep() {
+	[ $# -eq 1 ] || eargs fp_varname
+	local fps_varname="$1"
+	local fps_value
+
+	getvar "${fps_varname}" fps_value || return 0
+	case "${fps_value:+set}" in
+	set) ;;
+	*) return 0 ;;
+	esac
+
+	msg_warn "${fps_varname} sleeping" \
+	    "${fps_value}"
+	case "${fps_value}" in
+	random) sleep_random ;;
+	random:*) sleep_random "${fps_value#*:}" ;;
+	*) sleep "${fps_value:?}" ;;
+	esac
+}
+
+sleep_random() {
+	local int
+
+	int="$(randint "${1:-2}").$(randint 2)$(randint 2)"
+	msg_warn "${FUNCNAMESTACK} sleep ${int}"
+	sleep "${int}"
+}
+
 _lock_read_pid() {
 	[ $# -eq 2 ] || eargs _lock_read_pid pidfile pid_var_return
 	local _lrp_pidfile="$1"
@@ -2543,8 +3050,7 @@ _lock_acquire() {
 	local lockpath="$3"
 	local waittime="${4:-30}"
 
-	# Avoid blank value on signal (see critical_inherit).
-	until mypid="$(getpid)"; do :; done
+	critical_retry_cmdsubst mypid "\$(getpid)"
 	hash_get have_lock "${lockname}" have_lock || have_lock=0
 	# lock_pid is in case a subshell tries to reacquire/relase my lock
 	hash_get lock_pid "${lockname}" lock_pid || lock_pid=
@@ -2628,7 +3134,7 @@ lock_acquire() {
 		;;
 	esac
 	lockname="$1"
-	waittime="$2"
+	waittime="${2-}"
 
 	lockpath="${POUDRIERE_TMPDIR:?}/lock-${MASTERNAME:+${MASTERNAME}-}${lockname:?}"
 	_lock_acquire "${quiet}" "${lockname}" "${lockpath}" "${waittime}"
@@ -2648,7 +3154,7 @@ locked() {
 		unset "${l_tmp_var}"
 		return 1
 	fi
-	setvar "${l_tmp_var}" "1"
+	setvar "${l_tmp_var}" "1" || return
 	until lock_acquire "${lockname}" "${waittime}"; do
 		sleep 1
 	done
@@ -2695,7 +3201,7 @@ slocked() {
 		unset "${s_tmp_var}"
 		return 1
 	fi
-	setvar "${s_tmp_var}" "1"
+	setvar "${s_tmp_var}" "1" || return
 	until slock_acquire "${lockname}" "${waittime}"; do
 		sleep 1
 	done
@@ -2715,8 +3221,7 @@ _lock_release() {
 	fi
 	hash_get lock_pid "${lockname}" lock_pid ||
 		err 1 "Lock had no pid ${lockname}"
-	# Avoid blank value on signal (see critical_inherit).
-	until mypid="$(getpid)"; do :; done
+	critical_retry_cmdsubst mypid "\$(getpid)"
 	case "${mypid}" in
 	"${lock_pid}") ;;
 	*)
@@ -2741,7 +3246,7 @@ _lock_release() {
 			err 1 "Releasing lock pid ${lock_pid} owns ${lockname}"
 			;;
 		esac
-		rmdir "${lockpath:?}" ||
+		critical_retry rmdir "${lockpath:?}" ||
 			err 1 "Held lock dir not found: ${lockpath}"
 	fi
 
@@ -2768,7 +3273,7 @@ slock_release() {
 	local lockpath
 
 	lockpath="${SHARED_LOCK_DIR:?}/lock-poudriere-shared-${lockname:?}"
-	_lock_release "${lockname}" "${lockpath}" || return
+	_lock_release "${lockname}" "${lockpath}"
 	list_remove SLOCKS "${lockname}"
 }
 
@@ -2794,8 +3299,7 @@ lock_have() {
 	if hash_isset have_lock "${lockname}"; then
 		hash_get lock_pid "${lockname}" lock_pid ||
 			err 1 "have_lock: Lock had no pid ${lockname}"
-		# Avoid blank value on signal (see critical_inherit).
-		until mypid="$(getpid)"; do :; done
+		critical_retry_cmdsubst mypid "\$(getpid)"
 		case "${lock_pid}" in
 		"${mypid}") return 0 ;;
 		esac
@@ -2805,5 +3309,167 @@ lock_have() {
 
 # This is mostly for tests to assert without having the assert hidden.
 hide_stderr() {
-	"$@" 2>/dev/null
+	# allow vfork
+	{ "$@"; } 2>/dev/null
+}
+
+if ! type nproc >/dev/null 2>&1; then
+nproc() {
+	sysctl -n hw.ncpu
+}
+fi
+
+# Delete all files listed in the given file.
+remove_many_file() {
+	[ $# -ge 1 ] || eargs remove_many_file filename 'rm cmd'
+	local filelist="$1"
+	shift
+	local cmd ret -
+	set_pipefail
+	set -o noglob
+
+	ret=0
+	if [ ! -s "${filelist:?}" ]; then
+		unlink "${filelist:?}" || return
+		return
+	fi
+	case "$#" in
+	0)
+		if have_builtin "unlink"; then
+			set -- "unlink" "--"
+		else
+			set --  "rm" "-f"
+		fi
+		;;
+	esac
+	cmd="${1-}"
+	if have_builtin "${cmd:?}"; then
+		local file
+
+		while mapfile_read_loop "${filelist:?}" file; do
+			"$@" "${file:?}" || ret="$?"
+		done
+	else
+		mapfile_cat_file "${filelist:?}" |
+		    remove_many_pipe "$@" ||
+		    ret="$?"
+	fi
+	case "${ret}" in
+	0) unlink "${filelist:?}" || ret="$?" ;;
+	esac
+	return "${ret}"
+}
+
+# Delete all files listed in stdin, possibly avoiding fork+exec.
+remove_many_pipe() {
+	[ $# -ge 0 ] || eargs remove_many_pipe 'rm cmd'
+	local ret -
+	local cmd file
+	set_pipefail
+	set -o noglob
+
+	case "$#" in
+	0)
+		if have_builtin "unlink"; then
+			set -- "unlink" "--"
+		else
+			set --  "rm" "-f"
+		fi
+		;;
+	esac
+	cmd="$1"
+	ret=0
+	if have_builtin "${cmd}"; then
+		while mapfile_read_loop_redir file; do
+			"$@" "${file:?}" || ret="$?"
+		done
+	else
+		tr '\n' '\000' |
+		    xargs -0 "$@" ||
+		    ret="$?"
+	fi
+	return "${ret}"
+}
+unlink_many_pipe() { remove_many_pipe; }
+rmdir_many_pipe() { remove_many_pipe rmdir; }
+rmrf_many_pipe() { remove_many_pipe rm -rf; }
+
+# These take 1 argument because we're really never going to be passed
+# an array of files in practice.
+# Delete all files passed in, possibly avoiding a fork+exec
+_remove_many() {
+	[ $# -ge 2 ] || eargs _remove_many cmd -- '"files..."'
+	local cmd="$1"
+	local cmd_extra
+	shift
+	local ret -
+	local file
+	set -o noglob
+
+	case "$@" in
+	--" "*|*" -- "*) ;;
+	*) eargs _remove_many cmd -- '"files..."' ;;
+	esac
+
+	cmd_extra=
+	while :; do
+		case "$1" in
+		--)
+			shift
+			break
+			;;
+		*)
+			cmd_extra="$1"
+			shift
+			;;
+		esac
+	done
+	[ $# -eq 1 ] || eargs _remove_many cmd -- '"files..."'
+	# Expand the 1 argument into an array.
+	# shellcheck disable=SC2086
+	set -- $1
+
+	ret=0
+	if have_builtin "${cmd}"; then
+		for file in "$@"; do
+			"${cmd}" ${cmd_extra:+"${cmd_extra}"} "${file:?}" || ret="$?"
+		done
+	else
+		for file in "$@"; do
+			echo "${file:?}"
+		done | remove_many_pipe "${cmd}" \
+		    ${cmd_extra:+"${cmd_extra}"} ||
+		    ret="$?"
+	fi
+	return "${ret}"
+}
+
+# Delete all files passed in, possibly avoiding a fork+exec
+unlink_many() {
+	[ $# -eq 1 ] || eargs unlink_many '"files..."'
+	if ! have_builtin unlink; then
+		_remove_many rm -f -- "$@" || return
+		return
+	fi
+	_remove_many unlink -- "$@"
+}
+
+# Delete all dirs passed in, possibly avoiding a fork+exec
+rmdir_many() {
+	[ $# -eq 1 ] || eargs rmdir_many '"dirs..."'
+	_remove_many rmdir -- "$@"
+}
+
+# Recursively delete all dirs passed in, possibly avoiding a fork+exec
+rmrf_many() {
+	[ $# -ge 1 ] || eargs rmrf_many '"dirs..."'
+	_remove_many rm -rf -- "$@"
+}
+remove_many() { rmrf_many "$@"; }
+
+reset_funcstack() {
+	[ $# -ge 1 ] || eargs reset_funcstack 'cmd...'
+	# Reset the stack so it starts in the child.
+	unset FUNCNAMESTACK FUNCNAME
+	"$@"
 }

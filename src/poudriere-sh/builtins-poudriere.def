@@ -1,7 +1,13 @@
+alarmcmd -n		alarm
+chmodcmd -n		chmod
 clockcmd -n		clock
 critical_startcmd -n	critical_start
 critical_endcmd -n	critical_end
 diremptycmd -n		dirempty
+dirwatchcmd -n		dirwatch
+get_job_idcmd -n	get_job_id
+get_job_statuscmd -n	get_job_status
+jobs_with_statusescmd -n	jobs_with_statuses
 getpidcmd -n		getpid
 getvarcmd -n		getvar
 _gsub_var_namecmd -n	_gsub_var_name
@@ -24,6 +30,7 @@ mktempcmd -n		mktemp
 _mktempcmd -n		_mktemp
 pwaitcmd		pwait
 randintcmd -n		randint
+readlinkcmd -n		readlink
 realpathcmd -n		realpath
 renamecmd -n		rename
 rmcmd -n		rm

@@ -125,7 +125,7 @@ output_builder_info() {
 	_bget builders builders || :
 
 	_mastermnt MASTERMNT
-	JOBS="${builders}" siginfo_handler
+	BUILDERS="${builders}" siginfo_handler
 }
 
 add_summary_build() {

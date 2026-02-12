@@ -1,5 +1,5 @@
 _LINEINFO_FUNC_DATA='${LINEINFOSTACK:+${LINEINFOSTACK}:}${FUNCNAME:+${FUNCNAME}:}${LINENO}'
-_LINEINFO_DATA="\${lineinfo-\$0}:${_LINEINFO_FUNC_DATA:?}"
+_LINEINFO_DATA="\${lineinfo:-\$0}:${_LINEINFO_FUNC_DATA:?}"
 alias stack_lineinfo="LINEINFOSTACK=\"${_LINEINFO_FUNC_DATA:?}\" "
 if ! type err >/dev/null 2>&1; then
 	# This function may be called in "$@" contexts that do not use eval.
@@ -24,11 +24,6 @@ msg_assert() {
 }
 fi
 
-# This function gets conditionally overwritten in post_getopts()
-msg_assert_dev() {
-	msg_assert "$@"
-}
-
 _err() {
 	set +e +u +x
 	local lineinfo="${1}"
@@ -41,39 +36,43 @@ _err() {
 aecho() {
 	local -; set +x +e +u
 	[ $# -ge 2 ] || eargs aecho result lineinfo expected actual
-	local result="$1"
+	local _aresult="$1"
 	local lineinfo="${TEST_CONTEXT:+"{${TEST_CONTEXT_PROGRESS} ${TEST_CONTEXT}} "}${2}"
 
-	case "${result}" in
+	case "${_aresult}" in
 	TEST*)
 		shift 2
-		msg_assert_dev "$(printf "%d> ${COLOR_LINEINFO-}%-4s${COLOR_RESET-} ${COLOR_ASSERT_TEST-}%s${COLOR_RESET-}: %s\n" \
-		    "$(getpid)" "${lineinfo}" "${result}" "$*")"
+		if [ "${IN_TEST:-0}" -eq 1 ] || msg_level dev; then
+			msg_assert "$(printf "%d> ${COLOR_LINEINFO-}%-4s${COLOR_RESET-} ${COLOR_ASSERT_TEST-}%s${COLOR_RESET-}: %s\n" \
+			    "$(getpid)" "${lineinfo}" "${_aresult}" "$*")"
+		fi
 		;;
 	OK)
-		msg_assert_dev "$(printf "%d> ${COLOR_LINEINFO-}%-4s${COLOR_RESET-} ${COLOR_ASSERT_OK-}%s${COLOR_RESET-}\n" \
-		    "$(getpid)" "${lineinfo}" "${result}")"
+		if [ "${IN_TEST:-0}" -eq 1 ] || msg_level dev; then
+			msg_assert "$(printf "%d> ${COLOR_LINEINFO-}%-4s${COLOR_RESET-} ${COLOR_ASSERT_OK-}%s${COLOR_RESET-}\n" \
+			    "$(getpid)" "${lineinfo}" "${_aresult}")"
+		fi
 		;;
 	FAIL)
 		case "${ASSERT_CONTINUE:-0}" in
-		1) result="${result} (continuing)" ;;
+		1) _aresult="${_aresult} (continuing)" ;;
 		esac
 		if [ "$#" -lt 4 ]; then
 			shift 2
 			msg_assert "$(printf "%d> ${COLOR_LINEINFO-}%-4s${COLOR_RESET-} ${COLOR_ASSERT_FAIL-}%s${COLOR_RESET-}: %s\n" \
-			    "$(getpid)" "${lineinfo}" "${result}" "$*")"
+			    "$(getpid)" "${lineinfo}" "${_aresult}" "$*")"
 			return
 		fi
-		local expected="$3"
-		local actual="$4"
+		local _aexpected="$3"
+		local _aactual="$4"
 		local INDENT
 		shift 4
 		INDENT=">>   "
 		msg_assert "$(printf "%d> ${COLOR_LINEINFO-}%-4s${COLOR_RESET-} ${COLOR_ASSERT_FAIL-}%s${COLOR_RESET-}: %s\n${INDENT}expected '%s'\n${INDENT}actual   '%s'\n" \
-			"$(getpid)" "${lineinfo}" "${result}" \
+			"$(getpid)" "${lineinfo}" "${_aresult}" \
 			"$(echo "$@" | cat -ev | sed '2,$s,^,	,')" \
-			"$(echo "${expected}" | cat -ev | sed '2,$s,^,	,')" \
-			"$(echo "${actual}" | cat -ev | sed '2,$s,^,	,')")"
+			"$(echo "${_aexpected}" | cat -ev | sed '2,$s,^,	,')" \
+			"$(echo "${_aactual}" | cat -ev | sed '2,$s,^,	,')")"
 		;;
 	*)
 		;;
@@ -101,8 +100,8 @@ _assert_compare() {
 	[ $# -ge 4 ] || eargs _assert_compare lineinfo test_op expected actual
 	local lineinfo="$1"
 	local test_op="$2"
-	local expected="$3"
-	local actual="$4"
+	local _aexpected="$3"
+	local _aactual="$4"
 	local test_str
 	shift 4
 
@@ -118,14 +117,14 @@ _assert_compare() {
 	*) err 1 "invalid test_op=${test_op}" ;;
 	esac
 
-	aecho TEST "${lineinfo}" "'${expected}' ${test_str} '${actual}'"
-	if [ "${actual}" ${test_op} "${expected}" ]; then
+	aecho TEST "${lineinfo}" "'${_aexpected}' ${test_str} '${_aactual}'"
+	if [ "${_aactual}" ${test_op} "${_aexpected}" ]; then
 		:
 	else
-		aecho FAIL "${lineinfo}" "${expected}" "${actual}" "$@"
+		aecho FAIL "${lineinfo}" "${_aexpected}" "${_aactual}" "$@"
 		assert_failure
 	fi
-	aecho OK "${lineinfo}" #"${msg}: expected: '${expected}', actual: '${actual}'"
+	aecho OK "${lineinfo}" #"${msg}: expected: '${_aexpected}', actual: '${_aactual}'"
 }
 # This function may be called in "$@" contexts that do not use eval.
 assert_le() { _assert_compare "${lineinfo-}" "-le" "$@"; }
@@ -142,19 +141,19 @@ _assert() {
 	local -; set +x +e +u
 	[ $# -ge 3 ] || eargs assert lineinfo expected actual
 	local lineinfo="$1"
-	local expected="$2"
-	local actual="$3"
+	local _aexpected="$2"
+	local _aactual="$3"
 	shift 3
 
-	aecho TEST "${lineinfo}" "'${expected}' == '${actual}'"
-	case "${actual}" in
-	"${expected}") ;;
+	aecho TEST "${lineinfo}" "'${_aexpected}' == '${_aactual}'"
+	case "${_aactual}" in
+	"${_aexpected}") ;;
 	*)
-		aecho FAIL "${lineinfo}" "${expected}" "${actual}" "$@"
+		aecho FAIL "${lineinfo}" "${_aexpected}" "${_aactual}" "$@"
 		assert_failure
 		;;
 	esac
-	aecho OK "${lineinfo}" #"${msg}: expected: '${expected}', actual: '${actual}'"
+	aecho OK "${lineinfo}" #"${msg}: expected: '${_aexpected}', actual: '${_aactual}'"
 }
 # This function may be called in "$@" contexts that do not use eval.
 assert() { _assert "${lineinfo-}" "$@"; }
@@ -164,23 +163,23 @@ _assert_case() {
 	local -; set +x +e +u
 	[ $# -ge 3 ] || eargs assert_case lineinfo expected actual
 	local lineinfo="$1"
-	local expected="$2"
-	local actual="$3"
+	local _aexpected="$2"
+	local _aactual="$3"
 	shift 3
 	local -
 
-	aecho TEST "${lineinfo}" $'\n'"case \"${actual}\" in"$'\n'$'\t'"${expected})"
+	aecho TEST "${lineinfo}" $'\n'"case \"${_aactual}\" in"$'\n'$'\t'"${_aexpected})"
 	set -f
 	# shellcheck disable=SC2254
-	case "${actual}" in
-	${expected}) ;;
+	case "${_aactual}" in
+	${_aexpected}) ;;
 	*)
-		aecho FAIL "${lineinfo}" "${expected}" "${actual}" "$@"
+		aecho FAIL "${lineinfo}" "${_aexpected}" "${_aactual}" "$@"
 		assert_failure
 		;;
 	esac
 	set +f
-	aecho OK "${lineinfo}" #"${msg}: expected: '${expected}', actual: '${actual}'"
+	aecho OK "${lineinfo}" #"${msg}: expected: '${_aexpected}', actual: '${_aactual}'"
 }
 # This function may be called in "$@" contexts that do not use eval.
 assert_case() { _assert_case "${lineinfo-}" "$@"; }
@@ -191,17 +190,17 @@ _assert_not() {
 	[ $# -ge 3 ] || eargs assert_not lineinfo notexpected actual
 	local lineinfo="$1"
 	local notexpected="$2"
-	local actual="$3"
+	local _aactual="$3"
 	shift 3
 
-	aecho TEST "${lineinfo}" "'${notexpected}' != '${actual}'"
-	case "${actual}" in
+	aecho TEST "${lineinfo}" "'${notexpected}' != '${_aactual}'"
+	case "${_aactual}" in
 	"${notexpected}")
-		aecho FAIL "${lineinfo}" "!${notexpected}" "${actual}" "$@"
+		aecho FAIL "${lineinfo}" "!${notexpected}" "${_aactual}" "$@"
 		assert_failure
 		;;
 	esac
-	aecho OK "${lineinfo}" # "${msg}: notexpected: '${notexpected}', actual: '${actual}'"
+	aecho OK "${lineinfo}" # "${msg}: notexpected: '${notexpected}', actual: '${_aactual}'"
 }
 # This function may be called in "$@" contexts that do not use eval.
 assert_not() { _assert_not "${lineinfo-}" "$@"; }
@@ -216,29 +215,34 @@ _assert_list() {
 	local reason="$4"
 	local have_tmp=$(mktemp -t actual.${actual_name})
 	local expected_tmp=$(mktemp -t expected.${expected_name})
-	local ret=0
-	local expected actual
+	local _al_ret=0
+	local _aexpected _aactual
 
-	getvar "${expected_name}" expected || expected="null"
-	getvar "${actual_name}" actual || actual="null"
+	getvar "${expected_name}" _aexpected || _aexpected="null"
+	getvar "${actual_name}" _aactual || _aactual="null"
 
-	echo "${expected}" |
-	    tr ' ' '\n' | env LC_ALL=C sort |
-            sed -e '/^$/d' > "${expected_tmp}"
-	echo "${actual}" |
-	    tr ' ' '\n' | env LC_ALL=C sort |
-	    sed -e '/^$/d' > "${have_tmp}"
-	cmp -s "${have_tmp}" "${expected_tmp}" || ret=$?
-	if [ "${ret}" -ne 0 ]; then
-		diff -u "${expected_tmp}" "${have_tmp}" >&${REDIRECTED_STDERR_FD:-2}
+	{
+		echo "${_aexpected}" |
+		    tr ' ' '\n' | LC_ALL=C sort |
+		    sed -e '/^$/d'
+	} > "${expected_tmp}"
+	{
+		echo "${_aactual}" |
+		    tr ' ' '\n' | LC_ALL=C sort |
+		    sed -e '/^$/d'
+	} > "${have_tmp}"
+	cmp -s "${have_tmp}" "${expected_tmp}" || _al_ret=$?
+	if [ "${_al_ret}" -ne 0 ]; then
+		{ diff -u "${expected_tmp}" "${have_tmp}"; } \
+		    >&${REDIRECTED_STDERR_FD:-2}
 	fi
 
 	rm -f "${have_tmp}" "${expected_tmp}"
-	if [ "${ret}" -ne 0 ]; then
+	if [ "${_al_ret}" -ne 0 ]; then
 		aecho FAIL "${lineinfo}" "${reason}"
 		assert_failure
 	fi
-	aecho OK "${lineinfo}" #"${msg}: expected: '${expected}', actual: '${actual}'"
+	aecho OK "${lineinfo}" #"${msg}: expected: '${_aexpected}', actual: '${_aactual}'"
 }
 # This function may be called in "$@" contexts that do not use eval.
 assert_list() { _assert_list "${lineinfo-}" "$@"; }
@@ -248,38 +252,40 @@ _assert_file_reg() {
 	[ "$#" -ge 3 ] || eargs assert_file_reg 'expected-file|-' 'have-file'
 	local -; set +x +e +u
 	local lineinfo="$1"
-	local expected="$2"
+	local _aexpected="$2"
 	local have="$3"
 	local reason="${4-}"
-	local ret=0
+	local _afg_ret=0
 
 	if [ ! -r "${have}" ]; then
 		aecho FAIL "${lineinfo}" "Have file is missing? ${have}"
 		assert_failure
 	fi
 
-	case "${expected}" in
+	case "${_aexpected}" in
 	-)
-		expected=$(mktemp -ut assert_file.expected)
-		cat > "${expected}"
+		_aexpected=$(mktemp -ut assert_file.expected)
+		{ cat; } > "${_aexpected}"
 		;;
 	esac
 
-	aecho TEST "${lineinfo}" "awk -f ${AWKPREFIX:?}/file_cmp_reg.awk '${expected}' '${have}'"
-	awk -f "${AWKPREFIX:?}/file_cmp_reg.awk" "${expected}" "${have}" ||
-	    ret="$?"
-	reason="${reason:+${reason} -}
-HAVE:
-$(cat -nvet "${have}")
-EXPECTED:
-$(cat -nvet "${expected}")"
-	if [ "${ret}" -ne 0 ]; then
+	aecho TEST "${lineinfo}" "awk -f ${AWKPREFIX:?}/file_cmp_reg.awk '${_aexpected}' '${have}'"
+	awk -f "${AWKPREFIX:?}/file_cmp_reg.awk" "${_aexpected}" "${have}" ||
+	    _afg_ret="$?"
+	reason="$(\
+	    printf "%s%s\nHAVE:\n%s\nEXPECTED:\n%s\n" \
+	    "${reason}" \
+	    "${reason:+ -}" \
+	    "$(cat -nvet "${have}")" \
+	    "$(cat -nvet "${_aexpected}")" \
+	)"
+	if [ "${_afg_ret}" -ne 0 ]; then
 		aecho FAIL "${lineinfo}" "${reason}"
-		#diff -u "${expected}" "${have}" | cat -vet >&${REDIRECTED_STDERR_FD:-2}
+		#diff -u "${_aexpected}" "${have}" | cat -vet >&${REDIRECTED_STDERR_FD:-2}
 		assert_failure
 	else
 		aecho OK "${lineinfo}"
-		rm -f "${have}" "${expected}"
+		rm -f "${have}" "${_aexpected}"
 	fi
 }
 # This function may be called in "$@" contexts that do not use eval.
@@ -291,59 +297,75 @@ _assert_file() {
 	local -; set +x +e +u
 	local lineinfo="$1"
 	local unordered="$2"
-	local expected="$3"
-	local have="$4"
+	local _aexpected="$3"
+	local _ahave="$4"
 	local reason="${5-}"
-	local ret=0
+	local _af_ret=0
 	local havetmp havesave expectedtmp expectedsave
 
-	if [ ! -r "${have}" ]; then
-		aecho FAIL "${lineinfo}" "Have file is missing? ${have}"
-		assert_failure
-	fi
-
-	case "${expected}" in
+	case "${_ahave}" in
 	-)
-		expected=$(mktemp -ut assert_file.expected)
-		cat | grep -v '^#' > "${expected}"
+		_ahave=$(mktemp -ut assert_file.have)
+		{ grep -v '^#'; } > "${_ahave}"
+		;;
+	*)
+		if [ ! -r "${_ahave}" ]; then
+			aecho FAIL "${lineinfo}" "Have file is missing?" \
+			    "${_ahave}"
+			assert_failure
+		fi
+		;;
+	esac
+	case "${_aexpected}" in
+	-)
+		_aexpected=$(mktemp -ut assert_file.expected)
+		{ grep -v '^#'; } > "${_aexpected}"
+		;;
+	*)
+		if [ ! -r "${_aexpected}" ]; then
+			aecho FAIL "${lineinfo}" "Expected file is missing?" \
+			    "${_aexpected}"
+			assert_failure
+		fi
 		;;
 	esac
 
 	if [ "${unordered}" -eq 1 ]; then
 		havetmp=$(mktemp -ut have)
-		sort -o "${havetmp}" "${have}"
-		havesave="${have}"
-		have="${havetmp}"
+		sort -o "${havetmp}" "${_ahave}"
+		havesave="${_ahave}"
+		_ahave="${havetmp}"
 		expectedtmp=$(mktemp -ut expected)
-		sort -o "${expectedtmp}" "${expected}"
-		expectedsave="${expected}"
-		expected="${expectedtmp}"
+		sort -o "${expectedtmp}" "${_aexpected}"
+		expectedsave="${_aexpected}"
+		_aexpected="${expectedtmp}"
 	fi
 
-	aecho TEST "${lineinfo}" "diff -u '${expected}' '${have}'"
-	cmp -s "${have}" "${expected}" || ret=$?
+	aecho TEST "${lineinfo}" "diff -u '${_aexpected}' '${_ahave}'"
+	cmp -s "${_ahave}" "${_aexpected}" || _af_ret=$?
 	reason="${reason:+${reason} -}
 HAVE:
-$(cat -nvet "${have}")
+$(cat -nvet "${_ahave}")
 EXPECTED:
-$(cat -nvet "${expected}")"
-	if [ "${ret}" -ne 0 ]; then
+$(cat -nvet "${_aexpected}")"
+	if [ "${_af_ret}" -ne 0 ]; then
 		aecho FAIL "${lineinfo}" "${reason}"
-		diff -u "${expected}" "${have}" | cat -vet >&${REDIRECTED_STDERR_FD:-2}
+		{ diff -u "${_aexpected}" "${_ahave}" | cat -vet; } \
+		    >&${REDIRECTED_STDERR_FD:-2}
 		if [ "${unordered}" -eq 1 ]; then
 			rm -f "${havetmp}" "${expectedtmp}"
-			have="${havesave}"
-			expected="${expectedsave}"
+			_ahave="${havesave}"
+			_aexpected="${expectedsave}"
 		fi
 		assert_failure
 	else
 		if [ "${unordered}" -eq 1 ]; then
 			rm -f "${havetmp}" "${expectedtmp}"
-			have="${havesave}"
-			expected="${expectedsave}"
+			_ahave="${havesave}"
+			_aexpected="${expectedsave}"
 		fi
 		aecho OK "${lineinfo}"
-		rm -f "${have}" "${expected}"
+		rm -f "${_ahave}" "${_aexpected}"
 	fi
 }
 # This function may be called in "$@" contexts that do not use eval.
@@ -356,15 +378,15 @@ _assert_ret() {
 	local -; set +x +e +u
 	[ "$#" -ge 3 ] || eargs assert_ret expected_exit_status 'cmd ...'
 	local lineinfo="$1"
-	local expected="$2"
+	local _aexpected="$2"
 	shift 2
-	local ret reason
+	local _ar_ret reason
 
-	aecho TEST "${lineinfo}" "\$? == ${expected} cmd:" "$*"
-	ret=0
-	"$@" || ret=$?
-	reason="Bad exit status: ${ret} cmd: $*"
-	_assert "${lineinfo}" "${expected}" "${ret}" "${reason}${REASON:+ "$'\n'" ${REASON}}"
+	aecho TEST "${lineinfo}" "\$? == ${_aexpected} cmd:" "$*"
+	_ar_ret=0
+	"$@" || _ar_ret=$?
+	reason="Bad exit status: ${_ar_ret} cmd: $*"
+	_assert "${lineinfo}" "${_aexpected}" "${_ar_ret}" "${reason}${REASON:+ "$'\n'" ${REASON}}"
 }
 # This function may be called in "$@" contexts that do not use eval.
 assert_ret() { _assert_ret "${lineinfo-}" "$@"; }
@@ -376,22 +398,22 @@ _assert_ret_not() {
 	local -; set +x +e +u
 	[ "$#" -ge 3 ] || eargs assert_ret_not not_expected_exit_status 'cmd ...'
 	local lineinfo="$1"
-	local expected="$2"
+	local _aexpected="$2"
 	shift 2
-	local ret
+	local _arn_ret
 
 	# [(1) will always return 1 on failure but 2 on an error.
-	case "${expected}${1-}" in
+	case "${_aexpected}${1-}" in
 	'0[')
 		assert_ret 1 "$@"
 		return
 		;;
 	esac
 
-	aecho TEST "${lineinfo}" "\$? != ${expected} cmd:" "$*"
-	ret=0
-	"$@" || ret=$?
-	_assert_not "${lineinfo}" "${expected}" "${ret}" "Bad exit status: ${ret} cmd: $*"
+	aecho TEST "${lineinfo}" "\$? != ${_aexpected} cmd:" "$*"
+	_arn_ret=0
+	"$@" || _arn_ret=$?
+	_assert_not "${lineinfo}" "${_aexpected}" "${_arn_ret}" "Bad exit status: ${_arn_ret} cmd: $*"
 }
 # This function may be called in "$@" contexts that do not use eval.
 assert_ret_not() { _assert_ret_not "${lineinfo-}" "$@"; }
@@ -406,41 +428,41 @@ _assert_out() {
 	local lineinfo="$1"
 	local unordered="$2"
 	local expected_ret="$3"
-	local expected="$4"
+	local _aexpected="$4"
 	shift 4
-	local out ret tmpfile
+	local out _ao_ret tmpfile
 
-	aecho TEST "${lineinfo}" "'${expected}' == '\$($*)'"
+	aecho TEST "${lineinfo}" "'${_aexpected}' == '\$($*)'"
 
-	ret=0
-	case "${expected}" in
+	_ao_ret=0
+	case "${_aexpected}" in
 	-)
 		tmpfile="$(mktemp -ut assert_out)"
 		(set_pipefail; set -e; "$@" ) < /dev/null > "${tmpfile}"
-		ret="$?"
+		_ao_ret="$?"
 		_assert_file "${lineinfo}" "${unordered}" - "${tmpfile}"
-		_assert "${lineinfo:?}" "${expected_ret}" "${ret}"
-		return "${ret}"
+		_assert "${lineinfo:?}" "${expected_ret}" "${_ao_ret}"
+		return "${_ao_ret}"
 		;;
 	*)
-		out="$(set_pipefail; set -e; "$@" | cat -vet)" || ret="$?"
-		_assert "${lineinfo:?}" "${expected_ret}" "${ret}"
+		out="$(set_pipefail; set -e; "$@" | cat -vet)" || _ao_ret="$?"
+		_assert "${lineinfo:?}" "${expected_ret}" "${_ao_ret}"
 		;;
 	esac
 	case "${unordered:-0}" in
 	1)
 		assert \
-		    "$(echo "${expected}" | LC_ALL=C sort)" \
+		    "$(echo "${_aexpected}" | LC_ALL=C sort)" \
 		    "$(echo "${out}" | LC_ALL=C sort)" \
 		    "Bad output: $*"
 		;;
 	0)
-		assert "${expected}" "${out}" "Bad output: $*"
+		assert "${_aexpected}" "${out}" "Bad output: $*"
 		;;
 	esac
-	return "${ret}"
+	return "${_ao_ret}"
 	#aecho TEST "${lineinfo}" "'0' == '\$?'"
-	#assert 0 "${ret}" "Bad exit status: ${ret} cmd: $*"
+	#assert 0 "${_ao_ret}" "Bad exit status: ${_ao_ret} cmd: $*"
 }
 # This function may be called in "$@" contexts that do not use eval.
 assert_out() { _assert_out "" 0 "$@"; }
@@ -452,25 +474,25 @@ _assert_stack() {
 	local -; set +x +u
 	[ "$#" -ge 2 ] || eargs assert_stack stack_var expected_value '[reason]'
 	local stack_var="$1"
-	local expected="$2"
+	local _aexpected="$2"
 	local reason="$3"
 	local have_tmp=$(mktemp -t assert_stack)
 	local expected_tmp=$(mktemp -t assert_stack)
-	local ret=0
+	local _as_ret=0
 	local val
 
 	val="$(getvar "${stack_var}")"
-	echo "${val}" | tr ' ' '\n' | sort | sed -e '/^$/d' > "${have_tmp}"
-	echo "${expected}" | tr ' ' '\n' | sort | sed -e '/^$/d' > \
+	{ echo "${val}" | tr ' ' '\n' | sort | sed -e '/^$/d'; } > "${have_tmp}"
+	{ echo "${_aexpected}" | tr ' ' '\n' | sort | sed -e '/^$/d'; } > \
 	    "${expected_tmp}"
-	cmp -s "${have_tmp}" "${expected_tmp}" || ret=$?
-	if [ ${ret} -ne 0 ]; then
-		comm "${have_tmp}" "${expected_tmp}" >&2
+	cmp -s "${have_tmp}" "${expected_tmp}" || _as_ret=$?
+	if [ ${_as_ret} -ne 0 ]; then
+		{ comm "${have_tmp}" "${expected_tmp}"; } >&2
 	fi
 
 	rm -f "${have_tmp}" "${expected_tmp}"
-	assert 0 "${ret}" \
-		"${reason} -"$'\n'"Have:     '${val}'"$'\n'"Expected: '${expected}'"
+	assert 0 "${_as_ret}" \
+		"${reason} -"$'\n'"Have:     '${val}'"$'\n'"Expected: '${_aexpected}'"
 }
 # This function may be called in "$@" contexts that do not use eval.
 assert_stack() { _assert_stack "${lineinfo-}" "$@"; }
@@ -482,24 +504,28 @@ _assert_runs_le() {
 	local lineinfo="$1"
 	local within="$2"
 	shift 2
-	local ret start now duration reason
+	local _arle_ret start now duration reason
 
 	aecho TEST "${lineinfo}" "runs within ${within} seconds cmd: $*"
 	start="$(clock -monotonic)"
-	ret=0
-	"$@" || ret=$?
+	_arle_ret=0
+	"$@" || _arle_ret=$?
 	now="$(clock -monotonic)"
 	duration="$((now - start))"
 	if [ "${duration}" -gt "${within}" ]; then
 		reason="Took longer than ${within} seconds. Took ${duration} seconds. cmd: $*"
 	fi
-	aecho TEST_FINISH "${lineinfo}" "ran in ${duration} seconds ret=${ret} cmd: $*"
+	aecho TEST_FINISH "${lineinfo}" "ran in ${duration} seconds ret=${_arle_ret} cmd: $*"
 	_assert_compare "${lineinfo}" "-le" "${within}" "${duration}" "${reason}${REASON:+ "$'\n'" ${REASON}}"
 }
 # This function may be called in "$@" contexts that do not use eval.
 assert_runs_le() { _assert_runs_le "${lineinfo-}" "$@"; }
 alias assert_runs_le="_assert_runs_le \"${_LINEINFO_DATA:?}\" "
+assert_runs_shorter_than() { assert_runs_le "$@"; }
 alias assert_runs_shorter_than='assert_runs_le '
+assert_runs_less_than() { assert_runs_le "$@"; }
+alias assert_runs_less_than='assert_runs_le '
+assert_runs_within() { assert_runs_shorter_than "$@"; }
 alias assert_runs_within='assert_runs_shorter_than '
 
 _assert_runs_ge() {
@@ -508,24 +534,28 @@ _assert_runs_ge() {
 	local lineinfo="$1"
 	local within_ge="$2"
 	shift 2
-	local ret start now duration reason
+	local _arge_ret start now duration reason
 
 	aecho TEST "${lineinfo}" "runs at_least ${within_ge} seconds cmd: $*"
 	start="$(clock -monotonic)"
-	ret=0
-	"$@" || ret=$?
+	_arge_ret=0
+	"$@" || _arge_ret=$?
 	now="$(clock -monotonic)"
 	duration="$((now - start))"
 	if [ "${duration}" -gt "${within_ge}" ]; then
 		reason="Took shorter than ${within_ge} seconds. Took ${duration} seconds. cmd: $*"
 	fi
-	aecho TEST_FINISH "${lineinfo}" "ran in ${duration} seconds ret=${ret} cmd: $*"
+	aecho TEST_FINISH "${lineinfo}" "ran in ${duration} seconds ret=${_arge_ret} cmd: $*"
 	_assert_compare "${lineinfo}" "-ge" "${within_ge}" "${duration}" "${reason}${REASON:+ "$'\n'" ${REASON}}"
+	return "${_arge_ret}"
 }
 # This function may be called in "$@" contexts that do not use eval.
 assert_runs_ge() { _assert_runs_ge "${lineinfo-}" "$@"; }
 alias assert_runs_ge="_assert_runs_ge \"${_LINEINFO_DATA:?}\" "
+assert_runs_longer_than() { assert_runs_ge "$@"; }
 alias assert_runs_longer_than='assert_runs_ge '
+assert_runs_greather_than() { assert_runs_ge "$@"; }
+alias assert_runs_greather_than='assert_runs_ge '
 
 _assert_runs_between() {
 	local -; set +x +e +u
@@ -534,19 +564,20 @@ _assert_runs_between() {
 	local secs_start="$2"
 	local secs_end="$3"
 	shift 3
-	local ret start now duration reason
+	local _arb_ret start now duration reason
 
 	aecho TEST "${lineinfo}" "runs between ${secs_start}-${secs_end} seconds cmd: $*"
 	start="$(clock -monotonic)"
-	ret=0
-	"$@" || ret=$?
+	_arb_ret=0
+	"$@" || _arb_ret=$?
 	now="$(clock -monotonic)"
 	duration="$((now - start))"
-	aecho TEST_FINISH "${lineinfo}" "ran in ${duration} seconds ret=${ret} cmd: $*"
+	aecho TEST_FINISH "${lineinfo}" "ran in ${duration} seconds ret=${_arb_ret} cmd: $*"
 	reason="Took shorter than ${secs_start} seconds. Took ${duration} seconds. cmd: $*"
 	_assert_compare "${lineinfo}" "-ge" "${secs_start}" "${duration}" "${reason}${REASON:+ "$'\n'" ${REASON}}"
 	reason="Took longer than ${secs_end} seconds. Took ${duration} seconds. cmd: $*"
 	_assert_compare "${lineinfo}" "-le" "${secs_end}" "${duration}" "${reason}${REASON:+ "$'\n'" ${REASON}}"
+	return "${_arb_ret}"
 }
 # This function may be called in "$@" contexts that do not use eval.
 assert_runs_between() { _assert_runs_between "${lineinfo-}" "$@"; }
@@ -568,12 +599,15 @@ setup_runtime_asserts() {
 			# not use eval.
 			eval "dev_${aliasname}() { local DEV_ASSERT=1; ${aliasname} \"\$@\"; }"
 			alias "dev_${aliasname}=DEV_ASSERT=1 ${aliasname} "
+			use_debug() { return 0; }
 			;;
 		*)
 			# This function may be called in "$@" contexts that do
 			# not use eval.
 			eval "dev_${aliasname}() { :; }"
-			alias "dev_${aliasname}=# "
+			# See post_getopts() for use of nop().
+			alias "dev_${aliasname}=nop "
+			use_debug() { return 1; }
 			;;
 		esac
 	done <<-EOF

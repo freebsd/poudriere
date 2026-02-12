@@ -113,7 +113,7 @@ cache_pkgnames() {
 	fi
 	originspec_encode flavor_originspec "${origin}" "${port_flavor}" "${subpkg}"
 	fix_default_flavor "${originspec}" originspec
-	assert_not '' "${pkgname}" "cache_pkgnames: ${originspec} has no PKGNAME?"
+	assert_not '' "${pkgname-}" "cache_pkgnames: ${originspec} has no PKGNAME?"
 	hash_set originspec-pkgname "${originspec}" "${pkgname}"
 	hash_set originspec-pkgname "${flavor_originspec}" "${pkgname}"
 	if [ -n "${port_flavor}" ]; then
@@ -141,7 +141,9 @@ cache_pkgnames() {
 			esac
 		fi
 	fi
-	if [ -z "${ignore}" ]; then
+	# Used to skip ignored here but with TRYBROKEN support we need
+	# everything.
+	if true || [ -z "${ignore}" ]; then
 		for dep_origin in ${pdeps}; do
 			if cache_pkgnames 1 "${dep_origin}"; then
 				if [ "${was_listed_with_flavor}" -eq 1 ]; then
@@ -285,7 +287,7 @@ assert_metadata() {
 	fi
 
 	tmp="$(mktemp -t metadata.${dep})"
-	awk -v dep="${dep}" '$3 == dep' "${log}/.poudriere.all_pkgs%" \
+	{ awk -v dep="${dep}" '$3 == dep' "${log}/.poudriere.all_pkgs%"; } \
 	    > "${tmp}"
 	# First fix the list to expand main port FLAVORS
 	expand_origin_flavors "${origins}" origins_expanded
@@ -294,9 +296,9 @@ assert_metadata() {
 	for originspec in ${origins_expanded}; do
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is dep='${dep}' in metadata" >&2
-		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" -vdep="${dep}" '
+		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" -vdep="${dep}" '
 		    $2 == originspec && $1 == pkgname && $3 == dep {
 			print "==> " $0
 			if (found == 1) {
@@ -313,21 +315,21 @@ assert_metadata() {
 			exit 1
 		    }
 		    END { if (found != 1) exit 1 }
-		' ${log}/.poudriere.all_pkgs% >&2
+		' ${log}/.poudriere.all_pkgs%; } >&2
 		assert 0 $? "${originspec} | ${pkgname} should be known in metadata${dep:+ with dep=${dep}} in ${log}/.poudriere.all_pkgs%"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
-		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		    -vdep="${dep}" '
 		    $2 == originspec && $1 == pkgname && $3 == dep { next }
 		    { print }
-		' "${tmp}" > "${tmp}.new"
+		' "${tmp}"; } > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
 	echo "=> Asserting that nothing else is known in metadata with dep='${dep}'" >&2
 	if [ -s "${tmp}" ]; then
 		echo "=> Items remaining:" >&2
-		sed -e 's,^,==> ,' "${tmp}" >&2
+		{ sed -e 's,^,==> ,' "${tmp}"; } >&2
 	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Metadata${dep:+(${dep})} should be empty"
@@ -347,7 +349,7 @@ assert_queued() {
 	fi
 
 	tmp="$(mktemp -t queued.${dep})"
-	awk -v dep="${dep}" '(dep == "" || $3 == dep)' "${log}/.poudriere.ports.queued" \
+	{ awk -v dep="${dep}" '(dep == "" || $3 == dep)' "${log}/.poudriere.ports.queued"; } \
 	    > "${tmp}"
 	# First fix the list to expand main port FLAVORS
 	expand_origin_flavors "${origins}" origins_expanded
@@ -366,9 +368,9 @@ assert_queued() {
 		esac
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is dep='${dep}' in queue${rdep:+ with rdep ${rdep}}" >&2
-		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" -vdep="${dep:-${rdep}}" '
+		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" -vdep="${dep:-${rdep}}" '
 		    $1 == originspec && $2 == pkgname && (dep == "" || $3 == dep) {
 			print "==> " $0
 			if (found == 1) {
@@ -385,21 +387,21 @@ assert_queued() {
 			exit 1
 		    }
 		    END { if (found != 1) exit 1 }
-		' ${log}/.poudriere.ports.queued >&2
+		' ${log}/.poudriere.ports.queued; } >&2
 		assert 0 $? "${originspec} | ${pkgname} should be queued${dep:+ with dep=${dep}} in ${log}/.poudriere.ports.queued${rdep:+ with rdep ${rdep}}"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
-		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		    -vdep="${dep:-${rdep}}" '
 		    $1 == originspec && $2 == pkgname && (dep == "" || $3 == dep) { next }
 		    { print }
-		' "${tmp}" > "${tmp}.new"
+		' "${tmp}"; } > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
 	echo "=> Asserting that nothing else is in the dep='${dep}' queue" >&2
 	if [ -s "${tmp}" ]; then
 		echo "=> Items remaining:" >&2
-		sed -e 's,^,==> ,' "${tmp}" >&2
+		{ sed -e 's,^,==> ,' "${tmp}"; } >&2
 	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Queue${dep:+(${dep})} should be empty"
@@ -434,9 +436,9 @@ assert_ignored() {
 		esac
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is ignored${ignorereason:+ with reason='${ignorereason}'}" >&2
-		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		    -vignorereason="${ignorereason}" '
 		    {reason=""; for (i=3;i<=NF;i++) { reason = (reason ? reason FS : "") $i } }
 		    $1 == originspec && $2 == pkgname &&
@@ -451,23 +453,23 @@ assert_ignored() {
 			next
 		    }
 		    END { if (found != 1) exit 1 }
-		' ${log}/.poudriere.ports.ignored >&2
+		' ${log}/.poudriere.ports.ignored; } >&2
 		assert 0 $? "${originspec} | ${pkgname}${ignorereason:+ with reason='${ignorereason}'} should be ignored in ${log}/.poudriere.ports.ignored"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
-		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		        -vignorereason="${ignorereason}" '
 		    {reason=""; for (i=3;i<=NF;i++) { reason = (reason ? reason FS : "") $i } }
 		    $1 == originspec && $2 == pkgname &&
 		    (!ignorereason || reason == ignorereason) { next }
 		    { print }
-		' "${tmp}" > "${tmp}.new"
+		' "${tmp}"; } > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
 	echo "=> Asserting that nothing else is ignored" >&2
 	if [ -s "${tmp}" ]; then
 		echo "=> Items remaining:" >&2
-		sed -e 's,^,==> ,' "${tmp}" >&2
+		{ sed -e 's,^,==> ,' "${tmp}"; } >&2
 	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Ignore list should be empty"
@@ -502,9 +504,9 @@ assert_inspected() {
 		esac
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is inspected${inspectreason:+ with reason='${inspectreason}'}" >&2
-		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		    -vinspectreason="${inspectreason}" '
 		    {reason=""; for (i=3;i<=NF;i++) { reason = (reason ? reason FS : "") $i } }
 		    $1 == originspec && $2 == pkgname &&
@@ -519,23 +521,23 @@ assert_inspected() {
 			next
 		    }
 		    END { if (found != 1) exit 1 }
-		' ${log}/.poudriere.ports.inspected >&2
+		' ${log}/.poudriere.ports.inspected; } >&2
 		assert 0 $? "${originspec} | ${pkgname}${inspectreason:+ with reason='${inspectreason}'} should be inspected in ${log}/.poudriere.ports.inspected"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
-		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		        -vinspectreason="${inspectreason}" '
 		    {reason=""; for (i=3;i<=NF;i++) { reason = (reason ? reason FS : "") $i } }
 		    $1 == originspec && $2 == pkgname &&
 		    (!inspectreason || reason == inspectreason) { next }
 		    { print }
-		' "${tmp}" > "${tmp}.new"
+		' "${tmp}"; } > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
 	echo "=> Asserting that nothing else is inspected" >&2
 	if [ -s "${tmp}" ]; then
 		echo "=> Items remaining:" >&2
-		sed -e 's,^,==> ,' "${tmp}" >&2
+		{ sed -e 's,^,==> ,' "${tmp}"; } >&2
 	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Inspect list should be empty"
@@ -570,9 +572,9 @@ assert_skipped() {
 		esac
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is skipped${skipreason:+ with reason ${skipreason}}" >&2
-		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		    -vskipreason="${skipreason}" '
 		    $1 == originspec && $2 == pkgname &&
 		    (!skipreason || $3 == skipreason) {
@@ -586,20 +588,20 @@ assert_skipped() {
 			next
 		    }
 		    END { if (found != 1) exit 1 }
-		' ${log}/.poudriere.ports.skipped >&2
+		' ${log}/.poudriere.ports.skipped; } >&2
 		assert 0 $? "${originspec} | ${pkgname} should be skipped in ${log}/.poudriere.ports.skipped${skipreason:+ with reason=${skipreason}}"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
-		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
+		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
 		    $1 == originspec && $2 == pkgname { next }
 		    { print }
-		' "${tmp}" > "${tmp}.new"
+		' "${tmp}"; } > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
 	echo "=> Asserting that nothing else is skipped" >&2
 	if [ -s "${tmp}" ]; then
 		echo "=> Items remaining:" >&2
-		sed -e 's,^,==> ,' "${tmp}" >&2
+		{ sed -e 's,^,==> ,' "${tmp}"; } >&2
 	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Skipped list should be empty"
@@ -635,9 +637,9 @@ assert_tobuild() {
 		esac
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is tobuild${rdep:+ with rdep ${rdep}}" >&2
-		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		    -vrdep="${rdep}" '
 		    $1 == originspec && $2 == pkgname && (!rdep || $3 == rdep) {
 			print "==> " $0
@@ -650,20 +652,20 @@ assert_tobuild() {
 			next
 		    }
 		    END { if (found != 1) exit 1 }
-		' ${log}/.poudriere.ports.tobuild >&2
+		' ${log}/.poudriere.ports.tobuild; } >&2
 		assert 0 $? "${originspec} | ${pkgname} should be tobuild in ${log}/.poudriere.ports.tobuild${rdep:+ with rdep ${rdep}}"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
-		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
+		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
 		    $1 == originspec && $2 == pkgname { next }
 		    { print }
-		' "${tmp}" > "${tmp}.new"
+		' "${tmp}"; } > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
 	echo "=> Asserting that nothing else is tobuild" >&2
 	if [ -s "${tmp}" ]; then
 		echo "=> Items remaining:" >&2
-		sed -e 's,^,==> ,' "${tmp}" >&2
+		{ sed -e 's,^,==> ,' "${tmp}"; } >&2
 	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Tobuild list should be empty"
@@ -691,9 +693,9 @@ assert_built() {
 		originspec="${originspec%:*}"
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is built" >&2
-		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
+		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
 		    $1 == originspec && $2 == pkgname {
 			print "==> " $0
 			if (found == 1) {
@@ -705,20 +707,20 @@ assert_built() {
 			next
 		    }
 		    END { if (found != 1) exit 1 }
-		' ${log}/.poudriere.ports.built >&2
+		' ${log}/.poudriere.ports.built; } >&2
 		assert 0 $? "${originspec} | ${pkgname} should be built in ${log}/.poudriere.ports.built"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
-		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
+		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
 		    $1 == originspec && $2 == pkgname { next }
 		    { print }
-		' "${tmp}" > "${tmp}.new"
+		' "${tmp}"; } > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
 	echo "=> Asserting that nothing else is built" >&2
 	if [ -s "${tmp}" ]; then
 		echo "=> Items remaining:" >&2
-		sed -e 's,^,==> ,' "${tmp}" >&2
+		{ sed -e 's,^,==> ,' "${tmp}"; } >&2
 	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Built list should be empty"
@@ -753,9 +755,9 @@ assert_failed() {
 		esac
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is failed${phase:+ in phase ${phase}}" >&2
-		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		     -vfailedreason="${phase}" '
 		    $1 == originspec && $2 == pkgname &&
 		    (!phase || $3 == phase) {
@@ -769,20 +771,20 @@ assert_failed() {
 			next
 		    }
 		    END { if (found != 1) exit 1 }
-		' ${log}/.poudriere.ports.failed >&2
+		' ${log}/.poudriere.ports.failed; } >&2
 		assert 0 $? "${originspec} | ${pkgname} should be failed in ${log}/.poudriere.ports.failed${phase:+ in phase ${phase}}"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
-		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
+		{ awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
 		    $1 == originspec && $2 == pkgname { next }
 		    { print }
-		' "${tmp}" > "${tmp}.new"
+		' "${tmp}"; } > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
 	echo "=> Asserting that nothing else is failed" >&2
 	if [ -s "${tmp}" ]; then
 		echo "=> Items remaining:" >&2
-		sed -e 's,^,==> ,' "${tmp}" >&2
+		{ sed -e 's,^,==> ,' "${tmp}"; } >&2
 	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Failed list should be empty"
@@ -990,8 +992,8 @@ _setup_build() {
 	fi
 	__make_conf_orig="${__MAKE_CONF}"
 	__MAKE_CONF="$(mktemp -ut make.conf)"
-	cat "${__make_conf_orig}" \
-	    "${POUDRIERE_ETC:?}/poudriere.d/${MASTERNAME:?}-make.conf" \
+	{ cat "${__make_conf_orig}" \
+	    "${POUDRIERE_ETC:?}/poudriere.d/${MASTERNAME:?}-make.conf"; } \
 	    > "${__MAKE_CONF}"
 	export __MAKE_CONF
 	showfile "${__MAKE_CONF}"
@@ -1241,7 +1243,7 @@ _assert_bulk_build_results() {
 		# Trim away possible :reason leaked from EXPECTED_TOBUILD copy
 		originspec="${originspec%:*}"
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		built_pkgnames="${built_pkgnames:+${built_pkgnames} }${pkgname}"
 		case "${TESTPORT:+set}" in
 		set)
@@ -1267,7 +1269,7 @@ _assert_bulk_build_results() {
 			originspec="${failedspec}"
 		esac
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		failed_pkgnames="${failed_pkgnames:+${failed_pkgnames} }${pkgname}"
 		case "${TESTPORT:+set}" in
 		set)
@@ -1293,7 +1295,7 @@ _assert_bulk_build_results() {
 			originspec="${ignoredspec}"
 		esac
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		ignored_pkgnames="${ignored_pkgnames:+${ignored_pkgnames} }${pkgname}"
 		case "${TESTPORT:+set}" in
 		set)
@@ -1319,7 +1321,7 @@ _assert_bulk_build_results() {
 			originspec="${inspectedspec}"
 		esac
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		inspected_pkgnames="${inspected_pkgnames:+${inspected_pkgnames} }${pkgname}"
 		case "${TESTPORT:+set}" in
 		set)
@@ -1345,7 +1347,7 @@ _assert_bulk_build_results() {
 			originspec="${skippedspec}"
 		esac
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		assert_not '' "${pkgname-}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		skipped_pkgnames="${skipped_pkgnames:+${skipped_pkgnames} }${pkgname}"
 		case "${TESTPORT:+set}" in
 		set)
@@ -1387,7 +1389,13 @@ _assert_bulk_build_results() {
 			continue
 			;;
 		esac
-		assert_ret_not 0 [ -f "${file}" ]
+		# crashed tests may produce a package even with failure
+		case " ${EXPECTED_CRASHED-} " in
+		*" ${pkgname} "*) ;;
+		*)
+			assert_ret_not 0 [ -f "${file}" ]
+			;;
+		esac
 	done
 
 	echo "Asserting that logfiles were produced"
@@ -1397,8 +1405,17 @@ _assert_bulk_build_results() {
 		assert 0 $? "Logfile should exist: ${file}"
 		assert_ret 0 [ -s "${file}" ]
 		assert 0 $? "Logfile should not be empty: ${file}"
-		assert_ret_not 0 grep "build failure encountered" \
-		    "${file}"
+		# crashed build may still get a built package
+		case " ${EXPECTED_CRASHED-} " in
+		*" ${pkgname} "*)
+			assert_ret 0 grep "build crashed:" "${file}"
+			;;
+		*)
+			assert_ret_not 0 grep "build crashed:" "${file}"
+			assert_ret_not 0 grep "build failure encountered" \
+			    "${file}"
+			;;
+		esac
 		hash_get pkgname-originspec "${pkgname}" originspec ||
 			err 99 "Unable to find originspec for pkgname: ${pkgname}"
 		grep '^build of.*ended at' "${file}" || :
@@ -1586,8 +1603,10 @@ set_blacklist() {
 	write_atomic_cmp "${blacklist}"
 	showfile "${blacklist}"
 }
+if [ -z "${TEST_CONTEXTS_NUM_CHECK-}" ]; then
 set_blacklist <<-EOF
 EOF
+fi
 
 set_poudriere_conf() {
 	local poudriere_conf
@@ -1600,6 +1619,7 @@ set_poudriere_conf() {
 	poudriere_conf="${POUDRIERE_ETC:?}/poudriere.d/${MASTERNAME:?}-poudriere.conf"
 	msg "Updating ${poudriere_conf}" >&2
 	write_atomic_cmp "${poudriere_conf}" <<-EOF
+	${POUDRIERE_TMPDIR:+TMPDIR="${POUDRIERE_TMPDIR}"}
 	KEEP_OLD_PACKAGES=yes
 	KEEP_OLD_PACKAGES_COUNT=${KEEP_OLD_PACKAGES_COUNT:=10}
 	NOHANG_TIME=${NOHANG_TIME:-60}
@@ -1613,8 +1633,10 @@ set_poudriere_conf() {
 	EOF
 	showfile "${poudriere_conf}"
 }
+if [ -z "${TEST_CONTEXTS_NUM_CHECK-}" ]; then
 set_poudriere_conf <<-EOF
 EOF
+fi
 
 set_make_conf() {
 	local make_conf
@@ -1630,24 +1652,33 @@ set_make_conf() {
 	showfile "${make_conf}"
 	recache_pkgnames
 }
+if [ -z "${TEST_CONTEXTS_NUM_CHECK-}" ]; then
 # Start empty
 set_make_conf <<-EOF
 EOF
+fi
 
 do_logclean() {
+	local ret
+
 	echo -n "Pruning stale jails..."
+	ret=0
 	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} jail -k \
-	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
-	    >/dev/null || :
+	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} ||
+	    ret="$?"
 	echo " done"
+	case "${ret}" in
+	0) ;;
+	*) err 99 "jail cleanup failed ret=${ret}" ;;
+	esac
 	echo -n "Pruning previous logs..."
-	log_ret=0
+	ret=0
 	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} logclean \
 	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
-	    -y -N ${KEEP_LOGS_COUNT-10} -w ${LOGCLEAN_WAIT-30} || log_ret="$?"
-	case "${log_ret}" in
+	    -y -N ${KEEP_LOGS_COUNT-10} -w ${LOGCLEAN_WAIT-30} || ret="$?"
+	case "${ret}" in
 	0|124) ;;
-	*) err 99 "logclean failure ret=${log_ret}" ;;
+	*) err 99 "logclean failure ret=${ret}" ;;
 	esac
 	echo " done"
 }

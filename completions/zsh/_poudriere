@@ -8,6 +8,12 @@ _poudriere_pt() {
 	_values "poudriere portstrees" ${${(f)"$(${service} ports -lq)"}%% *}
 }
 
+_audit=(
+	'-j[run only on the given jail]::jail name:_poudriere_jail'
+	'-p[specify which ports tree to use]::tree:_poudriere_pt'
+	'-z[specify which SET to use]::'
+)
+
 _bulk=(
 	'-a[build the whole ports tree]'
 	'-f[get the list of ports to build from a file]:name of file:_files'
@@ -28,6 +34,7 @@ _bulk=(
 	'-J[run n jobs in parallel, and optionally run a different number of jobs in parallel while preparing the build]::'
 	'-j[run only on the given jail]::jail name:_poudriere_jail'
 	'-N[do not build package repository or INDEX when build completed]'
+	'-NN[do not commit package repository when build completed]'
 	'-p[specify on which ports tree the bulk build will be done]::tree:_poudriere_pt'
 	'-v[be verbose; show more information. Use twice to enable debug output]'
         '-w[save WRKDIR on failed builds]'
@@ -153,6 +160,13 @@ _ports=(
 	'-v[show more verbose output]'
 )
 
+_repo=(
+	'-j[run only on the given jail]::jail name:_poudriere_jail'
+	'-NN[do not publish package repository]'
+	'-p[specify which ports tree to use]::tree:_poudriere_pt'
+	'-z[specify which SET to use]::'
+)
+
 _status=(
         '-a[show all builds, not just latest]'
 	'-f[show finished builds as well]'
@@ -177,6 +191,7 @@ _testport=(
         "-k[don't consider failures as fatal; find all failures]"
 	'-n[show what will be done, but do not build any packages]'
 	'-N[do not build package repository when build of dependencies completed]'
+	'-NN[do not build package repository when build of dependencies completed]'
 	'-p[specifies which ports tree to use]::tree:_poudriere_pt'
         '-P[use custom prefix]'
         "-S[don't recursively rebuild packages affected by other packages requiring incremental rebuild]"
@@ -190,6 +205,7 @@ _poudriere () {
 	local context state line
 	typeset -A val_args
 	cmds=(
+		'audit:audit packages in repository'
 		'bulk:generate packages for given ports'
 		'daemon:launch the poudriere daemon'
 		'distclean:remove old distfiles'
@@ -200,6 +216,7 @@ _poudriere () {
 		'options:configure ports options'
 		'pkgclean:remove packages that are no longer needed'
 		'ports:create, update or delete the portstrees used by poudriere'
+		'repo:regenerate repository'
 		'queue:queue a build request'
 		'status:get the status of builds'
 		'testport:launch a test build of a given port'
@@ -211,6 +228,9 @@ _poudriere () {
 	# the main command has been typed, now we take care of the action
 	elif ((CURRENT >= 3)); then
 		case $words[2] in
+			audit)
+			_arguments : $_audit "::" && return
+			;;
 			bulk)
 			_arguments : $_bulk "::" && return
 			;;
@@ -237,6 +257,9 @@ _poudriere () {
 			;;
 			ports)
 			_arguments : $_ports "::" && return
+			;;
+			repo)
+			_arguments : $_repo "::" && return
 			;;
 			status)
 			_arguments : $_status "::" && return

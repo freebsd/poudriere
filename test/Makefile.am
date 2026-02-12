@@ -20,17 +20,27 @@ XFAIL_TESTS= \
 	options-overlays.sh
 
 TESTS=\
+	adjust_timeout.sh \
+	alarm.sh \
 	array.sh \
 	builtins.sh \
+	builtins-cp.sh \
 	builtins-cut.sh \
+	builtins-mv.sh \
 	builtins-paste.sh \
+	builtins-sed.sh \
+	builtins-tr.sh \
 	builtins-wc.sh \
 	cache.sh \
 	cache_pipe.sh \
 	calculate_duration.sh \
 	count_lines.sh \
 	critical_section_inherit.sh \
+	critical_section_retry.sh \
+	critical_section_retry_cmdsubst.sh \
 	display.sh \
+	dirname.sh \
+	dirwatch.sh \
 	distclean-badorigin.sh \
 	distclean-overlays.sh \
 	distclean-smoke.sh \
@@ -79,13 +89,19 @@ TESTS=\
 	pkgqueue_trimmed_misordered.sh \
 	port_var_fetch.sh \
 	prefix_output.sh \
+	pwait.sh \
 	read_blocking.sh \
+	read_blocking_line.sh \
+	read_pipe.sh \
 	read_file.sh \
 	read_line.sh \
 	readarray.sh \
 	readlines.sh \
 	relpath.sh \
 	relpath_common.sh \
+	remove_many.sh \
+	remove_many_file.sh \
+	remove_many_pipe.sh \
 	required_env.sh \
 	setup_traps.sh \
 	setvar.sh \
@@ -101,11 +117,14 @@ TESTS=\
 	stripansi.sh \
 	test_contexts.sh \
 	test_contexts_expand.sh \
+	time_bounded_loop.sh \
+	timeout.sh \
 	timespec.sh \
 	timestamp.sh \
 	trap_ignore_block.sh \
 	trap_save.sh \
 	trap_save_block.sh \
+	trim.sh \
 	write_atomic.sh \
 	write_atomic-piped.sh \
 	write_atomic_cmp.sh \
@@ -124,6 +143,8 @@ JAIL_TESTS= \
 	bulk-build-MOVED-default.sh \
 	bulk-build-MOVED-flavor-all.sh \
 	bulk-build-MOVED-flavor.sh \
+	bulk-build-broken.sh \
+	bulk-build-ignored.sh \
 	bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh \
@@ -143,6 +164,11 @@ JAIL_TESTS= \
 	bulk-build-multiple-eligible-in-queue.sh \
 	bulk-build-origin_has_pkgbase.sh \
 	bulk-build-porttesting.sh \
+	bulk-build-queue-race-double-job_done.sh \
+	bulk-build-quick-1-dep.sh \
+	bulk-build-quick-crashed-builder-err.sh \
+	bulk-build-quick-crashed-builder-sete.sh \
+	bulk-build-quick-crashed-builder-trap.sh \
 	bulk-build-quick-pkg.sh \
 	bulk-build-self-immutable-base-no.sh \
 	bulk-build-self-immutable-base-nullfs.sh \
@@ -209,12 +235,15 @@ JAIL_TESTS= \
 	testport-build-MOVED-flavor.sh \
 	testport-build-MOVED-to-default-flavor.sh \
 	testport-build-MOVED-to-different-flavor.sh \
+	testport-build-broken.sh \
+	testport-build-custom-PREFIX.sh \
 	testport-build-default-flavor-default.sh \
 	testport-build-default-flavor.sh \
+	testport-build-ignored.sh \
 	testport-build-no-deps.sh \
 	testport-build-porttesting.sh \
-	testport-build-quick-pkg.sh \
 	testport-build-quick-1-dep.sh \
+	testport-build-quick-pkg.sh \
 	testport-build-specific-flavor.sh \
 	testport-build-specific-port.sh \
 	testport-default-all-flavors-failure.sh \
@@ -224,6 +253,10 @@ JAIL_TESTS= \
 TESTS+=	prep.sh
 $(JAIL_TESTS:.sh=.sh.log): prep.sh.log
 
+if ADDRESS_SANITIZER
+TIMEOUT_SAN_MULTIPLIER=	2
+endif
+
 run_env= env \
 	 am_abs_top_builddir="$(abs_top_builddir)" \
 	 am_abs_top_srcdir="$(abs_top_srcdir)" \
@@ -232,6 +265,7 @@ run_env= env \
 	 am_pkgdatadir="$(pkgdatadir)" \
 	 am_VPATH="$(VPATH)" \
 	 am_check=1 \
+	 TIMEOUT_SAN_MULTIPLIER=$(TIMEOUT_SAN_MULTIPLIER) \
 	 AM_TESTS_FD_STDERR=$(AM_TESTS_FD_STDERR)
 RUNTEST_SH ?= $(abs_top_builddir)/sh
 LOG_COMPILER=	$(run_env) $(RUNTEST_SH) $(srcdir)/runtest.sh

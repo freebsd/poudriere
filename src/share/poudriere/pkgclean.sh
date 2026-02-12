@@ -44,6 +44,7 @@ Options:
     -n          -- Do not actually remove anything, just show what would be
                    removed
     -N          -- Do not build the package repository when clean completed
+    -NN         -- Do not commit/publish package repository when clean completed
     -O overlays -- Specify extra ports trees to overlay
     -p tree     -- Which ports tree to use for packages
     -r          -- With -C delete reverse dependencies too
@@ -66,6 +67,7 @@ FORCE_BUILD_REPO=0
 OVERLAYS=""
 CLEAN_LISTED=0
 CLEAN_RDEPS=0
+COMMIT=1
 
 [ $# -eq 0 ] && usage
 
@@ -98,7 +100,12 @@ while getopts "AaCj:J:f:nNO:p:rRuvyz:" FLAG; do
 			DRY_RUN=1
 			;;
 		N)
+			: ${NFLAG:=0}
+			NFLAG=$((NFLAG + 1))
 			BUILD_REPO=0
+			if [ "${NFLAG}" -eq 2 ]; then
+				COMMIT=0
+			fi
 			;;
 		O)
 			porttree_exists ${OPTARG} ||
@@ -191,8 +198,8 @@ else
 fi
 jail_start "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 prepare_ports
-case "${LISTPORTS+set}" in
-set)
+case "${DO_ALL}" in
+0)
 	if ! ensure_pkg_installed; then
 		err 1 "pkg must be built before this command can be used"
 	fi
@@ -222,6 +229,10 @@ should_delete() {
 	pkgname="${pkgfile##*/}"
 	pkgname="${pkgname%.*}"
 	ret=0
+
+	case "${DO_ALL}" in
+	1) return 0 ;;
+	esac
 
 	originspec=
 	if ! pkg_get_originspec originspec "${pkgfile}"; then
@@ -328,7 +339,7 @@ check_should_delete_pkg() {
 	esac
 }
 
-parallel_start
+parallel_start || err 1 "parallel_start"
 for file in "${PACKAGES:?}"/All/*; do
 	parallel_run check_should_delete_pkg "${file}"
 done
@@ -356,6 +367,35 @@ check_keep_old_packages() {
 }
 
 check_keep_old_packages
+
+check_orphaned_hashed_packages() {
+	local expected have diff file
+
+	case "${PKG_HASH:-}" in
+	no) return 0 ;;
+	esac
+	if [ ! -d "${PACKAGES:?}/All/Hashed" ]; then
+		return
+	fi
+	have="$(mktemp -t have)"
+	find "$(realpath "${PACKAGES:?}/All/Hashed")" -mindepth 1 -maxdepth 1 |
+	    sort -o "${have:?}"
+	expected="$(mktemp -t expected)"
+	find "${PACKAGES:?}/All" -mindepth 1 -maxdepth 1 -type l \
+	    -name "*.${PKG_EXT:?}" -exec realpath {} + |
+	    sort -o "${expected:?}"
+	diff="$(mktemp -t diff)"
+	comm -13 "${expected:?}" "${have:?}" > "${diff:?}" ||
+	    err 1 "check_orphaned_hashed_packages: comm"
+	if [ -s "${diff:?}" ]; then
+		while mapfile_read_loop "${diff}" file; do
+			msg_verbose "Found orphaned hashed package: ${file}"
+		done
+		cat "${diff:?}" >> "${BADFILES_LIST:?}"
+	fi
+	rm -f "${expected:?}" "${have:?}" "${diff:?}"
+}
+check_orphaned_hashed_packages
 
 check_pkg_cache() {
 	local file
@@ -415,7 +455,7 @@ check_duplicated_packages() {
 	msg_verbose "Keeping latest package: ${lastpkg##*/}"
 }
 
-parallel_start
+parallel_start || err 1 "parallel_start"
 # Check for duplicated origins (older packages) and keep only newer ones
 # This also grouped by pkgbase to respect PKGNAME uniqueness
 sort "${FOUND_ORIGINS:?}" | awk '
@@ -466,7 +506,10 @@ if [ "${ret}" -eq 1 ] || [ "${FORCE_BUILD_REPO}" -eq 1 ]; then
 	if [ ${BUILD_REPO} -eq 1 ]; then
 		if [ ${DO_ALL} -eq 1 ]; then
 			msg "Removing pkg repository files"
-			rm -f "${PACKAGES:?}/meta.txz" \
+			rm -f \
+				"${PACKAGES:?}/data.txz" \
+				"${PACKAGES:?}/data.${PKG_EXT}" \
+				"${PACKAGES:?}/meta.txz" \
 				"${PACKAGES:?}/meta.${PKG_EXT}" \
 				"${PACKAGES:?}/digests.txz" \
 				"${PACKAGES:?}/digests.${PKG_EXT}" \
@@ -476,6 +519,25 @@ if [ "${ret}" -eq 1 ] || [ "${FORCE_BUILD_REPO}" -eq 1 ]; then
 				"${PACKAGES:?}/packagesite.${PKG_EXT}"
 		else
 			build_repo
+			case "${PACKAGES:?}" in
+			*"/.building")
+				msg_warn "build_repo: Not executing publish hook for" \
+				    ".building directory"
+				;;
+			*)
+				# This assumes that COMMIT_PACKAGES_ON_FAILURE
+				# has been handled by the build.
+				case "${COMMIT}" in
+				1)
+					run_hook -v pkgrepo publish \
+					    "${PACKAGES:?}"
+					;;
+				*)
+					msg "(-NN) Skipping repository publish"
+					;;
+				esac
+				;;
+			esac
 		fi
 	fi
 	delete_stale_symlinks_and_empty_dirs

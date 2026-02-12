@@ -91,7 +91,7 @@ esac
 pwait() {
 	[ "$#" -ge 1 ] || eargs pwait '[pwait flags]' pids
 	local OPTIND=1 flag
-	local ret oflag tflag timeout time_start now vflag
+	local ret oflag tflag timeout time_start vflag
 
 	tflag=
 	while getopts "ot:v" flag; do
@@ -105,28 +105,17 @@ pwait() {
 	shift $((OPTIND-1))
 
 	[ "$#" -ge 1 ] || eargs pwait '[pwait flags]' pids
-	case "${tflag}" in
-	"") ;;
-	*.*) timeout="${tflag}" ;;
-	*) time_start="$(clock -monotonic)" ;;
+	case "${tflag:+set}" in
+	set)
+		time_start="$(clock -monotonic)"
+		# pwait does not handle -t 0 well.
+		case "${tflag:?}" in
+		0) tflag="0.00001" ;;
+		esac
+		timeout="${tflag:?}"
+		;;
 	esac
 	while :; do
-		# Adjust timeout
-		case "${tflag}" in
-		""|*.*) ;;
-		*)
-			now="$(clock -monotonic)"
-			timeout="$((tflag - (now - time_start)))"
-			case "${timeout}" in
-			"-"*) timeout=0 ;;
-			esac
-			# Special case for pwait as it does not handle
-			# -t 0 well.
-			case "${timeout}" in
-			0) timeout="0.00001" ;;
-			esac
-			;;
-		esac
 		ret=0
 		# If pwait is NOT builtin then sh will update its jobs state
 		# which means we may pwait on dead procs unexpectedly. It returns
@@ -142,15 +131,29 @@ pwait() {
 			    "$@" || ret="$?"
 			;;
 		*)
-			command pwait \
-			    ${tflag:+-t "${timeout}"} \
-			    ${vflag:+-v} ${oflag:+-o} \
-			    "$@" 2>/dev/null || ret="$?"
+			# allow vfork
+			{
+				command pwait \
+				    ${tflag:+-t "${timeout}"} \
+				    ${vflag:+-v} ${oflag:+-o} \
+				    "$@" || ret="$?"
+			} 2>/dev/null
 			;;
 		esac
 		case "${ret}" in
 		# Read again on SIGINFO interrupts
-		157) continue ;;
+		157)
+			case "${tflag:+set}" in
+			set)
+				if ! adjust_timeout "${tflag:?}" \
+				    "${time_start:?}" timeout; then
+					ret=124
+					break
+				fi
+				;;
+			esac
+			continue
+			;;
 		esac
 		break
 	done
@@ -231,7 +234,7 @@ kill_job() {
 	# Wait $timeout
 	# kill -KILL
 	_kill_job kill_job "${jobid}" \
-	    TERM ":${timeout}" KILL
+	    TERM ":${timeout}" "${KILL_JOB_FINAL_SIGNAL:-KILL}"
 }
 
 # _kill_job funcname jobid :${wait-timeout} SIG :${wait-timeout} SIG
@@ -256,7 +259,7 @@ _kill_job() {
 	ret=0
 	case "${jobid}" in
 	"%"*)
-		if [ "${VERBOSE:-0}" -gt 2 ]; then
+		if msg_level dev; then
 			# pgid only used in msg_dev calls
 			pgid="$(jobs -p "${jobid}")"
 		else
@@ -270,7 +273,7 @@ _kill_job() {
 		jobid="%${jobid}"
 		;;
 	esac
-	msg_dev "${funcname} job ${jobid} pgid=${pgid} spec: $*"
+	msg_dev "${funcname} job ${jobid} pgid=${pgid-} spec: $*"
 	for action in "$@"; do
 		case "${action}" in
 		":"*) timeout="${action#:}" ;;
@@ -282,7 +285,8 @@ _kill_job() {
 		"Running")
 			case "${timeout:+set}" in
 			set)
-				msg_dev "Pwait -t ${timeout} on ${status} job=${jobid} pgid=${pgid}"
+				msg_dev "Pwait -t ${timeout} on ${status}" \
+				    "job=${jobid} pgid=${pgid-}"
 				case "${jobid}" in
 				"%"*)
 					pwait_jobs -t "${timeout}" "${jobid}" ||
@@ -292,6 +296,8 @@ _kill_job() {
 					pwait -t "${timeout}" "${pgid}" || ret="$?"
 					;;
 				esac
+				msg_dev "Pwait -t ${timeout} on ${status}" \
+				    "job=${jobid} pgid=${pgid-} ret=${ret}"
 				case "${ret}" in
 				124)
 					# Timeout. Keep going on the
@@ -305,7 +311,8 @@ _kill_job() {
 				esac
 				;;
 			*)
-				msg_dev "Killing -${action} ${status} job=${jobid} pgid=${pgid}"
+				msg_dev "Killing -${action} ${status}" \
+				    "job=${jobid} pgid=${pgid-}"
 				if ! kill -STOP "${jobid}" ||
 				    ! kill -"${action}" "${jobid}" ||
 				    ! kill -CONT "${jobid}"; then
@@ -320,23 +327,24 @@ _kill_job() {
 			;;
 		esac
 	done
-	msg_dev "Collecting status='${status}' job=${jobid} pgid=${pgid}"
+	msg_dev "Collecting status='${status}' job=${jobid} pgid=${pgid-}"
 	# Truncate away pwait timeout for whatever the process exited with
 	# from the spec.
 	case "${ret}" in
 	124) ret=0 ;;
 	esac
 	_wait "${jobid}" || ret="$?"
-	msg_dev "Job ${jobid} pgid=${pgid} exited ${ret}"
+	msg_dev "Job ${jobid} pgid=${pgid-} exited ${ret}"
 	return "${ret}"
 }
 
 pwait_jobs() {
 	[ "$#" -ge 0 ] || eargs pwait_jobs '[pwait flags]' '%job...'
-	local jobno pid pids allpids job_status
+	local job pid pids allpids job_status
 	local OPTIND=1 flag
 	local oflag timeout vflag
-	local jobs_jobid
+	# shellcheck disable=SC2034
+	local jobs_it
 	local -
 
 	while getopts "ot:v" flag; do
@@ -353,42 +361,22 @@ pwait_jobs() {
 	0) return 0 ;;
 	esac
 
-	for jobno in "$@"; do
-		case "${jobno}" in
-		"%"*) ;;
-		*) err "${EX_SOFTWARE}" "pwait_jobs: invalid job spec: ${jobno}" ;;
-		esac
-	done
-
 	allpids=
-	# Each $(jobs) calls (wait4(2)) so rather than fetch status from
-	# $(jobs) for each pid just fetch it once and then check each
-	# pid for what we care about.
-	while mapfile_read_loop_redir jobs_jobid job_status; do
-		for jobno in "$@"; do
-			case "${jobno}" in
-			"${jobs_jobid}") ;;
-			*) continue ;;
-			esac
-			case "${job_status}" in
-			"Running") ;;
-			*)
-				# Unless the job is *Running* there is nothing to do.
+	pids=
+	unset jobs_it
+	while jobs_with_statuses jobs_it job job_status pids -- "$@"; do
+		# Unless the job is *Running* there is nothing to do.
+		case "${job_status:?}" in
+		"Running") ;;
+		*) continue ;;
+		esac
+		for pid in ${pids}; do
+			if ! kill -0 "${pid:?}" 2>&5; then
 				continue
-				;;
-			esac
-			pids="$(jobid "${jobno}")" ||
-			    err "${EX_SOFTWARE}" "kill_jobs: jobid"
-			for pid in ${pids}; do
-				if ! kill -0 "${pid}" 2>&5; then
-					continue
-				fi
-				allpids="${allpids:+${allpids} }${pid}"
-			done
-		done 5>/dev/null
-	done <<-EOF
-	$(jobs_with_statuses "$(jobs)")
-	EOF
+			fi
+			allpids="${allpids:+${allpids} }${pid:?}"
+		done
+	done 5>/dev/null
 	case "${allpids:+set}" in
 	set) ;;
 	*)
@@ -439,7 +427,9 @@ kill_all_jobs() {
 	local jobid ret rest alljobs
 	local -
 
-	msg_dev "Jobs: $(jobs -l)"
+	if msg_level dev; then
+		msg_dev "Jobs: $(jobs -l)"
+	fi
 	ret=0
 	alljobs=
 	while mapfile_read_loop_redir jobid rest; do
@@ -472,30 +462,15 @@ kill_all_jobs() {
 	return "${ret}"
 }
 
-_parallel_exec() {
-	local ret=0
-	local - # Make `set +e` local
-	local errexit=0
+_parallel_exec_exit() {
+	local ret="$?"
+	echo . >&8
+	return "${ret}"
+}
 
-	# Disable -e so that the actual execution failing does not
-	# return early and prevent notifying the FIFO that the
-	# exec is done
-	case $- in *e*) errexit=1;; esac
-	set +e
-	(
-		# Do still cause the actual command to return
-		# non-zero if it has any failures, if caller
-		# was set -e as well. Using 'if cmd' or 'cmd || '
-		# here would disable set -e in the cmd execution
-		if [ "${errexit}" -eq 1 ]; then
-			set -e
-		fi
-		"$@"
-	)
-	ret=$?
-	echo . >&8 || :
-	exit ${ret}
-	# set -e will be restored by 'local -'
+_parallel_exec() {
+	setup_traps _parallel_exec_exit
+	"$@"
 }
 
 parallel_start() {
@@ -522,26 +497,28 @@ parallel_start() {
 # if any have non-zero return, and then remove them from the PARALLEL_JOBNOS
 # list.
 _reap_children() {
-	local jobno jobs_jobid jobs_status ret
+	local job job_status ret
+	# shellcheck disable=SC2034
+	local jobs_it
+	local -
 
 	ret=0
-	while mapfile_read_loop_redir jobs_jobid jobs_status; do
-		for jobno in ${PARALLEL_JOBNOS-}; do
-			case "${jobno}" in
-			"${jobs_jobid}") ;;
-			*) continue ;;
-			esac
-			case "${jobs_status}" in
-			"Running") continue ;;
-			esac
-			_wait "${jobno}" || ret="$?"
-			list_remove PARALLEL_JOBNOS "${jobno}" ||
-			    err 1 "_reap_children did not find ${jobno} in PARALLEL_JOBNOS"
-		done
-	done <<-EOF
-	$(jobs_with_statuses "$(jobs)")
-	EOF
-
+	case "${PARALLEL_JOBNOS:+set}" in
+	set) ;;
+	*) return 0 ;;
+	esac
+	set -o noglob
+	unset jobs_it
+	# shellcheck disable=SC2086
+	while jobs_with_statuses jobs_it job job_status -- \
+	    ${PARALLEL_JOBNOS}; do
+		case "${job_status:?}" in
+		"Running") continue ;;
+		esac
+		_wait "${job:?}" || ret="$?"
+		list_remove PARALLEL_JOBNOS "${job:?}" ||
+		    err 1 "_reap_children did not find ${job} in PARALLEL_JOBNOS"
+	done
 	return "${ret}"
 }
 
@@ -588,28 +565,34 @@ parallel_shutdown() {
 	# known.
 	unset parallel_jobnos
 	for jobno in ${PARALLEL_JOBNOS-}; do
-		if ! jobid "${jobno}" >/dev/null 2>&1; then
+		if ! jobid "${jobno}"; then
 			continue
 		fi
 		parallel_jobnos="${parallel_jobnos:+${parallel_jobnos} }${jobno}"
-	done
+	done >/dev/null 2>&1
 	# shellcheck disable=SC2086
 	kill_jobs 30 ${parallel_jobnos-} || ret="$?"
 	parallel_stop 0 || ret="$?"
 	return "${ret}"
 }
 
+: "${PARALLEL_REAP_PERCENT:=200}"
 parallel_run() {
-	local ret spawn_jobid
+	local ret
+	local spawn_jobid spawn_job spawn_pgid spawn_pid
 
 	ret=0
+	case "${NBPARALLEL:+set}" in
+	set) ;;
+	*) err 1 "parallel_run: did not parallel_start" ;;
+	esac
 
 	# Occasionally reap dead children. Don't do this too often or it
-	# becomes a bottleneck. Do it too infrequently and there is a risk
-	# of PID reuse/collision
+	# becomes a bottleneck.
 	_SHOULD_REAP="$((_SHOULD_REAP + 1))"
 	case "${_SHOULD_REAP}" in
-	16)
+	"$(((PARALLEL_JOBS * PARALLEL_REAP_PERCENT) / 100))")
+		msg_dev "parallel_run: REAPING AT ${_SHOULD_REAP} JOBS=${PARALLEL_JOBS}"
 		_SHOULD_REAP=0
 		_reap_children || ret="$?"
 		;;
@@ -747,37 +730,137 @@ madvise_protect() {
 	case "${pid}" in
 	-*)
 		msg_debug "Protecting PGID ${pid}"
-		${PROTECT} -g "${pid#-}" 2>/dev/null || :
+		# allow vfork
+		{ ${PROTECT} -g "${pid#-}"; } 2>/dev/null || :
 		;;
 	*)
 		msg_debug "Protecting process ${pid}"
-		${PROTECT} -p "${pid}" 2>/dev/null || :
+		# allow vfork
+		{ ${PROTECT} -p "${pid}"; } 2>/dev/null || :
 		;;
 	esac
 }
 
-# Output $(jobs) in a simpler format
+# while jobs_with_statuses jobs_it job status -- %1 ...; do
+# 	echo "${job} ${status}"
+# done
+if ! have_builtin jobs_with_statuses; then
 jobs_with_statuses() {
-	[ "$#" -eq 1 ] || eargs jobs_with_statuses "\$(jobs)"
-	local jobs_output="$1"
-	local jobs_jobid jobs_rest
-	local jws_jobid jws_status
-	local - jws_arg
+	[ "$#" -ge 4 ] ||
+	    eargs jobs_with_statuses tmpvar job_var status_var \
+	    '[pids_var]' '--' '%job...'
+	local jws_stackvar="$1"
+	local jws_stack
+	[ "$#" -ge 3 ] ||
+	    eargs jobs_with_statuses tmpvar job_var status_var \
+	    '[pids_var]' '--' '%job...'
+	shift
+	local jws_job_var="$1"
+	local jws_status_var="$2"
+	shift 2
+	[ "$#" -ge 1 ] ||
+	    eargs jobs_with_statuses tmpvar job_var status_var \
+	    '[pids_var]' '--' '%job...'
+	local jws_pids_var=
+	case "$1" in
+	"--") shift ;;
+	*)
+		[ "$#" -ge 1 ] ||
+		    eargs jobs_with_statuses tmpvar job_var status_var \
+		    '[pids_var]' '--' '%job...'
+		jws_pids_var="$1"
+		shift
+		case "$1" in
+		"--") shift ;;
+		*) err "${EX_USAGE:-64}" \
+		    "jobs_with_statuses: Expected '--' after vars" ;;
+		esac
+		;;
+	esac
+	if ! getvar "${jws_stackvar:?}" jws_stack; then
+		jws_stack="JWS_STACK"
+		setvar "${jws_stackvar:?}" "${jws_stack:?}" || return
+		if ! _jobs_with_statuses "${jws_stack:?}" "$@"; then
+			return 1
+		fi
+	fi
+	local jws_line
 
-	while mapfile_read_loop_redir jobs_jobid jobs_rest; do
-		case "${jobs_jobid}" in
+	jws_line=
+	if ! stack_pop "${jws_stack:?}" jws_line; then
+		return 1
+	fi
+	local -
+	set -o noglob
+	# shellcheck disable=SC2086
+	set -- ${jws_line}
+	set +o noglob
+	setvar "${jws_job_var:?}" "${1:?}" || return
+	setvar "${jws_status_var:?}" "${2:?}" || return
+	case "${jws_pids_var:+set}" in
+	set)
+		shift 2
+		setvar "${jws_pids_var:?}" "$*" || return
+		;;
+	esac
+}
+
+_jobs_with_statuses() {
+	[ "$#" -ge 1 ] ||
+	    eargs _jobs_with_statuses jobs_stackvar '%job..'
+	local _jws_stackvar="$1"
+	shift
+	local _jws_jobs_jobid _jws_jobs_rest
+	local _jws_jobid _jws_status _jws_pids
+	local _jws_arg _jws_filter _jws_jobs
+	local -
+
+	_jws_jobs="$(jobs)"
+	case "${_jws_jobs:+set}" in
+	set) ;;
+	*)
+		stack_unset "${_jws_stackvar:?}" || return
+		return 0
+		;;
+	esac
+	case "$#" in
+	0) _jws_filter= ;;
+	*)
+		for _jws_jobs_jobid in "$@"; do
+			case "${_jws_jobs_jobid}" in
+			"%"*) ;;
+			*)
+				err "${EX_USAGE}" "_jobs_with_statuses:" \
+				    "Only %jobid is supported."
+				;;
+			esac
+			_jws_filter="${_jws_filter:+${_jws_filter} }[${_jws_jobs_jobid#%}]"
+		done
+		;;
+	esac
+	stack_unset "${_jws_stackvar:?}" || return
+	while mapfile_read_loop_redir _jws_jobs_jobid _jws_jobs_rest; do
+		case "${_jws_filter:+set}" in
+		set)
+			case " ${_jws_filter} " in
+			*" ${_jws_jobs_jobid} "*) ;;
+			*) continue ;;
+			esac
+			;;
+		esac
+		case "${_jws_jobs_jobid}" in
 		"["*"]")
-			jws_jobid="${jobs_jobid#"["}"
-			jws_jobid="${jws_jobid%%"]"*}"
+			_jws_jobid="${_jws_jobs_jobid#"["}"
+			_jws_jobid="${_jws_jobid%%"]"*}"
 			;;
 		*) continue ;;
 		esac
 		set -o noglob
 		# shellcheck disable=SC2086
-		set -- ${jobs_rest}
+		set -- ${_jws_jobs_rest}
 		set +o noglob
-		for jws_arg in "$@"; do
-			case "${jws_arg}" in
+		for _jws_arg in "$@"; do
+			case "${_jws_arg}" in
 			"+"|"-") continue ;;
 			[0-9][0-9]|\
 			[0-9][0-9][0-9]|\
@@ -787,17 +870,21 @@ jobs_with_statuses() {
 			[0-9][0-9][0-9][0-9][0-9][0-9][0-9]|\
 			[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]) continue ;;
 			*)
-				jws_status="${jws_arg}"
+				_jws_status="${_jws_arg}"
 				break
 				;;
 			esac
 		done
-		echo "%${jws_jobid} ${jws_status}"
+		_jws_pids="$(jobid "%${_jws_jobid:?}")"
+		stack_push_back "${_jws_stackvar:?}" \
+		    "%${_jws_jobid:?} ${_jws_status:?} ${_jws_pids:?}"
 	done <<-EOF
-	${jobs_output}"
+	${_jws_jobs:?}
 	EOF
 }
+fi
 
+if ! have_builtin get_job_status; then
 get_job_status() {
 	[ "$#" -eq 2 ] || eargs get_job_status '%job|pid' var_return
 	local gjs_pid="$1"
@@ -888,7 +975,9 @@ get_job_status() {
 	setvar "${gjs_var_return}" "" || return
 	return 1
 }
+fi
 
+if ! have_builtin get_job_id; then
 get_job_id() {
 	[ "$#" -eq 2 ] || eargs get_job_id pid var_return
 	local gji_pid="$1"
@@ -915,6 +1004,7 @@ get_job_id() {
 	gji_jobid="${gji_jobid%%"]"*}"
 	setvar "${gji_var_return}" "${gji_jobid}"
 }
+fi
 
 spawn_job() {
 	local -
@@ -945,6 +1035,8 @@ _spawn_wrapper() {
 		# Reset SIGINT to the default to undo POSIX's SIG_IGN in
 		# 2.11 "Signals and Error Handling". This will ensure no
 		# foreground process is left around on SIGINT.
+		# This is only relevant for asynchronous lists, &, which
+		# _spawn_wrapper is expected to be used in.
 		case "${SUPPRESS_INT:-0}" in
 		0)
 			trap - INT
@@ -952,6 +1044,9 @@ _spawn_wrapper() {
 		esac
 		;;
 	esac
+	# No need to keep job control on.
+	# It also would block vfork if left on.
+	set +m
 
 	"$@"
 }
@@ -1010,7 +1105,20 @@ raise() {
 	kill -"${sig}" "$(getpid)"
 }
 
+setreturnstatus() {
+	[ $# -eq 1 ] || eargs setreturnstatus ret
+	local ret="$1"
+
+	# This case is because the callers cannot do any conditional checks.
+	case "${ret-}" in
+	[0-9]*) return "${ret}" ;;
+	esac
+	return 0
+}
+
 # Need to cleanup some stuff before calling traps.
+# This is ran with 2>/dev/null
+# _ERET is done to chain exitstatus down to all handlers.
 _trap_pre_handler() {
 	_ERET="$?"
 	unset IFS
@@ -1030,11 +1138,22 @@ _trap_pre_handler() {
 	*x*) _trap_x=x ;;
 	esac
 	set +x
+	return "${_ERET}"
 }
-# {} is used to avoid set -x SIGPIPE
-alias trap_pre_handler='{ _trap_pre_handler; } 2>/dev/null; (exit "${_ERET}")'
-
+_trap_pre_handler2() {
+	_ERET="$?"
+	case "$-" in
+	*x*) err 1 "_trap_pre_handler2: set -x should not be on here" ;;
+	esac
+	# Fix stderr
+	redirect_to_real_tty exec
+	return "${_ERET}"
+}
+# {} 2>/dev/null is used to avoid set -x SIGPIPE; set +x done in there.
+# after set +x is done we call _trap_pre_handler2 to redirect stderr.
+alias trap_pre_handler='{ _trap_pre_handler; } 2>/dev/null; _trap_pre_handler2'
 sig_handler() {
+	local ret
 	local -
 
 	case "${SHFLAGS-$-}${_trap_x-}${SETX_EXIT:-0}" in
@@ -1074,15 +1193,21 @@ sig_handler() {
 	local tmp
 
 	TRAPSVAR="TRAPS$(getpid)"
+	ret="${sig_ret}"
 	unset tmp
 	while stack_foreach "${TRAPSVAR}" exit_handler tmp; do
-		case "${sig_ret:+set}" in
-		set) (exit "${sig_ret}") ;;
-		esac
-		"${exit_handler}" || :
+		# Ensure the handler sees the real status.
+		# Don't wrap around if/case/etc.
+		setreturnstatus "${sig_ret-}"
+		"${exit_handler}" || ret="$?"
 	done
 	trap - "${sig}"
-	raise "${sig}"
+	# A handler may have changed the status, but if not raise.
+	if [ "${ret}" -gt 128 ]; then
+		raise "$(kill -l "${ret}")"
+	else
+		exit "${ret}"
+	fi
 }
 
 # Take "return" value from real exit handler and exit with it.
@@ -1109,7 +1234,8 @@ exit_return() {
 	unset tmp
 	while stack_foreach "${TRAPSVAR}" exit_handler tmp; do
 		# Ensure the real handler sees the real status
-		(exit "${ret}")
+		# Don't wrap around if/case/etc.
+		setreturnstatus "${ret-}"
 		"${exit_handler}" || ret="$?"
 	done
 	exit "${ret}"

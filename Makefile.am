@@ -10,9 +10,10 @@ if MAINTAINER_MODE
 AM_CFLAGS+=	-Wextra -Werror
 endif
 if ADDRESS_SANITIZER
-AM_CFLAGS+=	-fsanitize=address -DADDRESS_SANITIZER -fno-omit-frame-pointer
-CFLAGS+=	-O1
+ASAN_CFLAGS=	-fsanitize=address -DADDRESS_SANITIZER -fno-omit-frame-pointer -O1
+UBSAN_CFLAGS=	-fsanitize=undefined -fno-sanitize-recover=undefined
 endif
+SAN_CFLAGS=	$(ASAN_CFLAGS) $(UBSAN_CFLAGS)
 
 awkdir=	$(pkgdatadir)/awk
 htmldir= $(pkgdatadir)/html
@@ -47,6 +48,7 @@ dist_man_MANS=	src/man/poudriere.8 \
 		src/man/poudriere-pkgclean.8 \
 		src/man/poudriere-ports.8 \
 		src/man/poudriere-queue.8 \
+		src/man/poudriere-repo.8 \
 		src/man/poudriere-status.8 \
 		src/man/poudriere-testport.8 \
 		src/man/poudriere-version.8
@@ -88,6 +90,7 @@ dist_pkgdata_DATA=	\
 			src/share/poudriere/ports.sh \
 			src/share/poudriere/processonelog.sh \
 			src/share/poudriere/queue.sh \
+			src/share/poudriere/repo.sh \
 			src/share/poudriere/status.sh \
 			src/share/poudriere/testport.sh
 
@@ -151,7 +154,9 @@ pkglibexec_PROGRAMS= \
 		     cpdup \
 		     dirempty \
 		     dirwatch \
+		     getpid \
 		     locked_mkdir \
+		     lockf \
 		     nc \
 		     poudriered \
 		     ptsort \
@@ -162,9 +167,7 @@ pkglibexec_PROGRAMS= \
 		     timeout \
 		     timestamp \
 		     @BUILD_SH@
-
 EXTRA_PROGRAMS= \
-		lockf \
 		rm \
 		sh
 
@@ -186,18 +189,20 @@ cpdup_LDADD=	-lcrypto
 cpdup_CFLAGS=	$(AM_CFLAGS) -D_ST_FLAGS_PRESENT_=1 -Wno-deprecated-declarations
 dirempty_SOURCES=	src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
+getpid_SOURCES=		src/libexec/poudriere/getpid/getpid.c
 locked_mkdir_SOURCES=	src/libexec/poudriere/locked_mkdir/locked_mkdir.c
-noinst_PROGRAMS+=	@USE_LOCKF@
-lockf_SOURCES=		external/lockf/lockf.c
+locked_mkdir_CFLAGS=	$(AM_CFLAGS) $(SAN_CFLAGS)
+lockf_SOURCES=		external/freebsd/usr.bin/lockf/lockf.c
 nc_SOURCES=		src/libexec/poudriere/nc/nc.c
-pwait_SOURCES=		external/pwait/pwait.c
+pwait_SOURCES=		external/freebsd/bin/pwait/pwait.c
 rename_SOURCES=		src/libexec/poudriere/rename/rename.c
-rm_SOURCES=		external/rm/rm.c
+rm_SOURCES=		external/freebsd/bin/rm/rm.c
 setsid_SOURCES=		external/setsid/setsid.c \
 			external/setsid/c.h
 setsid_CFLAGS=		$(AM_CFLAGS) -DHAVE_ERR_H -DHAVE_NANOSLEEP
-timeout_SOURCES=	external/timeout/timeout.c
+timeout_SOURCES=	external/freebsd/bin/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
+timestamp_CFLAGS=	$(AM_CFLAGS) $(SAN_CFLAGS)
 timestamp_LDADD=	-lpthread
 
 sh_CFLAGS=		$(AM_CFLAGS) -Wno-extra \
@@ -206,6 +211,7 @@ sh_CFLAGS=		$(AM_CFLAGS) -Wno-extra \
 			-include $(top_srcdir)/external/sh_compat/compat.h \
 			-I$(top_srcdir)/src \
 			-I$(top_srcdir)/external/sh
+sh_CFLAGS+=		$(SAN_CFLAGS)
 sh_LDADD=		${sh_hist_LDADD} -lsbuf
 if MAINTAINER_MODE
 sh_hist_LDADD=		-ledit
@@ -221,28 +227,32 @@ CLEANFILES+=		\
 			src/poudriere-sh/builtins.h \
 			src/poudriere-sh/shell.h
 sh_SOURCES+=		\
+			src/poudriere-sh/alarm.c \
 			src/poudriere-sh/builtins-poudriere.def \
 			src/poudriere-sh/helpers.c \
 			src/poudriere-sh/helpers.h \
 			src/poudriere-sh/mapfile.c \
-			src/poudriere-sh/mkdir.c \
-			src/poudriere-sh/mkfifo.c \
-			src/poudriere-sh/mktemp.c \
-			src/poudriere-sh/realpath.c \
-			src/poudriere-sh/rmdir.c \
-			src/poudriere-sh/setproctitle.c \
-			src/poudriere-sh/sleep.c \
-			src/poudriere-sh/stat.c \
-			src/poudriere-sh/touch.c \
-			src/poudriere-sh/traps.c \
-			src/poudriere-sh/unlink.c \
-			src/poudriere-sh/wc.c
+			src/poudriere-sh/traps.c
+# external builtins
+sh_SOURCES+=		external/freebsd/bin/chmod/chmod.c
 sh_SOURCES+=		$(clock_SOURCES)
 sh_SOURCES+=		$(dirempty_SOURCES)
+sh_SOURCES+=		$(dirwatch_SOURCES)
 sh_SOURCES+=		$(locked_mkdir_SOURCES)
+sh_SOURCES+=		external/freebsd/bin/mkdir/mkdir.c
+sh_SOURCES+=		external/freebsd/usr.bin/mkfifo/mkfifo.c
+sh_SOURCES+=		external/freebsd/usr.bin/mktemp/mktemp.c
 sh_SOURCES+=		$(pwait_SOURCES)
+sh_SOURCES+=		external/freebsd/bin/realpath/realpath.c
 sh_SOURCES+=		$(rename_SOURCES)
 sh_SOURCES+=		$(rm_SOURCES)
+sh_SOURCES+=		external/freebsd/bin/rmdir/rmdir.c
+sh_SOURCES+=		src/poudriere-sh/setproctitle.c
+sh_SOURCES+=		external/freebsd/bin/sleep/sleep.c
+sh_SOURCES+=		external/freebsd/usr.bin/stat/stat.c
+sh_SOURCES+=		external/freebsd/usr.bin/touch/touch.c
+sh_SOURCES+=		src/poudriere-sh/unlink.c
+sh_SOURCES+=		external/freebsd/usr.bin/wc/wc.c
 noinst_PROGRAMS+=	external/sh/mknodes
 external_sh_mknodes_SOURCES= external/sh/mknodes.c
 external/sh/nodes.c: external/sh/mknodes \
@@ -341,6 +351,7 @@ poudriered_SOURCES=	src/poudriered/poudriered.c \
 			external/pkg/xstring.h \
 			external/pkg/xmalloc.h
 poudriered_CFLAGS=	$(AM_CFLAGS) \
+			$(SAN_CFLAGS) \
 			-DPREFIX=\"$(prefix)\" \
 			-I$(top_srcdir)/external/libucl/include \
 			-I$(top_srcdir)/external/pkg
@@ -377,7 +388,7 @@ poudriere: src/bin/poudriere.in
 	$(AM_V_GEN)if test -e $(top_srcdir)/.git && \
 	    which git >/dev/null 2>&1 && \
 	    [ -d "$$(git -C "$(top_srcdir)" rev-parse --git-dir)" ]; then \
-	    gitver=$$(git -C "$(top_srcdir)" describe --tags HEAD); \
+	    gitver=$$(git -C "$(top_srcdir)" describe --always --tags HEAD); \
 	    sed \
 	      -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
 	      -e "s,^\(USE_DEBUG\)=.*,\1='@USE_DEBUG@'," \

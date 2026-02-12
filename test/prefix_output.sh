@@ -30,7 +30,7 @@ while get_test_context; do
 	OUTPUT=$(mktemp -ut poudriere)
 
 	if [ "${USE_TIMESTAMP}" -eq 1 ]; then
-		TS="[00:00:00] "
+		TS="\[00:00:0[012]\] "
 	fi
 
 	# Basic output test with prefix_stderr_quick
@@ -55,8 +55,8 @@ while get_test_context; do
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr_quick stderr output should match"
 	)
 	ret=$?
-	cat "${OUTPUT}" || :
-	cat "${OUTPUT}.stderr" >&2 || :
+	mapfile_cat_file -q "${OUTPUT}" || :
+	mapfile_cat_file -q "${OUTPUT}.stderr" >&2 || :
 	assert 0 "${ret}"
 
 	# Basic output test with prefix_stdout
@@ -66,11 +66,10 @@ while get_test_context; do
 		    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stdout test_output 0 wrong exit status"
 
-		cat > "${OUTPUT}.expected" <<-EOF
+		assert_file_reg - "${OUTPUT}" <<-EOF
 		${TS}STDOUT: test stdout 1
 		${TS}STDOUT: test stdout 2
 		EOF
-		diff -u "${OUTPUT}.expected" "${OUTPUT}"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stdout stdout output should match"
 
 		cat > "${OUTPUT}.expected" <<-EOF
@@ -81,8 +80,8 @@ while get_test_context; do
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stdout stderr output should match"
 	)
 	ret=$?
-	cat "${OUTPUT}" || :
-	cat "${OUTPUT}.stderr" >&2 || :
+	mapfile_cat_file -q "${OUTPUT}" || :
+	mapfile_cat_file -q "${OUTPUT}.stderr" >&2 || :
 	assert 0 "${ret}"
 
 	# Basic output test with prefix_stderr
@@ -99,16 +98,15 @@ while get_test_context; do
 		diff -u "${OUTPUT}.expected" "${OUTPUT}"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr stdout output should match"
 
-		cat > "${OUTPUT}.expected" <<-EOF
+		assert_file_reg - "${OUTPUT}.stderr" <<-EOF
 		${TS}STDERR: test stderr 1
 		${TS}STDERR: test stderr 2
 		EOF
-		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr stderr output should match"
 	)
 	ret=$?
-	cat "${OUTPUT}" || :
-	cat "${OUTPUT}.stderr" >&2 || :
+	mapfile_cat_file -q "${OUTPUT}" || :
+	mapfile_cat_file -q "${OUTPUT}.stderr" >&2 || :
 	assert 0 "${ret}"
 
 	# Basic output test with prefix_output
@@ -118,23 +116,21 @@ while get_test_context; do
 		    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_output test_output 0 wrong exit status"
 
-		cat > "${OUTPUT}.expected" <<-EOF
+		assert_file_reg - "${OUTPUT}" <<-EOF
 		${TS}OUTPUT: test stdout 1
 		${TS}OUTPUT: test stdout 2
 		EOF
-		diff -u "${OUTPUT}.expected" "${OUTPUT}"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_output stdout output should match"
 
-		cat > "${OUTPUT}.expected" <<-EOF
+		assert_file_reg - "${OUTPUT}.stderr" <<-EOF
 		${TS}OUTPUT: test stderr 1
 		${TS}OUTPUT: test stderr 2
 		EOF
-		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_output stderr output should match"
 	)
 	ret=$?
-	cat "${OUTPUT}" || :
-	cat "${OUTPUT}.stderr" >&2 || :
+	mapfile_cat_file -q "${OUTPUT}" || :
+	mapfile_cat_file -q "${OUTPUT}.stderr" >&2 || :
 	assert 0 "${ret}"
 
 	# Basic output test with chaining prefix_stderr and prefix_stdout
@@ -144,23 +140,21 @@ while get_test_context; do
 		    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr+prefix_stdout test_output 0 wrong exit status"
 
-		cat > "${OUTPUT}.expected" <<-EOF
+		assert_file_reg - "${OUTPUT}" <<-EOF
 		${TS}STDOUT: test stdout 1
 		${TS}STDOUT: test stdout 2
 		EOF
-		diff -u "${OUTPUT}.expected" "${OUTPUT}"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr+prefix_stdout stdout output should match"
 
-		cat > "${OUTPUT}.expected" <<-EOF
+		assert_file_reg - "${OUTPUT}.stderr" <<-EOF
 		${TS}STDERR: test stderr 1
 		${TS}STDERR: test stderr 2
 		EOF
-		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr+prefix_stdout stderr output should match"
 	)
 	ret=$?
-	cat "${OUTPUT}" || :
-	cat "${OUTPUT}.stderr" >&2 || :
+	mapfile_cat_file -q "${OUTPUT}" || :
+	mapfile_cat_file -q "${OUTPUT}.stderr" >&2 || :
 	assert 0 "${ret}"
 
 	# Now test exit statuses (pipefail and such)
@@ -188,8 +182,8 @@ while get_test_context; do
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr_quick/5 stderr output should match"
 	)
 	ret=$?
-	cat "${OUTPUT}" || :
-	cat "${OUTPUT}.stderr" >&2 || :
+	mapfile_cat_file -q "${OUTPUT}" || :
+	mapfile_cat_file -q "${OUTPUT}.stderr" >&2 || :
 	assert 0 "${ret}"
 
 	# pipefail test with prefix_stdout
@@ -199,11 +193,10 @@ while get_test_context; do
 		    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 		assert 5 $? "ts=${USE_TIMESTAMP} prefix_stdout test_output 5 wrong exit status"
 
-		cat > "${OUTPUT}.expected" <<-EOF
+		assert_file_reg - "${OUTPUT}" <<-EOF
 		${TS}STDOUT: test stdout 1
 		${TS}STDOUT: test stdout 2
 		EOF
-		diff -u "${OUTPUT}.expected" "${OUTPUT}"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stdout/5 stdout output should match"
 
 		cat > "${OUTPUT}.expected" <<-EOF
@@ -214,8 +207,8 @@ while get_test_context; do
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stdout/5 stderr output should match"
 	)
 	ret=$?
-	cat "${OUTPUT}" || :
-	cat "${OUTPUT}.stderr" >&2 || :
+	mapfile_cat_file -q "${OUTPUT}" || :
+	mapfile_cat_file -q "${OUTPUT}.stderr" >&2 || :
 	assert 0 "${ret}"
 
 	# pipefail test with prefix_stderr
@@ -232,16 +225,15 @@ while get_test_context; do
 		diff -u "${OUTPUT}.expected" "${OUTPUT}"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr/5 stdout output should match"
 
-		cat > "${OUTPUT}.expected" <<-EOF
+		assert_file_reg - "${OUTPUT}.stderr" <<-EOF
 		${TS}STDERR: test stderr 1
 		${TS}STDERR: test stderr 2
 		EOF
-		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr/5 stderr output should match"
 	)
 	ret=$?
-	cat "${OUTPUT}" || :
-	cat "${OUTPUT}.stderr" >&2 || :
+	mapfile_cat_file -q "${OUTPUT}" || :
+	mapfile_cat_file -q "${OUTPUT}.stderr" >&2 || :
 	assert 0 "${ret}"
 
 	# pipefail test with prefix_output
@@ -251,23 +243,21 @@ while get_test_context; do
 		    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 		assert 5 $? "ts=${USE_TIMESTAMP} prefix_output test_output 5 wrong exit status"
 
-		cat > "${OUTPUT}.expected" <<-EOF
+		assert_file_reg - "${OUTPUT}" <<-EOF
 		${TS}OUTPUT: test stdout 1
 		${TS}OUTPUT: test stdout 2
 		EOF
-		diff -u "${OUTPUT}.expected" "${OUTPUT}"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_output/5 stdout output should match"
 
-		cat > "${OUTPUT}.expected" <<-EOF
+		assert_file_reg - "${OUTPUT}.stderr" <<-EOF
 		${TS}OUTPUT: test stderr 1
 		${TS}OUTPUT: test stderr 2
 		EOF
-		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_output/5 stderr output should match"
 	)
 	ret=$?
-	cat "${OUTPUT}" || :
-	cat "${OUTPUT}.stderr" >&2 || :
+	mapfile_cat_file -q "${OUTPUT}" || :
+	mapfile_cat_file -q "${OUTPUT}.stderr" >&2 || :
 	assert 0 "${ret}"
 
 	# pipefail test with chaining prefix_stderr and prefix_stdout
@@ -277,23 +267,23 @@ while get_test_context; do
 		    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 		assert 5 $? "ts=${USE_TIMESTAMP} prefix_stderr+prefix_stdout test_output 5 wrong exit status"
 
-		cat > "${OUTPUT}.expected" <<-EOF
+		assert_file_reg - "${OUTPUT}" <<-EOF
 		${TS}STDOUT: test stdout 1
 		${TS}STDOUT: test stdout 2
 		EOF
-		diff -u "${OUTPUT}.expected" "${OUTPUT}"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr+prefix_stdout/5 stdout output should match"
 
-		cat > "${OUTPUT}.expected" <<-EOF
+		assert_file_reg - "${OUTPUT}.stderr" <<-EOF
 		${TS}STDERR: test stderr 1
 		${TS}STDERR: test stderr 2
 		EOF
-		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr+prefix_stdout/5 stderr output should match"
 	)
 	ret=$?
-	cat "${OUTPUT}" || :
-	cat "${OUTPUT}.stderr" >&2 || :
+	mapfile_cat_file -q "${OUTPUT}" || :
+	mapfile_cat_file -q "${OUTPUT}.stderr" >&2 || :
 	assert 0 "${ret}"
 	rm -f "${OUTPUT}" "${OUTPUT}.stderr" "${OUTPUT}.expected"
+
+	unset OUTPUT ret TS
 done

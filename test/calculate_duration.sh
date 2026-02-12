@@ -25,7 +25,9 @@ while get_test_context; do
 	assert_ret 0 calculate_duration duration "${seconds:?}"
 	assert "${expected_duration}" "${duration}" "calculate_duration()"
 
-	timestamp="$(TIME_START="${seconds}" timestamp -d)"
+	timestamp="$(timestamp -d "${seconds}")"
 	assert "0" "$?"
 	assert "${expected_duration}" "${timestamp}" "./timestamp -d"
+
+	unset duration timestamp
 done

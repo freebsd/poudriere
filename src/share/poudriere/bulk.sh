@@ -60,7 +60,7 @@ Options:
     -k          -- When doing testing with -t, don't consider failures as
                    fatal; don't skip dependent ports on findings.
     -N          -- Do not build package repository when build completed
-    -NN         -- Do not commit package repository when build completed
+    -NN         -- Do not commit/publish package repository when build completed
     -n          -- Dry-run. Show what will be done, but do not build
                    any packages.
     -O overlays -- Specify extra ports trees to overlay
@@ -159,9 +159,6 @@ while getopts "ab:B:CcFf:HiIj:J:knNO:p:RrSTtvwz:" FLAG; do
 			if [ "${NFLAG}" -eq 2 ]; then
 				# Don't commit the packages.  This is effectively
 				# the same as -n but does an actual build.
-				if [ "${ATOMIC_PACKAGE_REPOSITORY}" != "yes" ]; then
-					err ${EX_USAGE} "-NN only makes sense with ATOMIC_PACKAGE_REPOSITORY=yes"
-				fi
 				COMMIT=0
 			fi
 			;;

@@ -144,7 +144,7 @@ CLEANUP_HOOK=distfiles_cleanup
 read_packages_from_params "$@"
 
 for PTNAME in ${PTNAMES}; do
-	parallel_start
+	parallel_start || err 1 "parallel_start"
 
 	PORTSDIR=$(pget ${PTNAME} mnt)
 	export PORTSDIR

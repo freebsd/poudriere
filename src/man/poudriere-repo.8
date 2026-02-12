@@ -1,0 +1,160 @@
+.\" Copyright (c) 2012 Baptiste Daroussin <bapt@FreeBSD.org>
+.\" Copyright (c) 2012-2014 Bryan Drewery <bdrewery@FreeBSD.org>
+.\" Copyright (c) 2018 SRI International
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\" $FreeBSD$
+.\"
+.\" Note: The date here should be updated whenever a non-trivial
+.\" change is made to the manual page.
+.Dd November 10, 2025
+.Dt POUDRIERE-REPO 8
+.Os
+.Sh NAME
+.Nm "poudriere repo"
+.Nd regenerate repository with
+.Xr pkg-repo 8 .
+.Sh SYNOPSIS
+.Nm
+.Ar subcommand
+.Op Ar options
+.Nm
+.Op Ar options
+.Ar origin
+.Op Ar origin2 Op Ar ...
+.Sh DESCRIPTION
+This command is used to run
+.Xr pkg-repo 8
+after manual modification of the
+.Sy PACKAGES
+directory, or modifying the repository configuration.
+.Pp
+This is normally ran automatically by every other command.
+.Pp
+This requires that
+.Sy ports-mgmt/pkg
+has already been built by
+.Xr poudriere-bulk 8 .
+.Pp
+The
+.Cm pkgrepo Cm publish
+hook will be executed unless
+.Fl NN
+is given.
+Note that if
+.Sy ATOMIC_PACKAGE_REPOSITORY
+is not set to
+.Sy yes
+(default), or
+.Sy COMMIT_PACKAGES_ON_FAILURE
+is set to
+.Sy yes (default),
+then a failed build may be published.
+.Sy That is, by default a failed build may be published.
+.Sh OPTIONS
+.Bl -tag -width "-f conffile"
+.It Fl j Ar name
+Jail to use for the packages to inspect.
+.It Fl NN
+Do not publish the package repository.
+.It Fl p Ar tree
+Specifies which ports
+.Ar tree
+to use.
+.Pq Default: Dq Li default
+.It Fl z Ar set
+SET to use for the packages to inspect.
+.El
+.Sh CONFIG
+The following options in
+.Pa poudriere.conf
+affect building the repository.
+They are not read from the environment automatically, but may be with
+.Nm poudriere Fl s .
+See
+.Xr poudriere 8 .
+.Pp
+See
+.Pa poudriere.conf.sample
+for details on each of these.
+.Bl -tag -width "PKG_REPO_SIGNING_KEY"
+.It Sy PKG_HASH
+Enable
+.Xr pkg-repo 8
+hashed mode using
+.Nm pkg Nm repo Fl -hash Fl -symlink .
+Useful for CDNs and making remote sync more atomic.
+.It Sy PKG_REPO_FLAGS
+Arbitrary flags to pass to
+.Nm pkg Cm repo .
+.It Sy PKG_REPO_FROM_HOST
+Use host
+.Xr pkg 8
+rather than the jailed version.
+May be required depending on
+.Sy SIGNING_COMMAND .
+.It Sy PKG_REPO_LIST_FILES
+If
+.Sy yes
+then generates
+.Pa filesite.pkg
+with
+.Nm pkg Cm repo Fl -list-files .
+Nothing currently uses this file.
+.It Sy PKG_REPO_META_FILE
+The
+.Pa meta-file
+file passed to
+.Nm pkg Nm repo Fl -meta-file Ar meta-file .
+If not specified then
+.Xr pkg-repo 8
+will use default settings.
+.It Sy PKG_REPO_SIGNING_KEY
+The key used to sign the repository.
+See
+.Xr pkg-repo 8
+for more information.
+.It Sy SIGNING_COMMAND
+An optional external command to sign the repository, rather than specifying a
+.Sy PKG_REPO_SIGNING_KEY .
+See
+.Xr pkg-repo 8
+for more information.
+.El
+.Sh SEE ALSO
+.Xr poudriere 8 ,
+.Xr poudriere-bulk 8 ,
+.Xr poudriere-distclean 8 ,
+.Xr poudriere-image 8 ,
+.Xr poudriere-jail 8 ,
+.Xr poudriere-logclean 8 ,
+.Xr poudriere-pkgclean 8 ,
+.Xr poudriere-ports 8 ,
+.Xr poudriere-queue 8 ,
+.Xr poudriere-status 8 ,
+.Xr poudriere-testport 8 ,
+.Xr poudriere-version 8
+.Sh AUTHORS
+This page was written by
+.An Bryan Drewery Aq bdrewery@FreeBSD.org .

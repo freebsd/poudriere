@@ -77,7 +77,14 @@ pkg_get_generic_list() {
 	local _pggl_mapfile_var="$3"
 	local _pkg="$4"
 	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
+	local Tflag
 
+	# If outputting the value to stdout then tee it on cache miss,
+	# and shash_read it on cache hit.
+	case "${_pggl_mapfile_var}" in
+	-) Tflag=1 ;;
+	*) unset Tflag ;;
+	esac
 	get_pkg_cache_dir SHASH_VAR_PATH "${_pkg}"
 	if ! shash_exists 'pkg' "${name}"; then
 		local -; set_pipefail
@@ -86,22 +93,27 @@ pkg_get_generic_list() {
 		ret=0
 		injail "${PKG_BIN:?}" query -F "/packages/All/${_pkg##*/}" \
 		    "${flags}" | sort |
-		    shash_write 'pkg' "${name}" || ret="$?"
+		    shash_write ${Tflag:+-T} 'pkg' "${name}" || ret="$?"
 		if [ "${ret}" -ne 0 ]; then
 			shash_unset 'pkg' "${name}"
 			return "${ret}"
 		fi
+	else
+		case "${_pggl_mapfile_var}" in
+		-) shash_read 'pkg' "${name}" ;;
+		esac
 	fi
 	case "${_pggl_mapfile_var}" in
 	"") ;;
-	-)
-		shash_read 'pkg' "${name}"
-		;;
+	-) : ;;
 	*)
 		shash_read_mapfile 'pkg' "${name}" "${_pggl_mapfile_var}"
 		;;
 	esac ||
-	    err "${EX_SOFTWARE}" "pkg_get_generic_list: Failed to read cache just written"
+	    err "${EX_SOFTWARE}" "pkg_get_generic_list: Failed to read cache" \
+	        "just written name='${name}' pkg='${_pkg}'" \
+		"SHASH_VAR_PATH='${SHASH_VAR_PATH}'" \
+		"mapfile_handle_var='${_pggl_mapfile_var}'"
 }
 
 pkg_get_shlib_required_count() {
@@ -288,21 +300,25 @@ pkg_get_options() {
 	_compiled_options=
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
 	if ! shash_get 'pkg' 'options2' _compiled_options; then
+		local pgo_options
+
 		_compiled_options=
+		pgo_options="$({
+			set_pipefail
+			injail "${PKG_BIN:?}" query \
+			    -F "/packages/All/${pkg##*/}" '%Ok %Ov' |
+			    sort
+			})" || return
 		while mapfile_read_loop_redir key value; do
-			case "${key}" in
-			"!ERR! "*) return "${key#!ERR! }" ;;
-			esac
 			case "${value}" in
-				off|false) key="-${key}" ;;
-				on|true) key="+${key}" ;;
+			off|false) key="-${key}" ;;
+			on|true) key="+${key}" ;;
+			# no options
+			*) break ;;
 			esac
 			_compiled_options="${_compiled_options:+${_compiled_options} }${key}"
 		done <<-EOF
-		$(set_pipefail; \
-		    injail "${PKG_BIN:?}" \
-		    query -F "/packages/All/${pkg##*/}" '%Ok %Ov' | sort ||
-		    echo "!ERR! $?")
+		${pgo_options}
 		EOF
 		shash_set 'pkg' 'options2' "${_compiled_options-}"
 	fi
@@ -395,7 +411,7 @@ get_pkg_cache_dir() {
 	fi
 
 	if [ "${use_mtime}" -eq 1 ]; then
-		pkg_mtime=$(stat -f %m "${pkg}")
+		pkg_mtime=$(stat -L -f %m "${pkg}")
 	fi
 
 	pkg_dir="${cache_dir:?}/${pkg_file:?}/${pkg_mtime}"
@@ -641,4 +657,155 @@ sign_pkg() {
 		esac
 		;;
 	esac
+}
+
+# Extract key type from PKG_REPO_SIGNING_KEY.
+repo_key_type() {
+	local keyspec="${PKG_REPO_SIGNING_KEY}"
+
+	case "${keyspec}" in
+	rsa:*)
+		# Strip an rsa: prefix to avoid new pkg features if we're just using
+		# rsa.
+		;;
+	*:*)
+		echo "${keyspec%%:*}"
+		;;
+	esac
+}
+
+# Extract key path from PKG_REPO_SIGNING_KEY.  It may be prefixed with an
+# optional key type.
+repo_key_path() {
+	local keyspec="${PKG_REPO_SIGNING_KEY}"
+
+	case "${keyspec}" in
+	*:*)
+		# Key is prefixed with a type, but we'll pass the type along to avoid
+		# having to bake knowledge of valid types in multiple projects.
+		echo "${keyspec#*:}"
+		;;
+	*)
+		echo "${keyspec}"
+		;;
+	esac
+}
+
+build_repo() {
+	local origin pkg_repo_list_files hashcmd pkg_meta_mastermnt
+	local pkg_meta PKG_EXT
+
+	msg "Creating pkg repository"
+	if ! PKG_EXT='*' package_dir_exists_and_has_packages; then
+		msg "No packages present"
+		return 0
+	fi
+	if [ ${DRY_RUN} -eq 1 ]; then
+		return 0
+	fi
+	if [ "${PKG_HASH}" != "no" ]; then
+		hashcmd="--hash --symlink"
+		PKG_REPO_FLAGS="${PKG_REPO_FLAGS:+${PKG_REPO_FLAGS} }${hashcmd}"
+	fi
+	bset status "pkgrepo:"
+	ensure_pkg_installed force_extract || \
+	    err 1 "Unable to extract pkg."
+	case "${PKG_REPO_LIST_FILES}" in
+	yes)
+		pkg_repo_list_files="--list-files"
+		;;
+	*)
+		unset pkg_repo_list_files
+		;;
+	esac
+	run_hook pkgrepo sign "${PACKAGES:?}" "${PKG_REPO_SIGNING_KEY}" \
+	    "${PKG_REPO_FROM_HOST:-no}" "${PKG_REPO_META_FILE}"
+	if [ -r "${PKG_REPO_META_FILE:-/nonexistent}" ]; then
+		pkg_meta="-m /tmp/pkgmeta"
+		pkg_meta_mastermnt="-m ${MASTERMNT:?}/tmp/pkgmeta"
+		install -m 0400 "${PKG_REPO_META_FILE}" \
+		    "${MASTERMNT:?}/tmp/pkgmeta"
+	else
+		pkg_meta=
+		pkg_meta_mastermnt=
+	fi
+
+	remount_packages -o rw
+
+	mkdir -p ${MASTERMNT}/tmp/packages
+	if [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
+		local repokeyprefix=$(repo_key_type)
+		local repokeypath=$(repo_key_path)
+		# Avoid a ${type}: prefix for rsa keys.
+		if [ -n "${repokeyprefix}" ]; then
+			repokeyprefix="${repokeyprefix}:"
+		fi
+		msg "Signing repository with key: ${PKG_REPO_SIGNING_KEY}"
+		install -m 0400 "${repokeypath}" \
+			"${MASTERMNT:?}/tmp/repo.key"
+		injail ${PKG_BIN:?} repo \
+			${PKG_REPO_FLAGS-} \
+			${pkg_repo_list_files:+"${pkg_repo_list_files}"} \
+			-o /tmp/packages \
+			${pkg_meta} \
+			/packages "${repokeyprefix}"/tmp/repo.key ||
+		    err "$?" "Failed to sign pkg repository"
+		unlink "${MASTERMNT:?}/tmp/repo.key"
+	elif [ "${PKG_REPO_FROM_HOST:-no}" = "yes" ]; then
+		case "${SIGNING_COMMAND:+set}" in
+		set)
+			msg "Signing repository with command: ${SIGNING_COMMAND}"
+			;;
+		esac
+		# Sometimes building repo from host is needed if
+		# using SSH with DNSSEC as older hosts don't support
+		# it.
+		${MASTERMNT:?}${PKG_BIN:?} repo \
+		    ${PKG_REPO_FLAGS-} \
+		    ${pkg_repo_list_files:+"${pkg_repo_list_files}"} \
+		    -o "${MASTERMNT:?}/tmp/packages" ${pkg_meta_mastermnt} \
+		    "${MASTERMNT:?}/packages" \
+		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}} ||
+		    err "$?" "Failed to sign pkg repository"
+	else
+		case "${SIGNING_COMMAND:+set}" in
+		set)
+			msg "Signing repository with command: ${SIGNING_COMMAND}"
+			;;
+		esac
+		JNETNAME="n" injail ${PKG_BIN:?} repo \
+		    ${PKG_REPO_FLAGS-} \
+		    ${pkg_repo_list_files:+"${pkg_repo_list_files}"} \
+		    -o /tmp/packages ${pkg_meta} /packages \
+		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}} ||
+		    err "$?" "Failed to sign pkg repository"
+	fi
+	cp "${MASTERMNT:?}"/tmp/packages/* "${PACKAGES:?}/"
+
+	# Sign the ports-mgmt/pkg package for bootstrap
+	if [ -e "${PACKAGES:?}/Latest/pkg.${PKG_EXT}" ]; then
+		if [ -n "${SIGNING_COMMAND}" ]; then
+			sign_pkg fingerprint "${PACKAGES:?}/Latest/pkg.${PKG_EXT}"
+		elif [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
+			sign_pkg pubkey "${PACKAGES:?}/Latest/pkg.${PKG_EXT}"
+		fi
+	fi
+
+	# Check for stale pkg-repo files.
+	case "${PKG_EXT}" in
+	txz) ;;
+	*)
+		local file
+
+		for file in "${PACKAGES:?}/"*.txz; do
+			case "${file:?}" in
+			"${PACKAGES:?}/*.txz") break ;;
+			esac
+			msg "Removing obsolete pkg-repo file: ${file:?}"
+			unlink "${file:?}"
+		done
+		;;
+	esac
+
+	remount_packages -o ro
 }

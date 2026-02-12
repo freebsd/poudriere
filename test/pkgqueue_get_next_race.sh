@@ -21,7 +21,10 @@ add_next_foo() {
 }
 
 pkgqueue_balance_pool_worker() {
-	while :; do
+	local tmp
+
+	unset tmp
+	while time_bounded_loop tmp 60; do
 		assert_true pkgqueue_balance_pool
 		sleep 0.1
 	done
@@ -64,5 +67,5 @@ assert "" "${pkgname}"
 assert "" "${job_type}"
 
 assert_true cd "${POUDRIERE_TMPDIR:?}"
-assert_ret 143 kill_job 0 "${spawn_job}"
+assert_ret 143 kill_job 2 "${spawn_job}"
 rm -rf "${MASTER_DATADIR:?}"

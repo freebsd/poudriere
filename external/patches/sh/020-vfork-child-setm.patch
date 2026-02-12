@@ -1,0 +1,19 @@
+commit cfe49947c69e1d3877347edb0073cee116b3a7a2
+Author: Bryan Drewery <bryan@shatow.net>
+Date:   Thu Nov 20 07:44:51 2025 -0800
+
+    sh: Allow vfork in child with mflag set
+
+diff --git external/sh/eval.c external/sh/eval.c
+index c5fbfc5ed..852b282b4 100644
+--- external/sh/eval.c
++++ external/sh/eval.c
+@@ -1162,7 +1162,7 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
+ 		    cmd->ncmd.redirect == NULL &&
+ 		    varlist.count == 0 &&
+ 		    (mode == FORK_FG || mode == FORK_NOJOB) &&
+-		    !disvforkset() && !iflag && !mflag) {
++		    !disvforkset() && !iflag && !(rootshell && mflag)) {
+ 			vforkexecshell(jp, argv, environment(), path,
+ 			    cmdentry.u.index, flags & EV_BACKCMD ? pip : NULL);
+ 			goto parent;

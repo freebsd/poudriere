@@ -44,6 +44,8 @@ while get_test_context; do
 	assert "0" "${value}" "Iteration A=$A B=$B C=$C"
 	assert_true hash_set got "${CURITER}" 1
 	n=$((n + 1))
+
+	unset n value
 done
 assert_true hash_get teardown "${CURITER}" value
 assert "1" "${value}" "Iteration A=$A B=$B C=$C"

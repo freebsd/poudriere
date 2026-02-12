@@ -1,0 +1,21 @@
+commit c142b40e58e217144aae385ec06cda3ee8ec7a45
+Author: Bryan Drewery <bryan@shatow.net>
+Date:   Mon Nov 17 19:06:41 2025 -0800
+
+    sh: Add some builtins for job handling
+    
+    They are included from jobs.c due to `struct job` privately being defined
+    there, but also avoiding maintaining a patch for every change.
+
+diff --git external/sh/jobs.c external/sh/jobs.c
+index 0b72118a7..42af53e10 100644
+--- external/sh/jobs.c
++++ external/sh/jobs.c
+@@ -624,6 +624,7 @@ jobidcmd(int argc __unused, char **argv __unused)
+ 	return 0;
+ }
+ 
++#include <pjobs.c>
+ 
+ 
+ /*

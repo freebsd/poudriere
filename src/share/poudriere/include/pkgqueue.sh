@@ -134,7 +134,8 @@ pkgqueue_job_done() {
 	local delayed_pkgname delayed_job_type
 
 	pkgqueue_job_encode pkgqueue_job "${job_type}" "${job_name}"
-	rmdir "${MASTER_DATADIR:?}/running/${pkgqueue_job:?}"
+	rmdir "${MASTER_DATADIR:?}/running/${pkgqueue_job:?}" ||
+	    err 1 "pkgqueue_job_done: Job ${pkgqueue_job:?} was not running"
 
 	# Should we undelay anything?
 	if ! pkgqueue_job_is_mutually_exclusive "${pkgqueue_job}"; then
@@ -161,22 +162,18 @@ pkgqueue_job_done() {
 pkgqueue_job_is_mutually_exclusive() {
 	[ $# -eq 1 ] || eargs pkgqueue_job_is_mutually_exclusive pkgqueue_job
 	local pkgqueue_job="$1"
-	local job_type job_name pkgname pkgbase pkgglob
+	local job_type job_name pkgname pkgbase
 	local -
 
 	pkgqueue_job_decode "${pkgqueue_job}" job_type job_name
 	case "${job_type}.${IN_TEST:-0}" in
 	"build".*)
-		pkgname="${job_name}"
+		pkgname="${job_name:?}"
 		pkgbase="${pkgname%-*}"
-		set -o noglob
-		for pkgglob in ${MUTUALLY_EXCLUSIVE_BUILD_PACKAGES-}; do
-			# shellcheck disable=SC2254
-			case "${pkgbase}" in
-			${pkgglob}) return 0 ;;
-			esac
-		done
-		set +o noglob
+		if patternlist_match "${MUTUALLY_EXCLUSIVE_BUILD_PACKAGES-}" \
+		    "${pkgbase:?}"; then
+			return 0
+		fi
 		;;
 	"run".*) ;;
 	"test".1) ;;
@@ -335,9 +332,9 @@ pkgqueue_add_dep() {
 # Remove myself from the remaining list of dependencies for anything
 # depending on this package. If clean_rdepends is set, instead cleanup
 # anything depending on me and skip them.
-pkgqueue_clean_rdeps() {
-	required_env pkgqueue_clean_rdeps PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -eq 2 ] || eargs pkgqueue_clean_rdeps pkgqueue_job clean_rdepends
+_pkgqueue_clean_rdeps() {
+	required_env _pkgqueue_clean_rdeps PWD "${MASTER_DATADIR_ABS:?}"
+	[ $# -eq 2 ] || eargs _pkgqueue_clean_rdeps pkgqueue_job clean_rdepends
 	local pkgqueue_job="$1"
 	local clean_rdepends="$2"
 	local dep_dir pkg_dir_name dep_pkgqueue_job
@@ -381,8 +378,8 @@ pkgqueue_clean_rdeps() {
 			esac
 			dep_pkgqueue_job="${dep_dir##*/}"
 			pkgqueue_dir pkg_dir_name "${dep_pkgqueue_job}"
-			deps_to_check="${deps_to_check} deps/${pkg_dir_name}"
-			deps_to_clean="${deps_to_clean} deps/${pkg_dir_name}/${pkgqueue_job}"
+			deps_to_check="${deps_to_check:+${deps_to_check} }deps/${pkg_dir_name}"
+			deps_to_clean="${deps_to_clean:+${deps_to_clean} }deps/${pkg_dir_name}/${pkgqueue_job}"
 		done
 		case "${deps_to_clean:+set}${deps_to_check:+set}" in
 		"") ;;
@@ -392,11 +389,12 @@ pkgqueue_clean_rdeps() {
 			# Note that this is not needed when recursively cleaning
 			# as the entire /deps/<pkgname> for all my rdeps will
 			# be removed.
-			echo "${deps_to_clean}" | xargs rm -f || :
+			unlink_many "${deps_to_clean}" || :
 
 			# Look for packages that are now ready to build. They
 			# have no remaining dependencies. Move them to
 			# /unbalanced for later processing.
+			# shellcheck disable=SC2086
 			echo "${deps_to_check}" |
 			    xargs -J % \
 			    find % -type d -maxdepth 0 -empty |
@@ -407,15 +405,16 @@ pkgqueue_clean_rdeps() {
 		;;
 	esac
 
-	rm -rf "${rdep_dir}" 2>/dev/null &
+	# allow vfork
+	{ rm -rf "${rdep_dir}"; } >/dev/null
 
 	return 0
 }
 
 # Remove my /deps/<pkgqueue_job> dir and any references to this dir in /rdeps/
-pkgqueue_clean_deps() {
-	required_env pkgqueue_clean_deps PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -eq 2 ] || eargs pkgqueue_clean_deps pkgqueue_job clean_rdepends
+_pkgqueue_clean_deps() {
+	required_env _pkgqueue_clean_deps PWD "${MASTER_DATADIR_ABS:?}"
+	[ $# -eq 2 ] || eargs _pkgqueue_clean_deps pkgqueue_job clean_rdepends
 	local pkgqueue_job="$1"
 	local clean_rdepends="$2"
 	local dep_dir rdep_pkgqueue_job pkg_dir_name
@@ -432,13 +431,11 @@ pkgqueue_clean_deps() {
 
 	# Remove myself from all my dependency rdeps to prevent them from
 	# trying to skip me later
-
+	unset rdeps_to_clean
 	for dir in "${dep_dir}"/*; do
 		case "${dir}" in
 		# empty dir
-		"${dep_dir}/*")
-			rdeps_to_clean=
-			;;
+		"${dep_dir}/*") break ;;
 		esac
 		rdep_pkgqueue_job="${dir##*/}"
 		pkgqueue_dir rdep_dir_name "${rdep_pkgqueue_job}"
@@ -447,11 +444,12 @@ pkgqueue_clean_deps() {
 
 	case "${rdeps_to_clean:+set}" in
 	set)
-		echo "${rdeps_to_clean}" | xargs rm -f 2>/dev/null || :
+		unlink_many "${rdeps_to_clean}" 2>/dev/null || :
 		;;
 	esac
 
-	rm -rf "${dep_dir}" 2>/dev/null &
+	# allow vfork
+	{ rm -rf "${dep_dir}"; } >/dev/null
 
 	return 0
 }
@@ -464,7 +462,7 @@ _pkgqueue_clean_queue() {
 	local ret
 
 	ret=0
-	pkgqueue_clean_rdeps "${pkgqueue_job}" "${clean_rdepends}" || ret="$?"
+	_pkgqueue_clean_rdeps "${pkgqueue_job}" "${clean_rdepends}" || ret="$?"
 
 	# Remove this pkg from the needs-to-build list. It will not exist
 	# if this build was sucessful. It only exists if pkgqueue_clean_queue is
@@ -472,7 +470,7 @@ _pkgqueue_clean_queue() {
 	# not be empty.
 	case "${clean_rdepends:+set}" in
 	set)
-		pkgqueue_clean_deps "${pkgqueue_job}" "${clean_rdepends}" ||
+		_pkgqueue_clean_deps "${pkgqueue_job}" "${clean_rdepends}" ||
 		    ret="$?"
 		;;
 	esac
@@ -526,6 +524,9 @@ pkgqueue_list() {
 	done
 }
 
+PKGQUEUE_DEFAULT_PRIORITY=0
+# Ensure default bucket is always created.
+PKGQUEUE_PRIORITIES="${PKGQUEUE_DEFAULT_PRIORITY:?}"
 pkgqueue_prioritize() {
 	[ "$#" -eq 3 ] || eargs pkgqueue_prioritize job_type job_name priority
 	local job_type="$1"
@@ -568,7 +569,7 @@ pkgqueue_balance_pool() {
 		esac
 		pkgqueue_job="${pkgq_dir##*/}"
 		hash_remove "pkgqueue_priority" "${pkgqueue_job}" dep_count ||
-		    dep_count=0
+		    dep_count="${PKGQUEUE_DEFAULT_PRIORITY:?}"
 		# This races with pkgqueue_get_next(), just ignore failure
 		# to move it.
 		rename -q "${pkgq_dir}" "${dep_count}/${pkgqueue_job}" || :
@@ -608,19 +609,13 @@ _pkgqueue_create_pool_dirs() {
 	required_env _pkgqueue_create_pool_dirs PWD "${MASTER_DATADIR_ABS:?}"
 	[ $# -eq 0 ] || eargs _pkgqueue_create_pool_dirs
 
+
 	# Create buckets to satisfy the dependency chain priorities.
 	case "${PKGQUEUE_PRIORITIES:+set}" in
 	set)
 		POOL_BUCKET_DIRS="$(echo "${PKGQUEUE_PRIORITIES}" |
 		    tr ' ' '\n' | LC_ALL=C sort -run |
 		    paste -d ' ' -s -)"
-		;;
-	*)
-		# If there are no buckets then everything to build will fall
-		# into 0 as they depend on nothing and nothing depends on them.
-		# I.e., pkg-devel in -ac or testport on something with no deps
-		# needed.
-		POOL_BUCKET_DIRS="0"
 		;;
 	esac
 
@@ -658,7 +653,7 @@ _pkgqueue_remove_many_pipe() {
 			;;
 		*) ;;
 		esac
-	done | xargs rm -rf
+	done | remove_many_pipe rm -rf
 }
 
 _pkgqueue_compute_rdeps() {
@@ -763,7 +758,7 @@ pkgqueue_sanity_check() {
 		find deps -mindepth 3 | \
 		sed -e "s,^deps/[^/]*/,," -e 's:/: :' | \
 		# Only cycle errors are wanted
-		tsort 2>&1 >/dev/null | \
+		{ tsort; } 2>&1 >/dev/null | \
 		sed -e 's/tsort: //' | \
 		awk -f ${AWKPREFIX}/dependency_loop.awk \
 	)
@@ -798,8 +793,13 @@ pkgqueue_sanity_check() {
 	esac
 
 	# No cycle, there's some unknown poudriere bug
-	err 1 "Unknown stuck queue bug detected. Please submit the entire build output to poudriere developers.
-$(find ${MASTER_DATADIR}/running ${MASTER_DATADIR}/pool ${MASTER_DATADIR}/deps ${MASTER_DATADIR}/cleaning)"
+	err 1 "Unknown stuck queue bug detected. Please submit the entire" \
+	    "build output to poudriere developers." \
+	    "$(find "${MASTER_DATADIR:?}/running" \
+		    "${MASTER_DATADIR:?}/pool" \
+		    "${MASTER_DATADIR:?}/deps" \
+		    "${MASTER_DATADIR:?}/cleaning" \
+	    )"
 }
 
 pkgqueue_empty() {
@@ -882,14 +882,14 @@ pkgqueue_find_dead_packages() {
 	dead_all="$(mktemp -t dead_packages.all)"
 	dead_deps="$(mktemp -t dead_packages.deps)"
 	dead_top="$(mktemp -t dead_packages.top)"
-	find deps -mindepth 2 > "${dead_all}"
+	{ find deps -mindepth 2; } > "${dead_all}"
 	# All packages in the queue
 	cut -d / -f 3 "${dead_all}" | sort -u -o "${dead_top}"
 	# All packages with dependencies
 	cut -d / -f 4 "${dead_all}" | sed -e '/^$/d' | sort -u -o "${dead_deps}"
 	# Find all packages only listed as dependencies (not in queue)
 	comm -13 "${dead_top}" "${dead_deps}" || return 1
-	rm -f "${dead_all}" "${dead_deps}" "${dead_top}" || :
+	rm -f "${dead_all}" "${dead_deps}" "${dead_top}" >/dev/null || :
 }
 
 pkgqueue_find_all_pool_references() {

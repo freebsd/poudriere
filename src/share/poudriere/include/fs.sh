@@ -72,8 +72,12 @@ _do_cpdup() {
 	local src="$3"
 	local dst="$4"
 
-	case "${src}" in
-	/) err 1 "Tried to cpdup /; src=${src} dst=${dst}" ;;
+	case "${ALLOW_CLONING_HOST:-no}" in
+	no)
+		case "${src}" in
+		/) err 1 "Tried to cpdup /; src=${src} dst=${dst}" ;;
+		esac
+		;;
 	esac
 	case "${dst}" in
 	/) err 1 "Tried to cpdup /; src=${src} dst=${dst}" ;;
@@ -106,15 +110,23 @@ _do_clone() {
 	src="$1"
 	dst="$2"
 
-	if [ ${relative} -eq 1 ]; then
-		set -- $(relpath_common "${src}" "${dst}")
-		common="${1}"
-		src="${2}"
-		dst="${3}"
+	case "${relative}" in
+	1)
+		local _relpath_common _relpath_common_dir1 _relpath_common_dir2
+
+		_relpath_common "${src:?}" "${dst:?}" ||
+		    err 1 "_do_clone: relpath_common '${src}' '${dst}'"
+		common="${_relpath_common:?}"
+		src="${_relpath_common_dir1:?}"
+		dst="${_relpath_common_dir2:?}"
 		case "${common}" in
 		/)
-			case "${src}" in
-			".") err 1 "Tried to cpdup /; common=${common} src=${src} dst=${dst}" ;;
+			case "${ALLOW_CLONING_HOST:-no}" in
+			no)
+				case "${src}" in
+				".") err 1 "Tried to cpdup /; common=${common} src=${src} dst=${dst}" ;;
+				esac
+				;;
 			esac
 			case "${dst}" in
 			".") err 1 "Tried to cpdup /; common=${common} src=${src} dst=${dst}" ;;
@@ -126,7 +138,8 @@ _do_clone() {
 			_do_cpdup "${rflags}" "${cpignore}" "${src}" "${dst}"
 		)
 		return
-	fi
+		;;
+	esac
 
 	_do_cpdup "${rflags}" "${cpignore}" "${src}" "${dst}"
 }
@@ -357,11 +370,14 @@ clonefs() {
 		case "${snap}" in
 		"clean")
 			local skippath skippaths common src dst
+			local _relpath_common _relpath_common_dir1 \
+			    _relpath_common_dir2
 
-			set -- $(relpath_common "${from}" "${mnt}")
-			common="${1}"
-			src="${2}"
-			dst="${3}"
+			_relpath_common "${from:?}" "${mnt:?}" ||
+			    err 1 "_do_clone: relpath_common '${from}' '${mnt}'"
+			common="${_relpath_common:?}"
+			src="${_relpath_common_dir1:?}"
+			dst="${_relpath_common_dir2:?}"
 
 			cpignore="$(mktemp -ut clone.cpignore)"
 			skippaths="$(nullfs_paths "${mnt}")"

@@ -44,11 +44,15 @@ static char sccsid[] = "@(#)wc.c	8.1 (Berkeley) 6/6/93";
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#ifndef SHELL
 #include <sys/capsicum.h>
+#endif
 #include <sys/param.h>
 #include <sys/stat.h>
 
+#ifndef SHELL
 #include <capsicum_helpers.h>
+#endif
 #include <ctype.h>
 #include <err.h>
 #include <errno.h>

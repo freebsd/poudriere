@@ -8,7 +8,7 @@ set_test_contexts - '' '' <<-EOF
 MUTUALLY_EXCLUSIVE_BUILD_PACKAGES "" "rust* llvm*"
 EOF
 
-MASTER_DATADIR=$(mktemp -udt datadir)
+MASTER_DATADIR=$(mktemp -dt datadir)
 assert_true add_relpath_var MASTER_DATADIR
 while get_test_context; do
 	assert_true mkdir -p "${MASTER_DATADIR_ABS:?}"

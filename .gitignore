@@ -17,6 +17,7 @@ libtool
 /cpdup
 /dirempty
 /dirwatch
+/getpid
 /locked_mkdir
 /lockf
 /make_index

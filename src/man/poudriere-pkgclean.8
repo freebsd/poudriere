@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd June 6, 2022
+.Dd November 10, 2025
 .Dt POUDRIERE-PKGCLEAN 8
 .Os
 .Sh NAME
@@ -89,6 +89,8 @@ jobs will run in parallel for gathering package information.
 Jail to use for the packages to inspect.
 .It Fl N
 Do not build package repository when done cleaning.
+.It Fl NN
+Do not commit, or publish, the repository after it is cleaned.
 .It Fl n
 Dry run, do not actually delete anything.
 .It Fl O Ar overlay
@@ -131,6 +133,7 @@ SET to use for the packages to inspect.
 .Xr poudriere-logclean 8 ,
 .Xr poudriere-ports 8 ,
 .Xr poudriere-queue 8 ,
+.Xr poudriere-repo 8 ,
 .Xr poudriere-status 8 ,
 .Xr poudriere-testport 8 ,
 .Xr poudriere-version 8

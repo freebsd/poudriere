@@ -168,14 +168,15 @@ while read var; do
 	TEST_NUMS|ASSERT_CONTINUE|TEST_CONTEXTS_PARALLEL|\
 	URL_BASE|\
 	PVERBOSE|VERBOSE|\
-	SH_DISABLE_VFORK|TIMESTAMP|TRUSS|TIMEOUT_BIN|\
+	SH_DISABLE_VFORK|TIMESTAMP|TIMESTAMP_FLAGS|TRUSS|TIMEOUT_BIN|\
 	TIMEOUT_KILL_TIMEOUT|TIMEOUT_TRUSS_MULTIPLIER|TIMEOUT_KILL_SIGNAL|\
-	TIMEOUT_SH_MULTIPLIER|\
+	TIMEOUT_SAN_MULTIPLIER|TIMEOUT_SH_MULTIPLIER|\
 	HTML_JSON_UPDATE_INTERVAL|\
 	TESTS_SKIP_BUILD|\
 	TESTS_SKIP_LONG|\
 	TESTS_SKIP_BULK|\
 	TMPDIR|\
+	MALLOC_CONF|\
 	SH) ;;
 	*)
 		unset "${var}"
@@ -230,39 +231,62 @@ BUILD_DIR="${PWD}"
 THISDIR=${am_VPATH}
 THISDIR="$(realpath "${THISDIR}")"
 cd "${THISDIR}"
-: "${LOGCLEAN_WAIT:=30}"
+: "${LOGCLEAN_WAIT:=5}"
 export LOGCLEAN_WAIT
 
 case "${TEST##*/}" in
-prep.sh) : "${TIMEOUT:=250}" ;;
-*-build-quick*.sh) : "${TIMEOUT:=120}" ;;
-bulk*build*.sh|testport*build*.sh) : "${TIMEOUT:=400}" ;;
-critical_section_inherit.sh) : "${TIMEOUT:=20}" ;;
+prep.sh) : "${DEF_TIMEOUT:=250}" ;;
+*-build-quick*.sh) : "${DEF_TIMEOUT:=120}" ;;
+bulk*build*.sh|testport*build*.sh) : "${DEF_TIMEOUT:=400}" ;;
+critical_section_inherit.sh) : "${DEF_TIMEOUT:=20}" ;;
+shellcheck.sh) : "${DEF_TIMEOUT:=90}" ;;
 esac
-: "${TIMEOUT:=60}"
+: "${DEF_TIMEOUT:=60}"
 case "${TEST##*/}" in
-# Bump anything touching logclean
-bulk*.sh|testport*.sh|distclean*.sh|options*.sh) : "${TIMEOUT:=$((TIMEOUT + (LOGCLEAN_WAIT * 1)))}" ;;
+bulk*.sh|testport*.sh|distclean*.sh|options*.sh)
+	# Bump anything touching logclean
+	DEF_TIMEOUT="$((DEF_TIMEOUT + (LOGCLEAN_WAIT * 1)))"
+	;;
 esac
+case "${TEST##*/}" in
+*-build-quick*.sh) ;;
+bulk*.sh|testport*.sh|distclean*.sh|options*.sh)
+	# The heavy load of bulk asserts need some extra time.
+	: "${BULK_EXTRA_TIME:=30}"
+	DEF_TIMEOUT="$((DEF_TIMEOUT + BULK_EXTRA_TIME))"
+	;;
+esac
+# Multiply on incremental builds
+case "${TEST##*/}" in
+*-inc-*.sh)
+	: "${BULK_INCREMENTAL_MULTIPLIER:=2}"
+	DEF_TIMEOUT="$((DEF_TIMEOUT * BULK_INCREMENTAL_MULTIPLIER))"
+	;;
+esac
+# Boost by the sanitizer multiplier depending on build in Makefile.am
+: "${TIMEOUT_SAN_MULTIPLIER:=1}"
+DEF_TIMEOUT="$((DEF_TIMEOUT * TIMEOUT_SAN_MULTIPLIER))"
 : "${TIMEOUT_KILL_TIMEOUT=30}"
 : "${TIMEOUT_TRUSS_MULTIPLIER:=6}"
 case "${TRUSS-}" in
 "")
 	;;
 *)
-	TIMEOUT="$((TIMEOUT * TIMEOUT_TRUSS_MULTIPLIER))"
+	DEF_TIMEOUT="$((DEF_TIMEOUT * TIMEOUT_TRUSS_MULTIPLIER))"
 	TIMEOUT_KILL_TIMEOUT="${TIMEOUT_KILL_TIMEOUT:-$((TIMEOUT_KILL_TIMEOUT * TIMEOUT_TRUSS_MULTIPLIER))}"
 	;;
 esac
 TIMEOUT_KILL="${TIMEOUT_KILL_TIMEOUT:+-k ${TIMEOUT_KILL_TIMEOUT}}"
+: "${TIMEOUT_KILL_SIGNAL:=SIGTERM}"
 TIMEOUT_KILL="${TIMEOUT_KILL:+${TIMEOUT_KILL} }${TIMEOUT_KILL_SIGNAL:+-s ${TIMEOUT_KILL_SIGNAL} }"
 case "${SH}" in
 /bin/sh)
 	# It's about 4.6 times slower.
-	: "${TIMEOUT_SH_MULTIPLIER:=5}"
-	TIMEOUT="$((TIMEOUT * TIMEOUT_SH_MULTIPLIER))"
+	: "${TIMEOUT_SH_MULTIPLIER:=6}"
+	DEF_TIMEOUT="$((DEF_TIMEOUT * TIMEOUT_SH_MULTIPLIER))"
 	;;
 esac
+: "${TIMEOUT:=${DEF_TIMEOUT:?}}"
 if [ -n "${TESTS_SKIP_BUILD-}" ]; then
 	case "${TEST##*/}" in
 	*-build-quick*.sh) ;;
@@ -272,7 +296,11 @@ if [ -n "${TESTS_SKIP_BUILD-}" ]; then
 	esac
 fi
 if [ -n "${TESTS_SKIP_LONG-}" ]; then
-	:
+	case "${TEST##*/}" in
+	*build*-inc-*.sh|bulk-flavor-ignore-all.sh|bulk-overlay-all.sh)
+		exit 77
+		;;
+	esac
 fi
 if [ -n "${TESTS_SKIP_BULK-}" ]; then
 	case "${TEST##*/}" in
@@ -282,7 +310,10 @@ if [ -n "${TESTS_SKIP_BULK-}" ]; then
 		;;
 	esac
 fi
-: ${TIMESTAMP="${LIBEXECPREFIX}/timestamp" -t -1stdout: -2stderr:}
+
+# TIMESTAMP_FLAGS="-s us -t"
+: "${TIMESTAMP_FLAGS:=-t}"
+: "${TIMESTAMP=${LIBEXECPREFIX}/timestamp ${TIMESTAMP_FLAGS} -1stdout: -2stderr:}"
 
 [ "${am_check}" -eq 0 ] && [ -t 0 ] && export FORCE_COLORS=1
 exec < /dev/null
@@ -319,37 +350,50 @@ runtest() {
 		echo "Test started: $(date)"
 		# hide set -x
 	} >&2 2>/dev/null
-	${TIMEOUT_BIN:?} -v ${TIMEOUT_FOREGROUND} ${TIMEOUT_KILL} ${TIMEOUT} \
+	case "${AM_TESTS_FD_STDERR}" in
+	4) ;;
+	*)
+		echo "runtest: Expected ${AM_TESTS_FD_STDERR} == 4" >&2
+		exit 99
+		;;
+	esac
+	lockf -T -t 0 -k "$(get_log_name).lock" \
+	    ${TIMEOUT_BIN:?} -v ${TIMEOUT_FOREGROUND} ${TIMEOUT_KILL} ${TIMEOUT} \
 	    ${TIMESTAMP} \
 	    env \
 	    ${SH_DISABLE_VFORK:+SH_DISABLE_VFORK=1} \
 	    THISDIR="${THISDIR}" \
 	    SH="${SH}" \
-	    lockf ${TIMEOUT_FOREGROUND:+-T} -t 0 -k "$(get_log_name).lock" \
 	    ${TRUSS:+truss -ae -f -s256 -o "$(get_log_name).truss"} \
-	    "${SH}" "${TEST}" || ret="$?"
+	    "${SH}" "${TEST}" 4>&- || ret="$?"
 	{
 		# "Error: (pid) cmd" is an sh command error.
 		# "Error: [pid] ..." is err().
 		if [ "${ret}" -eq 0 ]; then
 			case "${TEST##*/}" in
 			bulk-bad-dep-pkgname.sh|\
+			bulk-build-*crashed-builder*.sh|\
 			bulk-build-specific-bad-flavor.sh|\
 			bulk-flavor-nonexistent.sh|\
 			bulk-flavor-specific-dep-and-specific-listed-nonexistent.sh|\
 			bulk-flavor-specific-dep-nonexistent.sh|\
 			distclean-badorigin.sh|\
+			err_catch.sh|\
+			err_catch_framework.sh|\
+			logging.sh|\
 			options-badorigin.sh|\
 			testport-all-flavors-failure.sh|\
+			testport-build-porttesting.sh|\
 			testport-default-all-flavors-failure.sh|\
 			testport-specific-bad-flavor-failure.sh|\
-			err_catch.sh|\
 			"END") ;;
 			*)
 				echo -n "Checking for unhandled errors... "
-				if egrep -q \
-				    ' Error: (\([0-9]+\) [a-zA-Z0-9]*|\[[0-9]+\])' \
+				if egrep \
+				    ' Error: ' \
 				    "$(get_log_name)" |
+				    sed -e 's,Error:,UnhandledError:,' |
+				    grep -v 'Build failed' |
 				    grep -v 'sleep:.*about.*second' |
 				    grep -v 'Another logclean is busy'; then
 					ret=99
@@ -413,7 +457,7 @@ case "$(type pwait)" in
 	PWAIT_BUILTIN=1
 	;;
 esac
-# Wrapper to fix SIGINFO [EINTR], -t 0, and ssert on errors.
+# Wrapper to fix SIGINFO [EINTR], -t 0, and assert on errors.
 pwait() {
 	[ "$#" -ge 1 ] || eargs pwait '[pwait flags]' pids
 	local OPTIND=1 flag
@@ -569,6 +613,7 @@ _spawn_wrapper() {
 		fi
 		;;
 	esac
+	set +m
 
 	"$@"
 }
@@ -579,6 +624,7 @@ spawn() {
 
 spawn_job() {
 	local -
+
 	set -m
 	spawn "$@"
 }
@@ -645,6 +691,17 @@ raise() {
 	kill -"${sig}" "$(getpid)"
 }
 
+setreturnstatus() {
+	[ $# -eq 1 ] || eargs setreturnstatus ret
+	local ret="$1"
+
+	# This case is because the callers cannot do any conditional checks.
+	case "${ret-}" in
+	[0-9]*) return "${ret}" ;;
+	esac
+	return 0
+}
+
 # Need to cleanup some stuff before calling traps.
 _trap_pre_handler() {
 	_ERET="$?"
@@ -652,10 +709,10 @@ _trap_pre_handler() {
 	set +u
 	set +e
 	trap '' PIPE INT INFO HUP TERM
+	return "${_ERET}"
 }
 # {} is used to avoid set -x SIGPIPE
-alias trap_pre_handler='{ _trap_pre_handler; } 2>/dev/null; (exit "${_ERET}")'
-
+alias trap_pre_handler='{ _trap_pre_handler; } 2>/dev/null'
 setup_traps() {
 	[ "$#" -eq 0 ] || [ "$#" -eq 1 ] || eargs setup_traps '[exit_handler]'
 	local exit_handler="${1-}"
@@ -713,8 +770,10 @@ siginfo_handler() {
 sig_handler() {
 	local sig="$1"
 	local exit_handler="${2-}"
+	local ret
 
 	trap - EXIT
+	ret="${sig_ret}"
 	case "${exit_handler:+set}" in
 	set)
 		local sig_ret
@@ -726,14 +785,20 @@ sig_handler() {
 		PIPE) sig_ret=$((128 + 13)) ;;
 		*)    sig_ret= ;;
 		esac
-		case "${sig_ret:+set}" in
-		set) (exit "${sig_ret}") ;;
-		esac
-		"${exit_handler}"
+		sig_ret="$(($(kill -l "${sig}") + 128))"
+		# Ensure the handler sees the real status
+		# Don't wrap around if/case/etc.
+		setreturnstatus "${sig_ret-}"
+		"${exit_handler}" || ret="$?"
 		;;
 	esac
 	trap - "${sig}"
-	raise "${sig}"
+	# A handler may have changed the status, but if not raise.
+	if [ "${ret}" -gt 128 ]; then
+		raise "$(kill -l "${ret}")"
+	else
+		exit "${ret}"
+	fi
 }
 
 set_job_title() {
@@ -771,14 +836,16 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 	setup_traps cleanup
 	exec 9>/dev/null
 	for fd in 9 2; do
-		if TEST_CONTEXTS_TOTAL="$(env \
+		ret=0
+		TEST_CONTEXTS_TOTAL="$(env \
 		    TEST_CONTEXTS_NUM_CHECK=yes \
 		    THISDIR="${THISDIR}" \
 		    SH="${SH}" \
 		    VERBOSE=0 \
-		    "${SH}" "${TEST}" 2>&"${fd}")"; then
-			break
-		fi
+		    "${SH}" "${TEST}" 2>&"${fd}")" || ret="$?"
+		case "${ret}" in
+		77) exit 77 ;;
+		esac
 	done
 	exec 9>&-
 	case "${TEST_CONTEXTS_TOTAL}" in

@@ -749,8 +749,8 @@ fi
 	assert_ret 0 mapfile handle "${TMP2}" "we"
 	assert_ret 0 mapfile_cat_file "${TMP}" |
 	    assert_ret 0 mapfile_write "${handle}"
-	assert 0 "${_mapfile_cat_file_lines_read}"
 	assert 0 "$?" "pipe exit status"
+	assert 0 "${_mapfile_cat_file_lines_read}"
 	assert_ret 0 mapfile_close "${handle}"
 	[ ! -s "${TMP2}" ]
 	assert 0 "$?" "'mapfile_cat_file <empty file> | mapfile_write' should not write anything"
@@ -759,9 +759,37 @@ fi
 
 {
 	TMP=$(mktemp -t mapfile)
+	assert_ret 0 mapfile_cat_file - > "${TMP}" <<-EOF
+	1
+	2
+	EOF
+	assert 2 "${_mapfile_cat_file_lines_read}"
+	assert_file - "${TMP}" <<-EOF
+	1
+	2
+	EOF
+	rm -f "${TMP}"
+}
+
+{
+	TMP=$(mktemp -t mapfile)
+	assert_ret 0 mapfile_cat_file > "${TMP}" <<-EOF
+	1
+	2
+	EOF
+	assert 2 "${_mapfile_cat_file_lines_read}"
+	assert_file - "${TMP}" <<-EOF
+	1
+	2
+	EOF
+	rm -f "${TMP}"
+}
+
+{
+	TMP=$(mktemp -t mapfile)
 	TMP2=$(mktemp -t mapfile)
 
-	ps uaxwd > "${TMP}"
+	generate_data > "${TMP}"
 
 	:>"${TMP2}"
 	assert_ret 0 mapfile handle "${TMP2}" "we"
@@ -787,7 +815,7 @@ fi
 	TMP=$(mktemp -t mapfile)
 	TMP2=$(mktemp -t mapfile)
 
-	ps uaxwd > "${TMP}"
+	generate_data > "${TMP}"
 
 	:>"${TMP2}"
 	assert_ret 0 mapfile read_handle "${TMP}" "re"
@@ -800,25 +828,8 @@ fi
 {
 	TMP=$(mktemp -t mapfile)
 	TMP2=$(mktemp -t mapfile)
-	TMP3=$(mktemp -t mapfile)
 
-	ps uaxwd > "${TMP}"
-
-	:>"${TMP2}"
-	:>"${TMP3}"
-	assert_ret 0 mapfile read_handle "${TMP}" "re"
-	assert_ret 0 mapfile_cat -T3 "${read_handle}" > "${TMP2}" 3>"${TMP3}"
-	assert_ret 0 mapfile_close "${read_handle}"
-	assert_ret 0 diff -u "${TMP}" "${TMP2}"
-	assert_ret 0 diff -u "${TMP}" "${TMP3}"
-	rm -f "${TMP}" "${TMP2}" "${TMP3}"
-}
-
-{
-	TMP=$(mktemp -t mapfile)
-	TMP2=$(mktemp -t mapfile)
-
-	ps uaxwd > "${TMP}"
+	generate_data > "${TMP}"
 
 	:>"${TMP2}"
 	assert_ret 0 mapfile_cat_file "${TMP}" > "${TMP2}"
@@ -831,23 +842,8 @@ fi
 {
 	TMP=$(mktemp -t mapfile)
 	TMP2=$(mktemp -t mapfile)
-	TMP3=$(mktemp -t mapfile)
 
-	ps uaxwd > "${TMP}"
-
-	:>"${TMP2}"
-	:>"${TMP3}"
-	assert_ret 0 mapfile_cat_file -T3 "${TMP}" > "${TMP2}" 3>"${TMP3}"
-	assert_ret 0 diff -u "${TMP}" "${TMP2}"
-	assert_ret 0 diff -u "${TMP}" "${TMP3}"
-	rm -f "${TMP}" "${TMP2}" "${TMP3}"
-}
-
-{
-	TMP=$(mktemp -t mapfile)
-	TMP2=$(mktemp -t mapfile)
-
-	ps uaxwd > "${TMP}"
+	generate_data > "${TMP}"
 
 	:>"${TMP2}"
 	assert_ret 0 mapfile read_handle "${TMP}" "re"
@@ -876,7 +872,7 @@ fi
 	TMP=$(mktemp -t mapfile)
 	TMP2=$(mktemp -t mapfile)
 
-	ps uaxwd > "${TMP}"
+	generate_data > "${TMP}"
 
 	:>"${TMP2}"
 	assert_ret 0 mapfile handle "${TMP2}" "we"
@@ -1079,7 +1075,7 @@ fi
 {
 	rm -f "${TMP}"
 	TMP=$(mktemp -ut mapfile)
-	ps uaxwd > "${TMP}"
+	generate_data > "${TMP}"
 	assert_ret 0 mapfile_read_proc ps_handle cat "${TMP}"
 	assert_not "" "${ps_handle}"
 	#assert_ret 0 kill -0 "$!"
@@ -1114,6 +1110,56 @@ fi
 	assert_true hash_assert_no_vars "file*"
 	assert_true hash_assert_no_vars "it*"
 	assert_true hash_assert_no_vars "mapfile*"
+}
+
+# Check for no EOL newline reads.
+{
+	TMP="$(mktemp)"
+	echo -n "1234" > "${TMP}"
+	{
+		assert_true mapfile_cat_file "${TMP}"
+		echo
+	} > "${TMP}.2"
+	assert_file - "${TMP}.2" <<-EOF
+	1234
+	EOF
+	rm -f "${TMP}"
+}
+
+{
+	TMP="$(mktemp)"
+	echo -n "1234" > "${TMP}"
+	assert_true mapfile handle "${TMP}" "re"
+	unset data
+	assert_ret 1 mapfile_read "${handle}" data
+	assert_true mapfile_close "${handle}"
+	assert "1234" "${data}"
+	rm -f "${TMP}"
+}
+
+{
+	TMP="$(mktemp -u)"
+	assert_true mapfile whandle "${TMP}" "we"
+	echo -n "1234" | mapfile_write "${whandle}" -n
+	assert_true mapfile_close "${whandle}"
+	assert "1234" "$(cat -ve "${TMP}")"
+	unset data
+	assert_ret 1 read data < "${TMP}"
+	assert "1234" "${data}"
+	rm -f "${TMP}"
+}
+
+# Same but without mapfile_write -n flag
+{
+	TMP="$(mktemp -u)"
+	assert_true mapfile whandle "${TMP}" "we"
+	echo -n "1234" | mapfile_write "${whandle}"
+	assert_true mapfile_close "${whandle}"
+	assert "1234\$" "$(cat -ve "${TMP}")"
+	unset data
+	assert_ret 0 read data < "${TMP}"
+	assert "1234" "${data}"
+	rm -f "${TMP}"
 }
 
 exit 0

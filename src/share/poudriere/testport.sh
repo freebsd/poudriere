@@ -56,7 +56,7 @@ Options:
     -n          -- Dry-run. Show what will be done, but do not build
                    any packages.
     -N          -- Do not build package repository when build is completed
-    -NN         -- Do not commit package repository when build is completed
+    -NN         -- Do not commit/publish package repository when build is completed
     -O overlays -- Specify extra ports trees to overlay
     -p tree     -- Specify the path to the ports tree
     -P          -- Use custom prefix
@@ -127,9 +127,6 @@ while getopts "b:B:o:cniIj:J:kNO:p:PSvwz:" FLAG; do
 			if [ "${NFLAG}" -eq 2 ]; then
 				# Don't commit the packages.  This is effectively
 				# the same as -n but does an actual build.
-				if [ "${ATOMIC_PACKAGE_REPOSITORY}" != "yes" ]; then
-					err ${EX_USAGE} "-NN only makes sense with ATOMIC_PACKAGE_REPOSITORY=yes"
-				fi
 				COMMIT=0
 			fi
 			;;
@@ -202,6 +199,8 @@ originspec_decode "${ORIGINSPEC}" ORIGIN FLAVOR SUBPKG
 ORIGIN="${ORIGIN#/}"
 ORIGIN="${ORIGIN%/}"
 originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
+# Avoid the port-to-test being marked IGNORED as it breaks dependency lookups.
+shash_set originspec-port_flags "${ORIGINSPEC}" "TRYBROKEN=yes"
 if have_ports_feature FLAVORS; then
 	case "${FLAVOR}" in
 	"${FLAVOR_ALL}")
@@ -242,51 +241,57 @@ fi
 # deps_fetch_vars lookup for dependencies moved to prepare_ports()
 LISTPORTS="${ORIGINSPEC:?}"
 CLEAN_LISTED=1
-prepare_ports
-if check_moved "${ORIGINSPEC}" new_originspec 1; then
-	msg "MOVED: ${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET} moved to ${COLOR_PORT}${new_originspec}${COLOR_RESET}"
-	case "${new_originspec}" in
-	"EXPIRED "*) ;;
-	"") ;;
-	*)
-		# The ORIGIN may have a FLAVOR in it which overrides what
-		# user specified.
-		originspec_decode "${new_originspec}" ORIGIN NEW_FLAVOR NEW_SUBPKG
-		case "${NEW_FLAVOR:+set}" in
-		set) FLAVOR="${NEW_FLAVOR}" ;;
-		esac
-		case "${NEW_SUBPKG:+set}" in
-		set) SUBPKG="${NEW_SUBPKG}" ;;
-		esac
-		# Update ORIGINSPEC for the new ORIGIN
-		originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
-		;;
-	esac
-fi
-# Ensure the port exists after handling MOVED.
-_lookup_portdir portdir "${ORIGIN}"
-if [ "${portdir:?}" = "${PORTSDIR:?}/${ORIGIN:?}" ] &&
-	[ ! -f "${portsdir:?}/${ORIGIN:?}/Makefile" ] ||
-	[ -d "${portsdir:?}/${ORIGIN:?}/../Mk" ]; then
-	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
-fi
-get_pkgname_from_originspec "${ORIGINSPEC:?}" PKGNAME ||
-    err "${EX_SOFTWARE}" "Failed to find PKGNAME for ${ORIGINSPEC}"
-shash_get pkgname-ignore "${PKGNAME:?}" IGNORE || :
-if have_ports_feature FLAVORS; then
-	shash_get origin-flavors "${ORIGIN:?}" FLAVORS || FLAVORS=
-	case "${FLAVORS:+set}" in
-	set)
-		case "${FLAVOR}" in
-		""|"${FLAVOR_DEFAULT}")
-			FLAVOR="${FLAVORS%% *}"
-			originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" \
-			    "${SUBPKG}"
+testport_post_gather_port_vars() {
+	if check_moved "${ORIGINSPEC}" new_originspec 1; then
+		msg "MOVED: ${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET}" \
+		    "moved to ${COLOR_PORT}${new_originspec}${COLOR_RESET}"
+		case "${new_originspec}" in
+		"EXPIRED "*) ;;
+		"") ;;
+		*)
+			# The ORIGIN may have a FLAVOR in it which overrides
+			# what user specified.
+			originspec_decode "${new_originspec}" \
+			    ORIGIN NEW_FLAVOR NEW_SUBPKG
+			case "${NEW_FLAVOR:+set}" in
+			set) FLAVOR="${NEW_FLAVOR}" ;;
+			esac
+			case "${NEW_SUBPKG:+set}" in
+			set) SUBPKG="${NEW_SUBPKG}" ;;
+			esac
+			# Update ORIGINSPEC for the new ORIGIN
+			originspec_encode ORIGINSPEC \
+			    "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
 			;;
 		esac
-		;;
-	esac
-fi
+	fi
+	# Ensure the port exists after handling MOVED.
+	_lookup_portdir portdir "${ORIGIN}"
+	if [ "${portdir:?}" = "${PORTSDIR:?}/${ORIGIN:?}" ] &&
+		[ ! -f "${portsdir:?}/${ORIGIN:?}/Makefile" ] ||
+		[ -d "${portsdir:?}/${ORIGIN:?}/../Mk" ]; then
+		err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
+	fi
+	get_pkgname_from_originspec "${ORIGINSPEC:?}" PKGNAME ||
+	    err "${EX_SOFTWARE}" "Failed to find PKGNAME for ${ORIGINSPEC}"
+	shash_get pkgname-ignore "${PKGNAME:?}" IGNORE || IGNORE=
+	if have_ports_feature FLAVORS; then
+		shash_get origin-flavors "${ORIGIN:?}" FLAVORS || FLAVORS=
+		case "${FLAVORS:+set}" in
+		set)
+			case "${FLAVOR}" in
+			""|"${FLAVOR_DEFAULT}")
+				FLAVOR="${FLAVORS%% *}"
+				originspec_encode ORIGINSPEC \
+				    "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
+				;;
+			esac
+			;;
+		esac
+	fi
+}
+prepare_ports
+
 # Unqueue our test port so parallel_build() does not build it.
 echo "${PKGNAME:?}" | pkgqueue_remove_many_pipe build
 
@@ -341,12 +346,20 @@ if [ "${USE_PORTLINT}" = "yes" ]; then
 	) || :
 fi
 if [ ${NOPREFIX} -ne 1 ]; then
-	PREFIX="${BUILDROOT:-/prefix}/`echo ${PKGNAME} | tr '[,+]' _`"
+	# /prefix-PKGNAME/ will automatically get a @dir entry added for it
+	# but if BUILDROOT is used it requires that there is separate handling
+	# for that in the mtree file or check_leftovers.sh or port.
+	PREFIX="${BUILDROOT:-/prefix}-`echo ${PKGNAME} | tr '[,+]' _`"
 fi
+PORT_FLAGS=
 if [ "${PREFIX}" != "${LOCALBASE}" ]; then
 	PORT_FLAGS="PREFIX=${PREFIX}"
 fi
-msg "Building with flags: ${PORT_FLAGS}"
+case "${PORT_FLAGS:+set}" in
+set)
+	msg "Building with flags: ${PORT_FLAGS}"
+	;;
+esac
 
 if [ -d "${MASTERMNT:?}${PREFIX:?}" -a "${PREFIX:?}" != "/usr" ]; then
 	msg "Removing existing ${PREFIX}"
@@ -374,10 +387,8 @@ ret=0
 
 # Don't show timestamps in msg() which goes to logs, only job_msg()
 # which goes to master
-NO_ELAPSED_IN_MSG=1
 TIME_START_JOB=$(clock -monotonic)
-build_port "${ORIGINSPEC}" "${PKGNAME}" || ret=$?
-unset NO_ELAPSED_IN_MSG
+NO_ELAPSED_IN_MSG=1 build_port "${ORIGINSPEC}" "${PKGNAME}" || ret=$?
 now=$(clock -monotonic)
 elapsed=$((now - TIME_START_JOB))
 
@@ -400,7 +411,17 @@ if [ ${ret} -ne 0 ]; then
 		"${log:?}/logs/errors/${PKGNAME:?}.log" \
 		2> /dev/null)" || :
 	bset_job_status "${status%%:*}" "${ORIGINSPEC}" "${PKGNAME}"
-	badd ports.failed "${ORIGINSPEC} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
+	case "${IGNORE:+set}.${failed_phase}" in
+	set.check-sanity)
+		# This is the expected failure from an IGNORE. Don't
+		# modify stats to call it a failure.
+		:
+		;;
+	*)
+		badd ports.failed \
+		    "${ORIGINSPEC} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
+		;;
+	esac
 	update_stats || :
 
 	if [ ${INTERACTIVE_MODE} -eq 0 ]; then

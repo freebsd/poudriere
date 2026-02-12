@@ -411,6 +411,31 @@ hash_unset_var() {
 	EOF
 }
 
+patternlist_match() {
+	local -; set +x -u
+	[ $# -eq 2 ] || eargs patternlist_match patternlist value
+	local patternlist="$1"
+	local value="$2"
+	local pattern ret
+
+	ret=1
+	set -o noglob
+	# Disabling globs for this loop or wildcards will
+	# expand to files in the current directory instead of
+	# being passed to the case statement as a pattern
+	for pattern in ${patternlist?}; do
+		# shellcheck disable=SC2254
+		case "${value}" in
+		${pattern:?})
+			ret=0
+			break
+			;;
+		esac
+	done
+	set +o noglob
+	return "${ret:?}"
+}
+
 list_contains() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs list_contains var item
@@ -611,7 +636,7 @@ stack_isset() {
 
 stack_size() {
 	local -; set +x
-	[ "$#" -eq 1 ] || eargs [ "$#" -eq 2 ] || eargs stack_size stack_var \
+	[ "$#" -eq 1 ] || [ "$#" -eq 2 ] || eargs stack_size stack_var \
 	    count_var_return
 	local ss_var="$1"
 	local ss_var_return="${2-}"

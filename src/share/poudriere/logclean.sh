@@ -220,7 +220,7 @@ case "${MAX_COUNT:+set}" in
 set)
 	# Find build directories up to limit MAX_COUNT per mastername
 	BUILDNAME_GLOB="${BUILDNAME_GLOB}" SHOW_FINISHED=1 \
-	    for_each_build echo_logdir | sort -d | \
+	    for_each_build echo_logdir 2>/dev/null | sort -d | \
 	    awk -vMAX_COUNT="${MAX_COUNT}" -F / '
 	{
 		if (out[$1])
@@ -244,7 +244,7 @@ set)
 *)
 	# Find build directories older than DAYS
 	BUILDNAME_GLOB="${BUILDNAME_GLOB}" SHOW_FINISHED=1 \
-	    for_each_build echo_logdir | \
+	    for_each_build echo_logdir 2>/dev/null | \
 	    xargs -0 -J {} \
 	    find -x {} -type d -mindepth 0 -maxdepth 0 -Btime +"${DAYS:?}"d \
 	    > "${OLDLOGS:?}"
@@ -365,28 +365,34 @@ if [ ${logs_deleted} -eq 1 ]; then
 	echo " done"
 
 	msg_n "Updating latest-per-pkg links..."
-	for MASTERNAME in ${MASTERNAMES_LOCKED?}; do
-		echo -n " ${MASTERNAME}..."
-		find -x "${MASTERNAME:?}" -maxdepth 2 -mindepth 2 -name logs -print0 | \
-		    xargs -0 -J % find -x % -mindepth 1 -maxdepth 1 -type f | \
-		    sort -d | \
-		    awk -F/ '{if (!printed[$4]){print $0; printed[$4]=1;}}' | \
-		    while mapfile_read_loop_redir log; do
-			filename="${log##*/}"
-			dst="${MASTERNAME:?}/latest-per-pkg/${filename:?}"
-			if [ -f "${dst:?}" ]; then
-				continue
-			fi
-			ln "${log:?}" "${dst:?}"
-			pkgname="${filename%.log}"
-			pkgbase="${pkgname%-*}"
-			pkgver="${pkgname##*-}"
-			latest_dst="latest-per-pkg/${pkgbase:?}/${pkgver:?}/${MASTERNAME:?}.log"
-			mkdir -p "${latest_dst%/*}"
-			ln "${log:?}" "${latest_dst:?}"
+	if lock_have "logs_latest-per-pkg"; then
+		for MASTERNAME in ${MASTERNAMES_LOCKED?}; do
+			echo -n " ${MASTERNAME}..."
+			find -x "${MASTERNAME:?}" -maxdepth 2 -mindepth 2 \
+				-name logs -print0 |
+			    xargs -0 -J % find -x % -mindepth 1 \
+				-maxdepth 1 -type f |
+			    sort -d |
+			    awk -F/ '{if (!printed[$4]){print $0; printed[$4]=1;}}' |
+			while mapfile_read_loop_redir log; do
+				filename="${log##*/}"
+				dst="${MASTERNAME:?}/latest-per-pkg/${filename:?}"
+				if [ -f "${dst:?}" ]; then
+					continue
+				fi
+				ln "${log:?}" "${dst:?}"
+				pkgname="${filename%.log}"
+				pkgbase="${pkgname%-*}"
+				pkgver="${pkgname##*-}"
+				latest_dst="latest-per-pkg/${pkgbase:?}/${pkgver:?}/${MASTERNAME:?}.log"
+				mkdir -p "${latest_dst%/*}"
+				ln "${log:?}" "${latest_dst:?}"
+			done
 		done
-	done
-	echo " done"
+		echo " done"
+	else
+		echo " skipped (locked by another process)"
+	fi
 
 	msg_n "Removing empty build log directories..."
 	if lock_have "logs_latest-per-pkg"; then

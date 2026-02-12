@@ -186,6 +186,7 @@ evaltree(union node *n, int flags)
 	int do_etest;
 	union node *next;
 	struct stackmark smark;
+	const int saveerrlinno = errlinno;
 
 	setstackmark(&smark);
 	do_etest = 0;
@@ -226,6 +227,7 @@ evaltree(union node *n, int flags)
 		case NSUBSHELL:
 			evalsubshell(n, flags);
 			do_etest = !(flags & EV_TESTED);
+			errlinno = n->nredir.linno;
 			break;
 		case NBACKGND:
 			evalsubshell(n, flags);
@@ -277,10 +279,12 @@ evaltree(union node *n, int flags)
 		case NPIPE:
 			evalpipe(n);
 			do_etest = !(flags & EV_TESTED);
+			errlinno = n->npipe.linno;
 			break;
 		case NCMD:
 			evalcommand(n, flags, (struct backcmd *)NULL);
 			do_etest = !(flags & EV_TESTED);
+			errlinno = n->ncmd.linno;
 			break;
 		default:
 			out1fmt("Node type = %d\n", n->type);
@@ -303,6 +307,7 @@ out:
 	}
 	if (flags & EV_EXIT)
 		exraise(EXEXIT);
+	errlinno = saveerrlinno;
 }
 
 
@@ -912,8 +917,8 @@ safe_builtin(int idx, int argc, char **argv)
 	/* Generated from builtins.def. */
 	if (safe_builtin_always(idx))
 		return (1);
-	if (idx == EXPORTCMD || idx == TRAPCMD || idx == ULIMITCMD ||
-	    idx == UMASKCMD)
+	if (idx == ALIASCMD || idx == EXPORTCMD || idx == TRAPCMD ||
+	    idx == ULIMITCMD || idx == UMASKCMD)
 		return (argc <= 1 || (argc == 2 && argv[1][0] == '-'));
 	if (idx == SETCMD)
 		return (argc <= 1 || (argc == 2 && (argv[1][0] == '-' ||
@@ -922,12 +927,54 @@ safe_builtin(int idx, int argc, char **argv)
 	return (0);
 }
 
+int in_trap(void);
+static void
+setfuncnamestack(const char *commandname, const union node *cmd,
+    const int linno)
+{
+	const char *funcnamestack, *funcstackset;
+	char *funcstack;
+
+	mklocal("FUNCNAMESTACK");
+	if (funcnest > 1) {
+		funcnamestack = lookupvar("FUNCNAMESTACK");
+		/* It may have been unset purposefully. */
+		if (funcnamestack == NULL) {
+			funcnamestack = lookupvar("FUNCNAME");
+		}
+	} else {
+		funcnamestack = arg0;
+	}
+	INTOFF;
+	if (funcnamestack != NULL) {
+		asprintf(&funcstack, "%s:%d:%s",
+		    funcnamestack,
+		    linno,
+		    commandname);
+		funcstackset = funcstack;
+	} else {
+		/*
+		 * The caller insists on making the child appear to be
+		 * a fresh stack.
+		 */
+		funcstackset = commandname;
+		funcstack = NULL;
+	}
+	/* Avoid SIGPIPE from trap. */
+	if (!in_trap())
+		xtracestr("FUNCNAMESTACK=%s", funcstackset);
+	setvar("FUNCNAMESTACK", funcstackset, 0);
+	free(funcstack);
+	mklocal("FUNCNAME");
+	setvar("FUNCNAME", commandname, 0);
+	INTON;
+}
+
 /*
  * Execute a simple command.
  * Note: This may or may not return if (flags & EV_EXIT).
  */
 
-int in_trap(void);
 static void
 evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 {
@@ -957,6 +1004,9 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 #ifndef NDEBUG
 	int savesuppressint;
 #endif
+	const int saveerrlinno = errlinno;
+
+	errlinno = cmd->ncmd.linno;
 
 	/* First expand the arguments. */
 	TRACE(("evalcommand(%p, %d) called\n", (void *)cmd, flags));
@@ -1112,7 +1162,7 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 		    cmd->ncmd.redirect == NULL &&
 		    varlist.count == 0 &&
 		    (mode == FORK_FG || mode == FORK_NOJOB) &&
-		    !disvforkset() && !iflag && !mflag) {
+		    !disvforkset() && !iflag && !(rootshell && mflag)) {
 			vforkexecshell(jp, argv, environment(), path,
 			    cmdentry.u.index, flags & EV_BACKCMD ? pip : NULL);
 			goto parent;
@@ -1158,45 +1208,14 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 			shellparam = saveparam;
 			funcnest--;
 			handler = savehandler;
+			errlinno = saveerrlinno;
 			longjmp(handler->loc, 1);
 		}
 		handler = &jmploc;
 		funcnest++;
-		mklocal("FUNCNAME");
-		setvar("FUNCNAME", argv[0], 0);
-		{
-			char *funcstack;
-			int exitstatus_save = exitstatus, oexitstatus_save = oexitstatus;
-			mklocal("FUNCNAMESTACK");
-			if (funcnest > 1) {
-				const char *funcnamestack;
-
-				funcnamestack = lookupvar("FUNCNAMESTACK");
-				assert(funcnamestack != NULL);
-				/*
-				 * Adding line number in for this would
-				 * require work similar to what was done
-				 * in dash commit 5bb39bb1995 and 0df96793e.
-				 */
-				asprintf(&funcstack, "%s:%s",
-				    funcnamestack,
-				    argv[0]);
-			} else {
-				asprintf(&funcstack, "%s:%d:%s",
-				    arg0,
-				    plinno,
-				    argv[0]);
-			}
-			/* Avoid SIGPIPE from trap. */
-			if (!in_trap())
-				xtracestr("FUNCNAMESTACK=%s", funcstack);
-			setvar("FUNCNAMESTACK", funcstack, 0);
-			assert(is_int_on());
-			exitstatus = exitstatus_save;
-			oexitstatus = oexitstatus_save;
-			free(funcstack);
-		}
 		redirect(cmd->ncmd.redirect, REDIR_PUSH);
+		setfuncnamestack(argv[0], cmd, cmd->ncmd.linno);
+		assert(is_int_on());
 		INTON;
 		for (i = 0; i < varlist.count; i++)
 			mklocal(varlist.args[i]);
@@ -1263,7 +1282,9 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 		flushall();
 #ifndef NDEBUG
 		if (suppressint > savesuppressint &&
-		    cmdentry.u.index != DOTCMD) {
+		    cmdentry.u.index != DOTCMD &&
+		    cmdentry.u.index != EVALCMD) {
+			assert(savesuppressint == suppressint);
 			error("leaked INTOFF/INTON %d != %ld",
 			    savesuppressint, suppressint);
 		}
@@ -1335,6 +1356,7 @@ out:
 		setvar("_", lastarg, 0);
 	if (do_clearcmdentry)
 		clearcmdentry();
+	errlinno = saveerrlinno;
 }
 
 

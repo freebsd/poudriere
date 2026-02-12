@@ -1,18 +1,18 @@
 # This test is not doing much but running through a basic distclean.
 . ./common.bulk.sh
 
-while slocked locktmp "test-${SCRIPTNAME}" 5; do
-#until slock_acquire "test-${SCRIPTNAME}" 5; do
-#	:
-#done
-	touch "${DISTFILES_CACHE:?}/junk"
+while slocked locktmp "test-distclean" 5; do
+	TESTFILE="$(TMPDIR="${DISTFILES_CACHE:?}" mktemp -t distclean-smoke)"
+	touch "${TESTFILE:?}"
 
 	do_distclean -n -a
 	assert 0 "$?" "distclean should pass"
 
 	# We told it to not delete anything
-	assert_ret 0 [ -e "${DISTFILES_CACHE}/junk" ]
+	ret=0
+	[ -e "${TESTFILE:?}" ] || ret="$?"
+	rm -f "${TESTFILE:?}"
+	assert 0 "$?" "[ -e ${TESTFILE:?} ]"
 
-	rm -f "${DISTFILES_CACHE:?}/junk"
+	rm -f "${TESTFILE:?}"
 done
-#slock_release "test-${SCRIPTNAME}"

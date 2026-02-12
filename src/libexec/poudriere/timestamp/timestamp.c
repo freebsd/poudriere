@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2014 Bryan Drewery <bdrewery@FreeBSD.org>
+ * Copyright (c) 2014-2025 Bryan Drewery <bdrewery@FreeBSD.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,11 +54,18 @@
 		}							\
 	} while (0)
 #endif
-#define TIMESTAMP_BUFSIZ 25
+#define TIMESTAMP_BUFSIZ 35
 static const char *const typefmt[] = {"[]", "()"};
 static int Dflag;
 static struct timespec start;
 pid_t child_pid = -1;
+enum timestamp_resolution {
+	RESOLUTION_SECONDS,
+	RESOLUTION_MILLISECONDS,
+	RESOLUTION_MICROSECONDS,
+	RESOLUTION_NANOSECONDS,
+};
+static enum timestamp_resolution resolution = RESOLUTION_SECONDS;
 
 struct kdata {
 	FILE *fp_in;
@@ -94,8 +101,19 @@ calculate_duration(char *timestamp, size_t tlen, const struct timespec *elapsed)
 		timestamp += slen;
 		assert(tlen > 0);
 	}
-	slen = snprintf(timestamp, tlen, "%02d:%02d:%02d",
-	    hours, minutes, seconds);
+	if (resolution == RESOLUTION_NANOSECONDS) {
+		slen = snprintf(timestamp, tlen, "%02d:%02d:%02d:%09ldns",
+		    hours, minutes, seconds, elapsed->tv_nsec);
+	} else if (resolution == RESOLUTION_MICROSECONDS) {
+		slen = snprintf(timestamp, tlen, "%02d:%02d:%02d:%06ldus",
+		    hours, minutes, seconds, elapsed->tv_nsec / 1000);
+	} else if (resolution == RESOLUTION_MILLISECONDS) {
+		slen = snprintf(timestamp, tlen, "%02d:%02d:%02d:%03ldms",
+		    hours, minutes, seconds, elapsed->tv_nsec / 1000000);
+	} else {
+		slen = snprintf(timestamp, tlen, "%02d:%02d:%02d",
+		    hours, minutes, seconds);
+	}
 	len += slen;
 	tlen -= len;
 	assert(tlen > 0);
@@ -250,21 +268,47 @@ prefix_main(void *arg)
 }
 
 static void
+parse_time(const char *time_start, struct timespec *tv)
+{
+	char *end, *p;
+
+	p = strchr(time_start, '.');
+	if (p != NULL)
+		*p = '\0';
+	errno = 0;
+	tv->tv_sec = strtol(time_start, &end, 10);
+	if (tv->tv_sec < 0 || *end != '\0' || errno != 0)
+		err(1, "Invalid START_TIME");
+	if (p != NULL) {
+		++p;
+		errno = 0;
+		tv->tv_nsec = strtol(p, &end, 10);
+		if (tv->tv_nsec < 0 || *end != '\0' || errno != 0)
+			err(1, "Invalid START_TIME");
+	} else {
+		tv->tv_nsec = 0;
+	}
+}
+
+static void
 usage(void)
 {
 
 	fprintf(stderr, "%s\n",
-	    "usage: timestamp [-1 <stdout prefix>] [-2 <stderr prefix>] [-eo in.fifo] [-P <proctitle>] [-dDutT] [command]");
+	    "usage: timestamp [-1 <stdout prefix>] [-2 <stderr prefix>] [-eo in.fifo] [-P <proctitle>] [-d duration] [-DutT] [-s {s,ms,us,ns}] [command]");
 	exit(EX_USAGE);
 }
 
 static void
-gotterm(int sig __unused)
+gotsig(int sig)
 {
-	if (child_pid == -1)
+	if (child_pid == -1) {
+		signal(sig, SIG_DFL);
+		raise(sig);
 		return;
-	warnx("killing child pid %d with SIGTERM", child_pid);
-	kill(child_pid, SIGTERM);
+	}
+	warnx("killing child pid %d with sig %d", child_pid, sig);
+	kill(child_pid, sig);
 	/*
 	 * We could reraise SIGTERM but let's ensure we flush everything
 	 * out that the child sends on its own SIGTERM.
@@ -279,19 +323,26 @@ main(int argc, char **argv)
 {
 	FILE *fp_in_stdout, *fp_in_stderr;
 	pthread_t *thr_stdout, *thr_stderr;
-	struct kdata kdata_stdout, kdata_stderr;
-	char *prefix_stdout, *prefix_stderr, *time_start;
-	char *end;
+	struct kdata kdata_stdout = {0}, kdata_stderr = {0};
+	const char *prefix_stdout, *prefix_stderr, *time_start;
+	char *dflag;
 	int child_stdout[2], child_stderr[2];
-	int ch, status, ret, dflag, uflag, tflag, Tflag;
+	int ch, status, ret, uflag, tflag, Tflag;
 
 	ret = 0;
-	dflag = tflag = Tflag = uflag = 0;
+	tflag = Tflag = uflag = 0;
+	dflag = NULL;
 	thr_stdout = thr_stderr = NULL;
 	prefix_stdout = prefix_stderr = NULL;
 	fp_in_stdout = fp_in_stderr = NULL;
+#ifdef SHELL
+	Dflag = 0;
+	child_pid = -1;
+	timespecclear(&start);
+	resolution = RESOLUTION_SECONDS;
+#endif
 
-	while ((ch = getopt(argc, argv, "1:2:dDe:o:P:tTu")) != -1) {
+	while ((ch = getopt(argc, argv, "1:2:d:De:no:P:s:tTu")) != -1) {
 		switch (ch) {
 		case '1':
 			prefix_stdout = strdup(optarg);
@@ -304,7 +355,9 @@ main(int argc, char **argv)
 				err(EXIT_FAILURE, "strdup");
 			break;
 		case 'd':
-			dflag = 1;
+			dflag = strdup(optarg);
+			if (dflag == NULL)
+				err(EXIT_FAILURE, "strdup");
 			break;
 		case 'D': /* dynamic prefix support */
 			Dflag = 1;
@@ -316,6 +369,18 @@ main(int argc, char **argv)
 		case 'o':
 			if ((fp_in_stdout = fopen(optarg, "r")) == NULL)
 				err(EX_DATAERR, "fopen");
+			break;
+		case 's':
+			if (strcmp(optarg, "s") == 0) {
+				resolution = RESOLUTION_SECONDS;
+			} else if (strcmp(optarg, "ms") == 0) {
+				resolution = RESOLUTION_MILLISECONDS;
+			} else if (strcmp(optarg, "us") == 0) {
+				resolution = RESOLUTION_MICROSECONDS;
+			} else if (strcmp(optarg, "ns") == 0) {
+				resolution = RESOLUTION_NANOSECONDS;
+			} else
+				usage();
 			break;
 		case 'P':
 			setproctitle("%s", optarg);
@@ -337,23 +402,7 @@ main(int argc, char **argv)
 	argv += optind;
 
 	if ((time_start = getenv("TIME_START")) != NULL) {
-		char *p;
-
-		p = strchr(time_start, '.');
-		if (p != NULL)
-			*p = '\0';
-		errno = 0;
-		start.tv_sec = strtol(time_start, &end, 10);
-		if (start.tv_sec < 0 || *end != '\0' || errno != 0)
-			err(1, "Invalid START_TIME");
-		if (p != NULL) {
-			++p;
-			errno = 0;
-			start.tv_nsec = strtol(p, &end, 10);
-			if (start.tv_nsec < 0 || *end != '\0' || errno != 0)
-				err(1, "Invalid START_TIME");
-		} else
-			start.tv_nsec = 0;
+		parse_time(time_start, &start);
 	} else if (clock_gettime(CLOCK_MONOTONIC_FAST, &start))
 		err(EXIT_FAILURE, "%s", "clock_gettime");
 
@@ -361,10 +410,13 @@ main(int argc, char **argv)
 		char timestamp[TIMESTAMP_BUFSIZ];
 		size_t dlen;
 
+		parse_time(dflag, &start);
 		dlen = calculate_duration(timestamp,
 		    TIMESTAMP_BUFSIZ, &start);
 		assert(dlen < TIMESTAMP_BUFSIZ);
+		(void)dlen; // quiet compiler
 		printf("%s\n", timestamp);
+		free(dflag);
 		exit(0);
 	}
 
@@ -375,8 +427,11 @@ main(int argc, char **argv)
 		setlinebuf(stderr);
 	}
 
-	signal(SIGTERM, gotterm);
 	if (argc > 0) {
+		signal(SIGTERM, gotsig);
+		signal(SIGALRM, gotsig);
+		signal(SIGINT, gotsig);
+		signal(SIGHUP, gotsig);
 		if (fp_in_stdout != NULL)
 			errx(EX_DATAERR, "Cannot use -o with command");
 		if (fp_in_stderr != NULL)
@@ -399,6 +454,7 @@ main(int argc, char **argv)
 			close(child_stderr[1]);
 
 			execvp(argv[0], &argv[0]);
+			warn("%s", argv[0]);
 			_exit(127);
 		}
 		signal(SIGINT, SIG_IGN);

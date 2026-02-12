@@ -6,20 +6,24 @@ READY_FILE="channel"
 EXIT_FILE="exit_file"
 
 # Basic test: should return 143 from handler
-{
+add_test_function test_basic_sigterm
+test_basic_sigterm() {
 	worker_cleanup() {
 		local ret="$?"
 		echo "in here" >&2
 		echo "${ret}" > "${EXIT_FILE}"
 	}
 	worker() {
+		local tmp
+
 		set -x
 		echo "I AM $(getpid)" >&2
 		setup_traps worker_cleanup
 		trap >&2
 		assert_true cond_signal child
-		while :; do
-			sleep 0.001
+		unset tmp
+		while time_bounded_loop tmp 10; do
+			sleep 0.01
 		done
 	}
 	assert_true spawn_job worker
@@ -32,7 +36,8 @@ EXIT_FILE="exit_file"
 }
 
 # Should return 1 from set -e failure
-{
+add_test_function test_set_e
+test_set_e() {
 	worker_cleanup() {
 		local ret=$?
 		echo "in here $ret" >&2
@@ -55,7 +60,8 @@ EXIT_FILE="exit_file"
 }
 
 # Should exit 42 from exit call
-{
+add_test_function test_exit
+test_exit() {
 	worker_cleanup() {
 		local ret=$?
 		echo "in here $ret" >&2
@@ -77,7 +83,8 @@ EXIT_FILE="exit_file"
 }
 
 # Should exit 41 from cleanup changing exit code
-{
+add_test_function test_exit_in_exit_handler
+test_exit_in_exit_handler() {
 	worker_cleanup() {
 		local ret=$?
 		echo "in here $ret" >&2
@@ -99,9 +106,33 @@ EXIT_FILE="exit_file"
 	EOF
 }
 
+# Should exit 41 from cleanup changing exit code
+add_test_function test_return_in_exit_handler
+test_return_in_exit_handler() {
+	worker_cleanup() {
+		local ret=$?
+		echo "in here $ret" >&2
+		assert_true cond_signal child
+		echo "${ret}" > "${EXIT_FILE}"
+		return 41
+	}
+	worker() {
+		echo "I AM $(getpid)" >&2
+		setup_traps worker_cleanup
+		exit 42
+	}
+	assert_true spawn_job worker
+	assert_not '' "${spawn_jobid}"
+	assert_true cond_timedwait 5 child
+	assert_ret 41 kill_job 2 "%${spawn_jobid}"
+	assert_file - "${EXIT_FILE}" <<-EOF
+	42
+	EOF
+}
 
 # Should show handler got $?=143 but then exit 41
-{
+add_test_function test_exit_handler_sets_code
+test_exit_handler_sets_code() {
 	worker_cleanup() {
 		local ret=$?
 		echo "in here $ret" >&2
@@ -109,11 +140,43 @@ EXIT_FILE="exit_file"
 		exit 41
 	}
 	worker() {
+		local tmp
+
 		echo "I AM $(getpid)" >&2
 		setup_traps worker_cleanup
 		assert_true cond_signal child
-		while :; do
-			sleep 0.001
+		unset tmp
+		while time_bounded_loop tmp 10; do
+			sleep 0.01
+		done
+	}
+	assert_true spawn_job worker
+	assert_not '' "${spawn_jobid}"
+	assert_true cond_timedwait 5 child
+	assert_ret 41 kill_job 7 "%${spawn_jobid}"
+	assert_file - "${EXIT_FILE}" <<-EOF
+	143
+	EOF
+}
+
+# Should show handler got $?=143 but then exit 41
+add_test_function test_exit_handler_sets_code_with_return
+test_exit_handler_sets_code_with_return() {
+	worker_cleanup() {
+		local ret=$?
+		echo "in here $ret" >&2
+		echo "${ret}" > "${EXIT_FILE}"
+		return 41
+	}
+	worker() {
+		local tmp
+
+		echo "I AM $(getpid)" >&2
+		setup_traps worker_cleanup
+		assert_true cond_signal child
+		unset tmp
+		while time_bounded_loop tmp 10; do
+			sleep 0.01
 		done
 	}
 	assert_true spawn_job worker
@@ -126,7 +189,10 @@ EXIT_FILE="exit_file"
 }
 
 # Should NOT exit SIGPIPE from handler
-{
+add_test_function test_no_sigpipe_in_handler
+test_no_sigpipe_in_handler() {
+	local FIFO writer_jobid stderr_jobid
+
 	worker_cleanup() {
 		local ret=$?
 		assert 0 "${ret}" "worker had error before entering worker_cleanup; should not SIGPIPE until here" 2>&4
@@ -196,3 +262,5 @@ EXIT_FILE="exit_file"
 	EOF
 	rm -f "${FIFO}"
 }
+
+run_test_functions
