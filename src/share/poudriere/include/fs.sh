@@ -153,7 +153,11 @@ do_clone() {
 do_clone_del() {
 	[ $# -ge 2 ] || eargs do_clone_del [-r] [-x | -X cpignore ] src dst
 
-	_do_clone "-s0 -f" "$@"
+	# We used to do -f here to _force_ overwriting destination files,
+	# but -V was intended to check before writing.
+	# Both were removed because they are unnecessarily harsh and
+	# expensive.
+	_do_clone "-s0" "$@"
 }
 
 rollback_file() {
