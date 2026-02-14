@@ -1345,6 +1345,13 @@ set_command() {
 	COMMAND="$1"
 }
 
+case "$1" in
+	create|delete|list|update|info|start|stop)
+		set_command "$1"
+		shift
+		;;
+esac
+
 while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxXC:y" FLAG; do
 	case "${FLAG}" in
 		b)
