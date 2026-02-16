@@ -1,4 +1,4 @@
-AC_INIT([poudriere],[3.4.1],[https://github.com/freebsd/poudriere],[poudriere])
+AC_INIT([poudriere],[3.4.5],[https://github.com/freebsd/poudriere],[poudriere])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_AUX_DIR([build-aux])

@@ -388,12 +388,15 @@ poudriere: src/bin/poudriere.in
 	$(AM_V_GEN)if test -e $(top_srcdir)/.git && \
 	    which git >/dev/null 2>&1 && \
 	    [ -d "$$(git -C "$(top_srcdir)" rev-parse --git-dir)" ]; then \
-	    gitver=$$(git -C "$(top_srcdir)" describe --tags HEAD); \
-	    sed -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
-	      ${.ALLSRC} > $@; \
+	    gitver=$$(git -C "$(top_srcdir)" describe --always --tags HEAD); \
+	    pkgversion="$${gitver}"; \
 	else \
-	    cp -f ${.ALLSRC} $@; \
+	    pkgversion="$(PACKAGE_VERSION)"; \
 	fi; \
+	sed \
+	    -e "s,@PACAKGE_VERSION@,$${pkgversion}," \
+	    -e "s,@USE_DEBUG@,$(USE_DEBUG)," \
+	    ${.ALLSRC} > $@.tmp && mv -f $@.tmp $@; \
 	chmod +x $@
 
 SUBDIRS= . test
