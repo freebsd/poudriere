@@ -443,6 +443,10 @@ destroyfs() {
 			if ! umount -n "${mnt:?}" 2>/dev/null; then
 				umount -f "${mnt:?}" 2>/dev/null || :
 			fi
+			# The directory should be empty but if it is not
+			# then do not be fatal. There is leftover junk
+			# from a previous build that was shadowed this run.
+			rmdir "${mnt:?}" || :
 		fi
 	else
 		case "${NO_ZFS:+set}" in
