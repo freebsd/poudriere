@@ -2,7 +2,7 @@ AC_INIT([poudriere],[3.4.99],[https://github.com/freebsd/poudriere],[poudriere])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([1.11 foreign -Wall -Wno-portability no-dist-gzip dist-xz])
+AM_INIT_AUTOMAKE([1.11 foreign -Wall -Wno-portability no-dist-gzip dist-xz tar-v7])
 AM_SILENT_RULES([yes])
 AC_CONFIG_HEADERS([src/config.h])
 
