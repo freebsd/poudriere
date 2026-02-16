@@ -715,8 +715,9 @@ jquerydir = $(assetsdir)/jquery-3.7.1
 rcdir = $(sysconfdir)/rc.d
 hookdir = $(sysconfdir)/poudriere.d/hooks
 examplesdir = $(datadir)/examples/$(PACKAGE_NAME)
-EXTRA_DIST = src/bin/poudriere.in test-ports/ external/sh/nodetypes \
-	external/sh/nodes.c.pat external/sh/mktokens
+EXTRA_DIST = src/bin/poudriere.in test-ports/ src/poudriere-sh/pjobs.c \
+	external/sh/nodetypes external/sh/nodes.c.pat \
+	external/sh/mktokens
 dist_bin_SCRIPTS = poudriere
 dist_man_MANS = src/man/poudriere.8 \
 		src/man/poudriere-audit.8 \

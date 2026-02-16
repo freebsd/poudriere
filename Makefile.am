@@ -233,6 +233,7 @@ sh_SOURCES+=		\
 			src/poudriere-sh/helpers.h \
 			src/poudriere-sh/mapfile.c \
 			src/poudriere-sh/traps.c
+EXTRA_DIST+=		src/poudriere-sh/pjobs.c
 # external builtins
 sh_SOURCES+=		external/freebsd/bin/chmod/chmod.c
 sh_SOURCES+=		$(clock_SOURCES)
