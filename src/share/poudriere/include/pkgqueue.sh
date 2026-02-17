@@ -291,6 +291,15 @@ _pkgqueue_might_run() {
 	if [ ! -f "${PACKAGES:?}/All/${pkgname}.${PKG_EXT}" ]; then
 		return 0
 	fi
+	# For testport we will always build the testport-PKGNAME
+	# even if there is an existing package file.
+	if was_a_testport_run; then
+		case "${pkgname:?}" in
+		"${PKGNAME:?}")
+			return 0
+			;;
+		esac
+	fi
 	# If this package has required shlibs we need to check it again later.
 	# See build_pkg().
 	if shash_exists pkgname-check_shlibs "${pkgname}"; then

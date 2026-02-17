@@ -617,6 +617,7 @@ JAIL_TESTS = \
 	options-overlays.sh \
 	options-smoke.sh \
 	testport-all-flavors-failure.sh \
+	testport-build-after-bulk.sh \
 	testport-build-MOVED-default.sh \
 	testport-build-MOVED-flavor.sh \
 	testport-build-MOVED-to-default-flavor.sh \
@@ -2278,6 +2279,13 @@ bulk-skipped-and-needed-dep.sh.log: bulk-skipped-and-needed-dep.sh
 testport-all-flavors-failure.sh.log: testport-all-flavors-failure.sh
 	@p='testport-all-flavors-failure.sh'; \
 	b='testport-all-flavors-failure.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-build-after-bulk.sh.log: testport-build-after-bulk.sh
+	@p='testport-build-after-bulk.sh'; \
+	b='testport-build-after-bulk.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

@@ -1373,9 +1373,10 @@ _assert_bulk_build_results() {
 		case "${pkgname}" in
 		"${TESTPKGNAME}")
 			# testport does not produce a package for the target
-			# port
-			assert_ret_not 0 [ -f "${file}" ]
-			assert 0 $? "Package should NOT exist: ${file}"
+			# port, but it should retain the existing one
+			# from before testport.
+			# assert_ret_not 0 [ -f "${file}" ]
+			# assert 0 $? "Package should NOT exist: ${file}"
 			continue
 			;;
 		esac

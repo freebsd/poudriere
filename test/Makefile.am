@@ -232,6 +232,7 @@ JAIL_TESTS= \
 	options-overlays.sh \
 	options-smoke.sh \
 	testport-all-flavors-failure.sh \
+	testport-build-after-bulk.sh \
 	testport-build-MOVED-default.sh \
 	testport-build-MOVED-flavor.sh \
 	testport-build-MOVED-to-default-flavor.sh \

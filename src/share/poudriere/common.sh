@@ -10266,12 +10266,8 @@ prepare_ports() {
 		if [ ${CLEAN_LISTED} -eq 1 ]; then
 			local reason
 
-			if was_a_testport_run; then
-				reason="testport"
-			else
-				msg "-C specified, cleaning listed packages"
-				reason="-C"
-			fi
+			msg "-C specified, cleaning listed packages"
+			reason="-C"
 			delete_pkg_list=$(mktemp -t poudriere.cleanC)
 			delay_pipe_fatal_error
 			listed_pkgnames | while mapfile_read_loop_redir \
@@ -10298,8 +10294,7 @@ prepare_ports() {
 			case "${ATOMIC_PACKAGE_REPOSITORY}" in
 			yes) ;;
 			*)
-				if ! was_a_testport_run &&
-				    [ -s "${delete_pkg_list}" ]; then
+				if [ -s "${delete_pkg_list}" ]; then
 					confirm_if_tty "Are you sure you want to delete the listed packages?" ||
 					    err 1 "Not cleaning packages"
 				fi
