@@ -7857,16 +7857,14 @@ determine_base_shlibs() {
 		find "${mnt:?}/lib" "${mnt:?}/usr/lib" \
 		    -maxdepth 1 \
 		    -type f \
-		    -name 'lib*.so*' \
-		    ! -name 'libprivate*' |
+		    -name 'lib*.so*' |
 		    awk -F/ '{print $NF}'
 
 		if [ -d "${mnt}/usr/lib32" ]; then
 			find "${mnt:?}/usr/lib32" \
 			    -maxdepth 1 \
 			    -type f \
-			    -name 'lib*.so*' \
-			    ! -name 'libprivate*' |
+			    -name 'lib*.so*' |
 			    awk -F/ '{print $NF ":32"}'
 		fi
 	} | sort | shash_write global baselibs
