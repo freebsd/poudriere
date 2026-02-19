@@ -8053,27 +8053,27 @@ package_libdeps_satisfied() {
 	    paste -d ' ' -s -)"
 	msg_debug "${COLOR_PORT}${pkgname}${COLOR_RESET}: provides:" \
 	    "${deps_provided_shlibs}"
-	case "${deps_provided_shlibs:+set}" in
-	"")
-		if patternlist_match \
-		    "${ORPHAN_SHLIB_REBUILD_IGNORELIST-}" \
-		    "${pkgbase:?}"; then
-			job_msg_warn "${COLOR_PORT}${pkgname}${COLOR_RESET}" \
-			    "will NOT be rebuilt (ignorelisted) but it" \
-			    "misses all of its" \
-			    "shlibs. May need SHLIB_REQUIRE_IGNORE_GLOB."
-		else
-			ret=1
-			job_msg_warn "${COLOR_PORT}${pkgname}${COLOR_RESET}" \
-			    "will be rebuilt as it" \
-			    "misses all of its" \
-			    "shlibs. May need SHLIB_REQUIRE_IGNORE_GLOB."
-		fi
-		pls_reason="misses all of its shlibs (may need SHLIB_REQUIRE_IGNORE_GLOB)"
-		setvar "${pls_reasonvar:?}" "${pls_reason:?}" || return
-		return "${ret}"
-		;;
-	esac
+	# case "${deps_provided_shlibs:+set}" in
+	# "")
+	# 	if patternlist_match \
+	# 	    "${ORPHAN_SHLIB_REBUILD_IGNORELIST-}" \
+	# 	    "${pkgbase:?}"; then
+	# 		job_msg_warn "${COLOR_PORT}${pkgname}${COLOR_RESET}" \
+	# 		    "will NOT be rebuilt (ignorelisted) but it" \
+	# 		    "misses all of its" \
+	# 		    "shlibs. May need SHLIB_REQUIRE_IGNORE_GLOB."
+	# 	else
+	# 		ret=1
+	# 		job_msg_warn "${COLOR_PORT}${pkgname}${COLOR_RESET}" \
+	# 		    "will be rebuilt as it" \
+	# 		    "misses all of its" \
+	# 		    "shlibs. May need SHLIB_REQUIRE_IGNORE_GLOB."
+	# 	fi
+	# 	pls_reason="misses all of its shlibs (may need SHLIB_REQUIRE_IGNORE_GLOB)"
+	# 	setvar "${pls_reasonvar:?}" "${pls_reason:?}" || return
+	# 	return "${ret}"
+	# 	;;
+	# esac
 	shash_read_mapfile pkgname-shlibs_required "${pkgname:?}" \
 	    mapfile_handle ||
 	    err "${EX_SOFTWARE}" "package_libdeps_satisfied: Failed to lookup shlib_requires from ${pkgname} ret=$?"
