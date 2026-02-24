@@ -5236,17 +5236,17 @@ gather_distfiles() {
 
 	from="$(realpath "$5")"
 	to="$(realpath "$6")"
-	# Can't remove the values as other ports may have us as a special.
-	shash_get originspec-dist_subdir "${originspec}" sub || sub=
-	shash_get originspec-dist_allfiles "${originspec}" dists || dists=
 	originspec_decode "${originspec}" origin flavor subpkg
 	case "${pkgname}" in
 	"")
 		# Recursive gather_distfiles()
-		shash_get originspec-pkgname "${originspec}" pkgname || \
+		get_pkgname_from_originspec "${originspec}" pkgname ||
 		    err 1 "gather_distfiles: Could not find PKGNAME for ${COLOR_PORT}${originspec}${COLOR_RESET}"
 		;;
 	esac
+	# Can't remove the values as other ports may have us as a special.
+	shash_get pkgname-dist_subdir "${pkgname}" sub || sub=
+	shash_get pkgname-dist_allfiles "${pkgname}" dists || dists=
 	shash_get pkgname-depend_specials "${pkgname}" specials || specials=
 
 	job_msg_dev "${COLOR_PORT}${origin}${flavor:+@${flavor}}${subpkg:+~${subpkg}} | ${pkgname_main}${COLOR_RESET}: distfiles ${from} -> ${to}"
@@ -7214,10 +7214,10 @@ deps_fetch_vars() {
 	set) shash_set pkgname-prefix "${_pkgname}" "${_prefix}" ;;
 	esac
 	case "${dist_subdir:+set}" in
-	set) shash_set originspec-dist_subdir "${originspec}" "${dist_subdir}" ;;
+	set) shash_set pkgname-dist_subdir "${_pkgname}" "${dist_subdir}" ;;
 	esac
 	case "${dist_allfiles:+set}" in
-	set) shash_set originspec-dist_allfiles "${originspec}" "${dist_allfiles}" ;;
+	set) shash_set pkgname-dist_allfiles "${_pkgname}" "${dist_allfiles}" ;;
 	esac
 	case "${_need_root:+set}" in
 	set) shash_set pkgname-need_root "${_pkgname}" "${_need_root}" ;;
