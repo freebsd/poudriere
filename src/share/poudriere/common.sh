@@ -164,6 +164,15 @@ _err() {
 	local exit_status="${2-}"
 	local msg="${3-}"
 
+	# unwind in_dir()
+	case "${ID_OLDPWD:+set}" in
+	set)
+		if cd "${ID_OLDPWD}"; then
+			ID_OLDPWD=
+		fi
+		;;
+	esac
+
 	if [ -n "${CRASHED:-}" ]; then
 		case "$#" in
 		[012]) ;;

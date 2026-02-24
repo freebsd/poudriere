@@ -58,6 +58,7 @@ TESTS=\
 	gsub.sh \
 	hash_basic.sh \
 	hash_stack.sh \
+	in_dir.sh \
 	jobs.sh \
 	list.sh \
 	locked_mkdir.sh \

@@ -441,7 +441,6 @@ in_reldir() {
 	local reldir_val nested_dir wanted_dir
 	# shellcheck disable=SC2034
 	local reldir_abs_val
-	local ir_ret ir_oldpwd
 
 	case "${reldir_var}" in
 	*/*)
@@ -450,6 +449,7 @@ in_reldir() {
 		;;
 	*)
 		nested_dir=
+		;;
 	esac
 
 	getvar "${reldir_var}" reldir_val ||
@@ -457,24 +457,33 @@ in_reldir() {
 	getvar "${reldir_var}_ABS" reldir_abs_val ||
 	    err "${EX_SOFTWARE}" "in_reldir: Failed to find value for '${reldir_var}_ABS'"
 	wanted_dir="${reldir_val:?}${nested_dir:+/${nested_dir}}"
+	in_dir "${wanted_dir:?}" "$@" || return
+}
+
+in_dir() {
+	[ "$#" -ge 2 ] || eargs in_dir dir cmd 'args...'
+	local wanted_dir="$1"
+	shift
+	local ID_OLDPWD id_ret OLDPWD
+
 	case "${PWD}" in
 	"${wanted_dir:?}")
-		ir_oldpwd=
+		ID_OLDPWD=
 		;;
 	*)
 		cd "${wanted_dir:?}" || return
-		ir_oldpwd="${OLDPWD}"
+		ID_OLDPWD="${OLDPWD}"
 		;;
 	esac
 
-	ir_ret=0
-	"$@" || ir_ret="$?"
+	id_ret=0
+	"$@" || id_ret="$?"
 
-	case "${ir_oldpwd:+set}" in
-	set) cd "${ir_oldpwd}" || return ;;
+	case "${ID_OLDPWD:+set}" in
+	set) cd "${ID_OLDPWD}" || return ;;
 	esac
 
-	return "${ir_ret}"
+	return "${id_ret}"
 }
 
 make_relative() {
