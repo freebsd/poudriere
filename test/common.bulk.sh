@@ -932,7 +932,7 @@ do_poudriere() {
 }
 
 _setup_overlays() {
-	local omnt oname
+	local o omnt oname
 
 	REAL_OVERLAYS=
 	case "${OVERLAYS-}" in
