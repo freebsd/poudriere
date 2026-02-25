@@ -495,7 +495,7 @@ make_relative() {
 	local mr_val mr_one mr_two
 
 	getvar "${mr_var:?}" mr_val || return 0
-	case "${mr_val:?}" in
+	case "${mr_val?}" in
 	"") return 0 ;;
 	esac
 	case "${mr_val:?}" in

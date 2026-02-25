@@ -123,4 +123,52 @@ assert_true in_reldir bar assert_dir "${bar_real}" "${bar_ABS}"
 
 rm -rf "${foo}"
 
+save_DEVFD="${DEVFD}"
+save_DEVFD_ABS="${DEVFD_ABS}"
+testfunc_blank_devfd() {
+	assert "" "${DEVFD-}"
+	assert "/dev/fd" "${DEVFD_ABS-}"
+	assert /dev "${PWD}"
+	cd fd
+	assert "" "${DEVFD-}"
+	assert "/dev/fd" "${DEVFD_ABS-}"
+	assert /dev/fd "${PWD}"
+	cd ..
+}
+DEVFD= in_dir /dev testfunc_blank_devfd
+assert "${save_DEVFD}" "${DEVFD}"
+assert "${save_DEVFD_ABS}" "${DEVFD_ABS}"
+
+save_DEVFD="${DEVFD}"
+save_DEVFD_ABS="${DEVFD_ABS}"
+testfunc_blank_devfd_and_abs() {
+	assert "" "${DEVFD-}"
+	assert "" "${DEVFD_ABS-}"
+	assert /dev "${PWD}"
+	cd fd
+	assert "" "${DEVFD-}"
+	assert "" "${DEVFD_ABS-}"
+	assert /dev/fd "${PWD}"
+	cd ..
+}
+DEVFD= DEVFD_ABS= in_dir /dev testfunc_blank_devfd_and_abs
+assert "${save_DEVFD}" "${DEVFD}"
+assert "${save_DEVFD_ABS}" "${DEVFD_ABS}"
+
+save_DEVFD="${DEVFD}"
+save_DEVFD_ABS="${DEVFD_ABS}"
+testfunc_blank_devfd_abs() {
+	assert "fd" "${DEVFD-}"
+	assert "" "${DEVFD_ABS-}"
+	assert /dev "${PWD}"
+	cd fd
+	assert "." "${DEVFD-}"
+	assert "" "${DEVFD_ABS-}"
+	assert /dev/fd "${PWD}"
+	cd ..
+}
+DEVFD_ABS= in_dir /dev testfunc_blank_devfd_abs
+assert "${save_DEVFD}" "${DEVFD}"
+assert "${save_DEVFD_ABS}" "${DEVFD_ABS}"
+
 cd "${POUDRIERE_TMPDIR:?}"
