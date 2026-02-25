@@ -567,6 +567,8 @@ msg_level() {
 }
 
 _mastermnt() {
+	[ $# -eq 1 ] || eargs _mastermnt MASTERMNT
+	local _mastermnt_var_name="$1"
 	local -; set -u
 	local hashed_name mnt mnttest mnamelen testpath mastername
 
@@ -576,7 +578,7 @@ _mastermnt() {
 
 	# Avoid : which causes issues with PATH for non-jailed commands
 	# like portlint in testport.
-	mastername="${MASTERNAME}"
+	mastername="${MASTERNAME:?}"
 	_gsub_badchars "${mastername}" ":" mastername
 	mnt="${POUDRIERE_DATA:?}/.m/${mastername}/ref"
 	case "${NOLINUX:+set}" in
@@ -585,11 +587,11 @@ _mastermnt() {
 	esac
 	mnttest="${mnt:?}${testpath}"
 
-	if [ "${FORCE_MOUNT_HASH}" = "yes" ] || \
+	if [ "${FORCE_MOUNT_HASH-}" = "yes" ] || \
 	    [ ${#mnttest} -ge $((mnamelen - 1)) ]; then
-		hashed_name=$(sha256 -qs "${MASTERNAME}" | \
+		hashed_name=$(sha256 -qs "${MASTERNAME:?}" | \
 		    awk '{print substr($0, 0, 6)}')
-		mnt="${POUDRIERE_DATA}/.m/${hashed_name}/ref"
+		mnt="${POUDRIERE_DATA:?}/.m/${hashed_name}/ref"
 		mnttest="${mnt}${testpath}"
 		if [ ${#mnttest} -ge $((mnamelen - 1)) ]; then
 			err 1 "Mountpath '${mnt}' exceeds system MNAMELEN limit of ${mnamelen}. Unable to mount. Try shortening BASEFS."
@@ -598,11 +600,12 @@ _mastermnt() {
 	fi
 
 	# MASTERMNT=
-	setvar "$1" "${mnt:?}"
-	MASTERMNTREL="${mnt:?}"
-	add_relpath_var MASTERMNTREL
+	setvar "${_mastermnt_var_name:?}" "${mnt:?}"
+	# MASTERMNTREL=
+	setvar "${_mastermnt_var_name:?}REL" "${mnt:?}"
+	add_relpath_var "${_mastermnt_var_name:?}REL"
 	# MASTERMNTROOT=
-	setvar "${1}ROOT" "${mnt%/ref}"
+	setvar "${_mastermnt_var_name:?}ROOT" "${mnt%/ref}"
 }
 
 _my_path() {
