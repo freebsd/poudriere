@@ -1529,7 +1529,6 @@ case "${COMMAND}" in
 		fi
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		_mastermnt MASTERMNT
-		export MASTERMNT
 		info_jail
 		;;
 	list)
@@ -1542,7 +1541,6 @@ case "${COMMAND}" in
 		maybe_run_queued "${saved_argv}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		_mastermnt MASTERMNT
-		export MASTERMNT
 		jail_runs ${MASTERNAME} ||
 		    msg "Jail ${MASTERNAME} not running, but cleaning up anyway"
 		jail_stop
@@ -1556,7 +1554,6 @@ case "${COMMAND}" in
 		maybe_run_queued "${saved_argv}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		_mastermnt MASTERMNT
-		export MASTERMNT
 		IMMUTABLE_BASE=no jail_start "${JAILNAME}" "${PTNAME}" \
 		    "${SETNAME}"
 		JNETNAME="n"

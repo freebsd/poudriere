@@ -239,7 +239,6 @@ MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 _mastermnt MASTERMNT
 
 export MASTERNAME
-export MASTERMNT
 export POUDRIERE_BUILD_TYPE=bulk
 
 read_packages_from_params "$@"

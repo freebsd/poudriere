@@ -1536,6 +1536,8 @@ buildlog_start() {
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
 	echo "Jail OSVERSION: ${JAIL_OSVERSION}"
 	echo "Builder Id: ${MY_BUILDER_ID}"
+	echo "Builder jail path: ${mnt:?}"
+	echo "Ref jail path: ${MASTERMNT:?}"
 	echo "Job Idx: ${MY_JOB_IDX}"
 	echo "Jail Id (no networking)  : $(jls -j ${jname} jid || :)"
 	echo "Jail Name (no networking): ${jname}"

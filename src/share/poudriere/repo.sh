@@ -87,9 +87,7 @@ post_getopts
 
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 _mastermnt MASTERMNT
-
 export MASTERNAME
-export MASTERMNT
 
 : "${PACKAGES:=${POUDRIERE_DATA:?}/packages/${MASTERNAME:?}}"
 PACKAGES_ROOT="${PACKAGES:?}"
