@@ -384,7 +384,7 @@ clonefs() {
 			dst="${_relpath_common_dir2:?}"
 
 			cpignore="$(mktemp -ut clone.cpignore)"
-			skippaths="$(nullfs_paths "${mnt}")"
+			skippaths="$(nullfs_paths)"
 			skippaths="${skippaths} /proc"
 			skippaths="${skippaths} /usr/src"
 			skippaths="${skippaths} /usr/lib/debug"
@@ -410,8 +410,7 @@ clonefs() {
 }
 
 nullfs_paths() {
-	[ $# -eq 1 ] || eargs nullfs_paths mnt
-	local mnt="${1}"
+	[ $# -eq 0 ] || eargs nullfs_paths
 	local nullpaths
 
 	nullpaths="${NULLFS_PATHS}"

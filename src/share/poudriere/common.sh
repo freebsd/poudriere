@@ -2516,7 +2516,7 @@ common_mtree() {
 	./var/db/ports
 	./wrkdirs
 	EOF
-	nullpaths="$(nullfs_paths "${mnt}")"
+	nullpaths="$(nullfs_paths)"
 	for dir in ${nullpaths}; do
 		echo ".${dir}"
 	done
@@ -2664,7 +2664,7 @@ do_jail_mounts() {
 	esac
 
 	# Mount some paths read-only from the ref-jail if possible.
-	nullpaths="$(nullfs_paths "${mnt}")"
+	nullpaths="$(nullfs_paths)"
 	if have_builtin mkdir; then
 		for nullpath in ${nullpaths}; do
 			mkdir -p "${mnt:?}${nullpath:?}"
