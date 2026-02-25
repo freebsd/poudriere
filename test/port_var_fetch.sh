@@ -1,5 +1,4 @@
 set -e
-INJAIL_HOST=1
 . ./common.sh
 set +e
 PORTSDIR=${THISDIR%/*}/test-ports/port_var_fetch

@@ -159,11 +159,11 @@ for PTNAME in ${PTNAMES}; do
 		echo "PACKAGE_BUILDING_FLAVORS=yes"
 	fi >> "${__MAKE_CONF}"
 	unset P_PORTS_FEATURES
-	MASTERMNT= fetch_global_port_vars
-	MASTERMNT= MASTERMNTREL= load_moved
+	inhost fetch_global_port_vars
+	inhost load_moved
 	msg "Gathering all expected distfiles for ports tree '${PTNAME}'"
 
-	ports="$(MASTERMNTREL= listed_ports show_moved)" ||
+	ports="$(inhost listed_ports show_moved)" ||
 	    err "$?" "Failed to find ports for ${PTNAME}"
 	parallel_start || err 1 "parallel_start"
 	for originspec in ${ports}; do

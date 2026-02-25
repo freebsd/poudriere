@@ -1,9 +1,6 @@
 set -e
 # Common setup for bulk test runs
 : ${ALL:=0}
-# Avoid injail() for port_var_fetch
-INJAIL_HOST=1
-
 : ${SCRIPTNAME:=${0}}
 
 . ./common.sh
@@ -72,7 +69,7 @@ cache_pkgnames() {
 	fi
 
 	# XXX: subpkg
-	cleanenv port_var_fetch_originspec "${originspec}" \
+	cleanenv inhost port_var_fetch_originspec "${originspec}" \
 	   PKGNAME pkgname \
 	   FLAVORS flavors \
 	   FLAVOR port_flavor \
@@ -87,7 +84,7 @@ cache_pkgnames() {
 		      flavor_default tmp x
 
 		originspec_encode originspec_default "${origin}" '' "${subpkg}"
-		cleanenv port_var_fetch_originspec "${originspec_default}" \
+		cleanenv inhost port_var_fetch_originspec "${originspec_default}" \
 		   PKGNAME pkgname_default \
 		   FLAVORS flavors_default \
 		   FLAVOR flavor_default || exit 99
@@ -973,7 +970,7 @@ _setup_build() {
 	ALL_PKGNAMES=
 	ALL_ORIGINS=
 	if [ ${ALL} -eq 1 ]; then
-		LISTPORTS="$(set_pipefail; set -e; listed_ports | paste -s -d ' ' -)"
+		LISTPORTS="$(set_pipefail; set -e; inhost listed_ports | paste -s -d ' ' -)"
 		assert 0 "$?"
 	fi
 	LISTPORTS="$(sorted "${LISTPORTS}")"
@@ -994,7 +991,7 @@ _setup_build() {
 	done
 	echo " done"
 	expand_origin_flavors "${LISTPORTS}" LISTPORTS_EXPANDED
-	fetch_global_port_vars || err 99 "Unable to fetch port vars"
+	inhost fetch_global_port_vars || err 99 "Unable to fetch port vars"
 	assert_not "null" "${P_PORTS_FEATURES-null}" "fetch_global_port_vars should work"
 	echo "Building: $(echo ${LISTPORTS_EXPANDED})"
 	newbuild
@@ -1585,8 +1582,6 @@ export SRCCONF=/dev/null
 export SRC_ENV_CONF=/dev/null
 export PACKAGE_BUILDING=yes
 MASTERNAME="${JAILNAME:?}-${PTNAME:?}-${SETNAME:?}"
-MASTERMNT=
-MASTERMNTREL=
 
 set_blacklist() {
 	local blacklist

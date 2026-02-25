@@ -200,10 +200,10 @@ options_cleanup() {
 	rm -f ${__MAKE_CONF}
 }
 setup_makeconf ${__MAKE_CONF} "${JAILNAME}" "${PTNAME}" "${SETNAME}"
-MASTERMNT= fetch_global_port_vars
+inhost fetch_global_port_vars
 
 export TERM=${SAVED_TERM}
-ports="$(MASTERMNTREL= listed_ports show_moved)" ||
+ports="$(inhost listed_ports show_moved)" ||
     err "$?" "Failed to list ports"
 for originspec in ${ports}; do
 	originspec_decode "${originspec}" origin flavor ''

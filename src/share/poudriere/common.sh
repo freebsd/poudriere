@@ -944,6 +944,16 @@ setup_jexec_limits()  {
 	esac
 }
 
+inhost() {
+	local MASTERMNT MASTERMNTREL MASTERMNTROOT INJAIL_HOST
+
+	MASTERMNT=
+	MASTERMNTREL=
+	MASTERMNTROOT=
+	INJAIL_HOST=1
+	"$@"
+}
+
 injail() {
 	local -; set +x
 	case "${DISALLOW_NETWORKING}" in
