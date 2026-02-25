@@ -3806,13 +3806,10 @@ jail_start() {
 	fi
 
 	case "${MASTERMNT:+set}" in
-	set)
-		tomnt="${MASTERMNT}"
-		;;
-	*)
-		_mastermnt tomnt
-		;;
+	set) ;;
+	*) err 1 "jail_start: MASTERMNT is expected to be set." ;;
 	esac
+	tomnt="${MASTERMNT:?}"
 	_jget arch ${name} arch || err 1 "Missing arch metadata for jail"
 	get_host_arch host_arch
 	_jget mnt ${name} mnt || err 1 "Missing mnt metadata for jail"
