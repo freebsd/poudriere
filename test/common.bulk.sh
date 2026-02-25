@@ -944,30 +944,16 @@ _setup_overlays() {
 	# Setup basic overlay to test-ports/overlay/ dir.
 	case "${OVERLAYSDIR-}" in
 	"/overlays")
-		OVERLAYSDIR="$(mktemp -ut overlays)"
+		OVERLAYSDIR="${PTMNT%/*}"
 		;;
 	esac
-	mkdir -p "${MASTERMNT:?}/${OVERLAYSDIR:?}"
 	for o in ${OVERLAYS}; do
 		# This is the git checkout dir test-ports/${o}
 		omnt="${PTMNT%/*}/${o}"
 		[ -d "${omnt}" ] || continue
-		oname=$(echo "${omnt}" | tr '[./]' '_')
-		# A previous run may have already setup this overlay.
-		case "$(realpath -q "${MASTERMNT:?}/${OVERLAYSDIR:?}/${oname:?}" || :)" in
-		"$(realpath "${omnt}")")
-			REAL_OVERLAYS="${REAL_OVERLAYS:+${REAL_OVERLAYS} }${oname}"
-			continue
-			;;
-		esac
+		oname="${o}"
 		pset "${oname}" mnt "${omnt}"
 		pset "${oname}" method "-"
-		# We run port_var_fetch_originspec without a jail so can't use plain
-		# /overlays. Need to link the host path into our fake MASTERMNT path
-		# as well as link to the overlay portdir without nullfs.
-		#mkdir -p "${MASTERMNT:?}/${OVERLAYSDIR%/*}"
-		ln -hfs "${MASTERMNT:?}/${OVERLAYSDIR:?}" "${OVERLAYSDIR:?}"
-		ln -hfs "${omnt:?}" "${MASTERMNT:?}/${OVERLAYSDIR:?}/${oname:?}"
 		REAL_OVERLAYS="${REAL_OVERLAYS:+${REAL_OVERLAYS} }${oname}"
 	done
 	recache_pkgnames
@@ -1599,7 +1585,8 @@ export SRCCONF=/dev/null
 export SRC_ENV_CONF=/dev/null
 export PACKAGE_BUILDING=yes
 MASTERNAME="${JAILNAME:?}-${PTNAME:?}-${SETNAME:?}"
-_mastermnt MASTERMNT
+MASTERMNT=
+MASTERMNTREL=
 
 set_blacklist() {
 	local blacklist

@@ -906,11 +906,6 @@ cleanup() {
 		rm -f "${TEST_CONTEXTS}"
 		;;
 	esac
-	case "${OVERLAYSDIR:+set}" in
-	set)
-		rm -f "${OVERLAYSDIR}"
-		;;
-	esac
 	if type test_cleanup >/dev/null 2>&1; then
 		test_cleanup
 	fi
