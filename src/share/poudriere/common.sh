@@ -869,6 +869,10 @@ stat_humanize() {
 	    awk -f ${AWKPREFIX}/humanize.awk
 }
 
+# ret = 0 nothing was done
+# ret = 1 files were deleted
+# ret = 2 no files were found
+# ret = 3 files were found, but this is a dry-run
 do_confirm_delete() {
 	[ $# -eq 4 ] || eargs do_confirm_delete badfiles_list \
 	    reason_plural_object answer DRY_RUN
