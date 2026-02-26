@@ -145,7 +145,7 @@ list_jail() {
 }
 
 delete_jail() {
-	local cache_dir method
+	local method
 	local cleandir depth
 
 	if [ -z "${JAILNAME}" ]; then
@@ -167,9 +167,9 @@ delete_jail() {
 	elif [ -n "${JAILMNT:+set}" ]; then
 		TMPFS_ALL=0 destroyfs ${JAILMNT:?} jail || :
 	fi
-	cache_dir="${POUDRIERE_DATA}/cache/${JAILNAME}-*"
-	rm -rfx ${POUDRIERED:?}/jails/${JAILNAME} ${cache_dir} \
-		${POUDRIERE_DATA:?}/.m/${JAILNAME}-* || :
+	rm -rfx "${POUDRIERED:?}/jails/${JAILNAME}" \
+		"${POUDRIERE_DATA:?}/cache/${JAILNAME}-"* \
+		"${POUDRIERE_DATA:?}/.m/${JAILNAME}-"* || :
 	echo " done"
 	if [ "${CLEANJAIL}" = "none" ]; then
 		return 0
