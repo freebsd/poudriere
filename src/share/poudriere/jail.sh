@@ -180,7 +180,7 @@ delete_jail() {
 		cache) cleandir="${POUDRIERE_DATA:?}/cache"; depth=1 ;;
 		logs) cleandir="${POUDRIERE_DATA:?}/logs"; depth=5 ;;
 		packages) cleandir="${POUDRIERE_DATA:?}/packages"; depth=1 ;;
-		wrkdirs) cleandir="${POUDRIERE_DATA:?}/wkdirs"; depth=1 ;;
+		wrkdirs) cleandir="${POUDRIERE_DATA:?}/wrkdirs"; depth=1 ;;
 	esac
 	if [ -n "${cleandir}" ]; then
 		find -x "${cleandir:?}/" -name "${JAILNAME}-*" \
