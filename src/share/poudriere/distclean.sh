@@ -196,10 +196,13 @@ comm -1 -3 ${DISTFILES_LIST}.expected ${DISTFILES_LIST}.actual \
 [ -s "${DISTFILES_LIST}.expected" ] || \
 	err 1 "Something went wrong. All distfiles would have been removed."
 
-ret=0
+distfiles_found_cnt=0
+distfiles_deleted=0
 do_confirm_delete "${DISTFILES_LIST}.unexpected" "stale distfiles" \
-    "${answer}" "${DRY_RUN}" || ret=$?
-if [ ${ret} -eq 2 ]; then
+    "${answer}" "${DRY_RUN}" \
+    distfiles_found_cnt distfiles_deleted ||
+    err "$?" "do_confirm_delete failure"
+if [ "${distfiles_deleted}" -eq 0 ]; then
 	exit 0
 fi
 if [ "${DRY_RUN}" -eq 0 ]; then

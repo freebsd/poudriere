@@ -275,16 +275,15 @@ echo " done"
 slock_release "logclean_all"
 
 # Confirm these logs are safe to delete.
-ret=0
+logs_cnt=0
+logs_deleted=0
 do_confirm_delete "${OLDLOGS:?}" \
     "${reason}" \
-    "${answer}" "${DRY_RUN}" || ret=$?
-# ret = 2 means no files were deleted, but let's still
-# cleanup other broken/stale files and links.
-logs_deleted=0
-if [ ${ret} -eq 1 ]; then
-	logs_deleted=1
-fi
+    "${answer}" "${DRY_RUN}" \
+    logs_cnt logs_deleted ||
+    err "$?" "do_confirm_delete failure"
+# Even if no files were deleted, continue on to cleanup other broken/stale
+# files and links.
 
 # Once that is done, we have a latest-per-pkg links to cleanup.
 reason="detached latest-per-pkg logfiles in ${log_top} (no filter)"
@@ -295,10 +294,11 @@ if lock_have "logs_latest-per-pkg"; then
 	} > "${OLDLOGS:?}"
 	echo " done"
 	# Confirm latest-per-pkg links are OK to cleanup
-	ret=0
 	do_confirm_delete "${OLDLOGS:?}" \
 	    "${reason}" \
-	    "${answer}" "${DRY_RUN}" || ret=$?
+	    "${answer}" "${DRY_RUN}" \
+	    "" "" ||
+	    err "$?" "do_confirm_delete failure"
 else
 	echo " skipped (locked by another process)"
 fi

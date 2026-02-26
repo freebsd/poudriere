@@ -487,19 +487,23 @@ if ! parallel_stop; then
 	err 1 "Fatal errors processing packages"
 fi
 
-ret=0
+packages_found_cnt=0
+packages_deleted=0
 do_confirm_delete "${BADFILES_LIST}" "stale packages" \
-    "${answer}" "${DRY_RUN}" || ret=$?
-case "${ret}.${FORCE_BUILD_REPO}" in
-# No files found and not forced, or dry-run, then exit.
-2.0|3.*)
+    "${answer}" "${DRY_RUN}" \
+    packages_found_cnt packages_deleted ||
+    err "$?" "do_confirm_delete failure"
+if [ "${DRY_RUN}" -eq 1 ]; then
 	exit 0
-	;;
-esac
+fi
+if [ "${packages_found_cnt}" -eq 0 ] && [ "${FORCE_BUILD_REPO}" -eq 0 ]; then
+	# No files found and not forced.
+	exit 0
+fi
 
 # After deleting stale files, need to remake repo.
 
-if [ "${ret}" -eq 1 ] || [ "${FORCE_BUILD_REPO}" -eq 1 ]; then
+if [ "${packages_deleted}" -eq 1 ] || [ "${FORCE_BUILD_REPO}" -eq 1 ]; then
 	[ "${NO_RESTRICTED}" != "no" ] && clean_restricted
 	if [ ${BUILD_REPO} -eq 1 ]; then
 		if [ ${DO_ALL} -eq 1 ]; then
@@ -544,4 +548,4 @@ if [ "${ret}" -eq 1 ] || [ "${FORCE_BUILD_REPO}" -eq 1 ]; then
 		msg "Cleaned all packages but ${PACKAGES} may need to be removed manually."
 	fi
 fi
-run_hook pkgclean done ${ret} ${BUILD_REPO} ${FORCE_BUILD_REPO}
+run_hook pkgclean done ${packages_deleted} ${BUILD_REPO} ${FORCE_BUILD_REPO}

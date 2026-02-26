@@ -869,23 +869,47 @@ stat_humanize() {
 	    awk -f ${AWKPREFIX}/humanize.awk
 }
 
-# ret = 0 nothing was done
-# ret = 1 files were deleted
-# ret = 2 no files were found
-# ret = 3 files were found, but this is a dry-run
+# cases that callers care about:
+# - unexpected error encountered:
+#   * ret > 0
+# - no files were found:
+#   * $files_cnt_var == 0
+# - files were deleted:
+#   * $files_deleted_bool_var == 1
+#   * $files_cnt_var > 0
+# - files would be deleted if not in dry-run.
+#   * DRY_RUN == 1
+#   * $files_deleted_bool_var == 0
+#   * $files_cnt_var > 0
+# - files would be deleted but the prompt was not confirmed.
+#   * $files_deleted_bool_var == 0
+#   * $files_cnt_var > 0
 do_confirm_delete() {
-	[ $# -eq 4 ] || eargs do_confirm_delete badfiles_list \
-	    reason_plural_object answer DRY_RUN
+	[ $# -eq 6 ] || eargs do_confirm_delete badfiles_list \
+	    reason_plural_object answer DRY_RUN \
+	    'files_cnt_var|""' 'files_deleted_bool_var|""'
 	local filelist="$1"
 	local reason="$2"
 	local answer="$3"
 	local DRY_RUN="$4"
-	local file_cnt hsize ret
+	local dcd_files_cnt_var="$5"
+	local dcd_files_deleted_bool_var="$6"
+	local dcd_files_cnt hsize
 
-	count_lines "${filelist:?}" file_cnt
-	if [ "${file_cnt}" -eq 0 ]; then
-		msg "No ${reason} to cleanup"
-		return 2
+	case "${dcd_files_deleted_bool_var:+set}" in
+	set)
+		setvar "${dcd_files_deleted_bool_var:?}" "0" || return
+		;;
+	esac
+	count_lines "${filelist:?}" dcd_files_cnt
+	case "${dcd_files_cnt_var:+set}" in
+	set)
+		setvar "${dcd_files_cnt_var:?}" "${dcd_files_cnt:?}" || return
+		;;
+	esac
+	if [ "${dcd_files_cnt}" -eq 0 ]; then
+		msg "No ${reason} to cleanup."
+		return 0
 	fi
 
 	msg_n "Calculating size for found files..."
@@ -897,13 +921,14 @@ do_confirm_delete() {
 
 	msg "These ${reason} will be deleted:"
 	cat "${filelist:?}"
-	msg "Removing these ${file_cnt} ${reason} will free: ${hsize}"
+	msg "Removing these ${dcd_files_cnt} ${reason} will free: ${hsize}"
 
-	if [ ${DRY_RUN} -eq 1 ];  then
+	case "${DRY_RUN-}" in
+	1)
 		msg "Dry run: not cleaning anything."
-		return 3
-	fi
-
+		answer="no"
+		;;
+	esac
 	case "${answer}" in
 	"")
 		if prompt "Proceed?"; then
@@ -911,18 +936,19 @@ do_confirm_delete() {
 		fi
 		;;
 	esac
-
-	ret=0
 	case "${answer}" in
 	"yes")
 		msg_n "Removing files..."
 		remove_many_file "${filelist:?}" rm -rf ||
 		    err 1 "Failed to delete files"
 		echo " done"
-		ret=1
+		case "${dcd_files_deleted_bool_var:+set}" in
+		set)
+			setvar "${dcd_files_deleted_bool_var:?}" "1" || return
+			;;
+		esac
 		;;
 	esac
-	return ${ret}
 }
 
 setup_jexec_limits()  {
