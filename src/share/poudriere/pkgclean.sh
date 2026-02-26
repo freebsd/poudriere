@@ -394,7 +394,7 @@ do_confirm_delete "${BADFILES_LIST}" "stale packages" \
     "${answer}" "${DRY_RUN}" || ret=$?
 case "${ret}.${FORCE_BUILD_REPO}" in
 # No files found and not forced, or dry-run, then exit.
-2.0|3)
+2.0|3.*)
 	exit 0
 	;;
 esac
