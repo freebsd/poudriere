@@ -79,9 +79,9 @@ Options:
                      Only applies if TARGET_ARCH and HOST_ARCH are different.
 
 Options for -d:
-    -C clean      -- Clean remaining data existing in poudriere data directory.
-                     See poudriere(8) for more details. Can be one of:
-                       all, cache, logs, packages, wrkdirs
+    -C data      -- Clean remaining data existing in poudriere data directory.
+                     See poudriere-jail(8) for more details. Can be one of:
+                       all, cache, images, logs, packages, wrkdirs
     -y            -- Do not prompt for confirmation when deleting a jail.
 
 Options for -s and -k:
@@ -146,48 +146,92 @@ list_jail() {
 
 delete_jail() {
 	local method
-	local cleandir depth
+	local clean_opt
 
 	if [ -z "${JAILNAME}" ]; then
 		usage JAILNAME
 	fi
-	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
-	if jail_runs ${JAILNAME}; then
+	if jail_runs "${JAILNAME}"; then
 		err 1 "Unable to delete jail ${JAILNAME}: it is running"
 	fi
 	msg_n "Removing ${JAILNAME} jail..."
-	method=$(jget ${JAILNAME} method)
-	if [ "${method}" = "null" ]; then
-		# Legacy jail cleanup. New jails don't create this file.
-		if [ -f "${JAILMNT:?}/etc/login.conf.orig" ]; then
-			mv -f ${JAILMNT:?}/etc/login.conf.orig \
-			    ${JAILMNT:?}/etc/login.conf
-			cap_mkdb ${JAILMNT:?}/etc/login.conf
+	if jail_exists ${JAILNAME}; then
+		method=$(jget ${JAILNAME} method)
+		if [ "${method}" = "null" ]; then
+			# Legacy jail cleanup. New jails don't create this file.
+			if [ -f "${JAILMNT:?}/etc/login.conf.orig" ]; then
+				mv -f ${JAILMNT:?}/etc/login.conf.orig \
+				    ${JAILMNT:?}/etc/login.conf
+				cap_mkdb ${JAILMNT:?}/etc/login.conf
+			fi
+		elif [ -n "${JAILMNT:+set}" ]; then
+			TMPFS_ALL=0 destroyfs ${JAILMNT:?} jail || :
 		fi
-	elif [ -n "${JAILMNT:+set}" ]; then
-		TMPFS_ALL=0 destroyfs ${JAILMNT:?} jail || :
 	fi
-	rm -rfx "${POUDRIERED:?}/jails/${JAILNAME}" \
-		"${POUDRIERE_DATA:?}/cache/${JAILNAME}-"* \
-		"${POUDRIERE_DATA:?}/.m/${JAILNAME}-"* || :
+	rm -rfx "${POUDRIERED:?}/jails/${JAILNAME:?}" || :
+	find -x "${POUDRIERE_DATA:?}/.m/" -name "${JAILNAME:?}-*" \
+	    -maxdepth 1 -print0 |
+	    xargs -0 rm -rfx || :
 	echo " done"
-	if [ "${CLEANJAIL}" = "none" ]; then
-		return 0
-	fi
-	msg_n "Cleaning ${JAILNAME} data..."
-	case ${CLEANJAIL} in
-		all) cleandir="${POUDRIERE_DATA:?}" ;;
-		cache) cleandir="${POUDRIERE_DATA:?}/cache"; depth=1 ;;
-		logs) cleandir="${POUDRIERE_DATA:?}/logs"; depth=5 ;;
-		packages) cleandir="${POUDRIERE_DATA:?}/packages"; depth=1 ;;
-		wrkdirs) cleandir="${POUDRIERE_DATA:?}/wrkdirs"; depth=1 ;;
+	case "${CLEANJAIL}" in
+	none) return 0 ;;
 	esac
-	if [ -n "${cleandir}" ]; then
-		find -x "${cleandir:?}/" -name "${JAILNAME}-*" \
-		    ${depth:+-maxdepth ${depth}} -print0 | \
-		    xargs -0 rm -rfx || :
-	fi
-	echo " done"
+	msg "Cleaning ${JAILNAME} data..."
+	_jail_clean() {
+		[ $# -ge 1 ] || eargs _jail_clean dir 'find_opts...'
+		local cleandir="$1"
+		shift
+		local cpath IFS
+
+		msg_n "Cleaning ${cleandir:?}:"
+		find -x "${cleandir:?}/" \
+		    -name "${JAILNAME:?}-*" \
+		    "$@" \
+		    -print |
+		while IFS= read -r cpath; do
+			echo -n " ${cpath#${cleandir}/}..."
+			rm -rfx "${cpath:?}" || :
+		done
+		echo " done"
+	}
+	# Avoid duplicate cleanup if all is specified.
+	case " ${CLEANJAIL} " in
+	*" all "*) CLEANJAIL=all ;;
+	esac
+	for clean_opt in ${CLEANJAIL}; do
+		# 'all' used to find -x data/ but every subdir could be a
+		# different zfs dataset. Expand out to avoid that and keep
+		# logic simple.
+		case "${clean_opt}" in
+		all|cache)
+			_jail_clean "${POUDRIERE_DATA:?}/cache" -maxdepth 1
+			;;
+		esac
+		case "${clean_opt}" in
+		all|images)
+			_jail_clean "${POUDRIERE_DATA:?}/images" -maxdepth 1
+			;;
+		esac
+		case "${clean_opt}" in
+		all|logs)
+			_jail_clean "${POUDRIERE_DATA:?}/logs" -maxdepth 2
+			_jail_clean \
+			    "${POUDRIERE_DATA:?}/logs/bulk/latest-per-pkg" \
+			    -maxdepth 3
+			;;
+		esac
+		case "${clean_opt}" in
+		all|packages)
+			_jail_clean "${POUDRIERE_DATA:?}/packages" -maxdepth 1
+			;;
+		esac
+		case "${clean_opt}" in
+		all|wrkdirs)
+			_jail_clean "${POUDRIERE_DATA:?}/wrkdirs" -maxdepth 1
+			;;
+		esac
+	done
+	msg "Cleaning ${JAILNAME} data... done"
 }
 
 cleanup_new_jail() {
@@ -1401,7 +1445,7 @@ while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxXC:y" FLAG; do
 			set_command create
 			;;
 		C)
-			CLEANJAIL=${OPTARG}
+			CLEANJAIL="${CLEANJAIL:+${CLEANJAIL} }${OPTARG}"
 			;;
 		d)
 			set_command delete
@@ -1562,7 +1606,9 @@ case "${COMMAND}" in
 		if [ -z "${JAILNAME}" ]; then
 			usage JAILNAME
 		fi
-		jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
+		if ! jail_exists "${JAILNAME}"; then
+			msg_warn "Jail does not exist. Proceeding with cleanup."
+		fi
 		if [ -z "${YES}" ]; then
 			confirm_if_tty "Are you sure you want to delete the jail?" || \
 			    err 1 "Not deleting jail"

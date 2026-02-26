@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd February 11, 2026
+.Dd February 26, 2026
 .Dt POUDRIERE-JAIL 8
 .Os
 .Sh NAME
@@ -157,10 +157,12 @@ Only used for
 .Fl d
 option.
 .Pp
+Can be specified multiple times.
+.Pp
 The
 .Pa data
 parameter can be one of the following:
-.Cm all , cache , logs , packages , No or Cm wrkdirs .
+.Cm all , cache , images , logs , packages , No or Cm wrkdirs .
 .It Fl D
 Clone the Git repository with the full history when creating the jail from a
 Git checkout.
