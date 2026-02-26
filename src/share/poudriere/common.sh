@@ -876,7 +876,7 @@ do_confirm_delete() {
 	local reason="$2"
 	local answer="$3"
 	local DRY_RUN="$4"
-	local file_cnt count hsize ret
+	local file_cnt hsize ret
 
 	count_lines "${filelist:?}" file_cnt
 	if [ "${file_cnt}" -eq 0 ]; then
@@ -893,8 +893,7 @@ do_confirm_delete() {
 
 	msg "These ${reason} will be deleted:"
 	cat "${filelist:?}"
-	count_lines "${filelist:?}" count
-	msg "Removing these ${count} ${reason} will free: ${hsize}"
+	msg "Removing these ${file_cnt} ${reason} will free: ${hsize}"
 
 	if [ ${DRY_RUN} -eq 1 ];  then
 		msg "Dry run: not cleaning anything."
