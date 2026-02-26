@@ -2113,6 +2113,10 @@ enter_interactive() {
 		enabled: no,
 		priority: 100
 	}
+	pkgbase: {
+		enabled: no,
+		priority: 100
+	}
 
 	local: {
 		url: "file:///packages",
@@ -3910,6 +3914,10 @@ download_from_repo() {
 		priority: 100
 	}
 	FreeBSD-base: {
+		enabled: no,
+		priority: 100
+	}
+	pkgbase: {
 		enabled: no,
 		priority: 100
 	}
