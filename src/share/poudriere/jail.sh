@@ -146,7 +146,6 @@ list_jail() {
 
 delete_jail() {
 	local method
-	local clean_opt
 
 	if [ -z "${JAILNAME}" ]; then
 		usage JAILNAME
@@ -173,27 +172,39 @@ delete_jail() {
 	    -maxdepth 1 -print0 |
 	    xargs -0 rm -rfx || :
 	echo " done"
+	clean_jail_data
+}
+
+_jail_clean() {
+	[ $# -ge 1 ] || eargs _jail_clean dir 'find_opts...'
+	local cleandir="$1"
+	shift
+	local cpath IFS
+
+	msg_n "Cleaning ${cleandir:?}:"
+	if [ ! -d "${cleandir:?}/" ]; then
+		echo " does not exist (skipped)"
+		return 0
+	fi
+	find -x "${cleandir:?}/" \
+	    -name "${JAILNAME:?}-*" \
+	    "$@" \
+	    -print |
+	while IFS= read -r cpath; do
+		echo -n " ${cpath#${cleandir}/}..."
+		rm -rfx "${cpath:?}" || :
+	done
+	echo " done"
+}
+
+clean_jail_data() {
+	[ $# -eq 0 ] || eargs clean_jail_data
+	local clean_opt
+
 	case "${CLEANJAIL}" in
 	none) return 0 ;;
 	esac
-	msg "Cleaning ${JAILNAME} data..."
-	_jail_clean() {
-		[ $# -ge 1 ] || eargs _jail_clean dir 'find_opts...'
-		local cleandir="$1"
-		shift
-		local cpath IFS
-
-		msg_n "Cleaning ${cleandir:?}:"
-		find -x "${cleandir:?}/" \
-		    -name "${JAILNAME:?}-*" \
-		    "$@" \
-		    -print |
-		while IFS= read -r cpath; do
-			echo -n " ${cpath#${cleandir}/}..."
-			rm -rfx "${cpath:?}" || :
-		done
-		echo " done"
-	}
+	msg "Cleaning ${JAILNAME:?} data..."
 	# Avoid duplicate cleanup if all is specified.
 	case " ${CLEANJAIL} " in
 	*" all "*) CLEANJAIL=all ;;
@@ -214,10 +225,21 @@ delete_jail() {
 		esac
 		case "${clean_opt}" in
 		all|logs)
+			local log_path_top POUDRIERE_BUILD_TYPE
+
+			POUDRIERE_BUILD_TYPE="bulk"
+			_log_path_top log_path_top
 			_jail_clean "${POUDRIERE_DATA:?}/logs" -maxdepth 2
-			_jail_clean \
-			    "${POUDRIERE_DATA:?}/logs/bulk/latest-per-pkg" \
+			_jail_clean "${log_path_top:?}/latest-per-pkg" \
 			    -maxdepth 3
+			msg_n "Rebuilding HTML JSON for top-level..."
+			if slock_acquire -q "json_top" 60; then
+				build_top_json || :
+				slock_release "json_top"
+				echo " done"
+			else
+				echo " skipped (locked by another process)"
+			fi
 			;;
 		esac
 		case "${clean_opt}" in
