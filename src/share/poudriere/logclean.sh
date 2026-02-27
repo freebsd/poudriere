@@ -398,7 +398,7 @@ if [ ${logs_deleted} -eq 1 ]; then
 	if lock_have "logs_latest-per-pkg"; then
 		case "${MASTERNAMES_LOCKED:+set}" in
 		set)
-			echo "${MASTERNAMES_LOCKED:?}" | sed -e 's,$,/latest-per-pkg,' | \
+			echo "${MASTERNAMES_LOCKED:?}" | tr ' ' '\n' | sed -e 's,$,/latest-per-pkg,' | \
 			    tr '\n' '\000' | \
 			    xargs -0 -J % find -x % -mindepth 0 -maxdepth 0 -empty | \
 			    sed -e 's,$,/..,' | xargs realpath | tr '\n' '\000' | \
