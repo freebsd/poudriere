@@ -2631,6 +2631,7 @@ markfs() {
 					.${HOME}
 					./tmp
 					./var/crash/*.core
+					./var/db/pkg/local.*
 					./var/tmp
 					EOF
 					;;
