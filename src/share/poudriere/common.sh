@@ -1975,6 +1975,10 @@ exit_handler() {
 		SHASH_VAR_PATH="${SHASH_VAR_PATH_DEFAULT:?}"
 	fi
 
+	shash_cleanup_shm
+	# Disable SHM so no new segments are created during cleanup.
+	SHASH_SHM_PREFIX=
+
 	parallel_shutdown
 
 	if was_a_bulk_run; then
@@ -10136,6 +10140,44 @@ trim_ignored_pkg() {
 	clean_pool "run" "${pkgname}" "${originspec}" "ignored"
 }
 
+shash_init_shm() {
+	[ $# -eq 0 ] || eargs shash_init_shm
+
+	case "${SHASH_USE_SHM}" in
+	1) ;;
+	*) return 0 ;;
+	esac
+	SHASH_SHM_PREFIX="/shash-${MASTERNAME:?}-"
+	# Clean up stale segments from a previous run (crash, SIGKILL, etc.)
+	shash_cleanup_shm
+	# Segments are auto-created on first shm_hash_set.
+	# SHASH_SHM_CAPACITY controls their size (default 131072).
+	: "${SHASH_SHM_CAPACITY:=131072}"
+	export SHASH_SHM_CAPACITY
+}
+
+shash_cleanup_shm() {
+	local _seg
+
+	case "${SHASH_USE_SHM:-0}" in
+	1) ;;
+	*) return 0 ;;
+	esac
+	case "${SHASH_SHM_PREFIX:+set}" in
+	set) ;;
+	*) return 0 ;;
+	esac
+	# Enumerate all shm segments matching our prefix.
+	posixshmcontrol ls 2>/dev/null |
+	    while read -r _ _ _ _ _seg; do
+		case "${_seg}" in
+		"${SHASH_SHM_PREFIX}"*)
+			shm_hash_destroy "${_seg}" 2>/dev/null || :
+			;;
+		esac
+	    done
+}
+
 # PWD will be MASTER_DATADIR after this
 prepare_ports() {
 	local pkg
@@ -10273,6 +10315,8 @@ prepare_ports() {
 		fi
 		;;
 	esac
+
+	shash_init_shm
 
 	gather_port_vars
 	if was_a_testport_run; then
@@ -11196,6 +11240,7 @@ esac
 : "${SHASH_VAR_PATH_DEFAULT:=${POUDRIERE_TMPDIR:?}}"
 : ${SHASH_VAR_PATH:=${SHASH_VAR_PATH_DEFAULT}}
 : ${SHASH_VAR_PREFIX:=sh-}
+: ${SHASH_USE_SHM:=0}
 : ${DATADIR_NAME:=".p"}
 
 : ${BUILDNAME_FORMAT:="%Y-%m-%d_%Hh%Mm%Ss"}

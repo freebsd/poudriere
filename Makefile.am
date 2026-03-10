@@ -252,6 +252,7 @@ sh_SOURCES+=		src/poudriere-sh/setproctitle.c
 sh_SOURCES+=		external/freebsd/bin/sleep/sleep.c
 sh_SOURCES+=		external/freebsd/usr.bin/stat/stat.c
 sh_SOURCES+=		external/freebsd/usr.bin/touch/touch.c
+sh_SOURCES+=		src/poudriere-sh/shm_hash.c
 sh_SOURCES+=		src/poudriere-sh/unlink.c
 sh_SOURCES+=		external/freebsd/usr.bin/wc/wc.c
 noinst_PROGRAMS+=	external/sh/mknodes

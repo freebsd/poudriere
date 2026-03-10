@@ -43,3 +43,8 @@ trap_pushcmd -n		trap_push
 trap_popcmd -n		trap_pop
 unlinkcmd -n		unlink
 wccmd -n		wc
+shm_hash_createcmd -n	shm_hash_create
+shm_hash_setcmd -n	shm_hash_set
+shm_hash_getcmd -n	shm_hash_get
+shm_hash_existscmd -n	shm_hash_exists
+shm_hash_destroycmd -n	shm_hash_destroy

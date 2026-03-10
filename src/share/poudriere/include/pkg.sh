@@ -49,7 +49,7 @@ pkg_get_origin() {
 	local var_return="$1"
 	local pkg="$2"
 	local _origin="${3-}"
-	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
+	local SHASH_VAR_PATH SHASH_VAR_PREFIX= SHASH_SHM_PREFIX=
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
 	case "${_origin}" in
@@ -76,7 +76,7 @@ pkg_get_generic_list() {
 	local flags="$2"
 	local _pggl_mapfile_var="$3"
 	local _pkg="$4"
-	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
+	local SHASH_VAR_PATH SHASH_VAR_PREFIX= SHASH_SHM_PREFIX=
 	local Tflag
 
 	# If outputting the value to stdout then tee it on cache miss,
@@ -121,7 +121,7 @@ pkg_get_shlib_required_count() {
 	local var_return="$1"
 	local pkg="$2"
 	local _count=$3
-	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
+	local SHASH_VAR_PATH SHASH_VAR_PREFIX= SHASH_SHM_PREFIX=
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
 	case "${_count}" in
@@ -206,7 +206,7 @@ pkg_get_arch() {
 	local var_return="$1"
 	local pkg="$2"
 	local _arch=$3
-	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
+	local SHASH_VAR_PATH SHASH_VAR_PREFIX= SHASH_SHM_PREFIX=
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
 	case "${_arch}" in
@@ -234,7 +234,7 @@ pkg_get_dep_origin_pkgnames() {
 	local var_return_origins="$1"
 	local var_return_pkgnames="$2"
 	local pkg="$3"
-	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
+	local SHASH_VAR_PATH SHASH_VAR_PREFIX= SHASH_SHM_PREFIX=
 	local fetched_data compiled_dep_origins compiled_dep_pkgnames
 	local origin pkgname
 	local -
@@ -294,7 +294,7 @@ pkg_get_options() {
 	[ $# -eq 2 ] || eargs pkg_get_options var_return pkg
 	local var_return="$1"
 	local pkg="$2"
-	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
+	local SHASH_VAR_PATH SHASH_VAR_PREFIX= SHASH_SHM_PREFIX=
 	local _compiled_options
 
 	_compiled_options=
