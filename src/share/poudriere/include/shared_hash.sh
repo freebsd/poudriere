@@ -67,6 +67,13 @@ shash_get() {
 	local sg_ret sg_rret
 	local -
 
+	case "${SHASH_SHM_PREFIX:+1}" in
+	1)
+		shm_hash_get "${SHASH_SHM_PREFIX}${sg_var}" \
+		    "${sg_key}" "${sg_var_return}"
+		return
+		;;
+	esac
 	sg_ret=0
 	_sh_values=
 	_shash_var_path
@@ -106,6 +113,12 @@ shash_exists() {
 	local key="$2"
 	local _shash_var_path _shash_var_name _f
 
+	case "${SHASH_SHM_PREFIX:+1}" in
+	1)
+		shm_hash_exists "${SHASH_SHM_PREFIX}${var}" "${key}"
+		return
+		;;
+	esac
 	_shash_var_path
 	_shash_var_name "${var:?}" "${key:?}"
 	_f="${_shash_var_path}${_shash_var_name}"
@@ -123,6 +136,21 @@ shash_set() {
 	local value="$3"
 	local _shash_varkey_file
 
+	case "${SHASH_SHM_PREFIX:+1}" in
+	1)
+		case "$-" in
+		*C*)
+			shm_hash_set -n "${SHASH_SHM_PREFIX}${var}" \
+			    "${key}" "${value}"
+			;;
+		*)
+			shm_hash_set "${SHASH_SHM_PREFIX}${var}" \
+			    "${key}" "${value}"
+			;;
+		esac
+		return
+		;;
+	esac
 	_shash_varkey_file "${var}" "${key}"
 	case "${value+set}" in
 	set)
@@ -186,6 +214,12 @@ shash_remove_var() {
 	[ $# -eq 1 ] || eargs shash_remove_var var
 	local srv_var="$1"
 
+	case "${SHASH_SHM_PREFIX:+1}" in
+	1)
+		shm_hash_destroy "${SHASH_SHM_PREFIX}${srv_var}" 2>/dev/null || :
+		return
+		;;
+	esac
 	# This assumes globbing works for shash.
 	_shash_unset "${srv_var:?}" "*"
 }
@@ -230,6 +264,12 @@ _shash_unset() {
 	local _shu_key="$2"
 	local _shash_var_path _shash_var_name
 
+	case "${SHASH_SHM_PREFIX:+1}" in
+	1)
+		# SHM hash is write-once; unset is a no-op.
+		return 0
+		;;
+	esac
 	_shash_var_path
 	_shash_var_name "${_shu_var:?}" "${_shu_key:?}"
 	# Ensure globbing is on
