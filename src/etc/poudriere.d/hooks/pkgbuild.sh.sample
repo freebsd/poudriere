@@ -1,8 +1,8 @@
 #!/bin/sh
 # /usr/local/etc/poudriere.d/hooks/pkgbuild.sh
 
-EMAIL_FROM=
-EMAIL_TO=
+EMAIL_FROM=root
+EMAIL_TO=root
 # The failure email will snip out the middle of a build log to help
 # save BW. A URL is provided to view the full log
 # Set to how many header lines from the build to display
