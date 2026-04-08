@@ -4806,7 +4806,7 @@ download_from_repo() {
 		return 0
 	fi
 
-	remote_pkg_ver="$(injail ${pkg_bin} rquery -U %v "${P_PKG_PKGBASE:?}")"
+	remote_pkg_ver="$(injail ${pkg_bin} rquery -U -r "${PACKAGE_FETCH_BRANCH}" %v "${P_PKG_PKGBASE:?}")"
 	local_pkg_name="${P_PKG_PKGNAME:?}"
 	local_pkg_ver="${local_pkg_name##*-}"
 	case "$(pkg_version -t "${remote_pkg_ver}" "${local_pkg_ver}")" in
