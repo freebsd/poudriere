@@ -3956,15 +3956,15 @@ download_from_repo() {
 	# (like pkg rquery -U), and it uses various locking that isn't needed
 	# here. Grab all the options for comparison.
 	remote_all_options=$(mktemp -t remote_all_options)
-	injail ${pkg_bin} rquery -U '%n %Ok %Ov' > "${remote_all_options}"
+	injail ${pkg_bin} rquery -U -e '%#O > 0' '%n %Ok %Ov' > "${remote_all_options}"
 	remote_all_pkgs=$(mktemp -t remote_all_pkgs)
 	injail ${pkg_bin} rquery -U '%n %n-%v %?O' > "${remote_all_pkgs}"
 	remote_all_deps=$(mktemp -t remote_all_deps)
-	injail ${pkg_bin} rquery -U '%n %dn-%dv' > "${remote_all_deps}"
+	injail ${pkg_bin} rquery -U -e '%#d > 0' '%n %dn-%dv' > "${remote_all_deps}"
 	remote_all_annotations=$(mktemp -t remote_all_annotations)
 	remote_all_cats=$(mktemp -t remote_all_cats)
 	if [ "${IGNORE_OSVERSION-}" != "yes" ]; then
-		injail ${pkg_bin} rquery -U '%n %At %Av' > "${remote_all_annotations}"
+		injail ${pkg_bin} rquery -U -e '%#A' '%n %At %Av' > "${remote_all_annotations}"
 		injail ${pkg_bin} rquery -U '%n %C' > "${remote_all_cats}"
 	fi
 	abi="$(injail "${pkg_bin}" config ABI)"
