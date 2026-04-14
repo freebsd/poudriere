@@ -4831,7 +4831,7 @@ download_from_repo() {
 	case "${IGNORE_OSVERSION-}" in
 	"yes") ;;
 	*)
-		injail ${pkg_bin} rquery -U -e '%#A' '%n %At %Av' > "${remote_all_annotations}"
+		injail ${pkg_bin} rquery -U -e '%#A > 0' '%n %At %Av' > "${remote_all_annotations}"
 		injail ${pkg_bin} rquery -U '%n %C' > "${remote_all_cats}"
 		;;
 	esac
