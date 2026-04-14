@@ -553,7 +553,7 @@ assert_bulk_build_results() {
 		assert 0 $? "Unable to get origin from package: ${file}"
 		assert "${origin}" "${pkg_origin}" "Package origin should match for: ${file}"
 
-		pkg_flavor=$(${PKG_BIN} query -F "${file}" '%At %Av' |
+		pkg_flavor=$(${PKG_BIN} query -F "${file}" -e '%#A > 0' '%At %Av' |
 			awk '$1 == "flavor" {print $2}')
 		assert 0 $? "Unable to get flavor from package: ${file}"
 		assert "${flavor}" "${pkg_flavor}" "Package flavor should match for: ${file}"

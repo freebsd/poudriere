@@ -227,7 +227,7 @@ convert_package_list() {
 	# Always need this from host.
 	export ABI_FILE="${WRKDIR}/world/usr/lib/crt1.o"
 	pkg -o ASSUME_ALWAYS_YES=yes update  >/dev/null || :
-	pkg rquery '%At %o@%Av %n-%v' | \
+	pkg rquery -e '%#A > 0' '%At %o@%Av %n-%v' | \
 	    awk -v pkglist="${PACKAGELIST}" \
 	    -f "${AWKPREFIX}/unique_pkgnames_from_flavored_origins.awk"
 	rm -rf "${PKG_DBDIR}" "${REPOS_DIR}"
