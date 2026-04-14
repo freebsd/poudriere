@@ -8014,7 +8014,7 @@ __package_recursive_deps() {
 		    dep_pkgname ||
 		    err 1 "package_recursive_deps: Failed to lookup pkgname for originspec=${dep_originspec} processing package ${pkgname}"
 		case "${dep_pkgname:?}" in
-		*"-(null)")
+		*"-(null)"|*-)
 			dep_pkgbase="${dep_pkgname%-*}"
 			for dep_pkgfile in \
 			    "${PACKAGES:?}/All/${dep_pkgbase:?}-"*.${PKG_EXT}; do
