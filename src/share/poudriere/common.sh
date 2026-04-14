@@ -4653,6 +4653,7 @@ download_from_repo_check_pkg() {
 	    $1 == pkgbase {
 		    # Trim out PKG_NO_VERSION_FOR_DEPS missing version
 		    sub(/-\(null\)$/, "", $2)
+		    sub(/-$/, '' $2)
 		    print $2
 		    printed=1
 	    }
@@ -5094,7 +5095,7 @@ sanity_check_pkg() {
 	displayed_warning=0
 	for dep_pkgname in ${compiled_deps_pkgnames}; do
 		case "${dep_pkgname}" in
-		*"-(null)")
+		*"-(null)"|*-)
 			# Dependency generated with PKG_NO_VERSION_FOR_DEPS
 			# which means this package doesn't care about any
 			# specific dependency's version.
