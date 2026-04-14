@@ -3964,7 +3964,7 @@ download_from_repo() {
 	remote_all_annotations=$(mktemp -t remote_all_annotations)
 	remote_all_cats=$(mktemp -t remote_all_cats)
 	if [ "${IGNORE_OSVERSION-}" != "yes" ]; then
-		injail ${pkg_bin} rquery -U -e '%#A' '%n %At %Av' > "${remote_all_annotations}"
+		injail ${pkg_bin} rquery -U -e '%#A > 0' '%n %At %Av' > "${remote_all_annotations}"
 		injail ${pkg_bin} rquery -U '%n %C' > "${remote_all_cats}"
 	fi
 	abi="$(injail "${pkg_bin}" config ABI)"
