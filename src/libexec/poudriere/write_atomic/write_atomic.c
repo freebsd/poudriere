@@ -78,7 +78,7 @@ file_cmp_overwrite(const int dirfd,
 	opened_existing = opened_new = false;
 	if (fd_existing == -1) {
 		fd_existing = openat(dirfd, file_existing,
-		    O_RDONLY | O_CLOEXEC | O_CLOFORK);
+		    O_RDONLY | O_CLOEXEC);
 		/* If the file does not exist then it is safe to replace it. */
 		if (fd_existing < 0) {
 			ret = 0;
@@ -92,7 +92,7 @@ file_cmp_overwrite(const int dirfd,
 	}
 	if (fd_new == -1) {
 		fd_new = openat(dirfd, file_new,
-		    O_RDONLY | O_CLOEXEC | O_CLOFORK);
+		    O_RDONLY | O_CLOEXEC);
 		if (fd_new < 0) {
 			warn("open %s", file_new);
 			ret = -1;
@@ -224,7 +224,7 @@ main(int argc, char *argv[])
 
 	strlcpy(dirname_buf, destpath, sizeof(dirname_buf));
 	destdir = dirname(dirname_buf);
-	dirfd = open(destdir, O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_CLOFORK);
+	dirfd = open(destdir, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
 	if (dirfd == -1) {
 		warn("open %s", destdir);
 		goto done;
@@ -237,7 +237,7 @@ main(int argc, char *argv[])
 	snprintf(tmpfile, sizeof(tmpfile), ".write_atomic-%s.XXXXXXXXXX",
 	    destfile);
 #if 0
-	tmpfd = mkostempsat(dirfd, tmpfile, 0, O_CLOEXEC | O_CLOFORK);
+	tmpfd = mkostempsat(dirfd, tmpfile, 0, O_CLOEXEC);
 	if (tmpfd < 0) {
 		warn("mkstemp");
 		goto done;
@@ -256,7 +256,7 @@ main(int argc, char *argv[])
 	 * Use a custom mkostempat(3) that takes a mode argument which
 	 * saves 3 extra syscalls compared to the idiomatic version above.
 	 */
-	tmpfd = mkostempsat_mode(dirfd, tmpfile, 0, O_CLOEXEC | O_CLOFORK,
+	tmpfd = mkostempsat_mode(dirfd, tmpfile, 0, O_CLOEXEC,
 	    0644);
 	if (tmpfd < 0) {
 		warn("mkstemp");
