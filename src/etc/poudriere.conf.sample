@@ -15,7 +15,7 @@
 # To not use ZFS, define NO_ZFS=yes
 #NO_ZFS=yes
 
-# root of the poudriere zfs filesystem, by default /poudriere
+# root of the poudriere ZFS filesystem, by default /poudriere
 # ZROOTFS=/poudriere
 
 # the host where to download sets for the jails setup
@@ -39,7 +39,7 @@ RESOLV_CONF=/etc/resolv.conf
 BASEFS=/usr/local/poudriere
 
 # The directory where the jail will store the packages and logs
-# by default a zfs filesystem will be created and set to
+# by default a ZFS filesystem will be created and set to
 # ${BASEFS}/data
 #
 #POUDRIERE_DATA=${BASEFS}/data
