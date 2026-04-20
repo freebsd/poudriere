@@ -2283,7 +2283,7 @@ _siginfo_handler() {
 		    }')
 		EOF
 		for j in ${BUILDERS}; do
-			# Ignore error here as the zfs dataset may not be cloned yet.
+			# Ignore error here as the ZFS dataset may not be cloned yet.
 			_bget status ${j} status || status=
 			# Skip builders not started yet
 			case "${status}" in
