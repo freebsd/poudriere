@@ -225,7 +225,7 @@ if [ -n "${new_origin}" ]; then
 	originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
 fi
 _lookup_portdir portdir "${ORIGIN}"
-if [ "${portdir}" = "${PORTSDIR}/${ORIGIN}" ] && [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../Mk" ]; then
+if [ "${portdir}" = "${PORTSDIR}/${ORIGIN}" ] && [ ! -f "${portsdir}/${ORIGIN}/Makefile" ]; then
 	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
 fi
 
