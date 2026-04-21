@@ -276,8 +276,7 @@ testport_post_gather_port_vars() {
 	# Ensure the port exists after handling MOVED.
 	_lookup_portdir portdir "${ORIGIN}"
 	if [ "${portdir:?}" = "${PORTSDIR:?}/${ORIGIN:?}" ] &&
-		[ ! -f "${portsdir:?}/${ORIGIN:?}/Makefile" ] ||
-		[ -d "${portsdir:?}/${ORIGIN:?}/../Mk" ]; then
+		[ ! -f "${portsdir:?}/${ORIGIN:?}/Makefile" ]; then
 		err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
 	fi
 	get_pkgname_from_originspec "${ORIGINSPEC:?}" PKGNAME ||
