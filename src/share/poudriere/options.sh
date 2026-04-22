@@ -200,6 +200,7 @@ options_cleanup() {
 	rm -f ${__MAKE_CONF}
 }
 setup_makeconf ${__MAKE_CONF} "${JAILNAME}" "${PTNAME}" "${SETNAME}"
+setup_ports_env "" "${__MAKE_CONF}"
 fetch_global_port_vars
 
 export TERM=${SAVED_TERM}
