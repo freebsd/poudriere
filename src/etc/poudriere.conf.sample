@@ -111,6 +111,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # the current options to be built. If they differ, the existing package
 # will be deleted and the port will be rebuilt.
 # Valid options: yes, no, verbose
+# Default: verbose
 # verbose will display the old and new options
 #CHECK_CHANGED_OPTIONS=verbose
 
