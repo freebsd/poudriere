@@ -5580,15 +5580,7 @@ build_port() {
 				fi
 			fi
 			;;
-		checksum)
-			JUSER=root
-			if [ "${allownetworking}" -eq 0 ]; then
-				phaseenv="${phaseenv:+${phaseenv} }FETCH_REGET=0"
-			fi
-			;;
-		*-depends)
-			JUSER=root
-			;;
+		checksum|*-depends) JUSER=root ;;
 		stage)
 			if [ "${PORTTESTING}" -eq 1 ]; then
 				markfs prestage "${mnt:?}"
