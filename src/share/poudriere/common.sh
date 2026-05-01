@@ -9259,7 +9259,7 @@ gather_port_vars_process_depqueue() {
 }
 
 # We may gather metadata for more ports than we actually want to build.
-# In here will will compute the list of packages that we are actually
+# In here we will compute the list of packages that we are actually
 # interested in.
 compute_needed() {
 	[ "$#" -eq 0 ] || eargs compute_needed

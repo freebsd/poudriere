@@ -474,7 +474,7 @@ _pkgqueue_clean_queue() {
 	_pkgqueue_clean_rdeps "${pkgqueue_job}" "${clean_rdepends}" || ret="$?"
 
 	# Remove this pkg from the needs-to-build list. It will not exist
-	# if this build was sucessful. It only exists if pkgqueue_clean_queue is
+	# if this build was successful. It only exists if pkgqueue_clean_queue is
 	# being called recursively to skip items and in that case it will
 	# not be empty.
 	case "${clean_rdepends:+set}" in
