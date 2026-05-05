@@ -1,0 +1,16 @@
+image: freebsd/latest
+packages:
+  - pkgconf
+  - kyua
+sources:
+  - https://github.com/freebsd/poudriere
+tasks:
+  - configure: |
+      cd poudriere
+      ./configure
+  - build: |
+      cd poudriere
+      make
+  - test: |
+      cd poudriere
+      make check || { kyua report --verbose; exit 1 ;}
