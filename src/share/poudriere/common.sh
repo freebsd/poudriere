@@ -5180,7 +5180,7 @@ check_leftovers() {
 
 	( cd "${mnt:?}" && \
 	    mtree -X "${MASTER_DATADIR:?}/mtree.preinstexclude${PORTTESTING}" \
-	    -f "${MNT_DATADIR:?}/mtree.preinst" -p . ) | \
+	    -f "${MNT_DATADIR:?}/mtree.preinst" -p . ) | tee /dev/stderr | \
 	    while mapfile_read_loop_redir l; do
 		local changed read_again
 
