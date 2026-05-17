@@ -1033,6 +1033,7 @@ install_from_tar() {
 
 install_from_pkgbase() {
 	msg_n "Installing ${VERSION} ${ARCH} from ${SOURCES_URL} ..."
+	VERSION="${VERSION%%.*}"
 	mkdir -p "${JAILMNT}/etc/pkg"
 	cat <<EOF > "${JAILMNT}/etc/pkg/pkgbase.conf"
 pkgbase: {
