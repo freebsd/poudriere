@@ -286,9 +286,10 @@ create)
 			fi
 
 			msg_n "Checking out the ports tree..."
+			[ "${BRANCH}" = "none" ] && BRANCH=""
 			${SVN_CMD} ${quiet} co \
 				${SVN_PRESERVE_TIMESTAMP} \
-				${SVN_FULLURL}/${BRANCH} \
+				${SVN_FULLURL}${BRANCH:+/${BRANCH}} \
 				${PTMNT} || err 1 " fail"
 			echo " done"
 			;;
