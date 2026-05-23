@@ -82,8 +82,8 @@ to create for the ports tree.
 If set to
 .Dq none
 then do not create a filesystem.
-Defaults to
-.Dq poudriere/ports/default .
+The default is
+.Cm poudriere/ports/default .
 .It Fl k
 When used with
 .Fl d ,
@@ -124,6 +124,7 @@ are used.
 Use the
 .Fl B Ar branch
 parameter to set the branch name.
+.Pp
 The Git server address is derived from the
 .Va GIT_PORTSURL
 variable in
@@ -145,6 +146,8 @@ are used.
 Use the
 .Fl B Ar branch
 parameter to set the branch name.
+The default is
+.Cm head .
 .Pp
 The SVN host address is derived from the
 .Va SVN_HOST
@@ -165,7 +168,8 @@ only display the name of the ports tree.
 Specifies the
 .Ar name
 of the ports tree to use.
-.Pq Default: Dq Li default
+The default is
+.Cm default .
 .It Fl q
 When used with
 .Fl l ,
