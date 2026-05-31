@@ -5496,7 +5496,12 @@ build_port() {
 	# changes. Easier once pkg_install is EOL.
 	targets="check-sanity pkg-depends fetch-depends fetch checksum \
 		  extract-depends extract patch-depends patch build-depends \
-		  lib-depends configure build run-depends stage package"
+		  lib-depends configure build run-depends stage"
+	# Run port tests after staging when -e is specified.
+	if [ "${PORT_RUN_TESTS}" -eq 1 ]; then
+		targets="${targets} test-depends test"
+	fi
+	targets="${targets} package"
 	# Do a install/deinstall cycle for testport/bulk -t.
 	if [ "${PORTTESTING}" -eq 1 ]; then
 		targets="${targets} install deinstall"
@@ -5583,6 +5588,13 @@ build_port() {
 		checksum|*-depends) JUSER=root ;;
 		stage)
 			if [ "${PORTTESTING}" -eq 1 ]; then
+				markfs prestage "${mnt:?}"
+			fi
+			;;
+		test)
+			# Re-record prestage after test-depends has installed packages
+			# so check_fs_violation at package phase won't flag them.
+			if [ "${PORTTESTING}" -eq 1 -a "${PORT_RUN_TESTS}" -eq 1 ]; then
 				markfs prestage "${mnt:?}"
 			fi
 			;;
@@ -5701,7 +5713,15 @@ build_port() {
 					job_build_status "${phase}/timeout" \
 					    "${originspec}" "${pkgname}"
 				fi
-				return 1
+				if [ "${phase}" = "test" -a $hangstatus -eq 1 ]; then
+					msg "Error: Test failures detected"
+					if [ "${PORTTESTING_FATAL}" != "no" ]; then
+						return 1
+					fi
+					testfailure=2
+				else
+					return 1
+				fi
 			fi
 			;;
 		esac
@@ -11118,6 +11138,7 @@ esac
 : ${PORTTESTING:=0}
 : ${PORTTESTING_FATAL:=yes}
 : ${PORTTESTING_RECURSIVE:=0}
+: ${PORT_RUN_TESTS:=0}
 : ${PRIORITY_BOOST_VALUE:=99}
 : ${RESTRICT_NETWORKING:=yes}
 : ${DISALLOW_NETWORKING:=no}
