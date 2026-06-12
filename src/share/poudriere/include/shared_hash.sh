@@ -289,6 +289,7 @@ shash_init_shm() {
 	SHASH_SHM_PREFIX="${shm_prefix:?}"
 	# Clean up stale segments from a previous run (crash, SIGKILL, etc.)
 	shash_cleanup_shm
+	SHASH_SHM_PREFIX="${shm_prefix:?}"
 	# Segments are auto-created on first shm_hash_set.
 	# SHASH_SHM_CAPACITY controls their size (default 131072).
 	: "${SHASH_SHM_CAPACITY:=131072}"
@@ -316,4 +317,5 @@ shash_cleanup_shm() {
 			;;
 		esac
 	done
+	unset SHASH_SHM_PREFIX
 }

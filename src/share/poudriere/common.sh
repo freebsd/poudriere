@@ -1976,8 +1976,6 @@ exit_handler() {
 	fi
 
 	shash_cleanup_shm
-	# Disable SHM so no new segments are created during cleanup.
-	SHASH_SHM_PREFIX=
 
 	parallel_shutdown
 
