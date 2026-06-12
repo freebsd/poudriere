@@ -575,8 +575,20 @@ shm_hash_getcmd(int argc, char **argv)
 				    pool + voff);
 			} else {
 				char vbuf[vlen + 1];
+				char *ifs;
 				memcpy(vbuf, pool + voff, vlen);
 				vbuf[vlen] = '\0';
+
+				if ((ifs = getenv("IFS")) == NULL)
+					ifs = " \t\n";
+				/* Trim trailing IFS chars. */
+				if (ifs[0] != '\0') {
+					while (vlen > 0 &&
+					    strchr(ifs,
+					    vbuf[vlen - 1]) != NULL)
+						--vlen;
+					vbuf[vlen] = '\0';
+				}
 				if (setvarsafe(var_return, vbuf, 0)) {
 					munmap(hdr, map_size);
 					INTON;
