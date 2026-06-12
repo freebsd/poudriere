@@ -69,8 +69,19 @@ shash_get() {
 
 	case "${SHASH_SHM_PREFIX:+set}" in
 	set)
+		_sh_value=
 		shm_hash_get "${SHASH_SHM_PREFIX}${sg_var:?}" \
-		    "${sg_key:?}" "${sg_var_return:?}" || return
+		    "${sg_key:?}" _sh_value || return
+		case "${sg_var_return}" in
+		-)
+			case "${_sh_value:+set}" in
+			set)
+				printf "%s\n" "${_sh_value:?}"
+				;;
+			esac
+			;;
+		*) setvar "${sg_var_return}" "${_sh_value-}" || return ;;
+		esac
 		return
 		;;
 	esac
