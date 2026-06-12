@@ -200,6 +200,12 @@ shash_read_mapfile() {
 	local srm_mapfile_hadle_var="$3"
 	local _shash_varkey_file
 
+	case "${SHASH_SHM_PREFIX:+set}" in
+	set)
+		unimplemented shash_read_mapfile "$@"
+		;;
+	esac
+
 	_shash_varkey_file "${srm_var}" "${srm_key}"
 	# shellcheck disable=SC2034
 	mapfile -q "${srm_mapfile_hadle_var}" "${_shash_varkey_file}" "re"
@@ -210,6 +216,12 @@ shash_write() {
 	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] || eargs shash_write '[-T]' var key
 	local flag Tflag
 	local OPTIND=1
+
+	case "${SHASH_SHM_PREFIX:+set}" in
+	set)
+		unimplemented shash_write "$@"
+		;;
+	esac
 
 	Tflag=
 	while getopts "T" flag; do
