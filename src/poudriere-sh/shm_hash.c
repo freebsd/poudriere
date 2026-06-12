@@ -152,6 +152,7 @@ shm_hash_do_create(const char *name, size_t capacity, size_t avg_data,
 	uint32_t nbuckets, pool_size, expected;
 	int fd;
 
+	assert(is_int_on() > 0);
 	/* Table size: ~150% of capacity, rounded up to a prime. */
 	nbuckets = (uint32_t)next_prime(capacity + capacity / 2 + 1);
 	pool_size = (uint32_t)(capacity * avg_data);
@@ -296,6 +297,7 @@ shm_hash_autocreate(const char *name, size_t *out_size)
 	const char *cap_str;
 	size_t capacity;
 
+	assert(is_int_on() > 0);
 	cap_str = getenv("SHASH_SHM_CAPACITY");
 	capacity = (cap_str != NULL) ? strtoul(cap_str, NULL, 10) : 131072;
 	if (capacity == 0)
@@ -315,6 +317,7 @@ shm_hash_map(const char *name, size_t *out_size)
 	size_t total;
 	int fd;
 
+	assert(is_int_on() > 0);
 	fd = shm_open(name, O_RDWR, 0);
 	if (fd == -1)
 		return (NULL);
@@ -670,8 +673,10 @@ shm_hash_destroycmd(int argc, char **argv)
 	if (argc != 2)
 		errx(EX_USAGE, "Usage: shm_hash_destroy name");
 
+	INTOFF;
 	if (shm_unlink(argv[1]) == -1 && errno != ENOENT)
 		err(EXIT_FAILURE, "shm_unlink(%s)", argv[1]);
+	INTON;
 
 	return (0);
 }
