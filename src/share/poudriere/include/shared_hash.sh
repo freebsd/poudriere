@@ -234,7 +234,7 @@ shash_remove() {
 	shash_get "$@" || sr_ret="$?"
 	case "${sr_ret}" in
 	0)
-		shash_unset "${sr_var}" "${sr_key}"
+		shash_unset "${sr_var}" "${sr_key}" || sr_ret="$?"
 		;;
 	esac
 	return "${sr_ret}"
