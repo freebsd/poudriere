@@ -4,6 +4,15 @@ set +e
 
 MASTERMNT=$(mktemp -d)
 
+set_test_contexts - '' '' <<-EOF
+SHASH_USE_SHM	0 1
+EOF
+
+while get_test_context; do
+	case "${SHASH_USE_SHM}" in
+	1) assert_true shash_init_shm ;;
+	esac
+
 echo "Working on ${MASTERMNT}"
 SHASH_VAR_PATH="${MASTERMNT}"
 value=
@@ -360,6 +369,11 @@ assert_ret_not 0 shash_get pkgname-origin "pkg 1.7" value
 	rm -f "${TMP}" "${TMP}.2" "${TMP}.3"
 	assert_ret 0 shash_unset description "pkg foo"
 }
+
+	case "${SHASH_USE_SHM}" in
+	1) assert_true shash_cleanup_shm ;;
+	esac
+done
 
 rm -rf "${MASTERMNT}"
 exit 0

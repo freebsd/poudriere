@@ -17,6 +17,15 @@ writer() {
 	done 2>/dev/null
 }
 
+set_test_contexts - '' '' <<-EOF
+SHASH_USE_SHM	0 1
+EOF
+
+while get_test_context; do
+	case "${SHASH_USE_SHM}" in
+	1) assert_true shash_init_shm ;;
+	esac
+
 echo "Working on ${MASTERMNT}"
 SHASH_VAR_PATH="${MASTERMNT}"
 
@@ -49,6 +58,11 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	assert_true kill "%${writerjob}"
 	assert_ret 143 timed_wait_and_kill_job 10 "%${writerjob}"
 }
+
+	case "${SHASH_USE_SHM}" in
+	1) assert_true shash_cleanup_shm ;;
+	esac
+done
 
 rm -rf "${MASTERMNT}"
 exit 0
