@@ -10219,14 +10219,15 @@ shash_cleanup_shm() {
 	*) return 0 ;;
 	esac
 	# Enumerate all shm segments matching our prefix.
-	posixshmcontrol ls 2>/dev/null |
-	    while read -r _ _ _ _ _seg; do
+	{
+		posixshmcontrol ls 2>/dev/null || :
+	} | while mapfile_read_loop_redir _ _ _ _ _seg; do
 		case "${_seg}" in
 		"${SHASH_SHM_PREFIX}"*)
 			shm_hash_destroy "${_seg}" 2>/dev/null || :
 			;;
 		esac
-	    done
+	done
 }
 
 # PWD will be MASTER_DATADIR after this
