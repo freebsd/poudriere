@@ -28,6 +28,7 @@
 : "${SHASH_VAR_NAME_SUB_BADCHARS:=" /"}"
 : "${SHASH_VAR_PATH:="${TMPDIR:-/tmp}"}"
 : "${SHASH_VAR_PREFIX="$$"}"
+: "${SHASH_SHM_DELETED:="!DELETED!"}"
 add_relpath_var SHASH_VAR_PATH || err "Failed to add SHASH_VAR_PATH to relpaths"
 
 _shash_var_name() {
@@ -70,8 +71,19 @@ shash_get() {
 	case "${SHASH_SHM_PREFIX:+set}" in
 	set)
 		_sh_value=
+		sg_ret=0
 		shm_hash_get "${SHASH_SHM_PREFIX}${sg_var:?}" \
-		    "${sg_key:?}" _sh_value || return
+		    "${sg_key:?}" _sh_value || sg_ret="$?"
+		case "${sg_ret}" in
+		0)
+			case "${_sh_value-}" in
+			"${SHASH_SHM_DELETED:?}")
+				_sh_value=
+				sg_ret=1
+				;;
+			esac
+			;;
+		esac
 		case "${sg_var_return}" in
 		-)
 			case "${_sh_value:+set}" in
@@ -82,7 +94,7 @@ shash_get() {
 			;;
 		*) setvar "${sg_var_return}" "${_sh_value-}" || return ;;
 		esac
-		return
+		return "${sg_ret}"
 		;;
 	esac
 	sg_ret=0
@@ -225,7 +237,8 @@ shash_remove_var() {
 
 	case "${SHASH_SHM_PREFIX:+set}" in
 	set)
-		shm_hash_destroy "${SHASH_SHM_PREFIX}${srv_var:?}" 2>/dev/null || :
+		shm_hash_destroy \
+		    "${SHASH_SHM_PREFIX}${srv_var:?}" 2>/dev/null || return
 		return
 		;;
 	esac
@@ -258,8 +271,10 @@ shash_unset() {
 
 	case "${SHASH_SHM_PREFIX:+set}" in
 	set)
-		# SHM hash is write-once; unset is a no-op.
-		return 0
+		shash_set "${su_var:?}" "${su_key:?}" \
+		    "${SHASH_SHM_DELETED:?}" ||
+		    return
+		return
 		;;
 	esac
 
