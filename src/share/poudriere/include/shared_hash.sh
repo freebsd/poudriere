@@ -67,10 +67,10 @@ shash_get() {
 	local sg_ret sg_rret
 	local -
 
-	case "${SHASH_SHM_PREFIX:+1}" in
-	1)
-		shm_hash_get "${SHASH_SHM_PREFIX}${sg_var}" \
-		    "${sg_key}" "${sg_var_return}"
+	case "${SHASH_SHM_PREFIX:+set}" in
+	set)
+		shm_hash_get "${SHASH_SHM_PREFIX}${sg_var:?}" \
+		    "${sg_key:?}" "${sg_var_return:?}" || return
 		return
 		;;
 	esac
@@ -113,9 +113,10 @@ shash_exists() {
 	local key="$2"
 	local _shash_var_path _shash_var_name _f
 
-	case "${SHASH_SHM_PREFIX:+1}" in
-	1)
-		shm_hash_exists "${SHASH_SHM_PREFIX}${var}" "${key}"
+	case "${SHASH_SHM_PREFIX:+set}" in
+	set)
+		shm_hash_exists "${SHASH_SHM_PREFIX}${var:?}" "${key:?}" ||
+		    return
 		return
 		;;
 	esac
@@ -136,18 +137,15 @@ shash_set() {
 	local value="$3"
 	local _shash_varkey_file
 
-	case "${SHASH_SHM_PREFIX:+1}" in
-	1)
+	case "${SHASH_SHM_PREFIX:+set}" in
+	set)
+		local clobber=
+
 		case "$-" in
-		*C*)
-			shm_hash_set -n "${SHASH_SHM_PREFIX}${var}" \
-			    "${key}" "${value}"
-			;;
-		*)
-			shm_hash_set "${SHASH_SHM_PREFIX}${var}" \
-			    "${key}" "${value}"
-			;;
+		*C*) clobber=1 ;;
 		esac
+		shm_hash_set ${clobber:+-n} "${SHASH_SHM_PREFIX}${var}" \
+		    "${key}" "${value}" || return
 		return
 		;;
 	esac
@@ -214,9 +212,9 @@ shash_remove_var() {
 	[ $# -eq 1 ] || eargs shash_remove_var var
 	local srv_var="$1"
 
-	case "${SHASH_SHM_PREFIX:+1}" in
-	1)
-		shm_hash_destroy "${SHASH_SHM_PREFIX}${srv_var}" 2>/dev/null || :
+	case "${SHASH_SHM_PREFIX:+set}" in
+	set)
+		shm_hash_destroy "${SHASH_SHM_PREFIX}${srv_var:?}" 2>/dev/null || :
 		return
 		;;
 	esac
@@ -247,8 +245,8 @@ shash_unset() {
 	local su_var="$1"
 	local su_key="$2"
 
-	case "${SHASH_SHM_PREFIX:+1}" in
-	1)
+	case "${SHASH_SHM_PREFIX:+set}" in
+	set)
 		# SHM hash is write-once; unset is a no-op.
 		return 0
 		;;
