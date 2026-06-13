@@ -71,44 +71,27 @@ shash_get() {
 	_sh_values=
 	_shash_var_path
 	_shash_var_name "${sg_var:?}" "${sg_key:?}"
-	# Ensure globbing is on
-	set +o noglob
-	# Don't glob the path.
-	for _f in "${_shash_var_path}"${_shash_var_name:?}; do
-		case "${_shash_var_path}${_shash_var_name:?}" in
-		*"*"*|*"["*|*"?"*)
-			case "${_f:?}" in
-			"${_shash_var_path}${_shash_var_name:?}")
-				# No file found
-				sg_ret=1
-				break
-			esac
-			;;
-		*)
-			;;
-		esac
-		sg_rret=0
+	_f="${_shash_var_path}${_shash_var_name:?}"
+	sg_rret=0
+	case "${sg_var_return:?}" in
+	-)
+		readlines_file -- "${_f:?}" - || sg_rret=$?
+		;;
+	*)
+		readlines_file -- "${_f:?}" _sh_value || sg_rret=$?
+		;;
+	esac
+	case "${sg_rret}" in
+	0)
 		case "${sg_var_return:?}" in
-		-)
-			readlines_file -- "${_f:?}" - || sg_rret=$?
-			;;
-		*)
-			readlines_file -- "${_f:?}" _sh_value || sg_rret=$?
-			;;
+		-) ;;
+		*) _sh_values="${_sh_values:+${_sh_values} }${_sh_value}" ;;
 		esac
-		case "${sg_rret}" in
-		0)
-			case "${sg_var_return:?}" in
-			-) ;;
-			*) _sh_values="${_sh_values:+${_sh_values} }${_sh_value}" ;;
-			esac
-			;;
-		*)
-			sg_ret="${sg_rret}"
-			continue
-			;;
-		esac
-	done
+		;;
+	*)
+		sg_ret="${sg_rret}"
+		;;
+	esac
 	case "${sg_var_return}" in
 	-) ;;
 	*) setvar "${sg_var_return}" "${_sh_values}" || return ;;
@@ -125,27 +108,11 @@ shash_exists() {
 
 	_shash_var_path
 	_shash_var_name "${var:?}" "${key:?}"
-	# Ensure globbing is on
-	set +o noglob
-	# Don't glob the path.
-	for _f in "${_shash_var_path}"${_shash_var_name}; do
-		case "${_shash_var_path}${_shash_var_name:?}" in
-		*"*"*|*"["*|*"?"*)
-			case "${_f:?}" in
-			"${_shash_var_path}${_shash_var_name:?}")
-				# No file found
-				return 1
-			esac
-			;;
-		*)
-			;;
-		esac
-		if [ ! -r "${_f:?}" ]; then
-			return 1
-		fi
-		return 0
-	done
-	return 1
+	_f="${_shash_var_path}${_shash_var_name}"
+	if [ ! -r "${_f:?}" ]; then
+		return 1
+	fi
+	return 0
 }
 
 shash_set() {
@@ -220,7 +187,7 @@ shash_remove_var() {
 	local srv_var="$1"
 
 	# This assumes globbing works for shash.
-	shash_unset "${srv_var:?}" "*"
+	_shash_unset "${srv_var:?}" "*"
 }
 
 shash_remove() {
@@ -243,12 +210,28 @@ shash_remove() {
 shash_unset() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs shash_unset var key
-	local var="$1"
-	local key="$2"
+	local su_var="$1"
+	local su_key="$2"
+
+	case "${su_var}" in
+	*"*"*) _gsub "${su_var}" '*' '\*' su_var ;;
+	esac
+	case "${su_key}" in
+	*"*"*) _gsub "${su_key}" '*' '\*' su_key ;;
+	esac
+	_shash_unset "${su_var}" "${su_key}"
+}
+
+# Globbing is allowed internally for shash_remove_var()
+_shash_unset() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs _shash_unset var key
+	local _shu_var="$1"
+	local _shu_key="$2"
 	local _shash_var_path _shash_var_name
 
 	_shash_var_path
-	_shash_var_name "${var:?}" "${key:?}"
+	_shash_var_name "${_shu_var:?}" "${_shu_key:?}"
 	# Ensure globbing is on
 	set +o noglob
 	# Don't glob the path.
