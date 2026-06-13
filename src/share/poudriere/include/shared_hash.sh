@@ -247,6 +247,13 @@ shash_unset() {
 	local su_var="$1"
 	local su_key="$2"
 
+	case "${SHASH_SHM_PREFIX:+1}" in
+	1)
+		# SHM hash is write-once; unset is a no-op.
+		return 0
+		;;
+	esac
+
 	case "${su_var}" in
 	*"*"*) _gsub "${su_var}" '*' '\*' su_var ;;
 	esac
@@ -264,12 +271,6 @@ _shash_unset() {
 	local _shu_key="$2"
 	local _shash_var_path _shash_var_name
 
-	case "${SHASH_SHM_PREFIX:+1}" in
-	1)
-		# SHM hash is write-once; unset is a no-op.
-		return 0
-		;;
-	esac
 	_shash_var_path
 	_shash_var_name "${_shu_var:?}" "${_shu_key:?}"
 	# Ensure globbing is on
