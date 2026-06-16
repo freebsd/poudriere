@@ -43,6 +43,10 @@ Options:
     -b branch   -- Branch to choose for fetching packages from official
                    repositories: valid options are: latest, quarterly,
                    release_*, or a url.
+    -e          -- Run 'make test' for each port after build and stage phases.
+                   This helps catch missing TEST_DEPENDS by running port tests
+                   in a clean environment where only declared dependencies are
+                   installed.
     -C          -- Clean only the packages listed on the command line or
                    -f file.  Implies -c for -a.
     -c          -- Clean all the previously built binary packages and logs.
@@ -98,12 +102,13 @@ BUILD_REPO=1
 INTERACTIVE_MODE=0
 OVERLAYS=""
 COMMIT=1
+PORT_RUN_TESTS=0
 
 if [ $# -eq 0 ]; then
 	usage
 fi
 
-while getopts "ab:B:CcFf:HiIj:J:knNO:p:RrSTtvwz:" FLAG; do
+while getopts "ab:B:CceFf:HiIj:J:knNO:p:RrSTtvwz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			ALL=1
@@ -120,6 +125,9 @@ while getopts "ab:B:CcFf:HiIj:J:knNO:p:RrSTtvwz:" FLAG; do
 			;;
 		C)
 			CLEAN_LISTED=1
+			;;
+		e)
+			PORT_RUN_TESTS=1
 			;;
 		F)
 			export MASTER_SITE_BACKUP=''
