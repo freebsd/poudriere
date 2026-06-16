@@ -1039,7 +1039,8 @@ EOF
 	    err 1 "pkg update failed"
 	# Omit the man/debug/kernel/src and tests packages, unneeded for us.
 	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ search -qCx '^FreeBSD-.*' | grep -vE -- '-man|-dbg|-kernel-|-tests|-src-' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ install -y
-	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ search -q '^FreeBSD-src-sys' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ install -y
+	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ install -y FreeBSD-src-sys || \
+	    err 1 "Failed to install FreeBSD-src-sys (needed for sys/param.h)"
 	if [ -n "${KERNEL}" ]; then
 		pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ install -y FreeBSD-kernel-"${KERNEL}" || \
 			err 1 "Failed to install FreeBSD-kernel-${KERNEL}"
