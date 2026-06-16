@@ -5008,6 +5008,36 @@ download_from_repo_post_delete() {
 	bset "stats_fetched" "${_read_file_lines_read:?}"
 }
 
+# download_from_repo() rewrites pkg_fetch on each call. prepare_ports() may
+# fetch more than once (an initial pass plus a re-fetch of packages the
+# incremental checks deleted), so the fetched lists are accumulated into
+# pkg_fetch_all and reduced back into pkg_fetch by download_from_repo_finalize().
+download_from_repo_accumulate() {
+	[ $# -eq 0 ] || eargs download_from_repo_accumulate
+	if [ -s "${MASTER_DATADIR:?}/pkg_fetch" ]; then
+		cat "${MASTER_DATADIR:?}/pkg_fetch" \
+		    >> "${MASTER_DATADIR:?}/pkg_fetch_all"
+	fi
+}
+
+# Reduce pkg_fetch to the deduplicated set of fetched packages that still
+# exist (a package fetched in an earlier pass may have been deleted by the
+# incremental checks), for download_from_repo_post_delete().
+download_from_repo_finalize() {
+	[ $# -eq 0 ] || eargs download_from_repo_finalize
+	local pkgname
+
+	if [ -s "${MASTER_DATADIR:?}/pkg_fetch_all" ]; then
+		sort -u "${MASTER_DATADIR:?}/pkg_fetch_all" |
+		    while mapfile_read_loop_redir pkgname; do
+			if [ -e "${PACKAGES:?}/All/${pkgname}.${PKG_EXT}" ]; then
+				echo "${pkgname}"
+			fi
+		done > "${MASTER_DATADIR:?}/pkg_fetch"
+	fi
+	rm -f "${MASTER_DATADIR:?}/pkg_fetch_all"
+}
+
 validate_package_branch() {
 	[ $# -eq 1 ] || eargs validate_package_branch PACKAGE_FETCH_BRANCH
 	local PACKAGE_FETCH_BRANCH="$1"
@@ -5177,6 +5207,28 @@ sanity_check_pkgs() {
 		return 1	# Packages deleted
 	fi
 	err 1 "Failure during sanity check"
+}
+
+# Repeatedly delete packages with missing dependencies until the repository
+# converges (the recursive rebuild). A no-op when SKIP_RECURSIVE_REBUILD is set.
+sanity_check_pkgs_loop() {
+	[ $# -eq 0 ] || eargs sanity_check_pkgs_loop
+
+	case "${SKIP_RECURSIVE_REBUILD}" in
+	0) ;;
+	*)
+		msg "Skipping recursive rebuild"
+		return 0
+		;;
+	esac
+	# PKG_NO_VERSION_FOR_DEPS still uses this to trim out old packages with
+	# versioned-dependencies which no longer exist.
+	msg_verbose "Checking packages for missing dependencies"
+	while :; do
+		if sanity_check_pkgs; then
+			break
+		fi
+	done
 }
 
 check_leftovers() {
@@ -7585,7 +7637,7 @@ _delete_old_pkg() {
 	case "${pkg_arch:+set}" in
 	set)
 		arch="${P_PKG_ABI:?}"
-		if shash_remove pkgname-no_arch "${pkgname}" no_arch; then
+		if shash_get pkgname-no_arch "${pkgname}" no_arch; then
 			arch="${arch%:*}:*"
 		fi
 		case "${pkg_arch}" in
@@ -7655,7 +7707,7 @@ _delete_old_pkg() {
 		fi
 
 		for td in ${dep_types}; do
-			shash_remove "pkgname-${td}_deps" "${new_pkgname}" \
+			shash_get "pkgname-${td}_deps" "${new_pkgname}" \
 			    raw_deps || raw_deps=
 			for d in ${raw_deps}; do
 				key="${d%:*}"
@@ -7809,7 +7861,7 @@ _delete_old_pkg() {
 	"no") ;;
 	*)
 		if have_ports_feature SELECTED_OPTIONS; then
-			shash_remove pkgname-options "${new_pkgname}" \
+			shash_get pkgname-options "${new_pkgname}" \
 			    current_options || current_options=
 		else
 			# Backwards-compat: Fallback on pretty-print-config.
@@ -10390,7 +10442,13 @@ prepare_ports() {
 		else
 			trim_ignored
 		fi
+		# Accumulate the packages fetched across both passes (the initial
+		# fetch here and a possible re-fetch below) for
+		# download_from_repo_post_delete(); download_from_repo() rewrites
+		# pkg_fetch on each call.
+		: > "${MASTER_DATADIR:?}/pkg_fetch_all"
 		download_from_repo
+		download_from_repo_accumulate
 		if ! ensure_pkg_installed; then
 			delete_all_pkgs "pkg bootstrap missing: unable to inspect existing packages"
 		fi
@@ -10407,20 +10465,22 @@ prepare_ports() {
 			    err 1 "Failure looking up pkg ABI"
 		fi
 		determine_base_shlibs
-		delete_old_pkgs
 
-		# PKG_NO_VERSION_FOR_DEPS still uses this to trim out old
-		# packages with versioned-dependencies which no longer exist.
-		if [ ${SKIP_RECURSIVE_REBUILD} -eq 0 ]; then
-			msg_verbose "Checking packages for missing dependencies"
-			while :; do
-				if sanity_check_pkgs; then
-					break
-				fi
-			done
-		else
-			msg "Skipping recursive rebuild"
-		fi
+		# delete_old_pkgs()/sanity_check_pkgs() may delete stale packages
+		# that were already present at the first download_from_repo().
+		# Re-fetch those instead of rebuilding them by doing a second pass.
+		delete_old_pkgs
+		sanity_check_pkgs_loop
+		case "${PACKAGE_FETCH_BRANCH-}" in
+		"") ;;
+		*)
+			rm -f "${MASTER_DATADIR:?}/pkg_fetch"
+			download_from_repo
+			download_from_repo_accumulate
+			sanity_check_pkgs_loop
+			;;
+		esac
+		download_from_repo_finalize
 
 		delete_stale_symlinks_and_empty_dirs
 		delete_stale_pkg_cache
