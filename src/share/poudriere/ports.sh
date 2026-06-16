@@ -80,6 +80,13 @@ set_command() {
 	COMMAND="$1"
 }
 
+case "$1" in
+	create|delete|list|update)
+		set_command "$1"
+		shift
+		;;
+esac
+
 while getopts "B:cDFuU:dklp:qf:nM:m:vy" FLAG; do
 	case "${FLAG}" in
 		B)
