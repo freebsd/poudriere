@@ -4907,6 +4907,10 @@ download_from_repo() {
 	)
 	while mapfile_read_loop "${MASTER_DATADIR:?}/pkg_fetch" pkgname; do
 		msg "Package fetch: Using cached copy of ${COLOR_PORT}${pkgname}${COLOR_RESET}"
+		# Mark this package as fetched so sanity_check_pkg() does not
+		# delete it just because a queued dependency's package is not
+		# present yet.
+		shash_set pkgname-fetched "${pkgname}" 1
 	done
 	umountfs "${MASTERMNT:?}/var/cache/pkg"
 	rm -f "${wantedpkgs}"
@@ -5119,6 +5123,15 @@ sanity_check_pkg() {
 			;;
 		esac
 		if [ -e "${PACKAGES:?}/All/${dep_pkgname}.${PKG_EXT}" ]; then
+			continue
+		fi
+		# If the package was just downloaded, its recorded dependencies
+		# are correct. Don't delete it if a dependency is missing and
+		# already queued to be (re)built. Locally built
+		# packages still follow the recursive rebuild below.
+		# See download_from_repo().
+		if shash_exists pkgname-fetched "${pkgname}" &&
+		    pkgqueue_contains build "${dep_pkgname}"; then
 			continue
 		fi
 		case "${PKG_NO_VERSION_FOR_DEPS:?}" in
@@ -10431,6 +10444,7 @@ prepare_ports() {
 			    pkgname-lib_deps \
 			    pkgname-trim_ignored \
 			    pkgname-skipped \
+			    pkgname-fetched \
 			    ; do
 				shash_remove_var "${shash_bucket}" || :
 			done
