@@ -3352,13 +3352,13 @@ commit_packages() {
 	# mostly incase pkg adds a new top-level repo or the ports framework
 	# starts creating a new directory
 	find "${PACKAGES:?}/" -mindepth 1 -maxdepth 1 \
-	    \( ! -name '.*' -o -name '.jailversion' -o -name '.buildname' \) |
+	    \( ! -name '.*' -o -name '.jailversion' -o -name '.buildname' -o -name '.portscommit' \) |
 	    while mapfile_read_loop_redir path; do
 		name=${path##*/}
 		[ ! -L "${PACKAGES_ROOT:?}/${name:?}" ] || continue
 		if [ -e "${PACKAGES_ROOT:?}/${name:?}" ]; then
 			case "${name}" in
-			.buildname|.jailversion|\
+			.buildname|.jailversion|.portscommit|\
 			"data.${PKG_EXT}"|data.txz|\
 			"meta.${PKG_EXT}"|meta.txz|\
 			"digests.${PKG_EXT}"|digests.txz|\
@@ -3394,7 +3394,7 @@ symlink to .latest/${name}"
 	# Look for broken top-level links and remove them, if they reference
 	# the old directory
 	find -L "${PACKAGES_ROOT:?}/" -mindepth 1 -maxdepth 1 \
-	    \( ! -name '.*' -o -name '.jailversion' -o -name '.buildname' \) \
+	    \( ! -name '.*' -o -name '.jailversion' -o -name '.buildname' -o -name '.portscommit' \) \
 	    -type l |
 	    while mapfile_read_loop_redir path; do
 		link="$(readlink "${path:?}")"
@@ -10478,6 +10478,10 @@ prepare_ports() {
 		jget ${JAILNAME} version > "${PACKAGES:?}/.jailversion" || \
 		    err 1 "Missing version metadata for jail"
 		echo "${BUILDNAME}" > "${PACKAGES:?}/.buildname"
+		local _portscommit_hash
+		if shash_get ports_metadata top_git_hash _portscommit_hash; then
+			echo "${_portscommit_hash}" > "${PACKAGES:?}/.portscommit"
+		fi
 	fi
 
 	return 0
