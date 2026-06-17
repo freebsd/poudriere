@@ -127,6 +127,7 @@ dist_awk_DATA= src/share/poudriere/awk/dependency_loop.awk \
 dist_html_DATA= 	src/share/poudriere/html/build.html \
 			src/share/poudriere/html/index.html \
 			src/share/poudriere/html/jail.html \
+			src/share/poudriere/html/log.html \
 			src/share/poudriere/html/robots.txt
 dist_assets_DATA=	src/share/poudriere/html/assets/poudriere.js \
 			src/share/poudriere/html/assets/logo-light.png \

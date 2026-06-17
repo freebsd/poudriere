@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<!--
+/*
+ * Copyright (c) 2026 Tiago Gasiba <tiga@FreeBSD.org>
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Poudriere log</title>
+
+    <link
+      href="assets/bootstrap-5.3.2/css/bootstrap.min.css"
+      type="text/css"
+      rel="stylesheet"
+    />
+    <link rel="icon" type="image/png" href="assets/favicon.png" />
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+      }
+      #log_pre {
+        flex: 1 1 auto;
+        margin: 0;
+        padding: 1rem;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar bg-light p-2 border-bottom">
+      <div class="container-fluid">
+        <span class="navbar-brand mb-0 h6" id="log_title">Log</span>
+        <span>
+          <span id="log_status" class="badge text-bg-secondary me-2"></span>
+          <a
+            id="log_raw"
+            class="btn btn-sm btn-outline-secondary"
+            href="#"
+            target="logs"
+            >Open raw log</a
+          >
+        </span>
+      </div>
+    </nav>
+    <pre id="log_pre"></pre>
+
+    <script
+      src="assets/jquery-3.7.1/jquery-3.7.1.min.js"
+      type="text/javascript"
+    ></script>
+    <script type="text/javascript">
+      server_style = "hosted";
+    </script>
+    <script type="text/javascript">
+      var poll_interval = 1;
+      var log_url = "";
+      var log_offset = 0;
+      var stopped = false;
+
+      function getParameterByName(name) {
+        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
+        var results = regex.exec(location.search);
+        return results == null
+          ? ""
+          : decodeURIComponent(results[1].replace(/\+/g, " "));
+      }
+
+      function byte_length(str) {
+        return new Blob([str]).size;
+      }
+
+      function append(text) {
+        var pre = document.getElementById("log_pre");
+        var at_bottom =
+          pre.scrollHeight - pre.scrollTop - pre.clientHeight < 40;
+        pre.appendChild(document.createTextNode(text));
+        if (at_bottom) {
+          pre.scrollTop = pre.scrollHeight;
+        }
+      }
+
+      function set_text(text) {
+        var pre = document.getElementById("log_pre");
+        pre.textContent = text;
+        pre.scrollTop = pre.scrollHeight;
+      }
+
+      function set_status(text, cls) {
+        $("#log_status")
+          .attr("class", "badge me-2 " + cls)
+          .text(text);
+      }
+
+      function update() {
+        if (stopped) {
+          return;
+        }
+        $.ajax({
+          url: log_url,
+          dataType: "text",
+          cache: false,
+          headers: {
+            "Cache-Control": "no-cache",
+            Range: "bytes=" + log_offset + "-",
+          },
+          success: function (data, textStatus, xhr) {
+            var content_range, total;
+
+            if (xhr.status == 206) {
+              if (data) {
+                append(data);
+              }
+              content_range = xhr.getResponseHeader("Content-Range");
+              if (content_range && content_range.indexOf("/") != -1) {
+                total = parseInt(content_range.split("/")[1], 10);
+              }
+              if (!isNaN(total)) {
+                log_offset = total;
+              } else {
+                log_offset += byte_length(data);
+              }
+            } else {
+              set_text(data);
+              log_offset = byte_length(data);
+            }
+            set_status("following", "text-bg-success");
+          },
+          error: function (xhr) {
+            if (xhr.status == 416) {
+              set_status("following", "text-bg-success");
+            } else if (xhr.status == 404) {
+              set_status("not found", "text-bg-danger");
+            } else {
+              set_status("error " + xhr.status, "text-bg-warning");
+            }
+          },
+          complete: function () {
+            if (!stopped) {
+              setTimeout(update, poll_interval * 1000);
+            }
+          },
+        });
+      }
+
+      $(document).ready(function () {
+        var mastername, buildname, pkg, errors, data_url;
+
+        pkg = getParameterByName("pkg");
+        errors = getParameterByName("errors");
+        if (!pkg) {
+          set_text("Invalid request. 'pkg' parameter required.");
+          set_status("error", "text-bg-danger");
+          return;
+        }
+
+        if (server_style == "hosted") {
+          mastername = getParameterByName("mastername");
+          buildname = getParameterByName("build");
+          if (!mastername || !buildname) {
+            set_text(
+              "Invalid request. 'mastername' and 'build' required."
+            );
+            set_status("error", "text-bg-danger");
+            return;
+          }
+          data_url = "data/" + mastername + "/" + buildname + "/";
+        } else {
+          data_url = "";
+        }
+
+        log_url =
+          data_url + "logs/" + (errors ? "errors/" : "") + pkg + ".log";
+
+        document.title = pkg + " - Poudriere log";
+        $("#log_title").text(pkg);
+        $("#log_raw").attr("href", log_url);
+        set_status("loading", "text-bg-secondary");
+        update();
+      });
+    </script>
+  </body>
+</html>
