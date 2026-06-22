@@ -458,6 +458,15 @@ already exists.
 .Bd -literal -offset 2n
 .Li # Ic poudriere jail -l -n -q | grep --quiet '^130i386$'
 .Ed
+.It Sy Example 3\&: No Creating a Jail using base system packages
+.Pp
+The following example creates a new jail called
+.Dq 151amd64
+from the official base system packages repository for
+.Fx 15.1-RELEASE .
+.Bd -literal -offset 2n
+.Li # Ic poudriere jail -c -j 151amd64 -v 15.1-RELEASE -m pkgbase=base_release_1 -U https://pkg.freebsd.org/
+.Ed
 .El
 .Sh SEE ALSO
 .Xr jail 8 ,
