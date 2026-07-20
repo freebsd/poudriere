@@ -251,8 +251,20 @@ must
 .Em not
 be provided.
 .Pp
-Note that building kernel module will not be possible as there is no
-package with the source code.
+The
+.Nm FreeBSD-src-sys
+package is always installed
+.Pq needed for Pa sys/param.h .
+The
+.Nm FreeBSD-src
+package is also installed unless
+.Fl S
+is specified or
+.Va NO_SRC
+is set to
+.Dq yes
+in
+.Pa poudriere.conf .
 .It Cm src= Ns Ar path
 Install from the given directory at
 .Ar path .
@@ -369,6 +381,11 @@ as the
 source tree mounted inside the jail
 or from the host for
 .Fl m Cm null .
+For
+.Fl m Cm pkgbase ,
+this suppresses installation of the
+.Nm FreeBSD-src
+packages.
 .It Fl t Ar version
 Upgrade the jail to the specified
 .Ar version
