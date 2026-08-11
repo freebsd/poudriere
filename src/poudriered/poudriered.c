@@ -491,21 +491,23 @@ execute_cmd(void)
 	int error;
 	char **argv;
 	char *buf, *tofree, *arg;
+	const char *logpath;
 	int argc, argvl;
 	const ucl_object_t *o, *a, *l;
 
 	if (running == NULL)
 		return;
 
+	logpath = "/var/log/poudriered.log";
 	l = ucl_object_find_key(running, "log");
-	if (l != NULL)
-		mkdirs(ucl_object_tostring(l), true);
-	fds[0] = open(l != NULL ? ucl_object_tostring(l) :
-	    "/tmp/poudriered.log", O_CREAT|O_RDWR|O_TRUNC, 0644);
+	/* Custom log paths are only accepted from trusted scheduled commands. */
+	if (l != NULL && l->type == UCL_STRING) {
+		logpath = ucl_object_tostring(l);
+		mkdirs(logpath, true);
+	}
+	fds[0] = open(logpath, O_CREAT|O_RDWR|O_TRUNC|O_NOFOLLOW, 0644);
 	if (fds[0] == -1) {
-		syslog(LOG_ERR, "Unable to open %s: %s",
-		    l != NULL ? ucl_object_tostring(l) : "/tmp/poudriered.log",
-		    strerror(errno));
+		syslog(LOG_ERR, "Unable to open %s: %s", logpath, strerror(errno));
 	}
 	if (fds[0] == -1 && (fds[0] = open("/dev/null", O_RDWR)) == -1) {
 		syslog(LOG_ERR, "Unable to open /dev/null");
@@ -626,6 +628,12 @@ client_exec(struct client *cl)
 	ucl_parser_free(p);
 
 	syslog(LOG_INFO, "uid(%d) sent request: %s", cl->uid, cl->buf->buf);
+	if (ucl_object_find_key(cmd, "log") != NULL) {
+		send_error(cl, "Client-supplied log paths are not supported");
+		keep(ucl_object_find_key(cmd, "keep"), cl);
+		ucl_object_unref(cmd);
+		return;
+	}
 
 	if ((c = ucl_object_find_key(cmd, "operation"))) {
 		/* The user specified an operation not a command */
