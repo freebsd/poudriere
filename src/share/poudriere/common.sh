@@ -4404,6 +4404,7 @@ build_port() {
 	local max_execution_time allownetworking
 	local _need_root NEED_ROOT PREFIX MAX_FILES
 	local JEXEC_SETSID
+	local pkg_stage pkg_stage_real pkg_target
 
 	pkgname_is_valid "${pkgname}" ||
 	    err 1 "build_port: Invalid PKGNAME '${pkgname}'"
@@ -4760,13 +4761,40 @@ may show failures if the port does not respect PREFIX."
 		fi
 	done
 
-	if [ -d "${PACKAGES}/.npkg/${pkgname}" ]; then
+	pkg_stage="${PACKAGES}/.npkg/${pkgname}"
+	if [ -d "${pkg_stage}" ]; then
 		# everything was fine we can copy the package to the package
 		# directory
-		find "${PACKAGES}/.npkg/${pkgname}" \
-			-mindepth 1 \( -type f -or -type l \) | \
-			while mapfile_read_loop_redir pkg_path; do
-			pkg_file="${pkg_path#${PACKAGES}/.npkg/${pkgname}}"
+		# Only the pkg bootstrap needs package-manager compatibility links.
+		pkg_stage_real=
+		case "${port}" in
+		ports-mgmt/pkg|ports-mgmt/pkg-devel)
+			pkg_stage_real="$(realpath -q "${pkg_stage}")" ||
+			    err 1 "build_port: realpath ${pkg_stage}"
+			;;
+		esac
+		{
+			case "${pkg_stage_real}" in
+			"") ;;
+			*)
+				# Process links first so their targets are still in staging.
+				find "${pkg_stage}" -mindepth 1 -type l
+				;;
+			esac
+			find "${pkg_stage}" -mindepth 1 -type f
+		} |
+		    while mapfile_read_loop_redir pkg_path; do
+			if [ -L "${pkg_path}" ]; then
+				pkg_target="$(realpath -q "${pkg_path}" || :)"
+				case "${pkg_target}" in
+				"${pkg_stage_real:?}/"*) ;;
+				*)
+					msg_warn "Ignoring package symlink outside staging: ${pkg_path}"
+					continue
+					;;
+				esac
+			fi
+			pkg_file="${pkg_path#"${pkg_stage}"}"
 			pkg_base="${pkg_file%/*}"
 			mkdir -p "${PACKAGES:?}/${pkg_base}"
 			mv "${pkg_path}" "${PACKAGES:?}/${pkg_base}"
