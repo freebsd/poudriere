@@ -4405,6 +4405,9 @@ build_port() {
 	local _need_root NEED_ROOT PREFIX MAX_FILES
 	local JEXEC_SETSID
 
+	pkgname_is_valid "${pkgname}" ||
+	    err 1 "build_port: Invalid PKGNAME '${pkgname}'"
+
 	_my_path mnt
 	_log_path log
 
@@ -5330,6 +5333,16 @@ print_phase_footer() {
 	echo "==========================================================================="
 }
 
+pkgname_is_valid() {
+	[ $# -eq 1 ] || eargs pkgname_is_valid pkgname
+	local pkgname="$1"
+
+	case "${pkgname}" in
+	""|"."|".."|*/*) return 1 ;;
+	esac
+	return 0
+}
+
 build_pkg() {
 	[ $# -ne 2 ] && eargs build_pkg pkgname PORTTESTING
 	local pkgname="$1"
@@ -5345,6 +5358,9 @@ build_pkg() {
 	local ret=0
 	local tmpfs_blacklist_dir
 	local elapsed now pkgname_varname jpkg originspec
+
+	pkgname_is_valid "${pkgname}" ||
+	    err 1 "build_pkg: Invalid PKGNAME '${pkgname}'"
 
 	_my_path mnt
 	_my_name name
@@ -5721,6 +5737,12 @@ deps_fetch_vars() {
 
 	[ -n "${_pkgname}" ] || \
 	    err 1 "deps_fetch_vars: failed to get PKGNAME for ${COLOR_PORT}${originspec}${COLOR_RESET}"
+	if ! pkgname_is_valid "${_pkgname}"; then
+		msg_error "${COLOR_PORT}${origin}${COLOR_RESET} has invalid" \
+		    "PKGNAME '${_pkgname}'. Package names may not be empty," \
+		    "'.', '..', or contain '/'."
+		return 1
+	fi
 
 	# Validate CATEGORIES is proper to avoid:
 	# - Pkg not registering the dependency
