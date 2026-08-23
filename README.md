@@ -38,4 +38,4 @@ Getting started with poudriere
 Build status
 ------------------------------
 
-* [![Build Status](https://api.cirrus-ci.com/github/freebsd/poudriere.svg?branch=master)](https://cirrus-ci.com/github/freebsd/poudriere)
+* [![builds.sr.ht status](https://builds.sr.ht/~brd/poudriere.svg)](https://builds.sr.ht/~brd/poudriere?)
