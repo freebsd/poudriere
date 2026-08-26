@@ -646,7 +646,7 @@ client_exec(struct client *cl)
 				else
 					send_ok(cl, "reloaded");
 			} else if (!strcmp(ucl_object_tostring(c), "list")) {
-				send_object(cl, queue);
+				send_object(cl, ucl_object_ref(queue));
 			} else if (!strcmp(ucl_object_tostring(c), "status")) {
 				msg = ucl_object_typed_new(UCL_OBJECT);
 				ucl_object_insert_key(msg,
