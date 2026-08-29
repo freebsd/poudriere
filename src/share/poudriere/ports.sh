@@ -285,24 +285,32 @@ create)
 				err 1 "svn or svnlite not installed. Perhaps you need to 'pkg install subversion'"
 			fi
 
-			msg_n "Checking out the ports tree..."
+			if [ -n "${quiet}" ]; then
+				msg_n "Checking out the ports tree..."
+			else
+				msg "Checking out the ports tree..."
+			fi
 			[ "${BRANCH}" = "none" ] && BRANCH=""
 			${SVN_CMD} ${quiet} co \
 				${SVN_PRESERVE_TIMESTAMP} \
 				${SVN_FULLURL}${BRANCH:+/${BRANCH}} \
 				${PTMNT} || err 1 " fail"
-			echo " done"
+			[ -n "${quiet}" ] && echo " done"
 			;;
 		git*)
 			# !! Any changes here should be considered for jail.sh too.
 			if [ ! -x "${GIT_CMD}" ]; then
 				err 1 "Git is not installed. Perhaps you need to 'pkg install git'"
 			fi
-			msg_n "Cloning the ports tree..."
+			if [ -n "${quiet}" ]; then
+				msg_n "Cloning the ports tree..."
+			else
+				msg "Cloning the ports tree..."
+			fi
 			${GIT_CMD} clone ${GIT_DEPTH} ${quiet} \
 			    ${BRANCH:+-b ${BRANCH}} ${GIT_FULLURL} ${PTMNT} || \
 			    err 1 " fail"
-			echo " done"
+			[ -n "${quiet}" ] && echo " done"
 			;;
 		esac
 		pset ${PTNAME} method ${METHOD}
@@ -378,20 +386,28 @@ update)
 		echo " done"
 		;;
 	svn*)
-		msg_n "Updating portstree \"${PTNAME}\" with ${METHOD}..."
+		if [ -n "${quiet}" ]; then
+			msg_n "Updating portstree \"${PTNAME}\" with ${METHOD}..."
+		else
+			msg "Updating portstree \"${PTNAME}\" with ${METHOD}..."
+		fi
 		${SVN_CMD} upgrade ${PORTSMNT:-${PTMNT}} 2>/dev/null || :
 		${SVN_CMD} ${quiet} update \
 			${SVN_PRESERVE_TIMESTAMP} \
 			${PORTSMNT:-${PTMNT}} || \
 		    err 1 " fail"
-		echo " done"
+		[ -n "${quiet}" ] && echo " done"
 		;;
 	git*)
 		# !! Any changes here should be considered for jail.sh too.
-		msg_n "Updating portstree \"${PTNAME}\" with ${METHOD}..."
+		if [ -n "${quiet}" ]; then
+			msg_n "Updating portstree \"${PTNAME}\" with ${METHOD}..."
+		else
+			msg "Updating portstree \"${PTNAME}\" with ${METHOD}..."
+		fi
 		${GIT_CMD} -C ${PORTSMNT:-${PTMNT}} pull --rebase ${quiet} || \
 		    err 1 " fail"
-		echo " done"
+		[ -n "${quiet}" ] && echo " done"
 		;;
 	null|none) msg "Not updating portstree \"${PTNAME}\" with method ${METHOD}" ;;
 	*)
