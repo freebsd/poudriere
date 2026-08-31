@@ -183,7 +183,7 @@ get_uefi_bootname() {
 make_esp_file() {
     local file size loader device stagedir fatbits efibootname
 
-    msg "Creating ESP image"
+    msg_n "Creating ESP image..."
     file=$1
     size=$2
     loader=$3
@@ -210,7 +210,7 @@ make_esp_file() {
 	"${file}" "${stagedir}" \
 	>/dev/null 2>&1
     rm -rf "${stagedir:?}"
-    msg "ESP Image created"
+    echo " done"
 }
 
 # Convert @flavor from package list to a unique entry of pkgname, otherwise it
