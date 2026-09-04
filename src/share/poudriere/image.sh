@@ -263,7 +263,7 @@ install_world_from_pkgbase()
 install_world()
 {
     # Use of tar given cpdup has a pretty useless -X option for this case
-	msg "Installing world with tar"
+	msg_n "Installing world with tar..."
 	tar -C ${mnt:?} -X ${excludelist} -cf - . | tar -xf - -C ${WRKDIR:?}/world
 	touch ${WRKDIR:?}/src.conf
 	[ ! -f ${POUDRIERED}/src.conf ] || cat ${POUDRIERED}/src.conf > ${WRKDIR:?}/src.conf
@@ -273,7 +273,7 @@ install_world()
 	if [ -f ${mnt:?}/usr/src/Makefile ]; then
 	    make -s -C ${mnt:?}/usr/src DESTDIR=${WRKDIR:?}/world BATCH_DELETE_OLD_FILES=yes SRCCONF=${WRKDIR:?}/src.conf delete-old delete-old-libs
 	fi
-	msg "Installing world done"
+	echo " done"
 }
 
 HOSTNAME=poudriere-image
