@@ -5618,7 +5618,7 @@ build_port() {
 			# Skip for all linux ports, they are not safe
 			*"linux"*) ;;
 			*)
-				msg "Checking shared library dependencies"
+				msg "Checking shared library dependencies..."
 				cleanenv injail "${PKG_BIN}" query '%Fp' "${pkgname}" | \
 				    cleanenv injail xargs readelf -d 2>/dev/null | \
 				    grep NEEDED | sort -u
