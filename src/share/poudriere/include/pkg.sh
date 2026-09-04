@@ -740,7 +740,7 @@ build_repo() {
 		if [ -n "${repokeyprefix}" ]; then
 			repokeyprefix="${repokeyprefix}:"
 		fi
-		msg "Signing repository with key: ${PKG_REPO_SIGNING_KEY}"
+		msg "Signing repository with key: ${PKG_REPO_SIGNING_KEY}..."
 		install -m 0400 "${repokeypath}" \
 			"${MASTERMNT:?}/tmp/repo.key"
 		injail ${PKG_BIN:?} repo \
@@ -754,7 +754,7 @@ build_repo() {
 	elif [ "${PKG_REPO_FROM_HOST:-no}" = "yes" ]; then
 		case "${SIGNING_COMMAND:+set}" in
 		set)
-			msg "Signing repository with command: ${SIGNING_COMMAND}"
+			msg "Signing repository with command: ${SIGNING_COMMAND}..."
 			;;
 		esac
 		# Sometimes building repo from host is needed if
@@ -770,7 +770,7 @@ build_repo() {
 	else
 		case "${SIGNING_COMMAND:+set}" in
 		set)
-			msg "Signing repository with command: ${SIGNING_COMMAND}"
+			msg "Signing repository with command: ${SIGNING_COMMAND}..."
 			;;
 		esac
 		JNETNAME="n" injail ${PKG_BIN:?} repo \
