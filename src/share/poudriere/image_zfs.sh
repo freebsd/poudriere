@@ -31,9 +31,10 @@ _zfs_writereplicationstream()
 	# $1: snapshot to recursively replicate
 	# $2: Image name to write replication stream to
 	[ $# -eq 2 ] || eargs _zfs_writereplicationstream snapshot_from image_to
-	msg "Creating replication stream"
+	msg_n "Creating replication stream..."
 	zfs send ${ZFS_SEND_FLAGS} "$1" > "${OUTPUTDIR}/$2" ||
 	    err 1 "Failed to save ZFS replication stream"
+	echo " done"
 }
 
 zfs_check()
@@ -63,7 +64,7 @@ zfs_prepare()
 	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
 	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
 
-	msg "Creating temporary ZFS pool"
+	msg_n "Creating temporary ZFS pool..."
 	if [ -n "${ZFS_COMPATIBILITY}" ]; then
 		compatibility_opt="-o compatibility=${ZFS_COMPATIBILITY}"
 	else
@@ -78,12 +79,14 @@ zfs_prepare()
 		${compatibility_opt} \
 		-t ${zroot} \
 		-R ${WRKDIR}/world ${ZFS_POOL_NAME} /dev/${md} || exit
+	echo " done"
 
 	if [ -n "${ORIGIN_IMAGE}" ]; then
-		msg "Importing previous ZFS Datasets"
+		msg_n "Importing previous ZFS Datasets..."
 		zfs recv -F ${zroot} < "${ORIGIN_IMAGE}"
+		echo " done"
 	else
-		msg "Creating ZFS Datasets"
+		msg_n "Creating ZFS Datasets..."
 		zfs create -o mountpoint=none ${zroot}/${ZFS_BEROOT_NAME}
 		zfs create -o mountpoint=/ ${zroot}/${ZFS_BEROOT_NAME}/${ZFS_BOOTFS_NAME}
 		zfs create -o mountpoint=/tmp -o exec=on -o setuid=off ${zroot}/tmp
@@ -99,6 +102,7 @@ zfs_prepare()
 		zfs create -o atime=on ${zroot}/var/mail
 		zfs create -o setuid=off ${zroot}/var/tmp
 		chmod 1777 ${WRKDIR}/world/tmp ${WRKDIR}/world/var/tmp
+		echo " done"
 	fi
 }
 
@@ -127,8 +131,9 @@ zfs_generate()
 
 	SNAPSPEC="${zroot}@${SNAPSHOT_NAME}"
 
-	msg "Creating snapshot(s) for image generation"
+	msg_n "Creating snapshot(s) for image generation..."
 	zfs snapshot -r "$SNAPSPEC"
+	echo " done"
 
 	## If we are creating a send stream, we need to do it before we export
 	## the pool. Call the function to export the replication stream(s) here.
