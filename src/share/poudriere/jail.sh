@@ -300,7 +300,7 @@ update_pkgbase() {
 		make_jobs="${MAKE_JOBS}"
 	fi
 
-	msg "Starting make update-packages"
+	msg "Starting make update-packages..."
 	env ${PKG_REPO_SIGNING_KEY:+PKG_REPO_SIGNING_KEY="${PKG_REPO_SIGNING_KEY}"} IGNORE_OSMAJOR=y \
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} update-packages \
 			KERNCONF="${KERNEL}" DESTDIR="${destdir:?}" \
@@ -340,7 +340,7 @@ update_jail() {
 		METHOD="${METHOD_DEF}"
 		jset ${JAILNAME} method ${METHOD}
 	fi
-	msg "Upgrading using ${METHOD}"
+	msg "Upgrading using ${METHOD}..."
 	# -B / BUILD_PKGBASE being set in this context may lead to
 	# *build_pkgbase()* being called rather than *update_pkgbase()*.
 	# Set pkgbase based on whether the jail was *created* with -B and
@@ -487,7 +487,7 @@ installworld() {
 		make_jobs="${MAKE_JOBS}"
 	fi
 
-	msg "Starting make installworld"
+	msg "Starting make installworld..."
 	objtop="$(${MAKE_CMD} -C "${SRC_BASE:?}" -V OBJTOP || echo)"
 	if [ -z "${objtop}" ] ||
 	    [ ! -e "${objtop}/toolchain-metadata.mk" ]; then
@@ -506,7 +506,7 @@ installworld() {
 	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} DESTDIR=${destdir:?} \
 	    distribution ${MAKEWORLDARGS} || err 1 "Failed to 'make distribution'"
 	if [ -n "${KERNEL}" ]; then
-		msg "Starting make installkernel"
+		msg "Starting make installkernel..."
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} installkernel \
 		    KERNCONF="${KERNEL}" NO_INSTALLEXTRAKERNELS=no DESTDIR=${destdir:?} ${MAKEWORLDARGS} || \
 		    err 1 "Failed to 'make installkernel'"
@@ -523,7 +523,7 @@ build_pkgbase() {
 		make_jobs="${MAKE_JOBS}"
 	fi
 
-	msg "Starting make packages"
+	msg "Starting make packages..."
 	env ${PKG_REPO_SIGNING_KEY:+PKG_REPO_SIGNING_KEY="${PKG_REPO_SIGNING_KEY}"} \
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages \
 			KERNCONF="${KERNEL}" DESTDIR=${destdir:?} \
@@ -626,13 +626,13 @@ buildworld() {
 
 	setup_build_env
 
-	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
+	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs..."
 	${MAKE_CMD} -C ${SRC_BASE} buildworld ${MAKE_JOBS} \
 	    ${MAKEWORLDARGS} || err 1 "Failed to 'make buildworld'"
 	BUILTWORLD=1
 
 	if [ -n "${KERNEL}" ]; then
-		msg "Starting make buildkernel with ${PARALLEL_JOBS} jobs"
+		msg "Starting make buildkernel with ${PARALLEL_JOBS} jobs..."
 		${MAKE_CMD} -C ${SRC_BASE} buildkernel ${MAKE_JOBS} \
 			KERNCONF="${KERNEL}" ${MAKEWORLDARGS} || \
 			err 1 "Failed to 'make buildkernel'"
@@ -662,7 +662,7 @@ build_native_xtools() {
 	    [ ! -f "${XDEV_SRC}/Makefile.inc1" ]; then
 		err 1 "${XDEV_SRC} must be a working src tree to build native-xtools. Perhaps you meant to specify -X?"
 	fi
-	msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs in ${XDEV_SRC}"
+	msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs in ${XDEV_SRC}..."
 	# Can use -DNO_NXBTOOLCHAIN if we just ran buildworld to reuse the
 	# toolchain already just built.
 	${MAKE_CMD} -C ${XDEV_SRC} native-xtools ${MAKE_JOBS} \
