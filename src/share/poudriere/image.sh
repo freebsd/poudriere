@@ -117,7 +117,7 @@ recursecopylib() {
 }
 
 mkminiroot() {
-	msg "Making miniroot"
+	msg_n "Making miniroot..."
 	[ -z "${MINIROOT}" ] && err 1 "MINIROOT not defined"
 	mroot=${WRKDIR:?}/miniroot
 	dirs="etc dev boot bin usr/bin libexec lib usr/lib sbin"
@@ -155,9 +155,11 @@ mkminiroot() {
 	done
 	cp -fRPp ${MINIROOT}/ ${mroot:?}/
 
-	makefs "${OUTPUTDIR:?}/${IMAGENAME}-miniroot" ${mroot}
+	makefs "${OUTPUTDIR:?}/${IMAGENAME}-miniroot" ${mroot} \
+	    >/dev/null 2>&1
 	[ -f "${OUTPUTDIR:?}/${IMAGENAME}-miniroot.gz" ] && rm "${OUTPUTDIR:?}/${IMAGENAME}-miniroot.gz"
 	gzip -9 "${OUTPUTDIR:?}/${IMAGENAME}-miniroot"
+	echo " done"
 }
 
 get_pkg_abi() {
