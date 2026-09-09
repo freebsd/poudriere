@@ -8882,13 +8882,41 @@ deps_sanity() {
 		msg_verbose "${COLOR_PORT}${originspec}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
 		case "${dep_origin}" in
 		"${origin}")
-			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
-			ret=1
+			case "${STRICT_DEPS:-0}" in
+			1)
+				msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
+				ret=1
+				;;
+			*)
+				reason="Incorrectly depends on itself"
+				msg_warn "${COLOR_PORT}${originspec}${COLOR_RESET} ${reason}; ignoring"
+				case "${ret}" in
+				0)
+					ret=2
+					setvar "${reason_var}" "${reason}"
+					;;
+				esac
+				;;
+			esac
 			;;
 		# Detect bad cat/origin/ dependency which pkg will not register properly
 		*"/")
-			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on bad origin ${COLOR_PORT}${dep_origin}${COLOR_RESET}; Please contact maintainer of the port to fix this."
-			ret=1
+			case "${STRICT_DEPS:-0}" in
+			1)
+				msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on bad origin ${COLOR_PORT}${dep_origin}${COLOR_RESET}; Please contact maintainer of the port to fix this."
+				ret=1
+				;;
+			*)
+				reason="Depends on bad origin ${dep_origin}"
+				msg_warn "${COLOR_PORT}${originspec}${COLOR_RESET} ${reason}; ignoring"
+				case "${ret}" in
+				0)
+					ret=2
+					setvar "${reason_var}" "${reason}"
+					;;
+				esac
+				;;
+			esac
 			;;
 		esac
 		if ! test_port_origin_exist "${dep_origin}"; then
@@ -8929,8 +8957,22 @@ deps_sanity() {
 		if have_ports_feature FLAVORS && [ -z "${dep_flavor}" ] && \
 			[ -z "${dep_subpkg}" ] && \
 			[ "${dep_originspec}" != "${dep_origin}" ]; then
-			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} has dependency on ${COLOR_PORT}${dep_origin}${COLOR_RESET} with invalid empty FLAVOR; Please contact maintainer of the port to fix this."
-			ret=1
+			case "${STRICT_DEPS:-0}" in
+			1)
+				msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} has dependency on ${COLOR_PORT}${dep_origin}${COLOR_RESET} with invalid empty FLAVOR; Please contact maintainer of the port to fix this."
+				ret=1
+				;;
+			*)
+				reason="Has dependency on ${dep_origin} with invalid empty FLAVOR"
+				msg_warn "${COLOR_PORT}${originspec}${COLOR_RESET} ${reason}; ignoring"
+				case "${ret}" in
+				0)
+					ret=2
+					setvar "${reason_var}" "${reason}"
+					;;
+				esac
+				;;
+			esac
 		fi
 	done
 	return ${ret}
@@ -9201,7 +9243,8 @@ gather_port_vars_port() {
 	    deps_sanity_ret=$?
 	case "${deps_sanity_ret}" in
 	0) ;;
-	# Non-fatal: a dependency's origin doesn't exist.  This port
+	# Non-fatal: a dependency problem was found (nonexistent origin,
+	# self-dependency, bad origin syntax, empty FLAVOR).  This port
 	# cannot be built; ignore it instead of aborting the whole run.
 	2)
 		shash_set pkgname-ignore "${pkgname}" "${deps_sanity_reason}"
