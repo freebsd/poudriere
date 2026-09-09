@@ -781,7 +781,13 @@ pkgqueue_sanity_check() {
 	if [ ${always_fail} -eq 0 ]; then
 		case "${dead_packages:+set}" in
 		set)
-			err 1 "Packages stuck in queue (depended on but not in queue): ${dead_packages}"
+			failed_phase="stuck_in_queue"
+			for pkgqueue_job in ${dead_packages}; do
+				pkgqueue_job_decode "${pkgqueue_job}" \
+				    job_type job_name
+				crashed_build "${job_type}" "${job_name}" \
+				    "${failed_phase}"
+			done
 			;;
 		esac
 		cd "${pwd}"
