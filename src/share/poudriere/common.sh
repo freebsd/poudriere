@@ -9507,7 +9507,7 @@ generate_queue_pkg() {
 	local pkg_deps="$3"
 	local deps dep_pkgname dep_originspec dep_origin dep_flavor dep_subpkg
 	local raw_deps d key dpath dep_real_pkgname err_type
-	local deps_type
+	local deps_type reason
 
 	# build_deps=compiler
 	# run_deps=
@@ -9539,21 +9539,30 @@ generate_queue_pkg() {
 					originspec_decode "${dep_originspec}" \
 					    dep_origin \
 					    dep_flavor dep_subpkg
-					# If the dependency's origin is
-					# otherwise known and resolved, then
-					# it simply doesn't provide the
-					# requested FLAVOR.  This port cannot
-					# be built; warn and ignore it rather
-					# than aborting the whole run.
-					if [ -n "${dep_flavor}" ] &&
-					    [ "${STRICT_DEPS:-0}" -eq 0 ] &&
-					    shash_exists originspec-pkgname \
-					    "${dep_origin}"; then
-						msg_warn "${COLOR_PORT}${originspec}${COLOR_RESET} | ${COLOR_PORT}${pkgname}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}${COLOR_RESET} but ${COLOR_PORT}${dep_origin}${COLOR_RESET} does not provide the '${dep_flavor}' FLAVOR; ignoring"
-						echo "${pkgname} ${originspec} Depends on invalid FLAVOR '${dep_flavor}' for ${dep_origin}" \
+					# This port's dependency cannot be
+					# resolved -- either the dependency's
+					# origin is known but doesn't provide
+					# the requested FLAVOR, or the origin
+					# was never resolved at all.  This
+					# port cannot be built; warn and
+					# ignore it rather than aborting the
+					# whole run.
+					case "${STRICT_DEPS:-0}" in
+					0)
+						if [ -n "${dep_flavor}" ] &&
+						    shash_exists \
+						    originspec-pkgname \
+						    "${dep_origin}"; then
+							reason="Depends on invalid FLAVOR '${dep_flavor}' for ${dep_origin}"
+						else
+							reason="Depends on nonexistent origin ${dep_origin}"
+						fi
+						msg_warn "${COLOR_PORT}${originspec}${COLOR_RESET} | ${COLOR_PORT}${pkgname}${COLOR_RESET} ${reason}; ignoring"
+						echo "${pkgname} ${originspec} ${reason}" \
 						    >> "${MASTER_DATADIR:?}/deps_invalid_flavor"
 						continue
-					fi
+						;;
+					esac
 					if [ ${ALL} -eq 0 ]; then
 						msg_error "generate_queue_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET}${dep_flavor:+ -- Does ${COLOR_PORT}${dep_origin}${COLOR_RESET} provide the '${dep_flavor}' FLAVOR?}"
 					else
