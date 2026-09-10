@@ -361,7 +361,10 @@ ${dependency_cycles}"
 
 	if [ ${always_fail} -eq 0 ]; then
 		if [ -n "${dead_packages}" ]; then
-			err 1 "Packages stuck in queue (depended on but not in queue): ${dead_packages}"
+			failed_phase="stuck_in_queue"
+			for pkgname in ${dead_packages}; do
+				crashed_build "${pkgname}" "${failed_phase}"
+			done
 		fi
 		cd "${pwd}"
 		return 0
