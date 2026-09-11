@@ -2,7 +2,7 @@ LISTPORTS="misc/freebsd-release-manifests@nonexistent"
 OVERLAYS="omnibus"
 . ./common.bulk.sh
 
-do_bulk -c -n ${LISTPORTS}
+do_bulk -c -n -D ${LISTPORTS}
 assert 1 $? "Bulk should fail due to nonexistent FLAVOR"
 
 EXPECTED_TOBUILD=
