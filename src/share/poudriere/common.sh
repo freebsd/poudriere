@@ -5267,6 +5267,18 @@ check_fs_violation() {
 	return $ret
 }
 
+distfile_path_is_safe() {
+	[ $# -eq 1 ] || eargs distfile_path_is_safe path
+	local path="$1"
+
+	case "${path}" in
+	""|/*|*/|*//*|.|..|./*|../*|*/./*|*/../*|*/.|*/..)
+		return 1
+		;;
+	esac
+	return 0
+}
+
 gather_distfiles() {
 	[ $# -eq 7 ] || [ $# -eq 6 ] ||
 	    eargs gather_distfiles '[-l]' originspec_main pkgname_main \
@@ -5292,7 +5304,8 @@ gather_distfiles() {
 	local from to
 	local sub dists d specials special origin
 	local dep_originspec pkgname flavor subpkg
-	local srcsize dstsize doinstall
+	local srcsize dstsize doinstall srcpath srcpath_real
+	local dstroot dstpath dstpath_parent dstpath_parent_real
 
 	from="$(realpath "$5")"
 	to="$(realpath "$6")"
@@ -5308,11 +5321,30 @@ gather_distfiles() {
 	shash_get pkgname-dist_subdir "${pkgname}" sub || sub=
 	shash_get pkgname-dist_allfiles "${pkgname}" dists || dists=
 	shash_get pkgname-depend_specials "${pkgname}" specials || specials=
+	case "${sub}" in
+	"") ;;
+	*)
+		if ! distfile_path_is_safe "${sub}"; then
+			err 1 "gather_distfiles: Invalid DIST_SUBDIR '${sub}'"
+		fi
+		;;
+	esac
+	for d in ${dists}; do
+		if ! distfile_path_is_safe "${d}"; then
+			err 1 "gather_distfiles: Invalid distfile path '${d}'"
+		fi
+	done
 
 	job_msg_dev "${COLOR_PORT}${origin}${flavor:+@${flavor}}${subpkg:+~${subpkg}} | ${pkgname_main}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	mkdir -p "${to}/${sub}"
+	dstroot="$(realpath -q "${to}/${sub}")" ||
+	    err 1 "gather_distfiles: Failed to resolve ${to}/${sub}"
+	case "${dstroot}" in
+	"${to}"|"${to}"/*) ;;
+	*) err 1 "gather_distfiles: DIST_SUBDIR escapes ${to}" ;;
+	esac
 	(
-		cd "${to}/${sub}"
+		cd "${dstroot}"
 		if have_builtin mkdir; then
 			for d in ${dists}; do
 				case "${d}" in
@@ -5332,9 +5364,29 @@ gather_distfiles() {
 		fi
 	)
 	for d in ${dists}; do
-		if [ ! -f "${from}/${sub}/${d}" ]; then
+		srcpath="${from}/${sub}/${d}"
+		if [ ! -f "${srcpath}" ]; then
 			continue
 		fi
+		srcpath_real="$(realpath -q "${srcpath}")" ||
+		    return 1
+		case "${srcpath_real}" in
+		"${from}"/*) ;;
+		*)
+			msg_warn "gather_distfiles: skipping source outside" \
+			    "${from}: '${srcpath}'"
+			continue
+			;;
+		esac
+		dstpath="${dstroot}/${d}"
+		dstpath_parent="${dstpath%/*}"
+		dstpath_parent_real="$(realpath -q "${dstpath_parent}")" ||
+		    return 1
+		case "${dstpath_parent_real}" in
+		"${to}"|"${to}"/*) ;;
+		*) err 1 "gather_distfiles: Destination escapes ${to}" ;;
+		esac
+		dstpath="${dstpath_parent_real}/${d##*/}"
 		case "${lflag}" in
 		0)	# We want to do a hard copy of the files.
 			local linkpath
@@ -5342,36 +5394,36 @@ gather_distfiles() {
 			# If the file is a symlink then it may be pointing
 			# back to the null-mounted distdir, or it is some
 			# distfile symlink like go.mod or user-made.
-			if linkpath="$(readlink "${from}/${sub}/${d}")"; then
+			if linkpath="$(readlink "${srcpath}")"; then
 				case "${linkpath}" in
 				..*/distfiles/*)
 					msg_debug "gather_distfiles:" \
 					    "skipping untouched" \
-					    "'${from}/${sub}/${d}'"
+					    "'${srcpath}'"
 					continue
 					;;
 				esac
 				# We need to copy the symlink.
 			fi
-			if [ ! -f "${to}/${sub}/${d}" ]; then
+			if [ ! -f "${dstpath}" ]; then
 				msg_debug "gather_distfiles: missing" \
-				    "'${to}/${sub}/${d}'"
+				    "'${dstpath}'"
 				doinstall=1
 			else
-				dstsize="$(stat -f %z "${to}/${sub}/${d}")"
-				srcsize="$(stat -f %z "${from}/${sub}/${d}")"
+				dstsize="$(stat -f %z "${dstpath}")"
+				srcsize="$(stat -f %z "${srcpath_real}")"
 				case "${srcsize}" in
 				"${dstsize}")
 					msg_debug "gather_distfiles:" \
 					    "skipping copy" \
-					    "'${from}/${sub}/${d}'"
+					    "'${srcpath}'"
 					doinstall=0
 					;;
 				*)
 					msg_debug "gather_distfiles:" \
 					    "size mismatch" \
 					    "($srcsize != $dstsize)," \
-					    "overwriting '${to}/${sub}/${d}'"
+					    "overwriting '${dstpath}'"
 					doinstall=1
 					;;
 				esac
@@ -5379,24 +5431,24 @@ gather_distfiles() {
 			if [ "${doinstall}" -eq 1 ]; then
 				msg_debug "gather_distfiles:" \
 				    "copying" \
-				    "'${from}/${sub}/${d}'" \
+				    "'${srcpath}'" \
 				    "->" \
-				    "'${to}/${sub}/${d}'"
+				    "'${dstpath}'"
 				install -pS -m 0644 \
-				    "${from}/${sub}/${d}" \
-				    "${to}/${sub}/${d}" ||
+				    "${srcpath_real}" \
+				    "${dstpath}" ||
 				    return 1
 			fi
 			;;
 		1)	# We want to symlink all the needed files in.
 			msg_debug "gather_distfiles:" \
 			    "symlinking (relative)" \
-			    "'${to}/${sub}/${d}'" \
+			    "'${dstpath}'" \
 			    "->" \
-			    "${from}/${sub}/${d}"
+			    "${srcpath_real}"
 			install -p -m 0644 -lrs \
-			    "${from}/${sub}/${d}" \
-			    "${to}/${sub}/${d}" ||
+			    "${srcpath_real}" \
+			    "${dstpath}" ||
 			    return 1
 			;;
 		esac
