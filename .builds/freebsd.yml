@@ -1,6 +1,7 @@
 image: freebsd/latest
 packages:
   - pkgconf
+  - hs-ShellCheck
 sources:
   - https://github.com/freebsd/poudriere
 tasks:
@@ -12,4 +13,4 @@ tasks:
       make
   - test: |
       cd poudriere
-      make check || { kyua report --verbose; exit 1 ;}
+      make check || { cat test/test-suite.log; exit 1 ;}
