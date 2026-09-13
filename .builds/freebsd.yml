@@ -13,4 +13,6 @@ tasks:
       make
   - test: |
       cd poudriere
-      make check || { cat test/test-suite.log; exit 1 ;}
+      make check
+artifacts:
+  - test/test-suite.log
