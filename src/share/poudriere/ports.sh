@@ -235,10 +235,8 @@ create)
 	*:*)
 		err 1 "The ports name cannot contain a period (.). See jail(8)"
 		;;
-	*-*)
-		err 1 "The ports name should not contain a dash (-). Poudriere will parse it as a SETNAME (-z)."
-		;;
 	esac
+	check_name_hyphen "ports tree" "${PTNAME}"
 
 	if [ "${METHOD}" = "null" ]; then
 		[ -z "${PTMNT}" ] && \
