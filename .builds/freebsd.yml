@@ -15,4 +15,4 @@ tasks:
       cd poudriere
       make check
 artifacts:
-  - test/test-suite.log
+  - poudriere/test/test-suite.log
