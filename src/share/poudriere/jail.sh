@@ -283,6 +283,8 @@ rename_jail() {
 	local cache_dir
 
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
+	[ "${NEWJAILNAME#*.*}" = "${NEWJAILNAME}" ] ||
+		err 1 "The jailname cannot contain a period (.). See jail(8)"
 	msg_n "Renaming '${JAILNAME}' in '${NEWJAILNAME}'"
 	mv ${POUDRIERED:?}/jails/${JAILNAME} ${POUDRIERED:?}/jails/${NEWJAILNAME}
 	cache_dir="${POUDRIERE_DATA:?}/cache/${JAILNAME}-*"
