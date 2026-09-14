@@ -283,6 +283,7 @@ rename_jail() {
 	local cache_dir
 
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
+	check_name_hyphen jail "${NEWJAILNAME}"
 	msg_n "Renaming '${JAILNAME}' in '${NEWJAILNAME}'"
 	mv ${POUDRIERED:?}/jails/${JAILNAME} ${POUDRIERED:?}/jails/${NEWJAILNAME}
 	cache_dir="${POUDRIERE_DATA:?}/cache/${JAILNAME}-*"
@@ -1112,6 +1113,7 @@ create_jail() {
 
 	[ "${JAILNAME#*.*}" = "${JAILNAME}" ] ||
 		err 1 "The jailname cannot contain a period (.). See jail(8)"
+	check_name_hyphen jail "${JAILNAME}"
 
 	if [ "${METHOD}" = "null" ]; then
 		case "${JAILMNT:+set}" in
