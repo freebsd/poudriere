@@ -296,7 +296,9 @@ create)
 				${SVN_PRESERVE_TIMESTAMP} \
 				${SVN_FULLURL}${BRANCH:+/${BRANCH}} \
 				${PTMNT} || err 1 " fail"
-			[ -n "${quiet}" ] && echo " done"
+			if [ -n "${quiet}" ]; then
+				echo " done"
+			fi
 			;;
 		git*)
 			# !! Any changes here should be considered for jail.sh too.
@@ -311,7 +313,9 @@ create)
 			${GIT_CMD} clone ${GIT_DEPTH} ${quiet} \
 			    ${BRANCH:+-b ${BRANCH}} ${GIT_FULLURL} ${PTMNT} || \
 			    err 1 " fail"
-			[ -n "${quiet}" ] && echo " done"
+			if [ -n "${quiet}" ]; then
+				echo " done"
+			fi
 			;;
 		esac
 		pset ${PTNAME} method ${METHOD}
@@ -398,7 +402,9 @@ update)
 			${SVN_PRESERVE_TIMESTAMP} \
 			${PORTSMNT:-${PTMNT}} || \
 		    err 1 " fail"
-		[ -n "${quiet}" ] && echo " done"
+		if [ -n "${quiet}" ]; then
+			echo " done"
+		fi
 		;;
 	git*)
 		# !! Any changes here should be considered for jail.sh too.
@@ -409,7 +415,9 @@ update)
 		fi
 		${GIT_CMD} -C ${PORTSMNT:-${PTMNT}} pull --rebase ${quiet} || \
 		    err 1 " fail"
-		[ -n "${quiet}" ] && echo " done"
+		if [ -n "${quiet}" ]; then
+			echo " done"
+		fi
 		;;
 	null|none) msg "Not updating portstree \"${PTNAME}\" with method ${METHOD}" ;;
 	*)
