@@ -769,7 +769,9 @@ install_from_vcs() {
 			${SVN_CMD} ${quiet} checkout \
 			    ${SVN_FULLURL}/${VERSION} ${SRC_BASE} || \
 			    err 1 " fail"
-			[ -n "${quiet}" ] && echo " done"
+			if [ -n "${quiet}" ]; then
+				echo " done"
+			fi
 			if [ -n "${SRCPATCHFILE}" ]; then
 				msg_n "Patching the sources with ${SRCPATCHFILE}"
 				${SVN_CMD} ${quiet} patch ${SRCPATCHFILE} \
@@ -791,7 +793,9 @@ install_from_vcs() {
 			    ${VERSION:+-b ${VERSION}} ${GIT_FULLURL} \
 			    ${SRC_BASE} || \
 			    err 1 " fail"
-			[ -n "${quiet}" ] && echo " done"
+			if [ -n "${quiet}" ]; then
+				echo " done"
+			fi
 			# No support for patches, using feature branches is recommanded"
 			;;
 		esac
@@ -806,7 +810,9 @@ install_from_vcs() {
 			fi
 			${SVN_CMD} upgrade ${SRC_BASE} 2>/dev/null || :
 			${SVN_CMD} ${quiet} update -r ${TORELEASE:-head} ${SRC_BASE} || err 1 " fail"
-			[ -n "${quiet}" ] && echo " done"
+			if [ -n "${quiet}" ]; then
+				echo " done"
+			fi
 			;;
 		git*)
 			# !! Any changes here should be considered for ports.sh too.
@@ -821,7 +827,9 @@ install_from_vcs() {
 				${GIT_CMD} -C ${SRC_BASE} checkout \
 				    ${quiet} "${TORELEASE}" || err 1 " fail"
 			fi
-			[ -n "${quiet}" ] && echo " done"
+			if [ -n "${quiet}" ]; then
+				echo " done"
+			fi
 			;;
 		esac
 	fi
