@@ -8679,6 +8679,7 @@ gather_port_vars() {
 	run_hook gather_port_vars start
 
 	:> "${MASTER_DATADIR:?}/all_pkgs"
+	:> "${MASTER_DATADIR:?}/deps_broken"
 
 	rm -rf gqueue dqueue mqueue fqueue 2>/dev/null || :
 	mkdir gqueue dqueue mqueue fqueue
@@ -8866,11 +8867,12 @@ gather_port_vars() {
 
 # Dependency policy/assertions.
 deps_sanity() {
-	[ $# -eq 2 ] || eargs deps_sanity originspec deps
+	[ $# -eq 3 ] || eargs deps_sanity originspec deps reason_var
 	local originspec="${1}"
 	local deps="${2}"
+	local reason_var="${3}"
 	local origin dep_originspec dep_origin dep_flavor dep_subpkg ret
-	local new_originspec moved_reason
+	local new_originspec moved_reason reason
 
 	originspec_decode "${originspec}" origin '' ''
 
@@ -8880,13 +8882,41 @@ deps_sanity() {
 		msg_verbose "${COLOR_PORT}${originspec}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
 		case "${dep_origin}" in
 		"${origin}")
-			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
-			ret=1
+			case "${STRICT_DEPS:-0}" in
+			1)
+				msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
+				ret=1
+				;;
+			*)
+				reason="Incorrectly depends on itself"
+				msg_warn "${COLOR_PORT}${originspec}${COLOR_RESET} ${reason}; ignoring"
+				case "${ret}" in
+				0)
+					ret=2
+					setvar "${reason_var}" "${reason}"
+					;;
+				esac
+				;;
+			esac
 			;;
 		# Detect bad cat/origin/ dependency which pkg will not register properly
 		*"/")
-			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on bad origin ${COLOR_PORT}${dep_origin}${COLOR_RESET}; Please contact maintainer of the port to fix this."
-			ret=1
+			case "${STRICT_DEPS:-0}" in
+			1)
+				msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on bad origin ${COLOR_PORT}${dep_origin}${COLOR_RESET}; Please contact maintainer of the port to fix this."
+				ret=1
+				;;
+			*)
+				reason="Depends on bad origin ${dep_origin}"
+				msg_warn "${COLOR_PORT}${originspec}${COLOR_RESET} ${reason}; ignoring"
+				case "${ret}" in
+				0)
+					ret=2
+					setvar "${reason_var}" "${reason}"
+					;;
+				esac
+				;;
+			esac
 			;;
 		esac
 		if ! test_port_origin_exist "${dep_origin}"; then
@@ -8907,14 +8937,42 @@ deps_sanity() {
 				moved_reason="moved to ${COLOR_PORT}${new_originspec}${COLOR_RESET}"
 				;;
 			esac
-			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on nonexistent origin ${COLOR_PORT}${dep_origin}${COLOR_RESET}${moved_reason:+ (${moved_reason})}; Please contact maintainer of the port to fix this."
-			ret=1
+			case "${STRICT_DEPS:-0}" in
+			1)
+				msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on nonexistent origin ${COLOR_PORT}${dep_origin}${COLOR_RESET}${moved_reason:+ (${moved_reason})}; Please contact maintainer of the port to fix this."
+				ret=1
+				;;
+			*)
+				reason="Depends on nonexistent origin ${dep_origin}${moved_reason:+ (${moved_reason})}"
+				msg_warn "${COLOR_PORT}${originspec}${COLOR_RESET} ${reason}; ignoring"
+				case "${ret}" in
+				0)
+					ret=2
+					setvar "${reason_var}" "${reason}"
+					;;
+				esac
+				;;
+			esac
 		fi
 		if have_ports_feature FLAVORS && [ -z "${dep_flavor}" ] && \
 			[ -z "${dep_subpkg}" ] && \
 			[ "${dep_originspec}" != "${dep_origin}" ]; then
-			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} has dependency on ${COLOR_PORT}${dep_origin}${COLOR_RESET} with invalid empty FLAVOR; Please contact maintainer of the port to fix this."
-			ret=1
+			case "${STRICT_DEPS:-0}" in
+			1)
+				msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} has dependency on ${COLOR_PORT}${dep_origin}${COLOR_RESET} with invalid empty FLAVOR; Please contact maintainer of the port to fix this."
+				ret=1
+				;;
+			*)
+				reason="Has dependency on ${dep_origin} with invalid empty FLAVOR"
+				msg_warn "${COLOR_PORT}${originspec}${COLOR_RESET} ${reason}; ignoring"
+				case "${ret}" in
+				0)
+					ret=2
+					setvar "${reason_var}" "${reason}"
+					;;
+				esac
+				;;
+			esac
 		fi
 	done
 	return ${ret}
@@ -8931,6 +8989,7 @@ gather_port_vars_port() {
 	local dep_ret log flavor flavors dep_flavor
 	local origin origin_flavor default_flavor originspec_flavored
 	local ignore origin_subpkg qdir
+	local deps_sanity_ret deps_sanity_reason
 
 	msg_debug "gather_port_vars_port (${COLOR_PORT}${originspec}${COLOR_RESET}): LOOKUP"
 	originspec_decode "${originspec}" origin origin_flavor origin_subpkg
@@ -9011,11 +9070,34 @@ gather_port_vars_port() {
 						return 0
 						;;
 					esac
-					# The FLAVOR is invalid.  It will be
-					# marked IGNORE but we process too late.
-					# There is no unique PKGNAME for this
-					# looku so we must fail now.
-					err 1 "Invalid FLAVOR '${origin_flavor}' for ${COLOR_PORT}${origin}${COLOR_RESET}"
+					# The FLAVOR is invalid.  Warn and
+					# skip; there is no unique PKGNAME
+					# for this originspec to mark ignored.
+					case "${STRICT_DEPS:-0}" in
+					1)
+						err 1 "Invalid FLAVOR '${origin_flavor}' for ${COLOR_PORT}${origin}${COLOR_RESET}"
+						;;
+					esac
+					msg_warn "Invalid FLAVOR '${origin_flavor}' for ${COLOR_PORT}${origin}${COLOR_RESET}, skipping"
+					return 0
+					;;
+				esac
+				;;
+			"")
+				# Port genuinely provides no FLAVORS at all,
+				# so any requested FLAVOR here is invalid
+				# too.  The PKGNAME is shared with the
+				# default build so there's nothing to mark
+				# ignored; just warn and skip this originspec.
+				case "${origin_flavor:+set}" in
+				set)
+					case "${STRICT_DEPS:-0}" in
+					1)
+						err 1 "gather_port_vars_port: ${COLOR_PORT}${originspec}${COLOR_RESET} had FLAVOR=${origin_flavor} but port provided no flavors?"
+						;;
+					esac
+					msg_warn "${COLOR_PORT}${origin}${COLOR_RESET} has no FLAVORS but FLAVOR=${origin_flavor} was requested, skipping"
+					return 0
 					;;
 				esac
 				;;
@@ -9093,7 +9175,16 @@ gather_port_vars_port() {
 		    "${origin_flavor}" "${origin_subpkg}"
 		;;
 	set."")
-		err 1 "gather_port_vars_port: ${COLOR_PORT}${originspec}${COLOR_RESET} had FLAVOR=${origin_flavor} but port provided no flavors?"
+		case "${STRICT_DEPS:-0}" in
+		1)
+			err 1 "gather_port_vars_port: ${COLOR_PORT}${originspec}${COLOR_RESET} had FLAVOR=${origin_flavor} but port provided no flavors?"
+			;;
+		esac
+		msg_warn "${COLOR_PORT}${origin}${COLOR_RESET} has no FLAVORS but FLAVOR=${origin_flavor} was requested; ignoring"
+		: "${ignore:="Invalid FLAVOR '${origin_flavor}' for ${origin}: port provides no FLAVORS"}"
+		shash_set pkgname-ignore "${pkgname}" "${ignore}"
+		shash_set originspec-ignored "${originspec}" 1
+		originspec_flavored="${originspec}"
 		;;
 	"".set)
 		# Was not queued as a flavor but we are the default flavor.
@@ -9147,10 +9238,26 @@ gather_port_vars_port() {
 	esac
 	# Assert some policy before proceeding to process these deps
 	# further.
-	if ! deps_sanity "${originspec}" "${deps}"; then
+	deps_sanity_ret=0
+	deps_sanity "${originspec}" "${deps}" deps_sanity_reason ||
+	    deps_sanity_ret=$?
+	case "${deps_sanity_ret}" in
+	0) ;;
+	# Non-fatal: a dependency problem was found (nonexistent origin,
+	# self-dependency, bad origin syntax, empty FLAVOR).  This port
+	# cannot be built; ignore it instead of aborting the whole run.
+	2)
+		shash_set pkgname-ignore "${pkgname}" "${deps_sanity_reason}"
+		shash_set originspec-ignored "${originspec}" 1
+		echo "${pkgname} ${originspec} ${deps_sanity_reason}" \
+		    >> "${MASTER_DATADIR:?}/deps_broken"
+		return 0
+		;;
+	*)
 		set_pipe_fatal_error
 		return 1
-	fi
+		;;
+	esac
 
 	# In the -a case, there's no need to use the depqueue to add
 	# dependencies into the gatherqueue since the default ones will
@@ -9314,13 +9421,28 @@ gather_port_vars_process_depqueue() {
 compute_needed() {
 	[ "$#" -eq 0 ] || eargs compute_needed
 
-	awk 'NF < 4' "${MASTER_DATADIR:?}/all_pkgs" > \
-	    "${MASTER_DATADIR:?}/all_pkgs_not_ignored"
+	# Also exclude packages whose dependency was already found broken
+	# during gather (deps_broken), even though their own all_pkgs line
+	# has no ignore column yet -- deps_sanity discovers this after that
+	# line was already written.  Only use the 2-file NR==FNR awk form
+	# when deps_broken is non-empty: awk's NR==FNR idiom cannot tell
+	# the first file apart from the second once the first file has 0
+	# lines (NR and FNR then advance in lockstep for the whole second
+	# file too), which would otherwise silently drop everything.
+	if [ -s "${MASTER_DATADIR:?}/deps_broken" ]; then
+		awk 'NR==FNR { skip[$1]=1; next } NF < 4 && !($1 in skip)' \
+		    "${MASTER_DATADIR:?}/deps_broken" \
+		    "${MASTER_DATADIR:?}/all_pkgs" \
+		    > "${MASTER_DATADIR:?}/all_pkgs_not_ignored"
+	else
+		awk 'NF < 4' "${MASTER_DATADIR:?}/all_pkgs" \
+		    > "${MASTER_DATADIR:?}/all_pkgs_not_ignored"
+	fi
 }
 
 generate_queue() {
 	required_env generate_queue PWD "${MASTER_DATADIR_ABS:?}"
-	local pkgname originspec dep_pkgname _rdep _ignored
+	local pkgname originspec dep_pkgname _rdep _ignored reason
 
 	pkgqueue_init
 	msg "Calculating ports order and dependencies"
@@ -9329,6 +9451,7 @@ generate_queue() {
 	run_hook compute_deps start
 
 	:> "${MASTER_DATADIR:?}/pkg_deps.unsorted"
+	:> "${MASTER_DATADIR:?}/deps_invalid_flavor"
 
 	parallel_start || err 1 "parallel_start"
 	while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs_not_ignored" \
@@ -9348,6 +9471,29 @@ generate_queue() {
 	pkgqueue_compute_rdeps
 	{ find deps rdeps; } > "pkg_pool"
 
+	# Now that the reverse-dependency graph exists, ignore (and cascade
+	# a "Skipping" to anything depending on) any package whose
+	# dependency on an invalid FLAVOR was discovered above.
+	if [ -s "${MASTER_DATADIR:?}/deps_invalid_flavor" ]; then
+		while mapfile_read_loop \
+		    "${MASTER_DATADIR:?}/deps_invalid_flavor" \
+		    pkgname originspec reason; do
+			trim_ignored_pkg "${pkgname}" "${originspec}" \
+			    "${reason}"
+		done
+	fi
+
+	# Same, but for packages whose own dependency origin was found to
+	# not exist at all during gather (deps_sanity).
+	if [ -s "${MASTER_DATADIR:?}/deps_broken" ]; then
+		while mapfile_read_loop \
+		    "${MASTER_DATADIR:?}/deps_broken" \
+		    pkgname originspec reason; do
+			trim_ignored_pkg "${pkgname}" "${originspec}" \
+			    "${reason}"
+		done
+	fi
+
 	run_hook compute_deps stop
 	run_hook generate_queue stop
 	return 0
@@ -9361,7 +9507,7 @@ generate_queue_pkg() {
 	local pkg_deps="$3"
 	local deps dep_pkgname dep_originspec dep_origin dep_flavor dep_subpkg
 	local raw_deps d key dpath dep_real_pkgname err_type
-	local deps_type
+	local deps_type reason
 
 	# build_deps=compiler
 	# run_deps=
@@ -9393,6 +9539,30 @@ generate_queue_pkg() {
 					originspec_decode "${dep_originspec}" \
 					    dep_origin \
 					    dep_flavor dep_subpkg
+					# This port's dependency cannot be
+					# resolved -- either the dependency's
+					# origin is known but doesn't provide
+					# the requested FLAVOR, or the origin
+					# was never resolved at all.  This
+					# port cannot be built; warn and
+					# ignore it rather than aborting the
+					# whole run.
+					case "${STRICT_DEPS:-0}" in
+					0)
+						if [ -n "${dep_flavor}" ] &&
+						    shash_exists \
+						    originspec-pkgname \
+						    "${dep_origin}"; then
+							reason="Depends on invalid FLAVOR '${dep_flavor}' for ${dep_origin}"
+						else
+							reason="Depends on nonexistent origin ${dep_origin}"
+						fi
+						msg_warn "${COLOR_PORT}${originspec}${COLOR_RESET} | ${COLOR_PORT}${pkgname}${COLOR_RESET} ${reason}; ignoring"
+						echo "${pkgname} ${originspec} ${reason}" \
+						    >> "${MASTER_DATADIR:?}/deps_invalid_flavor"
+						continue
+						;;
+					esac
 					if [ ${ALL} -eq 0 ]; then
 						msg_error "generate_queue_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET}${dep_flavor:+ -- Does ${COLOR_PORT}${dep_origin}${COLOR_RESET} provide the '${dep_flavor}' FLAVOR?}"
 					else
@@ -11161,6 +11331,7 @@ esac
 : ${ALL:=0}
 : ${CLEAN:=0}
 : ${CLEAN_LISTED:=0}
+: ${STRICT_DEPS:=0}
 : ${SKIP_RECURSIVE_REBUILD:=0}
 : ${PKG_NO_VERSION_FOR_DEPS:=no}
 : ${VERBOSE:=0}
