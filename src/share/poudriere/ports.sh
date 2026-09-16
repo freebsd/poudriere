@@ -232,7 +232,7 @@ create)
 	: ${PTFS="${ZPOOL}${ZROOTFS}/ports/${PTNAME}"}
 
 	case "${PTNAME}" in
-	*:*)
+	*.*)
 		err 1 "The ports name cannot contain a period (.). See jail(8)"
 		;;
 	*-*)
