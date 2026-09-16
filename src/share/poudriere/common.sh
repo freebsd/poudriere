@@ -5443,6 +5443,7 @@ build_port() {
 	local max_execution_time allownetworking
 	local NEED_ROOT PREFIX MAX_FILES
 	local JEXEC_SETSID
+	local expected_pkgnames expected_pkgname pkg_output_name
 	local pkg_stage pkg_stage_real pkg_target
 	local -
 
@@ -5885,6 +5886,12 @@ build_port() {
 
 	pkg_stage="${PACKAGES}/.npkg/${pkgname}"
 	if [ -d "${pkg_stage}" ]; then
+		expected_pkgnames="${pkgname}"
+		if have_ports_feature SUBPACKAGES; then
+			port_var_fetch_originspec "${originspec}" \
+				PKGNAMES expected_pkgnames ||
+				err 1 "build_port: Failed to find PKGNAMES for ${originspec}"
+		fi
 		# everything was fine we can copy the package to the package
 		# directory
 		# Only the pkg bootstrap needs package-manager compatibility links.
@@ -5917,6 +5924,27 @@ build_port() {
 				esac
 			fi
 			pkg_file="${pkg_path#"${pkg_stage}"}"
+			if [ ! -L "${pkg_path}" ]; then
+				case "${pkg_file}" in
+				/All/*."${PKG_EXT}") ;;
+				*)
+					msg_warn "Ignoring unexpected package output: ${pkg_path}"
+					continue
+					;;
+				esac
+				pkg_output_name="${pkg_file#/All/}"
+				pkg_output_name="${pkg_output_name%.${PKG_EXT}}"
+				expected_pkgname=
+				for expected_pkgname in ${expected_pkgnames}; do
+					case "${pkg_output_name}" in
+					"${expected_pkgname}") break ;;
+					esac
+				done
+				if [ "${pkg_output_name}" != "${expected_pkgname-}" ]; then
+					msg_warn "Ignoring unexpected package output: ${pkg_path}"
+					continue
+				fi
+			fi
 			pkg_base="${pkg_file%/*}"
 			mkdir -p "${PACKAGES:?}/${pkg_base:?}"
 			# rename as this is expected to be on the same
