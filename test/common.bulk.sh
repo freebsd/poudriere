@@ -1522,7 +1522,7 @@ ARCH=$(uname -p)
 # and makes debugging multiple worktrees difficult. Just hash the srcdir
 # into the name.
 JAILNAME="poudriere-test-${ARCH}-$(realpath "${am_abs_top_srcdir:?}" | sha256 | cut -c1-6)"
-JAIL_VERSION="13.5-RELEASE"
+JAIL_VERSION="15.1-RELEASE"
 JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt || echo" || echo)
 export UNAME_r=$(freebsd-version)
 export UNAME_v="FreeBSD ${UNAME_r}"
