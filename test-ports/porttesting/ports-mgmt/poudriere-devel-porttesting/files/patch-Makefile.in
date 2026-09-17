@@ -1,0 +1,32 @@
+--- Makefile.in.orig	2026-09-18 00:32:33 UTC
++++ Makefile.in
+@@ -504,6 +504,7 @@ MOSTLYCLEANFILES = poudriere
+ 	src/poudriere-sh/builtins.def src/poudriere-sh/builtins.h \
+ 	src/poudriere-sh/shell.h
+ MOSTLYCLEANFILES = poudriere
++.ALLSRC	?= $^
+ AM_CFLAGS = -Wall -pipe -O2
+ awkdir = $(pkgdatadir)/awk
+ assetsdir = $(htmldir)/assets
+@@ -3232,7 +3233,7 @@ src/poudriere-sh/builtins.def: $(top_srcdir)/external/
+ 
+ src/poudriere-sh/builtins.def: $(top_srcdir)/external/sh/builtins.def \
+     $(top_srcdir)/src/poudriere-sh/builtins-poudriere.def
+-	cat $^${.ALLSRC} > $@
++	cat ${.ALLSRC} > $@
+ src/poudriere-sh/shell.h:
+ 	@ln -fs ../../$(top_srcdir)/external/sh/shell.h $@
+ src/poudriere-sh/builtins.h: src/poudriere-sh/builtins.def \
+@@ -3269,10 +3270,10 @@ poudriere: $(top_srcdir)/src/bin/poudriere
+ 	    gitver=$$(git -C "$(top_srcdir)" describe --tags HEAD); \
+ 	    echo "POUDRIERE_VERSION=$${gitver} > $@"; \
+ 	    sed -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
+-	      $^${.ALLSRC} > $@; \
++	      ${.ALLSRC} > $@; \
+ 	    chmod +x $@; \
+ 	else \
+-	    cp -f $^${.ALLSRC} $@; \
++	    cp -f ${.ALLSRC} $@; \
+ 	fi;
+ 
+ # Tell versions [3.59,3.63) of GNU make to not export all variables.
