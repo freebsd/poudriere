@@ -10,12 +10,7 @@ PORTSDIR_SRC="${THISDIR%/*}/test-ports/default"
 PORTSDIR="$(mktemp -dt git_tree_dirty)"
 
 # Setup a test ports tree
-{
-	assert_true do_clone "${PORTSDIR_SRC}" "${PORTSDIR}"
-	assert_true git -C "${PORTSDIR}" init
-	assert_true git -C "${PORTSDIR}" add .
-	assert_true git -C "${PORTSDIR}" commit -m "initial commit"
-}
+copy_git_init "${PORTSDIR_SRC}" "${PORTSDIR}"
 
 assert_true git_get_hash_and_dirty "${PORTSDIR}" 0 git_hash git_modified
 assert "no" "${git_modified}"
