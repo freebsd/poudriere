@@ -1,0 +1,31 @@
+--- Makefile.am.orig	2017-06-01 17:12:34 UTC
++++ Makefile.am
+@@ -1,6 +1,8 @@ MOSTLYCLEANFILES=
+ CLEANFILES=	$(dist_rc_SCRIPTS)
+ MOSTLYCLEANFILES=
+ 
++.ALLSRC	?= $^
++
+ AM_CFLAGS=	-Wall -pipe -O2
+ 
+ awkdir=	$(pkgdatadir)/awk
+@@ -219,7 +221,7 @@ src/poudriere-sh/builtins.def: $(top_srcdir)/external/
+ sh_LDADD+=		-lrt
+ src/poudriere-sh/builtins.def: $(top_srcdir)/external/sh/builtins.def \
+     $(top_srcdir)/src/poudriere-sh/builtins-poudriere.def
+-	cat $^${.ALLSRC} > $@
++	cat ${.ALLSRC} > $@
+ src/poudriere-sh/shell.h:
+ 	@ln -fs ../../$(top_srcdir)/external/sh/shell.h $@
+ src/poudriere-sh/builtins.h: src/poudriere-sh/builtins.def \
+@@ -309,8 +311,8 @@ poudriere: $(top_srcdir)/src/bin/poudriere
+ 	    gitver=$$(git -C "$(top_srcdir)" describe --tags HEAD); \
+ 	    echo "POUDRIERE_VERSION=$${gitver} > $@"; \
+ 	    sed -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
+-	      $^${.ALLSRC} > $@; \
++	      ${.ALLSRC} > $@; \
+ 	    chmod +x $@; \
+ 	else \
+-	    cp -f $^${.ALLSRC} $@; \
++	    cp -f ${.ALLSRC} $@; \
+ 	fi;
