@@ -226,6 +226,13 @@ for
 Clean
 .Em all
 previously built packages and logs.
+.It Fl D
+Treat an invalid
+.Va FLAVOR
+or a dependency on a nonexistent origin or
+.Va FLAVOR
+as a fatal error that aborts the whole build, instead of ignoring just the
+affected port.
 .It Fl F
 Fetch only from the original
 .Va MASTER_SITES .
