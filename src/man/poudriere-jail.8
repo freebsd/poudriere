@@ -36,6 +36,9 @@
 .Nd manage jails used to build ports
 .Sh SYNOPSIS
 .Nm
+.Cm subcommand
+.Op Ar options
+.Nm
 .Fl c
 .Fl j Ar name
 .Op Fl bBDx
@@ -88,12 +91,12 @@ This command manages the poudriere jails which are used as different building
 environments.
 .Sh SUBCOMMANDS
 .Bl -tag -width "-r name"
-.It Fl c
+.It Cm create Pq or Fl c
 Create a jail.
 See
 .Sx CAVEATS
 for restrictions on the names of jails.
-.It Fl d
+.It Cm delete Pq or Fl d
 Delete a jail.
 .Pp
 If the stdin is a TTY then the command is going to ask for confirmation,
@@ -101,20 +104,20 @@ which defaults to
 .Dq Ic N
 .Pq for no .
 Othwerwise, the specified jail is deleted without confirmation.
-.It Fl i
+.It Cm info Pq or Fl i
 Show information about a jail.
 See also
 .Xr poudriere-status 8 .
-.It Fl k
+.It Cm stop Pq or Fl k
 Kill a jail (stop it).
-.It Fl l
+.It Cm list Pq or Fl l
 List all poudriere jails.
 .It Fl r Ar name
 Rename a jail to
 .Ar name .
-.It Fl s
+.It Cm start Pq or Fl s
 Start a jail.
-.It Fl u
+.It Cm update Pq or Fl u
 Update a jail.
 .El
 .Sh OPTIONS
