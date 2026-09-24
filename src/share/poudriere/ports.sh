@@ -80,6 +80,63 @@ set_command() {
 	COMMAND="$1"
 }
 
+ports_from_tarball() {
+	local URL portspath strip
+
+	case "${METHOD}" in
+		ftp|http)
+			# Check that the defaults have been changed
+			echo ${FREEBSD_HOST} | egrep -E "(_PROTO_|_CHANGE_THIS_)" > /dev/null
+			if [ $? -eq 0 ]; then
+				msg "FREEBSD_HOST from config invalid; defaulting to https://download.FreeBSD.org"
+				FREEBSD_HOST="https://download.FreeBSD.org"
+			fi
+			case "$(echo "${FREEBSD_HOST}" | tr '[:upper:]' '[:lower:]')" in
+				*download.freebsd.org) URL="${FREEBSD_HOST}/development/tarballs" ;;
+				*) URL="${FREEBSD_HOST}/pub/FreeBSD/development/tarballs" ;;
+			esac
+			case "${BRANCH}" in
+				[2-9][0-9]*[qQ][1-4]) TARBALL="ports_$(echo ${BRANCH} | tr q Q).tar.xz";;
+				*) TARBALL=ports_main.tar.xz ;;
+			esac
+			;;
+		url=*)
+			URL="${METHOD##url=}"
+			[ -n "${URL}" ] || err ${EX_USAGE} "Must use format -m url=https://example.org"
+			TARBALL=ports.txz
+			;;
+		tar=*)
+			TARBALL="${METHOD##url=}"
+			[ -n "${TARBALL}" ] || err ${EX_USAGE} "Must use format -m tar=/path/to/tarball.tar"
+			[ -r "${TARBALL}" ] || err 1 "Cannot read file ${TARBALL}"
+			;;
+	esac
+
+	if [ -n "${URL}" ]; then
+		msg "Fetching ${URL}/${TARBALL} ..."
+		fetch_file "${PTMNT}/${TARBALL}" "${URL}/${TARBALL}"
+		echo " done"
+		TARBALL="${PTMNT:?}/${TARBALL}"
+  	fi
+
+	# Ensure that the given tarball actually contains a Ports collection
+	portspath="$(tar -tf "${TARBALL}" -q '*UIDs' 2>/dev/null)"
+	[ $? -eq 0 ] || err 1 "${TARBALL} doesn't seem to contain a Ports tree, please verify."
+
+	# The tarball could contain any number of leading path elements
+	# e.g. for -m http, ports_<branch>.tar.xz usually has a leading 'ports/'
+	# e.g. for -m url=..., the ports.txz distset usually has a leading 'usr/ports'
+	strip="$(echo ${portspath} | awk -F'/' '{print NF-1}')"
+	portspath="$(dirname "${portspath}")"
+	msg "Extracting ${TARBALL} ..."
+	tar -C "${PTMNT}" -xpf "${TARBALL}" --strip-components "${strip}" "${portspath}"
+	echo " done"
+
+	msg "Cleaning up..."
+	rm -f "${TARBALL}"
+	echo " done"
+}
+
 while getopts "B:cDFuU:dklp:qf:nM:m:vy" FLAG; do
 	case "${FLAG}" in
 		B)
@@ -159,6 +216,10 @@ if ! svn_git_checkout_method "${SOURCES_URL}" "${METHOD}" \
 	case "${METHOD}" in
 	portsnap) ;;
 	null) ;;
+	http) ;;
+	ftp) ;;
+	tar=*) ;;
+	url=*) ;;
 	*)
 		if [ ${FAKE} -eq 0 ]; then
 			msg_error "Unknown method ${METHOD}"
@@ -171,9 +232,11 @@ fi
 case ${METHOD} in
 svn*) : ${BRANCH:=head} ;;
 git*) ;;
+http) ;;
+ftp) ;;
 *)
 	[ -n "${BRANCH}" ] && \
-	    err 1 "Branch (-B) only supported for SVN and git."
+	    err 1 "Branch (-B) only supported for the following methods (-m): SVN, git, http, ftp."
 esac
 
 cleanup_new_ports() {
@@ -317,6 +380,7 @@ create)
 				echo " done"
 			fi
 			;;
+		http|ftp|tar=*|url=*) ports_from_tarball ;;
 		esac
 		pset ${PTNAME} method ${METHOD}
 		pset ${PTNAME} timestamp $(clock -epoch)
@@ -418,6 +482,9 @@ update)
 		if [ -n "${quiet}" ]; then
 			echo " done"
 		fi
+		;;
+	http*|ftp*|tar*|url*)
+		err 1 "Upgrade is not supported with ${METHOD}; to upgrade, please delete and recreate the ports tree"
 		;;
 	null|none) msg "Not updating portstree \"${PTNAME}\" with method ${METHOD}" ;;
 	*)
