@@ -999,6 +999,16 @@ expect_error_on_stderr() {
 	return "${ret}"
 }
 
+copy_git_init() {
+	[ $# -eq 2 ] || eargs srcdir dstdir
+	assert_true cp -R "$1/" "$2/"
+	assert_true git -C "$2" init -b main
+	assert_true git -C "$2" config user.name 'Poudriere Test'
+	assert_true git -C "$2" config user.email 'poudriere-test@example.org'
+	assert_true git -C "$2" add .
+	assert_true git -C "$2" commit -m "initial commit"
+}
+
 setup_traps cleanup
 set -T
 
