@@ -565,6 +565,7 @@ JAIL_TESTS = \
 	bulk-build-skips.sh \
 	bulk-build-specific-bad-flavor.sh \
 	bulk-build-ulimits.sh \
+	bulk-circular-deps.sh \
 	bulk-flavor-FLAVORS-misordered.sh \
 	bulk-flavor-all-and-specific.sh \
 	bulk-flavor-default-dep-and-specific-listed.sh \
@@ -1964,6 +1965,13 @@ bulk-build-specific-bad-flavor.sh.log: bulk-build-specific-bad-flavor.sh
 bulk-build-ulimits.sh.log: bulk-build-ulimits.sh
 	@p='bulk-build-ulimits.sh'; \
 	b='bulk-build-ulimits.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-circular-deps.sh.log: bulk-circular-deps.sh
+	@p='bulk-circular-deps.sh'; \
+	b='bulk-circular-deps.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
