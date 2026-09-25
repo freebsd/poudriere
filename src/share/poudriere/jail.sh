@@ -1226,26 +1226,18 @@ create_jail() {
 		[ -r "${TARBALL}" ] || err 1 "Cannot read file ${TARBALL}"
 		METHOD="${METHOD%%=*}"
 		;;
-	pkgbase=*)
+	pkgbase*)
 		FCT=install_from_pkgbase
 		PKGBASEREPO="${METHOD##*=}"
-		[ -n "${PKGBASEREPO}" ] ||
-		    err 1 "Must specify repository to use -m pkgbase=repodir"
-		[ -n "${SOURCES_URL}" ] ||
-		    err 1 "Must specify URL to use -m pkgbase=repodir with -U"
+		if [ "${PKGBASEREPO}" = pkgbase ]; then
+  			PKGBASEREPO='base_release_${VERSION_MINOR}'
+  		fi
+		: ${SOURCES_URL:=pkg+https://pkg.freebsd.org/}
 		case "${SOURCES_URL}" in
 		pkg+https://*) PKGBASEMIRROR="srv" ;;
 		*) PKGBASEMIRROR="none" ;;
 		esac
 		METHOD="${METHOD%%=*}"
-		;;
-	pkgbase)
-		FCT=install_from_pkgbase
-		[ -z "${SOURCES_URL}" ] ||
-		    err 1 "Cannot specify -U with -m pkgbase"
-		SOURCES_URL="pkg+https://pkg.freebsd.org/"
-		PKGBASEREPO='base_release_${VERSION_MINOR}'
-		PKGBASEMIRROR="srv"
 		;;
 	null)
 		JAILFS=none
@@ -1584,8 +1576,7 @@ if ! svn_git_checkout_method "${SOURCES_URL}" "${METHOD}" \
 	gjb) ;;
 	http) ;;
 	null) ;;
-	pkgbase=*) ;;
-	pkgbase) ;;
+	pkgbase*) ;;
 	src=*) ;;
 	tar=*) ;;
 	url=*) ;;
