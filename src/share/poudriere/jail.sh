@@ -328,6 +328,16 @@ update_pkgbase() {
 	esac
 }
 
+_pkgbase_get_osversion() {
+	local _pkgbase_major_version _pkgbase_minior_version
+	_pkgbase_major_version="${VERSION%-*}"
+	_pkgbase_minior_version="${_pkgbase_major_version#*.}"
+	_pkgbase_major_version="${_pkgbase_major_version%.*}"
+	# Unlikely to be needed but check if the minor version is two digits and otherwise pad it out
+	[ "${#_pkgbase_minior_version}" -eq 1 ] && _pkgbase_minior_version="0${_pkgbase_minior_version}"
+	echo -n "-o OSVERSION=${_pkgbase_major_version}${_pkgbase_minior_version}000"
+}
+
 update_jail() {
 	local jail_created_with_build_pkgbase BUILD_PKGBASE
 
@@ -450,11 +460,15 @@ update_jail() {
 		create_jail
 		;;
 	pkgbase)
+		local _pkgbase_osversion
+		if [ -n "${VERSION}" ] && [ "${VERSION}" != "${VERSION%-*}" ]; then
+			_pkgbase_osversion=$(_pkgbase_get_osversion "${VERSION}")
+		fi
 		VERSION=$(jget ${JAILNAME} version | cut -d '.' -f 1)
 		[ -z "${ARCH}" ] && ARCH=$(jget ${JAILNAME} arch)
-		pkg -o IGNORE_OSVERSION=yes -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -o REPOS_DIR="${JAILMNT}/etc/pkg" -r "${JAILMNT}" update || \
+		pkg -o IGNORE_OSVERSION=yes -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" ${_pkgbase_osversion} -o REPOS_DIR="${JAILMNT}/etc/pkg" -r "${JAILMNT}" update || \
 			err 1 "pkg update failed"
-		pkg -o IGNORE_OSVERSION=yes -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -o REPOS_DIR="${JAILMNT}/etc/pkg" -r "${JAILMNT}" upgrade -y || \
+		pkg -o IGNORE_OSVERSION=yes -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" ${_pkgbase_osversion} -o REPOS_DIR="${JAILMNT}/etc/pkg" -r "${JAILMNT}" upgrade -y || \
 			err 1 "pkg upgrade failed"
 		markfs clean ${JAILMNT}
 		;;
@@ -1032,10 +1046,15 @@ install_from_tar() {
 
 install_from_pkgbase() {
 	msg_n "Installing ${VERSION} ${ARCH} from ${SOURCES_URL} ..."
+	local _pkgbase_major_version _pkgbase_osversion
+	_pkgbase_major_version="${VERSION%%.*}"
+	if [ -n "${VERSION}" ] && [ "${VERSION}" != "${VERSION%-*}" ]; then
+		_pkgbase_osversion=$(_pkgbase_get_osversion "${VERSION}")
+	fi
 	mkdir -p "${JAILMNT}/etc/pkg"
 	cat <<EOF > "${JAILMNT}/etc/pkg/pkgbase.conf"
 pkgbase: {
-  url: "${SOURCES_URL%/}/FreeBSD:${VERSION}:${ARCH#*.}/${PKGBASEREPO#/}"
+  url: "${SOURCES_URL%/}/FreeBSD:${_pkgbase_major_version}:${ARCH#*.}/${PKGBASEREPO#/}"
   mirror_type: "${PKGBASEMIRROR}"
   enabled: yes
 }
@@ -1063,13 +1082,13 @@ FreeBSD-base: {
 }
 EOF
 
-	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ update || \
+	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ update || \
 	    err 1 "pkg update failed"
 	# Omit the man/debug/kernel/src and tests packages, unneeded for us.
-	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ search -qCx '^FreeBSD-.*' | grep -vE -- '-man|-dbg|-kernel-|-tests|-src-' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ install -y
-	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ search -q '^FreeBSD-src-sys' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ install -y
+	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ search -qCx '^FreeBSD-.*' | grep -vE -- '-man|-dbg|-kernel-|-tests|-src-' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ install -y
+	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ search -q '^FreeBSD-src-sys' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion}  -r ${JAILMNT}/ install -y
 	if [ -n "${KERNEL}" ]; then
-		pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ install -y FreeBSD-kernel-"${KERNEL}" || \
+		pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ install -y FreeBSD-kernel-"${KERNEL}" || \
 			err 1 "Failed to install FreeBSD-kernel-${KERNEL}"
 	fi
 
