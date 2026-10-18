@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 26, 2021
+.Dd September 24, 2026
 .Dt POUDRIERE-PORTS 8
 .Os
 .Sh NAME
@@ -63,16 +63,20 @@ switch (see below).
 .Pp
 .Bl -tag -width "-f filesystem"
 .It Fl B Ar branch
-Specifies which
-.Ar branch
-to checkout when using the
+When used with the
 .Cm git
 or
 .Cm svn
-methods.
-.It Fl F
-When used with
-.Fl c ,
+methods, checkout 
+.Ar branch .
+When used with the
+.Cm http
+or
+.Cm ftp
+methods, fetch the tarball corresponding to
+.Ar branch .
+.Pp
+.It Fl c ,
 only create the needed file systems (for ZFS) and directories, but do
 not populate them.
 .It Fl f Ar filesystem
@@ -162,6 +166,27 @@ may be used to override that value.
 .Pp
 The following protocols are supported:
 .Cm svn No (default), Cm +http Ns , Cm +https Ns , Cm +file Ns , Cm +ssh Ns .
+.It Cm ftp
+Fetch from the host specified in the
+.Va FREEBSD_HOST
+variable in
+.Pa poudriere.conf .
+.It Cm http
+See
+.Cm ftp .
+.It Cm tar= Ns Ar path
+Install from the tarball located at the given
+.Ar path .
+.It Cm url= Ns Ar url
+Fetch
+. Pa ports.txz
+from the directory at
+.Ar url .
+Any URL supported by
+.Xr fetch 1
+can be used.
+For example:
+.Dq Cm url=file:///mirror/10.0 .
 .El
 .Pp
 .It Fl n
@@ -220,6 +245,27 @@ from
 .Pa /usr/ports .
 .Bd -literal -offset 2n
 .Li # Ic poudriere ports -c -p local -m null -M /usr/ports
+.Ed
+.It
+Fetch the
+.Sy 2024Q3
+quarterly ports tree from FreeBSD's official download server.
+Note that this
+.Cm cannot
+be updated with
+.Fl u .
+.Bd -literal -offset 2n
+.Li # Ic poudriere ports -c -p 2024q3 -m http -B 2024Q3
+.Ed
+.It
+Import a local ports tree that is extracted from
+.Ar /path/to/myports.tar.zst .
+Note that this
+.Cm cannot
+be updated with
+.Fl u .
+.Bd -literal -offset 2n
+.Li # Ic poudriere ports -c -p myports -m tar=/path/to/myports.tar.zst
 .Ed
 .Sh ENVIRONMENT
 .Bl -tag -width "HTTP_PROXY FTP_PROXY"
