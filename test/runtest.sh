@@ -159,7 +159,6 @@ while read var; do
 	am_check|am_installcheck|\
 	AM_TESTS_FD_STDERR|\
 	MAKEFLAGS|\
-	CCACHE*|\
 	PATH|\
 	PWD|\
 	TIMEOUT|\
