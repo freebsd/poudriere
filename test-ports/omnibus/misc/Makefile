@@ -1,4 +1,5 @@
 SUBDIR += foo
+SUBDIR += foo-CIRCULAR
 SUBDIR += foo-all-DEPIGNORED
 SUBDIR += foo-all-IGNORED
 SUBDIR += foo-default-DEPIGNORED
