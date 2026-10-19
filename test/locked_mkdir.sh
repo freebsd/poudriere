@@ -98,18 +98,21 @@ assert 0 $? "Lock dir should exist"
 [ -d "${LOCK1}" ]
 assert 0 $? "Lock dir should exist"
 time=$(clock -monotonic)
-echo 1 > "${LOCK1}.pid"
+sleep 86400 &
+notourpid=$!
+echo ${notourpid} > "${LOCK1}.pid"
 assert 0 $? "Writing to pid should succeed"
-assert_pid "$0:$LINENO" "${LOCK1}" "1"
+assert_pid "$0:$LINENO" "${LOCK1}" "${notourpid}"
 locked_mkdir 5 ${LOCK1} $$
 assert 124 $? "Lock should not succeed"
-assert_pid "$0:$LINENO" "${LOCK1}" "1"
+assert_pid "$0:$LINENO" "${LOCK1}" "${notourpid}"
 nowtime=$(clock -monotonic)
 elapsed=$((${nowtime} - ${time}))
 [ "${elapsed}" -le 6 ]
 assert 0 $? "Lock slept too long elapsed=${elapsed}"
 [ -d "${LOCK1}" ]
 assert 0 $? "Lock dir should exist"
+assert_ret 143 kill_job 2 ${notourpid}
 
 # Try taking lock with running pid but no dir which is considered stale
 rmdir "${LOCK1}"
