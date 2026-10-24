@@ -531,6 +531,7 @@ JAIL_TESTS = \
 	bulk-build-broken.sh \
 	bulk-build-ignored.sh \
 	bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh \
+	bulk-build-inc-delete_old_pkg-invalid-flavor-dep.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
@@ -610,6 +611,9 @@ JAIL_TESTS = \
 	bulk-overlay-all.sh \
 	bulk-overlay-specific.sh \
 	bulk-skipped-and-needed-dep.sh \
+	bulk-strict-deps-default-all.sh \
+	bulk-strict-deps-default-duplicate-pkgname.sh \
+	bulk-strict-deps-default-listpkgs.sh \
 	distclean-badorigin.sh \
 	distclean-overlays.sh \
 	distclean-smoke.sh \
@@ -1730,6 +1734,13 @@ bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh.log: bulk-build-inc-delete_
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-inc-delete_old_pkg-invalid-flavor-dep.sh.log: bulk-build-inc-delete_old_pkg-invalid-flavor-dep.sh
+	@p='bulk-build-inc-delete_old_pkg-invalid-flavor-dep.sh'; \
+	b='bulk-build-inc-delete_old_pkg-invalid-flavor-dep.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh.log: bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh
 	@p='bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh'; \
 	b='bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh'; \
@@ -2279,6 +2290,27 @@ bulk-overlay-specific.sh.log: bulk-overlay-specific.sh
 bulk-skipped-and-needed-dep.sh.log: bulk-skipped-and-needed-dep.sh
 	@p='bulk-skipped-and-needed-dep.sh'; \
 	b='bulk-skipped-and-needed-dep.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-strict-deps-default-all.sh.log: bulk-strict-deps-default-all.sh
+	@p='bulk-strict-deps-default-all.sh'; \
+	b='bulk-strict-deps-default-all.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-strict-deps-default-duplicate-pkgname.sh.log: bulk-strict-deps-default-duplicate-pkgname.sh
+	@p='bulk-strict-deps-default-duplicate-pkgname.sh'; \
+	b='bulk-strict-deps-default-duplicate-pkgname.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-strict-deps-default-listpkgs.sh.log: bulk-strict-deps-default-listpkgs.sh
+	@p='bulk-strict-deps-default-listpkgs.sh'; \
+	b='bulk-strict-deps-default-listpkgs.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

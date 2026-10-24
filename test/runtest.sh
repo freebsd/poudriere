@@ -373,10 +373,14 @@ runtest() {
 			case "${TEST##*/}" in
 			bulk-bad-dep-pkgname.sh|\
 			bulk-build-*crashed-builder*.sh|\
+			bulk-build-inc-delete_old_pkg-invalid-flavor-dep.sh|\
 			bulk-build-specific-bad-flavor.sh|\
 			bulk-flavor-nonexistent.sh|\
 			bulk-flavor-specific-dep-and-specific-listed-nonexistent.sh|\
 			bulk-flavor-specific-dep-nonexistent.sh|\
+			bulk-strict-deps-default-all.sh|\
+			bulk-strict-deps-default-duplicate-pkgname.sh|\
+			bulk-strict-deps-default-listpkgs.sh|\
 			distclean-badorigin.sh|\
 			err_catch.sh|\
 			err_catch_framework.sh|\

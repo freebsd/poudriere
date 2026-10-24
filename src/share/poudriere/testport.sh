@@ -83,6 +83,10 @@ BUILD_REPO=1
 OVERLAYS=""
 COMMIT=1
 TRYBROKEN=
+# testport is for testing a single port; treat an invalid FLAVOR or a
+# dependency on a nonexistent origin/FLAVOR as fatal by default, unlike
+# bulk (which defaults to ignoring just the affected port).
+STRICT_DEPS=1
 
 while getopts "b:B:o:cniIj:J:kNO:p:PSTvwz:" FLAG; do
 	case "${FLAG}" in

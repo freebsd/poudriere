@@ -46,6 +46,18 @@ Options:
     -C          -- Clean only the packages listed on the command line or
                    -f file.  Implies -c for -a.
     -c          -- Clean all the previously built binary packages and logs.
+    -D          -- Treat an invalid FLAVOR or a dependency on a nonexistent
+                   origin/FLAVOR as a fatal error that aborts the whole
+                   build, instead of ignoring just the affected port.  This
+                   is already the default when ports are listed on the
+                   command line; -D only changes behavior when combined with
+                   -a or -f, whose default is -d.
+    -d          -- Treat an invalid FLAVOR or a dependency on a nonexistent
+                   origin/FLAVOR as a non-fatal warning, skipping just the
+                   affected port instead of aborting the whole build.  This
+                   is already the default with -a or -f; -d is only useful
+                   when listing ports on the command line, whose default is
+                   -D.
     -F          -- Only fetch from original master_site (skip FreeBSD mirrors)
     -H          -- Create a repository where the package filenames contain the
                    short hash of the contents.
@@ -94,6 +106,9 @@ CLEAN=0
 CLEAN_LISTED=0
 DRY_RUN=0
 ALL=0
+# STRICT_DEPS default depends on how ports are selected (see below,
+# after getopts); -D/-d force it explicitly regardless of mode.
+STRICT_DEPS=
 BUILD_REPO=1
 INTERACTIVE_MODE=0
 OVERLAYS=""
@@ -103,7 +118,7 @@ if [ $# -eq 0 ]; then
 	usage
 fi
 
-while getopts "ab:B:CcFf:HiIj:J:knNO:p:RrSTtvwz:" FLAG; do
+while getopts "ab:B:CcDdFf:HiIj:J:knNO:p:RrSTtvwz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			ALL=1
@@ -120,6 +135,12 @@ while getopts "ab:B:CcFf:HiIj:J:knNO:p:RrSTtvwz:" FLAG; do
 			;;
 		C)
 			CLEAN_LISTED=1
+			;;
+		D)
+			STRICT_DEPS=1
+			;;
+		d)
+			STRICT_DEPS=0
 			;;
 		F)
 			export MASTER_SITE_BACKUP=''
@@ -223,6 +244,15 @@ post_getopts
 
 if [ ${ALL} -eq 1 -a "${PORTTESTING}" -eq 1 ]; then
 	PORTTESTING_FATAL=no
+fi
+
+# Default STRICT_DEPS based on how ports were selected, unless -D/-d
+# already forced an explicit value above.  Listing ports on the
+# command line defaults to fatal (1); -a/-f default to lenient (0).
+if [ $# -gt 0 ]; then
+	: ${STRICT_DEPS:=1}
+else
+	: ${STRICT_DEPS:=0}
 fi
 
 : ${BUILD_PARALLEL_JOBS:=${PARALLEL_JOBS}}
