@@ -7,3 +7,4 @@ SUBDIR += bar
 #SUBDIR += dup-a
 #SUBDIR += dup-b
 SUBDIR += foo-dep-invalid-flavor
+SUBDIR += foo-dep-invalid-flavor-versioned

@@ -11,7 +11,7 @@ set +e
 do_bulk -c -n -a
 assert 0 $? "Bulk -a should not fail by default (STRICT_DEPS defaults to 0)"
 
-EXPECTED_IGNORED="misc/foo-dep-invalid-flavor"
+EXPECTED_IGNORED="misc/foo-dep-invalid-flavor misc/foo-dep-invalid-flavor-versioned"
 EXPECTED_SKIPPED=
 EXPECTED_TOBUILD="converters/libiconv devel/ccache devel/gettext devel/gettext-runtime devel/gettext-tools devel/libffi devel/libtextstyle devel/pkgconf devel/readline lang/perl5.36 lang/python lang/python2 lang/python27 lang/python3 lang/python39 ports-mgmt/pkg print/indexinfo security/openssl misc/bar@default misc/bar@flav"
 EXPECTED_QUEUED="${EXPECTED_TOBUILD} ${EXPECTED_IGNORED} ${EXPECTED_SKIPPED}"

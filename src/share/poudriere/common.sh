@@ -9666,8 +9666,17 @@ generate_queue_pkg() {
 				if ! hash_get \
 				    generate_queue_originspec-pkgname \
 				    "${dpath}" dep_real_pkgname; then
-					msg_error "generate_queue_pkg failed to lookup PKGNAME for ${COLOR_PORT}${dpath}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET}"
-					set_pipe_fatal_error
+					# This dependency never resolved to a
+					# PKGNAME at all (e.g. invalid FLAVOR
+					# or nonexistent origin), which was
+					# already warned about above; nothing
+					# new to validate here.
+					case "${STRICT_DEPS:-0}" in
+					1)
+						msg_error "generate_queue_pkg failed to lookup PKGNAME for ${COLOR_PORT}${dpath}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET}"
+						set_pipe_fatal_error
+						;;
+					esac
 					continue
 				fi
 				if shash_exists originspec-ignored "${dpath}"; then
