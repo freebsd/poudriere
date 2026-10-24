@@ -7776,7 +7776,16 @@ _delete_old_pkg() {
 					esac
 					case "${dpath}" in
 					"")
-						err 1 "Invalid dependency for ${COLOR_PORT}${pkgname}${COLOR_RESET}: ${d}"
+						case "${STRICT_DEPS:-0}" in
+						1)
+							msg_error "Invalid dependency for ${COLOR_PORT}${pkgname}${COLOR_RESET}: ${d}"
+							set_pipe_fatal_error
+							;;
+						*)
+							msg_warn "Invalid dependency for ${COLOR_PORT}${pkgname}${COLOR_RESET}: ${d}; ignoring"
+							;;
+						esac
+						continue
 						;;
 					esac
 					current_deps="${current_deps:+${current_deps} }${dpath}"
@@ -7824,9 +7833,23 @@ _delete_old_pkg() {
 				    ''
 				case "${dep_flavor:+set}" in
 				set)
-					get_pkgname_from_originspec \
-					    "${d}" dep_pkgname || \
-					    err 1 "delete_old_pkg: Failed to lookup PKGNAME for ${COLOR_PORT}${d}${COLOR_RESET}"
+					if ! get_pkgname_from_originspec \
+					    "${d}" dep_pkgname; then
+						case "${STRICT_DEPS:-0}" in
+						1)
+							msg_error "delete_old_pkg: Failed to lookup PKGNAME for ${COLOR_PORT}${d}${COLOR_RESET}"
+							set_pipe_fatal_error
+							;;
+						esac
+						# Can't resolve this dependency at
+						# all (e.g. the FLAVOR no longer
+						# exists); treat it the same as
+						# an unknown/new dependency below
+						# rather than aborting the run.
+						msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: new dependency: ${COLOR_PORT}${d}${COLOR_RESET}"
+						delete_pkg "${pkg}"
+						return 0
+					fi
 					dep_pkgbase="${dep_pkgname%-*}"
 					# Now need to map all of the package's
 					# dependencies to PKGBASES.

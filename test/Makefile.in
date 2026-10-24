@@ -531,6 +531,7 @@ JAIL_TESTS = \
 	bulk-build-broken.sh \
 	bulk-build-ignored.sh \
 	bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh \
+	bulk-build-inc-delete_old_pkg-invalid-flavor-dep.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
@@ -1729,6 +1730,13 @@ bulk-build-ignored.sh.log: bulk-build-ignored.sh
 bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh.log: bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh
 	@p='bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh'; \
 	b='bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-inc-delete_old_pkg-invalid-flavor-dep.sh.log: bulk-build-inc-delete_old_pkg-invalid-flavor-dep.sh
+	@p='bulk-build-inc-delete_old_pkg-invalid-flavor-dep.sh'; \
+	b='bulk-build-inc-delete_old_pkg-invalid-flavor-dep.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
