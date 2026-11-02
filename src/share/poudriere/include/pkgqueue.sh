@@ -724,7 +724,7 @@ pkgqueue_graph() {
 pkgqueue_graph_dot() {
 	[ $# -eq 0 ] || eargs pkgqueue_graph_dot
 	echo "digraph Q {"
-	pkgqueue_graph | tr '-' '_' | sort |
+	pkgqueue_graph | sort |
 	    awk '{print "\t" "\"" $2 "\"" " -> " "\"" $1 "\"" ";"}'
 	echo "}"
 }
