@@ -3817,6 +3817,18 @@ unset_cross_env() {
 	unset OSVERSION
 }
 
+check_name_hyphen() {
+	[ $# -eq 2 ] || eargs check_name_hyphen kind name
+	local kind="$1"
+	local name="$2"
+
+	case "${name}" in
+	*-*)
+		msg_warn "Using a hyphen (-) in a ${kind} name is not recommended; it can cause ambiguity when parsing the build name."
+		;;
+	esac
+}
+
 jail_start() {
 	[ $# -ge 2 ] || eargs jail_start name ptname setname
 	local name=$1
@@ -3857,11 +3869,7 @@ jail_start() {
 		needkld="${needkld} sem"
 	fi
 
-	case "${setname}" in
-	*-*)
-		msg_warn "Using '-' in a SETNAME is not recommended as it causes ambiguities with parsing the build name of ${MASTERNAME}"
-		;;
-	esac
+	check_name_hyphen set "${setname}"
 
 	if [ "${DISTFILES_CACHE}" != "no" -a ! -d "${DISTFILES_CACHE}" ]; then
 		err 1 "DISTFILES_CACHE directory does not exist. (cf.  poudriere.conf)"
