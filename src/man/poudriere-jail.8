@@ -250,6 +250,29 @@ which case
 must
 .Em not
 be provided.
+The repository is chosen from the branch of
+.Fl v Ar version :
+.Cm base_latest
+for
+.Cm -CURRENT
+and
+.Cm -STABLE ,
+otherwise
+.Cm base_release_ Ns Aq Ar minor .
+.Pp
+Note that the
+.Ar path
+must be a base-system packages repository such as
+.Cm base_latest
+or
+.Cm base_release_0 .
+Pointing it at the
+.Cm latest
+ports repository will fail because that repository contains no
+.Fx
+.Dq base
+packages
+.Pq such as FreeBSD-src-sys .
 .Pp
 The
 .Nm FreeBSD-src-sys

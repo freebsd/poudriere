@@ -1032,7 +1032,27 @@ install_from_tar() {
 }
 
 install_from_pkgbase() {
+	local minor
+
 	msg_n "Installing ${VERSION} ${ARCH} from ${SOURCES_URL} ..."
+	# The bare 'pkgbase' method defaults to the official repository,
+	# whose branch depends on the -v value: CURRENT/STABLE snaps build
+	# from 'base_latest', while RELEASEs use 'base_release_${VERSION_MINOR}'.
+	if [ "${PKGBASEREPO_METHOD:?}" = "default" ]; then
+		case "${VERSION}" in
+		*-CURRENT|*-STABLE|*-ALPHA*|*-BETA*|*-RC*|*-PRERELEASE)
+			PKGBASEREPO="base_latest"
+			;;
+		*)
+			minor="${VERSION#*.}"
+			minor="${minor%%[-._]*}"
+			case "${minor}" in
+			""|*[!0-9]*) minor=0 ;;
+			esac
+			PKGBASEREPO="base_release_${minor}"
+			;;
+		esac
+	fi
 	VERSION="${VERSION%%.*}"
 	mkdir -p "${JAILMNT}/etc/pkg"
 	cat <<EOF > "${JAILMNT}/etc/pkg/pkgbase.conf"
@@ -1069,6 +1089,12 @@ EOF
 	    err 1 "pkg update failed"
 	# Omit the man/debug/kernel and tests packages, unneeded for us.
 	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ search -qCx '^FreeBSD-.*' | grep -vE -- '-man|-dbg|-kernel-|-tests|-src-' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ install -y
+	if ! pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ search -S name -qxC '^FreeBSD-src-sys$' >/dev/null; then
+		err 1 "FreeBSD-src-sys package not found in the ${PKGBASEREPO} repository. " \
+		    "This is a base-system packages repository (pkgbase); make sure -m " \
+		    "pkgbase points at base_latest/base_release_*, not the 'latest' ports " \
+		    "repository."
+	fi
 	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ install -y FreeBSD-src-sys || \
 	    err 1 "Failed to install FreeBSD-src-sys (needed for sys/param.h)"
 	if [ -z "${SRCPATH}" -a "${NO_SRC:-no}" = "no" ]; then
@@ -1241,6 +1267,7 @@ create_jail() {
 		    err 1 "Must specify repository to use -m pkgbase=repodir"
 		[ -n "${SOURCES_URL}" ] ||
 		    err 1 "Must specify URL to use -m pkgbase=repodir with -U"
+		PKGBASEREPO_METHOD="explicit"
 		case "${SOURCES_URL}" in
 		pkg+https://*) PKGBASEMIRROR="srv" ;;
 		*) PKGBASEMIRROR="none" ;;
@@ -1252,7 +1279,7 @@ create_jail() {
 		[ -z "${SOURCES_URL}" ] ||
 		    err 1 "Cannot specify -U with -m pkgbase"
 		SOURCES_URL="pkg+https://pkg.freebsd.org/"
-		PKGBASEREPO='base_release_${VERSION_MINOR}'
+		PKGBASEREPO_METHOD="default"
 		PKGBASEMIRROR="srv"
 		;;
 	null)
