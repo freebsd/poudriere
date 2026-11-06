@@ -109,6 +109,16 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/svn.html#svn-mirrors
 #SVN_HOST=svn.FreeBSD.org
 
+# Skip installing the FreeBSD source tree when creating a jail.
+# This applies to the ftp, http, gjb, ftp-archive, freebsdci and url= methods,
+# which then skip the src distribution set, and to the pkgbase method, which
+# then skips the FreeBSD-src package. FreeBSD-src-sys is always installed for
+# pkgbase as it provides sys/param.h. Giving -S to poudriere jail has the same
+# effect.
+# Valid options: yes, no
+# Default: no
+#NO_SRC=no
+
 # Automatic OPTION change detection
 # When bulk building packages, compare the options from kept packages to
 # the current options to be built. If they differ, the existing package

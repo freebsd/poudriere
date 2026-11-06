@@ -248,10 +248,14 @@ is specified, the repository is chosen from the branch of
 .Fl v Ar version :
 .Cm base_latest
 for
-.Cm -CURRENT
-and
+.Cm -CURRENT ,
 .Cm -STABLE ,
-otherwise
+.Cm -PRERELEASE ,
+.Cm -ALPHA ,
+.Cm -BETA
+and
+.Cm -RC
+versions, otherwise
 .Cm base_release_ Ns Aq Ar minor .
 The server is the official
 .Fx
@@ -421,7 +425,9 @@ For
 .Fl m Cm pkgbase ,
 this suppresses installation of the
 .Nm FreeBSD-src
-packages.
+package.
+.Nm FreeBSD-src-sys
+is still installed.
 .It Fl t Ar version
 Upgrade the jail to the specified
 .Ar version
@@ -458,6 +464,10 @@ in the form of
 or
 .Dq Cm main
 for CURRENT from git.
+For
+.Fl m Cm pkgbase ,
+the major version selects the package ABI and, when no repository is
+given, the branch selects the repository.
 Other methods only use the
 .Ar version
 value for display.
@@ -511,15 +521,49 @@ already exists.
 .Bd -literal -offset 2n
 .Li # Ic poudriere jail -l -n -q | grep --quiet '^130i386$'
 .Ed
-.It Sy Example 3\&: No Creating a Jail using base system packages
+.It Sy Example 3\&: No Creating a CURRENT Jail from Base System Packages
+.Pp
+The following example creates a new jail called
+.Dq 160amd64
+from the official base system packages for
+.Fx 16.0-CURRENT .
+The
+.Cm base_latest
+repository is used.
+.Bd -literal -offset 2n
+.Li # Ic poudriere jail -c -j 160amd64 -v 16.0-CURRENT -m pkgbase
+.Ed
+.It Sy Example 4\&: No Creating a RELEASE Jail from Base System Packages
+.Pp
+The following example creates a new jail called
+.Dq 150amd64
+from the official base system packages for
+.Fx 15.0-RELEASE .
+The
+.Cm base_release_0
+repository is used.
+.Bd -literal -offset 2n
+.Li # Ic poudriere jail -c -j 150amd64 -v 15.0-RELEASE -m pkgbase
+.Ed
+.It Sy Example 5\&: No Creating a Jail from a Base System Packages Mirror
 .Pp
 The following example creates a new jail called
 .Dq 151amd64
-from the official base system packages repository for
-.Fx 15.1-RELEASE .
+for
+.Fx 15.1-RELEASE
+from a local mirror of the official package server.
+The
+.Cm base_release_1
+repository is still chosen from
+.Fl v .
 .Bd -literal -offset 2n
-.Li # Ic poudriere jail -c -j 151amd64 -v 15.1-RELEASE -m pkgbase=base_release_1 -U https://pkg.freebsd.org/
+.Li # Ic poudriere jail -c -j 151amd64 -v 15.1-RELEASE -m pkgbase -U https://pkg.example.org/
 .Ed
+.Pp
+To use a specific repository on the mirror instead, give it as
+.Fl m Cm pkgbase= Ns Ar repository_path ,
+for example
+.Fl m Cm pkgbase=base_latest .
 .El
 .Sh SEE ALSO
 .Xr jail 8 ,
