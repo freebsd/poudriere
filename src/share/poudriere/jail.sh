@@ -1032,7 +1032,31 @@ install_from_tar() {
 }
 
 install_from_pkgbase() {
+	local minor
+
 	msg_n "Installing ${VERSION} ${ARCH} from ${SOURCES_URL} ..."
+	# The bare 'pkgbase' method picks the repository on the server
+	# from the -v value: CURRENT/STABLE snaps build
+	# from 'base_latest', while RELEASEs use 'base_release_${VERSION_MINOR}'.
+	if [ "${PKGBASEREPO_METHOD:?}" = "default" ]; then
+		case "${VERSION}" in
+		*-CURRENT|*-STABLE|*-ALPHA*|*-BETA*|*-RC*|*-PRERELEASE)
+			PKGBASEREPO="base_latest"
+			;;
+		*)
+			minor="${VERSION#*.}"
+			minor="${minor%%[-._]*}"
+			case "${minor}" in
+			""|*[!0-9]*) minor=0 ;;
+			esac
+			PKGBASEREPO="base_release_${minor}"
+			;;
+		esac
+	fi
+	# Keep the -v value for create_jail(), VERSION is cut to the
+	# ABI major below.
+	PKGBASEVERSION="${VERSION}"
+	VERSION="${VERSION%%.*}"
 	mkdir -p "${JAILMNT}/etc/pkg"
 	cat <<EOF > "${JAILMNT}/etc/pkg/pkgbase.conf"
 pkgbase: {
@@ -1066,9 +1090,20 @@ EOF
 
 	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ update || \
 	    err 1 "pkg update failed"
-	# Omit the man/debug/kernel/src and tests packages, unneeded for us.
+	# Omit the man/debug/kernel and tests packages, unneeded for us.
 	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ search -qCx '^FreeBSD-.*' | grep -vE -- '-man|-dbg|-kernel-|-tests|-src-' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ install -y
-	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ search -q '^FreeBSD-src-sys' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ install -y
+	if ! pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ search -S name -qxC '^FreeBSD-src-sys$' >/dev/null; then
+		err 1 "FreeBSD-src-sys package not found in the ${PKGBASEREPO} repository. " \
+		    "This is a base-system packages repository (pkgbase); make sure -m " \
+		    "pkgbase points at base_latest/base_release_*, not the 'latest' ports " \
+		    "repository."
+	fi
+	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ install -y FreeBSD-src-sys || \
+	    err 1 "Failed to install FreeBSD-src-sys (needed for sys/param.h)"
+	if [ -z "${SRCPATH}" -a "${NO_SRC:-no}" = "no" ]; then
+		pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ install -y FreeBSD-src || \
+		    err 1 "Failed to install FreeBSD-src"
+	fi
 	if [ -n "${KERNEL}" ]; then
 		pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" -r ${JAILMNT}/ install -y FreeBSD-kernel-"${KERNEL}" || \
 			err 1 "Failed to install FreeBSD-kernel-${KERNEL}"
@@ -1235,6 +1270,7 @@ create_jail() {
 		    err 1 "Must specify repository to use -m pkgbase=repodir"
 		[ -n "${SOURCES_URL}" ] ||
 		    err 1 "Must specify URL to use -m pkgbase=repodir with -U"
+		PKGBASEREPO_METHOD="explicit"
 		case "${SOURCES_URL}" in
 		pkg+https://*) PKGBASEMIRROR="srv" ;;
 		*) PKGBASEMIRROR="none" ;;
@@ -1243,11 +1279,14 @@ create_jail() {
 		;;
 	pkgbase)
 		FCT=install_from_pkgbase
-		[ -z "${SOURCES_URL}" ] ||
-		    err 1 "Cannot specify -U with -m pkgbase"
-		SOURCES_URL="pkg+https://pkg.freebsd.org/"
-		PKGBASEREPO='base_release_${VERSION_MINOR}'
-		PKGBASEMIRROR="srv"
+		# The repository is picked from -v later; -U only changes
+		# the server.
+		: ${SOURCES_URL:="pkg+https://pkg.freebsd.org/"}
+		PKGBASEREPO_METHOD="default"
+		case "${SOURCES_URL}" in
+		pkg+https://*) PKGBASEMIRROR="srv" ;;
+		*) PKGBASEMIRROR="none" ;;
+		esac
 		;;
 	null)
 		JAILFS=none
@@ -1317,6 +1356,17 @@ create_jail() {
 		RELEASE="${VERSION}"
 	fi
 	[ -n "${RELEASE}" ] || err 1 "Failed to determine RELEASE"
+
+	# An explicit pkgbase repository decides what gets installed,
+	# -v only sets the ABI major, so say so when they disagree.
+	if [ "${PKGBASEREPO_METHOD-}" = "explicit" ]; then
+		case "${RELEASE}" in
+		"${PKGBASEVERSION}"|"${PKGBASEVERSION}"-p[0-9]*) ;;
+		*)
+			msg_warn "Asked for ${PKGBASEVERSION} but the ${PKGBASEREPO} repository installed ${RELEASE}"
+			;;
+		esac
+	fi
 
 	if [ "${METHOD}" = "null" ] && \
 	    [ ! -f "${JAILMNT}/etc/login.conf" ]; then

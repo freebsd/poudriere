@@ -244,15 +244,67 @@ from the given
 .Fl U Ar url .
 If no
 .Ar path
-is specified, defaults to the official FreeBSD pkgbase server, in
-which case
-.Fl U
-must
-.Em not
-be provided.
+is specified, the repository is chosen from the branch of
+.Fl v Ar version :
+.Cm base_latest
+for
+.Cm -CURRENT ,
+.Cm -STABLE ,
+.Cm -PRERELEASE ,
+.Cm -ALPHA ,
+.Cm -BETA
+and
+.Cm -RC
+versions, otherwise
+.Cm base_release_ Ns Aq Ar minor .
+The server is the official
+.Fx
+package server unless a mirror is given with
+.Fl U .
 .Pp
-Note that building kernel module will not be possible as there is no
-package with the source code.
+When a
+.Ar repository_path
+is given, that repository decides the installed version and
+.Fl v
+only sets the ABI major version.
+For example,
+.Fl v Cm 15.1-RELEASE
+with
+.Cm pkgbase=base_latest
+installs the latest
+.Cm stable/15
+snapshot, such as 15.2-PRERELEASE.
+A warning is printed when the installed version does not match
+.Fl v .
+.Pp
+Note that the
+.Ar path
+must be a base-system packages repository such as
+.Cm base_latest
+or
+.Cm base_release_0 .
+Pointing it at the
+.Cm latest
+ports repository will fail because that repository contains no
+.Fx
+.Dq base
+packages
+.Pq such as FreeBSD-src-sys .
+.Pp
+The
+.Nm FreeBSD-src-sys
+package is always installed
+.Pq needed for Pa sys/param.h .
+The
+.Nm FreeBSD-src
+package is also installed unless
+.Fl S
+is specified or
+.Va NO_SRC
+is set to
+.Dq yes
+in
+.Pa poudriere.conf .
 .It Cm src= Ns Ar path
 Install from the given directory at
 .Ar path .
@@ -369,6 +421,13 @@ as the
 source tree mounted inside the jail
 or from the host for
 .Fl m Cm null .
+For
+.Fl m Cm pkgbase ,
+this suppresses installation of the
+.Nm FreeBSD-src
+package.
+.Nm FreeBSD-src-sys
+is still installed.
 .It Fl t Ar version
 Upgrade the jail to the specified
 .Ar version
@@ -405,6 +464,10 @@ in the form of
 or
 .Dq Cm main
 for CURRENT from git.
+For
+.Fl m Cm pkgbase ,
+the major version selects the package ABI and, when no repository is
+given, the branch selects the repository.
 Other methods only use the
 .Ar version
 value for display.
@@ -458,6 +521,49 @@ already exists.
 .Bd -literal -offset 2n
 .Li # Ic poudriere jail -l -n -q | grep --quiet '^130i386$'
 .Ed
+.It Sy Example 3\&: No Creating a CURRENT Jail from Base System Packages
+.Pp
+The following example creates a new jail called
+.Dq 160amd64
+from the official base system packages for
+.Fx 16.0-CURRENT .
+The
+.Cm base_latest
+repository is used.
+.Bd -literal -offset 2n
+.Li # Ic poudriere jail -c -j 160amd64 -v 16.0-CURRENT -m pkgbase
+.Ed
+.It Sy Example 4\&: No Creating a RELEASE Jail from Base System Packages
+.Pp
+The following example creates a new jail called
+.Dq 150amd64
+from the official base system packages for
+.Fx 15.0-RELEASE .
+The
+.Cm base_release_0
+repository is used.
+.Bd -literal -offset 2n
+.Li # Ic poudriere jail -c -j 150amd64 -v 15.0-RELEASE -m pkgbase
+.Ed
+.It Sy Example 5\&: No Creating a Jail from a Base System Packages Mirror
+.Pp
+The following example creates a new jail called
+.Dq 151amd64
+for
+.Fx 15.1-RELEASE
+from a local mirror of the official package server.
+The
+.Cm base_release_1
+repository is still chosen from
+.Fl v .
+.Bd -literal -offset 2n
+.Li # Ic poudriere jail -c -j 151amd64 -v 15.1-RELEASE -m pkgbase -U https://pkg.example.org/
+.Ed
+.Pp
+To use a specific repository on the mirror instead, give it as
+.Fl m Cm pkgbase= Ns Ar repository_path ,
+for example
+.Fl m Cm pkgbase=base_latest .
 .El
 .Sh SEE ALSO
 .Xr jail 8 ,
