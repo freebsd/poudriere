@@ -334,7 +334,9 @@ _pkgbase_get_osversion() {
 	_pkgbase_minior_version="${_pkgbase_major_version#*.}"
 	_pkgbase_major_version="${_pkgbase_major_version%.*}"
 	# Unlikely to be needed but check if the minor version is two digits and otherwise pad it out
-	[ "${#_pkgbase_minior_version}" -eq 1 ] && _pkgbase_minior_version="0${_pkgbase_minior_version}"
+	if [ "${#_pkgbase_minior_version}" -eq 1 ]; then
+		_pkgbase_minior_version="0${_pkgbase_minior_version}"
+	fi
 	echo -n "-o OSVERSION=${_pkgbase_major_version}${_pkgbase_minior_version}000"
 }
 
