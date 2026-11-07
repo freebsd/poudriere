@@ -181,6 +181,7 @@ JAIL_TESTS= \
 	bulk-build-skips.sh \
 	bulk-build-specific-bad-flavor.sh \
 	bulk-build-ulimits.sh \
+	bulk-circular-deps.sh \
 	bulk-flavor-FLAVORS-misordered.sh \
 	bulk-flavor-all-and-specific.sh \
 	bulk-flavor-default-dep-and-specific-listed.sh \
