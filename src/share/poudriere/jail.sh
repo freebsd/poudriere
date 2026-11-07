@@ -331,7 +331,7 @@ update_pkgbase() {
 
 _pkgbase_get_osversion() {
 	local _pkgbase_major_version _pkgbase_minior_version
-	_pkgbase_major_version="${VERSION%-*}"
+	_pkgbase_major_version="${VERSION%%-*}"
 	_pkgbase_minior_version="${_pkgbase_major_version#*.}"
 	_pkgbase_major_version="${_pkgbase_major_version%.*}"
 	# Unlikely to be needed but check if the minor version is two digits and otherwise pad it out
