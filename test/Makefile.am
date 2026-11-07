@@ -147,6 +147,7 @@ JAIL_TESTS= \
 	bulk-build-broken.sh \
 	bulk-build-ignored.sh \
 	bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh \
+	bulk-build-inc-delete_old_pkg-invalid-flavor-dep.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
@@ -226,6 +227,9 @@ JAIL_TESTS= \
 	bulk-overlay-all.sh \
 	bulk-overlay-specific.sh \
 	bulk-skipped-and-needed-dep.sh \
+	bulk-strict-deps-default-all.sh \
+	bulk-strict-deps-default-duplicate-pkgname.sh \
+	bulk-strict-deps-default-listpkgs.sh \
 	distclean-badorigin.sh \
 	distclean-overlays.sh \
 	distclean-smoke.sh \

@@ -35,6 +35,7 @@ libtool
 /timestamp
 /write_atomic
 Makefile
+!/test-ports/**/Makefile
 configure~
 build-aux/install-sh~
 build-aux/test-driver.orig
