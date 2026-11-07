@@ -38,7 +38,7 @@
 .Nm
 .Fl a
 .Fl j Ar name
-.Op Fl CcFHIikNnRrSTtvw
+.Op Fl CceFHIikNnRrSTtvw
 .Op Fl B Ar name
 .Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
@@ -48,7 +48,7 @@
 .Nm
 .Fl f Ar file Op Fl f Ar file2 Ar ...
 .Fl j Ar name
-.Op Fl CcFHIikNnRrSTtvw
+.Op Fl CceFHIikNnRrSTtvw
 .Op Fl B Ar name
 .Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
@@ -57,7 +57,7 @@
 .Op Fl z Ar set
 .Nm
 .Fl j Ar name
-.Op Fl CcFHIikNnRrSTtvw
+.Op Fl CceFHIikNnRrSTtvw
 .Op Fl B Ar name
 .Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
@@ -226,6 +226,14 @@ for
 Clean
 .Em all
 previously built packages and logs.
+.It Fl e
+Run
+.Cm make test
+for each port after the build and stage phases complete.
+This helps catch missing
+.Va TEST_DEPENDS
+by running port tests in a clean environment where only declared
+dependencies are installed.
 .It Fl F
 Fetch only from the original
 .Va MASTER_SITES .
