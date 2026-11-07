@@ -1093,8 +1093,8 @@ EOF
 	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ update || \
 	    err 1 "pkg update failed"
 	# Omit the man/debug/kernel/src and tests packages, unneeded for us.
-	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ search -qCx '^FreeBSD-.*' | grep -vE -- '-man|-dbg|-kernel-|-tests|-src-' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ install -yU
-	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ search -q '^FreeBSD-src-sys' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion}  -r ${JAILMNT}/ install -yU
+	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ search -qCx '^FreeBSD-.*' | grep -vE -- '-man|-dbg|-kernel-|-tests|-src-' | xargs pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ install -yU
+	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ search -q '^FreeBSD-src-sys' | xargs pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion}  -r ${JAILMNT}/ install -yU
 	if [ -n "${KERNEL}" ]; then
 		pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ install -yU FreeBSD-kernel-"${KERNEL}" || \
 			err 1 "Failed to install FreeBSD-kernel-${KERNEL}"
