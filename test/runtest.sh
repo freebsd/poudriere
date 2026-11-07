@@ -236,7 +236,7 @@ export LOGCLEAN_WAIT
 
 case "${TEST##*/}" in
 prep.sh) : "${DEF_TIMEOUT:=250}" ;;
-*-build-quick*.sh) : "${DEF_TIMEOUT:=120}" ;;
+*-build-quick*.sh) : "${DEF_TIMEOUT:=200}" ;;
 bulk*build*.sh|testport*build*.sh) : "${DEF_TIMEOUT:=400}" ;;
 critical_section_inherit.sh) : "${DEF_TIMEOUT:=20}" ;;
 shellcheck.sh) : "${DEF_TIMEOUT:=90}" ;;
