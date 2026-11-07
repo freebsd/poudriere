@@ -285,6 +285,7 @@ rename_jail() {
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	[ "${NEWJAILNAME#*.*}" = "${NEWJAILNAME}" ] ||
 		err 1 "The jailname cannot contain a period (.). See jail(8)"
+	check_name_hyphen jail "${NEWJAILNAME}"
 	msg_n "Renaming '${JAILNAME}' in '${NEWJAILNAME}'"
 	mv ${POUDRIERED:?}/jails/${JAILNAME} ${POUDRIERED:?}/jails/${NEWJAILNAME}
 	cache_dir="${POUDRIERE_DATA:?}/cache/${JAILNAME}-*"
@@ -1087,10 +1088,10 @@ EOF
 	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ update || \
 	    err 1 "pkg update failed"
 	# Omit the man/debug/kernel/src and tests packages, unneeded for us.
-	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ search -qCx '^FreeBSD-.*' | grep -vE -- '-man|-dbg|-kernel-|-tests|-src-' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ install -y
-	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ search -q '^FreeBSD-src-sys' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion}  -r ${JAILMNT}/ install -y
+	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ search -qCx '^FreeBSD-.*' | grep -vE -- '-man|-dbg|-kernel-|-tests|-src-' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ install -yU
+	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ search -q '^FreeBSD-src-sys' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion}  -r ${JAILMNT}/ install -yU
 	if [ -n "${KERNEL}" ]; then
-		pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ install -y FreeBSD-kernel-"${KERNEL}" || \
+		pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ install -yU FreeBSD-kernel-"${KERNEL}" || \
 			err 1 "Failed to install FreeBSD-kernel-${KERNEL}"
 	fi
 
@@ -1143,6 +1144,7 @@ create_jail() {
 
 	[ "${JAILNAME#*.*}" = "${JAILNAME}" ] ||
 		err 1 "The jailname cannot contain a period (.). See jail(8)"
+	check_name_hyphen jail "${JAILNAME}"
 
 	if [ "${METHOD}" = "null" ]; then
 		case "${JAILMNT:+set}" in

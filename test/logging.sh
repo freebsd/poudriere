@@ -89,7 +89,9 @@ while get_test_context; do
 	assert_ret 0 log_start ${prefix:+-P "port:"} "${PORT_NAME}" ${PORT_TEE}
 	if [ "${expect_pids_port}" -eq 1 ]; then
 		assert_not "null" "${log_start_job-null}"
-		assert_ret 0 check_pids "${log_start_job}"
+		tpid="$(jobid "%${log_start_job:?}")"
+		assert 0 "$?"
+		assert_ret 0 check_pids "${tpid}"
 	else
 		assert "null" "${log_start_job-null}"
 	fi
