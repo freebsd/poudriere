@@ -2388,7 +2388,7 @@ jail_runs() {
 	[ $# -eq 1 ] || eargs jail_runs jname
 	local jname="$1"
 
-	jls -j "$jname" >/dev/null 2>&1
+	jls -d name 2>&1 | grep -q "^${jname}" 2>&1
 }
 
 porttree_list() {
