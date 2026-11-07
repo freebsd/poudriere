@@ -740,7 +740,7 @@ install_from_src() {
 		.svn
 		EOF
 	fi
-	do_clone -r ${cpignore_flag} "${SRC_BASE:?}" "${JAILMNT:?}/usr/src"
+	do_clone_del -r ${cpignore_flag} "${SRC_BASE:?}" "${JAILMNT:?}/usr/src"
 	if [ -n "${cpignore}" ]; then
 		rm -f "${cpignore}"
 	fi
