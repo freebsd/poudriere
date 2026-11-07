@@ -46,6 +46,9 @@ Options:
     -C          -- Clean only the packages listed on the command line or
                    -f file.  Implies -c for -a.
     -c          -- Clean all the previously built binary packages and logs.
+    -D          -- Treat an invalid FLAVOR or a dependency on a nonexistent
+                   origin/FLAVOR as a fatal error instead of ignoring just
+                   the affected port.
     -F          -- Only fetch from original master_site (skip FreeBSD mirrors)
     -H          -- Create a repository where the package filenames contain the
                    short hash of the contents.
@@ -92,6 +95,7 @@ CLEAN=0
 CLEAN_LISTED=0
 DRY_RUN=0
 ALL=0
+STRICT_DEPS=0
 BUILD_REPO=1
 INTERACTIVE_MODE=0
 OVERLAYS=""
@@ -99,7 +103,7 @@ COMMIT=1
 
 [ $# -eq 0 ] && usage
 
-while getopts "ab:B:CcFf:HiIj:J:knNO:p:RrSTtvwz:" FLAG; do
+while getopts "ab:B:CcDFf:HiIj:J:knNO:p:RrSTtvwz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			ALL=1
@@ -116,6 +120,9 @@ while getopts "ab:B:CcFf:HiIj:J:knNO:p:RrSTtvwz:" FLAG; do
 			;;
 		C)
 			CLEAN_LISTED=1
+			;;
+		D)
+			STRICT_DEPS=1
 			;;
 		F)
 			export MASTER_SITE_BACKUP=''
