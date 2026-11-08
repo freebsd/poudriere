@@ -383,7 +383,8 @@ clonefs() {
 			src="${_relpath_common_dir1:?}"
 			dst="${_relpath_common_dir2:?}"
 
-			cpignore="$(mktemp -ut clone.cpignore)"
+			cpignore="$(mktemp -t clone.cpignore)" ||
+			    err 1 "clonefs: mktemp failed"
 			skippaths="$(nullfs_paths)"
 			skippaths="${skippaths} /proc"
 			skippaths="${skippaths} /usr/src"
@@ -395,13 +396,13 @@ clonefs() {
 					echo "${src}${skippath}"
 				done
 				echo ".cpignore"
-			} > "${cpignore}"
+			} > "${cpignore:?}"
 			;;
 		esac
 		do_clone -r ${cpignore:+-X "${cpignore}"} "${from}" "${mnt:?}"
 		case "${snap}" in
 		"clean")
-			rm -f "${cpignore}"
+			rm -f "${cpignore:?}"
 			echo "${DATADIR_NAME}" >> "${mnt:?}/.cpignore"
 			;;
 		esac

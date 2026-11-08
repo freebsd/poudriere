@@ -730,22 +730,23 @@ install_from_src() {
 	cpignore_flag=
 	cpignore=
 	msg_n "Copying ${SRC_BASE} to ${JAILMNT}/usr/src..."
-	mkdir -p ${JAILMNT}/usr/src
+	mkdir -p "${JAILMNT:?}/usr/src"
 	# Support user-supplied .cpignore.
 	if [ -f "${SRC_BASE:?}/.cpignore" ]; then
 		cpignore_flag="-x"
 	else
-		cpignore=$(mktemp -t cpignore)
+		cpignore="$(mktemp -t cpignore)" ||
+		    err 1 "install_from_src: mktemp failed"
 		cpignore_flag="-X ${cpignore}"
 		# Ignore some files
-		cat > ${cpignore} <<-EOF
+		cat > "${cpignore:?}" <<-EOF
 		.git
 		.svn
 		EOF
 	fi
 	do_clone_del -r ${cpignore_flag} "${SRC_BASE:?}" "${JAILMNT:?}/usr/src"
 	if [ -n "${cpignore}" ]; then
-		rm -f "${cpignore}"
+		rm -f "${cpignore:?}"
 	fi
 	echo " done"
 	check_kernconf
