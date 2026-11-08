@@ -727,6 +727,8 @@ install_from_src() {
 	local var_version_extra="$1"
 	local cpignore_flag cpignore
 
+	cpignore_flag=
+	cpignore=
 	msg_n "Copying ${SRC_BASE} to ${JAILMNT}/usr/src..."
 	mkdir -p ${JAILMNT}/usr/src
 	# Support user-supplied .cpignore.
