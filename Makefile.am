@@ -215,6 +215,7 @@ sh_CFLAGS=		$(AM_CFLAGS) -Wno-extra \
 			-Wno-unused-const-variable \
 			-include $(top_srcdir)/external/sh_compat/compat.h \
 			-I$(top_srcdir)/src \
+			-I$(top_builddir)/external/sh \
 			-I$(top_srcdir)/external/sh
 sh_CFLAGS+=		$(SAN_CFLAGS)
 sh_LDADD=		${sh_hist_LDADD} -lsbuf
