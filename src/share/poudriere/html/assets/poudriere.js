@@ -409,6 +409,29 @@ function format_log(pkgname, errors, text) {
   return html;
 }
 
+function format_log_tail(pkgname, text) {
+  var params;
+
+  if (!pkgname) {
+    return text;
+  }
+  params = [];
+  if (server_style == "hosted") {
+    params.push("mastername=" + encodeURIComponent(page_mastername));
+    params.push("build=" + encodeURIComponent(page_buildname));
+  }
+  params.push("pkg=" + encodeURIComponent(pkgname));
+  return (
+    '<a target="logtail" title="Live log for ' +
+    pkgname +
+    '" href="log.html?' +
+    params.join("&") +
+    '">' +
+    text +
+    "</a>"
+  );
+}
+
 function format_start_to_end(start, end) {
   var duration;
 
@@ -698,7 +721,7 @@ function process_data_build(data) {
         ? format_origin(builder.origin, builder.flavor)
         : "";
       row.status = builder.pkgname
-        ? format_log(builder.pkgname, false, builder.status)
+        ? format_log_tail(builder.pkgname, builder.status)
         : builder.status.split(":")[0];
       row.elapsed = builder.started
         ? format_start_to_end(builder.started, now)
