@@ -63,38 +63,25 @@ shash_get() {
 	local sg_var="$1"
 	local sg_key="$2"
 	local sg_var_return="$3"
-	local _shash_var_name _shash_var_path _f _sh_value _sh_values
-	local sg_ret sg_rret
-	local -
+	local _shash_var_name _shash_var_path _f _sh_value
+	local sg_ret
 
 	sg_ret=0
-	_sh_values=
 	_shash_var_path
 	_shash_var_name "${sg_var:?}" "${sg_key:?}"
 	_f="${_shash_var_path}${_shash_var_name:?}"
-	sg_rret=0
 	case "${sg_var_return:?}" in
 	-)
-		readlines_file -- "${_f:?}" - || sg_rret=$?
+		readlines_file -- "${_f:?}" - || sg_ret=$?
 		;;
 	*)
-		readlines_file -- "${_f:?}" _sh_value || sg_rret=$?
-		;;
-	esac
-	case "${sg_rret}" in
-	0)
-		case "${sg_var_return:?}" in
-		-) ;;
-		*) _sh_values="${_sh_values:+${_sh_values} }${_sh_value}" ;;
+		readlines_file -- "${_f:?}" _sh_value || sg_ret=$?
+		case "${sg_ret}" in
+		0) ;;
+		*) _sh_value= ;;
 		esac
+		setvar "${sg_var_return}" "${_sh_value}" || return
 		;;
-	*)
-		sg_ret="${sg_rret}"
-		;;
-	esac
-	case "${sg_var_return}" in
-	-) ;;
-	*) setvar "${sg_var_return}" "${_sh_values}" || return ;;
 	esac
 	return "${sg_ret}"
 }
