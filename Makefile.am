@@ -205,7 +205,8 @@ sh_CFLAGS=		$(AM_CFLAGS) -Wno-extra \
 			-DSHELL -std=gnu99 -DVTABSIZE=1000 ${sh_hist_CFLAGS} \
 			-Wno-unused-const-variable \
 			-include $(top_srcdir)/external/sh_compat/compat.h \
-		-I$(top_srcdir)/src \
+			-I$(top_srcdir)/src \
+			-I$(top_builddir)/external/sh \
 			-I$(top_srcdir)/external/sh
 sh_LDADD=		${sh_hist_LDADD} -lsbuf
 if MAINTAINER_MODE
