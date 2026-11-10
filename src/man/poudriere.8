@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd November 4, 2025
+.Dd November 10, 2026
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -119,6 +119,9 @@ It is currently
 Using it requires starting
 .Sy poudriered
 via the provided rc script.
+.It Cm repo ( Xr poudriere-repo 8 )
+This command regenerates the package repository with
+.Xr pkg-repo 8 .
 .It Cm status Xr ( poudriere-status 8 )
 This command shows status of current and previous builds
 .It Cm version Xr ( poudriere-version 8 )
@@ -456,6 +459,7 @@ For specific hook documentation see:
 .Lk https://github.com/freebsd/poudriere/wiki/hooks
 .Sh SEE ALSO
 .Xr jail 8 ,
+.Xr poudriere-audit 8 ,
 .Xr poudriere-bulk 8 ,
 .Xr poudriere-distclean 8 ,
 .Xr poudriere-image 8 ,
@@ -465,6 +469,7 @@ For specific hook documentation see:
 .Xr poudriere-pkgclean 8 ,
 .Xr poudriere-ports 8 ,
 .Xr poudriere-queue 8 ,
+.Xr poudriere-repo 8 ,
 .Xr poudriere-status 8 ,
 .Xr poudriere-testport 8 ,
 .Xr poudriere-version 8
