@@ -462,8 +462,9 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-MOSTLYCLEANFILES = $(TEST_LOGS:.log=.log.truss) \
-	$(TEST_LOGS:.log=*.log) prep.sh.trs prep.sh.log
+MOSTLYCLEANFILES = $(TEST_LOGS:.log=*.log.truss) \
+	$(TEST_LOGS:.log=*.log) $(TEST_LOGS:.log=*.log.lock) \
+	prep.sh.trs prep.sh.log
 AM_TESTS_FD_STDERR = 4
 AM_TESTS_FD_REDIRECT = $(AM_TESTS_FD_STDERR)>&2
 EXTRA_DIST = $(TESTS) \
