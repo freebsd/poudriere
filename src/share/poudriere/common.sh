@@ -8886,8 +8886,8 @@ deps_sanity() {
 	for dep_originspec in ${deps}; do
 		originspec_decode "${dep_originspec}" dep_origin dep_flavor dep_subpkg
 		msg_verbose "${COLOR_PORT}${originspec}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
-		case "${dep_originspec}" in
-		"${originspec}")
+		case "${dep_origin}" in
+		"${origin}")
 			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
 			ret=1
 			;;
