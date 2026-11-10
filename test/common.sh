@@ -64,7 +64,7 @@ IN_TEST=1
 USE_DEBUG=yes
 SCRIPTPATH="${SCRIPTPREFIX}/${CMD}"
 : ${SCRIPTNAME:=runtest.sh}
-: "${BASEFS:="/var/tmp/poudriere/test/worktrees/${am_abs_top_srcdir:?}"}"
+: "${BASEFS:="/var/tmp/poudriere/test/worktrees/${am_abs_top_builddir:?}"}"
 POUDRIERE_ETC="${BASEFS}/etc"
 : ${HTML_JSON_UPDATE_INTERVAL:=15}
 

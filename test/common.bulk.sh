@@ -1519,9 +1519,9 @@ SCRIPTNAME="${SCRIPTNAME##*/}"
 POUDRIERE="env VERBOSE=0 ${POUDRIEREPATH} -e ${POUDRIERE_ETC}"
 ARCH=$(uname -p)
 # Need to keep JAILNAME unique but not full of spam as it gets into every path
-# and makes debugging multiple worktrees difficult. Just hash the srcdir
+# and makes debugging multiple worktrees difficult. Just hash the build dir
 # into the name.
-JAILNAME="poudriere-test-${ARCH}-$(realpath "${am_abs_top_srcdir:?}" | sha256 | cut -c1-6)"
+JAILNAME="poudriere-test-${ARCH}-$(realpath "${am_abs_top_builddir:?}" | sha256 | cut -c1-6)"
 JAIL_VERSION="14.5-RELEASE"
 JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt || echo" || echo)
 export UNAME_r=$(freebsd-version)
