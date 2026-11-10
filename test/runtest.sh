@@ -231,6 +231,11 @@ BUILD_DIR="${PWD}"
 THISDIR=${am_VPATH}
 THISDIR="$(realpath "${THISDIR}")"
 cd "${THISDIR}"
+# Keep logs in the build dir rather than srcdir for out-of-tree builds.
+case "${am_check}" in
+1) LOG_DIR="${BUILD_DIR}" ;;
+*) LOG_DIR="${TEST%/*}" ;;
+esac
 : "${LOGCLEAN_WAIT:=5}"
 export LOGCLEAN_WAIT
 
@@ -320,11 +325,11 @@ exec < /dev/null
 
 echo "Using SH=${SH}" >&2
 
-rm -f "${TEST}.log.truss"
-
 get_log_name() {
-	echo "${TEST}${TEST_CONTEXT_NUM:+-${TEST_CONTEXT_NUM}}.log"
+	echo "${LOG_DIR}/${TEST##*/}${TEST_CONTEXT_NUM:+-${TEST_CONTEXT_NUM}}.log"
 }
+
+rm -f "$(get_log_name).truss"
 
 runtest() {
 	local make_job="${1-}"
