@@ -61,6 +61,13 @@ case "${1##*/}" in
 	;;
 esac
 : ${TIMEOUT:=90}
+case "${CCACHE_DIR:+set}" in
+set) ;;
+*)
+	: "${TIMEOUT_NO_CCACHE_MULTIPLER:=2}"
+	TIMEOUT="$((TIMEOUT * TIMEOUT_NO_CCACHE_MULTIPLER))"
+	;;
+esac
 
 [ "${am_check}" -eq 0 ] && [ -t 0 ] && export FORCE_COLORS=1
 exec < /dev/null
