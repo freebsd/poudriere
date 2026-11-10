@@ -218,6 +218,7 @@ sh_CFLAGS=		$(AM_CFLAGS) -Wno-extra \
 			-I$(top_builddir)/external/sh \
 			-I$(top_srcdir)/external/sh
 sh_CFLAGS+=		$(SAN_CFLAGS)
+EXTRA_DIST+=		external/sh_compat/compat.h
 sh_LDADD=		${sh_hist_LDADD} -lsbuf
 if MAINTAINER_MODE
 sh_hist_LDADD=		-ledit
