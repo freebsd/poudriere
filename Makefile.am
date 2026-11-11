@@ -385,8 +385,34 @@ gen-man-wiki:
 	    echo "### This page is auto-generated from $${man}"; \
 	    (mandoc -Thtml -O man=%N.%S${DEVEL_SFX} $${man} | awk \
 	    '$$1 == "<body>" { seenbody=1; next; }; \
-	     $$1 == "</body>" { seenbody=0; }; \
-	     seenbody == 1 { print };'\
+	     $$1 == "</body>" { seenbody=0; next; }; \
+	     seenbody != 1 { next; }; \
+	     { \
+	       line = $$0; \
+	       if (pending) { \
+	         if (line ~ /href="#([^"]+)"/) { \
+	           id = line; \
+	           sub(/.*href="#/, "", id); \
+	           sub(/".*/, "", id); \
+	           sub(/<dt>/, sprintf("<dt id=\"%s\">", id), pending_line); \
+	         }; \
+	         print pending_line; \
+	         pending = 0; \
+	       }; \
+	       if (line ~ /^[[:space:]]*<dt>[[:space:]]*$$/) { \
+	         pending_line = line; \
+	         pending = 1; \
+	       } else if (line ~ /<dt>/ && line !~ /<dt[[:space:]]+id=/ && line ~ /href="#([^"]+)"/) { \
+	         id = line; \
+	         sub(/.*href="#/, "", id); \
+	         sub(/".*/, "", id); \
+	         sub(/<dt>/, sprintf("<dt id=\"%s\">", id), line); \
+	         print line; \
+	       } else { \
+	         print line; \
+	       }; \
+	     } \
+	     END { if (pending) print pending_line; }'\
 	    ); \
 	  ) > wiki/$${man##*/}${DEVEL_SFX}.md; \
 	done
