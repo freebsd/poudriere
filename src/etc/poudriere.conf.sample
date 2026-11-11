@@ -136,6 +136,8 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # CHECK_CHANGED_DEPS enabled would consider it a "new dependency"
 # since it is in the port but not in the package.  This is usually
 # a warning but can be made fatal instead by enabling this option.
+# With bulk -a/-f (or -d), "fatal" only ignores the affected port instead
+# of aborting the whole build; use bulk -D to abort.
 # Default: no
 #BAD_PKGNAME_DEPS_ARE_FATAL=yes
 
