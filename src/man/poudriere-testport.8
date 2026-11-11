@@ -90,6 +90,14 @@ See
 for further details.
 .It Fl c
 Run make config for the given port.
+.It Fl e
+Run
+.Cm make test
+after the build and stage phases complete.
+This helps catch missing
+.Va TEST_DEPENDS
+by running port tests in a clean environment where only declared
+dependencies are installed.
 .It Fl I
 Advanced Interactive mode.
 Leaves jail running with port installed after test.
