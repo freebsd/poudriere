@@ -371,6 +371,7 @@ runtest() {
 		# "Error: [pid] ..." is err().
 		if [ "${ret}" -eq 0 ]; then
 			case "${TEST##*/}" in
+			bulk-bad-dep-pkgname-lenient.sh|\
 			bulk-bad-dep-pkgname.sh|\
 			bulk-build-*crashed-builder*.sh|\
 			bulk-build-inc-delete_old_pkg-invalid-flavor-dep.sh|\

@@ -12,7 +12,8 @@ do_bulk -c -n -d ${LISTPORTS}
 assert 0 $? "Bulk -d should pass: bad PKGNAME dep should only ignore the port"
 
 EXPECTED_IGNORED="${LISTPORTS}"
-EXPECTED_TOBUILD="ports-mgmt/pkg misc/foo@flav"
+# misc/foo@flav is only needed by the ignored port, so it is not queued.
+EXPECTED_TOBUILD="ports-mgmt/pkg"
 EXPECTED_QUEUED="${EXPECTED_TOBUILD} ${LISTPORTS}"
 EXPECTED_LISTED="${LISTPORTS}"
 
