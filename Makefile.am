@@ -412,7 +412,8 @@ gen-man-wiki:
 	         print line; \
 	       }; \
 	     } \
-	     END { if (pending) print pending_line; }'\
+	     END { if (pending) print pending_line; }' | \
+	     sed -E 's|<a([^>]*) href="#([^"]+)"|<a\1 name="\2" href="#\2"|g'\
 	    ); \
 	  ) > wiki/$${man##*/}${DEVEL_SFX}.md; \
 	done
