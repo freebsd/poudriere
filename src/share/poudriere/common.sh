@@ -9654,8 +9654,13 @@ generate_queue_pkg() {
 	case "${CHECK_CHANGED_DEPS}" in
 	"no") ;;
 	*)
-		case "${BAD_PKGNAME_DEPS_ARE_FATAL}" in
-		"yes")
+		# Under lenient STRICT_DEPS=0 a "fatal" bad PKGNAME only
+		# ignores this port, so it is reported as a warning.
+		case "${BAD_PKGNAME_DEPS_ARE_FATAL}:${STRICT_DEPS:-0}" in
+		"yes:0")
+			err_type="msg_warn"
+			;;
+		"yes:"*)
 			err_type="msg_error"
 			;;
 		*)
@@ -9711,6 +9716,16 @@ generate_queue_pkg() {
 					${err_type} "${COLOR_PORT}${originspec}${COLOR_WARN} dependency on ${COLOR_PORT}${dpath}${COLOR_WARN} has wrong PKGNAME of '${dep_pkgname}' but should be '${dep_real_pkgname%-*}'; Is the dependency missing a @FLAVOR?"
 					case "${BAD_PKGNAME_DEPS_ARE_FATAL}" in
 					"yes")
+						case "${STRICT_DEPS:-0}" in
+						0)
+							reason="Depends on ${dpath} with wrong PKGNAME '${dep_pkgname}' (should be '${dep_real_pkgname%-*}')"
+							echo "${pkgname} ${originspec} ${reason}" \
+							    >> "${MASTER_DATADIR:?}/deps_invalid_flavor"
+							# Port is ignored; no need
+							# to report further lines.
+							break
+							;;
+						esac
 						set_pipe_fatal_error
 						continue
 						;;

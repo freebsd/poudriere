@@ -235,6 +235,9 @@ as a fatal error that aborts the whole build, instead of ignoring just the
 affected port.
 This is already the default when ports are listed on the command line;
 .Fl D
+also makes
+.Va BAD_PKGNAME_DEPS_ARE_FATAL
+abort the build rather than only ignore the affected port, and
 only changes behavior when combined with
 .Fl a
 or
