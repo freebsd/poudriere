@@ -1054,7 +1054,7 @@ install_from_tar() {
 
 install_from_pkgbase() {
 	msg_n "Installing ${VERSION} ${ARCH} from ${SOURCES_URL} ..."
-	local _pkgbase_major_version _pkgbase_osversion
+	local _pkgbase_major_version _pkgbase_osversion _pkgbase_kernel
 	_pkgbase_major_version="${VERSION%%.*}"
 	if [ -n "${VERSION}" ] && [ "${VERSION}" != "${VERSION%-*}" ]; then
 		_pkgbase_osversion=$(_pkgbase_get_osversion "${VERSION}")
@@ -1096,8 +1096,10 @@ EOF
 	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ search -qCx '^FreeBSD-.*' | grep -vE -- '-man|-dbg|-kernel-|-tests|-src-' | xargs pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ install -yU
 	pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ search -q '^FreeBSD-src-sys' | xargs pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion}  -r ${JAILMNT}/ install -yU
 	if [ -n "${KERNEL}" ]; then
-		pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ install -yU FreeBSD-kernel-"${KERNEL}" || \
-			err 1 "Failed to install FreeBSD-kernel-${KERNEL}"
+		# Kernel package names are lowercase, e.g. FreeBSD-kernel-generic.
+		_pkgbase_kernel="$(echo "${KERNEL}" | tr '[:upper:]' '[:lower:]')"
+		pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${_pkgbase_major_version}:${ARCH#*.}" ${_pkgbase_osversion} -r ${JAILMNT}/ install -yU FreeBSD-kernel-"${_pkgbase_kernel}" || \
+			err 1 "Failed to install FreeBSD-kernel-${_pkgbase_kernel}"
 	fi
 
 	rm "${JAILMNT}/etc/pkg/FreeBSD2.conf"
