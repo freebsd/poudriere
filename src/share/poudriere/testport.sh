@@ -52,6 +52,10 @@ Options:
                    run a different number of jobs in parallel while preparing
                    the build. (Defaults to the number of CPUs for n and
                    1.25 times n for p)
+    -e          -- Run 'make test' after build and stage phases.
+                   This helps catch missing TEST_DEPENDS by running port tests
+                   in a clean environment where only declared dependencies are
+                   installed.
     -k          -- Don't consider failures as fatal; find all failures.
     -n          -- Dry-run. Show what will be done, but do not build
                    any packages.
@@ -83,8 +87,9 @@ BUILD_REPO=1
 OVERLAYS=""
 COMMIT=1
 TRYBROKEN=
+PORT_RUN_TESTS=0
 
-while getopts "b:B:o:cniIj:J:kNO:p:PSTvwz:" FLAG; do
+while getopts "b:B:o:ceniIj:J:kNO:p:PSTvwz:" FLAG; do
 	case "${FLAG}" in
 		b)
 			PACKAGE_FETCH_BRANCH="${OPTARG}"
@@ -95,6 +100,9 @@ while getopts "b:B:o:cniIj:J:kNO:p:PSTvwz:" FLAG; do
 			;;
 		c)
 			CONFIGSTR=1
+			;;
+		e)
+			PORT_RUN_TESTS=1
 			;;
 		o)
 			ORIGINSPEC=${OPTARG}
