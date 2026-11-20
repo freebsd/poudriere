@@ -128,7 +128,7 @@ build_json() {
 }
 
 _build_jail_json() {
-	[ $# -eq 1 ] || _build_jail_json log_path_jail
+	[ $# -eq 1 ] || eargs _build_jail_json log_path_jail
 	local log_path_jail="$1"
 	local -
 
