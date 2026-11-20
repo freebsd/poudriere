@@ -632,12 +632,6 @@ function process_data_build(data) {
     now = Math.floor(new Date().getTime() / 1000);
   }
 
-  // Redirect from /latest/ to the actual build.
-  if (page_buildname == "latest") {
-    document.location.href = build_url(page_mastername, data.buildname);
-    return;
-  }
-
   if (data.stats) {
     determine_canvas_width();
     update_canvas(data.stats);
