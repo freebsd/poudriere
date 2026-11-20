@@ -24,6 +24,7 @@ TESTS=\
 	adjust_timeout.sh \
 	alarm.sh \
 	array.sh \
+	build_jail_json.sh \
 	builtins.sh \
 	builtins-cp.sh \
 	builtins-cut.sh \
