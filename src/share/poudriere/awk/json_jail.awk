@@ -34,17 +34,19 @@ function print_build(buildname, data) {
     print "\"" buildname "\":" data "" | "sort -n -k1,1 -t :"
 }
 {
-  if (FILENAME ~ /\/latest\//)
+  if (FILENAME ~ /\/latest-done\/\.data(\.mini)?\.json$/)
     next
-  else {
-    data = $0
-    buildname = get_value("buildname")
+  data = $0
+  buildname = get_value("buildname")
+  if (FILENAME ~ /\/latest\/\.data(\.mini)?\.json$/) {
+    latest = buildname
+    next
   }
   print_build(buildname, data)
 }
 END {
-  if (buildname) {
-    data = "\"" buildname "\""
+  if (latest) {
+    data = "\"" latest "\""
     buildname = "latest"
     print_build(buildname, data)
   }
